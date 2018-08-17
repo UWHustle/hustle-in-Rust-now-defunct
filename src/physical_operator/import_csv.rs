@@ -29,15 +29,19 @@ impl ImportCsv {
             .read(true)
             .write(true)
             .create(true)
-            .open(self.relation.to_filename())
+            .truncate(true)
+            .open(self.relation.get_filename())
             .expect("Unable to open file");
 
+        extern crate csv;
+        let mut rdr = csv::Reader::from_path(&self.file_name).unwrap();
+        let record_count = rdr.records().count();
+        rdr.seek(csv::Position::new());
+
         // Allocate space in the file first
-        f.seek(SeekFrom::Start(self.relation.get_total_size() as u64)).unwrap();
+        f.seek(SeekFrom::Start((self.relation.get_row_size() * (record_count+2)) as u64)).unwrap();
         f.write_all(&[0]).unwrap();
         f.seek(SeekFrom::Start(0)).unwrap();
-
-
 
         let mut data = unsafe {
             memmap::MmapOptions::new()
@@ -45,8 +49,6 @@ impl ImportCsv {
                 .expect("Could not access data from memory mapped file")
         };
 
-        extern crate csv;
-        let mut rdr = csv::Reader::from_path(&self.file_name).unwrap();
         let columns = self.relation.get_columns();
         let mut n : usize = 0;
 
@@ -54,20 +56,20 @@ impl ImportCsv {
             for (i, column) in columns.iter().enumerate() {
                 let a = record.get(i).unwrap().parse::<u64>().unwrap();
                 unsafe {
-                    //let c = mem::transmute::<u64, [u8; 8]>(a);
-                    use std::slice;
-                    let ip: *const u64 = &a;
-                    let bp: *const u8 = ip as *const _;
-                    let bs: &[u8] = unsafe { slice::from_raw_parts(bp, mem::size_of::<u64>()) };
-                    let d:&[u8] =slice::from_raw_parts(bp, 8);//column.get_size());
-                    data[n..n + column.get_size()].clone_from_slice(d); // 0  8
+                    let c = mem::transmute::<u64, [u8; 8]>(a);
+                    //use std::slice;
+                    //let ip: *const u64 = &a;
+                    //let bp: *const u8 = ip as *const _;
+                    //let bs: &[u8] = unsafe { slice::from_raw_parts(bp, mem::size_of::<u64>()) };
+                    //let d:&[u8] =slice::from_raw_parts(bp, 8);//column.get_size());
+                    data[n..n + column.get_size()].clone_from_slice(&c); // 0  8
                     n = n + column.get_size();
                 }
             }
         };
 
 
-        process_record(&mut data,rdr.headers().unwrap());
+        //process_record(&mut data,rdr.headers().unwrap());
 
         for result in rdr.records() {
             let record = result.unwrap();

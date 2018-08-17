@@ -1,6 +1,8 @@
 
 pub mod logical_relation;
 pub mod column;
+pub mod row;
+pub mod schema;
 use logical_operator::logical_relation::LogicalRelation;
 
 pub trait Operator {

@@ -1,4 +1,5 @@
 use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::row::Row;
 
 use std::time::{Instant};
 
@@ -8,21 +9,16 @@ use std::{
     fs::OpenOptions,
 };
 
-pub const CHUNK_SIZE:usize = 1024*1024;
-
-use logical_operator::column::Column;
-
 #[derive(Debug)]
-pub struct SelectSum {
+pub struct Insert {
     relation: LogicalRelation,
-    column_index: usize,
-    column: Column,
+    column_index: usize
 }
 
-impl SelectSum {
-    pub fn new(relation: LogicalRelation, column_index:usize, column:Column) -> Self {
+impl Insert {
+    pub fn new(relation: LogicalRelation, column_index:usize) -> Self {
         SelectSum {
-            relation,column_index,column
+            relation,column_index
         }
     }
 
@@ -34,20 +30,15 @@ impl SelectSum {
         let mut children = vec![];
 
         let thread_relation = Arc::new(self.relation.clone());
-        let column_name = Arc::new(self.column.get_name().clone());
 
         let mut my_chunk_start:isize = -1*(CHUNK_SIZE as isize);
         let mut my_chunk_end = 0;
         let mut my_chunk_length = CHUNK_SIZE;
-
-
         let total_size = self.relation.get_total_size();
-        println!("{}",total_size);
 
         while my_chunk_end < total_size {
             use std::cmp;
             let my_relation = thread_relation.clone();
-            let my_target_column_name = column_name.clone();
 
             my_chunk_start += CHUNK_SIZE as isize;
             my_chunk_end = cmp::min(my_chunk_end + CHUNK_SIZE, total_size);
@@ -56,11 +47,10 @@ impl SelectSum {
             children.push(thread::spawn(move|| {
 
                 let columns = my_relation.get_columns();
-                let col_name = Arc::as_ref(&my_target_column_name);
 
                 let f = OpenOptions::new()
                     .read(true)
-                    .open(my_relation.get_filename())
+                    .open("T.hsl")
                     .expect("Unable to open file");
 
                 let data = unsafe {
@@ -76,14 +66,10 @@ impl SelectSum {
                 let mut i = 0;
                 while i < my_chunk_length {
                     for column in columns {
-
                         t_v.clone_from_slice(&data[i..i+column.get_size()]);
-                        //println!("{},{},{}",i,column.get_size(),t_v[7]);
                         unsafe {
                             let _t_v_p = mem::transmute::<[u8; 8], u64>(t_v) as u128;
-
-                            if column.get_name() == col_name{
-                                //println!("{} == {} => {}",column.get_name(), col_name, _t_v_p);
+                            if column.get_name() == "b" {
                                 t += _t_v_p;
                             }
                         }

@@ -11,6 +11,8 @@ mod constants;
 
 
 const GENERATE_DATA: bool = true; // Generates the CSV File with Data
+const RECORD_COUNT: usize = 1024*64;
+
 const CONVERT_DATA_TO_SQLITE: bool = true; // Loads data from CSV file into sqlite3
 const CONVERT_DATA_TO_HUSTLE: bool = true; // Loads data from CSV file into hustle
 
@@ -30,7 +32,7 @@ fn main() {
         use std::process::Command;
         Command::new("rm").arg("data.csv").output().unwrap();
         use physical_operator::data_generator::DataGenerator;
-        let data_generator = DataGenerator::new("data.csv".to_string(), relation.clone(), relation.get_row_count());
+        let data_generator = DataGenerator::new("data.csv".to_string(), relation.clone(), RECORD_COUNT);
         data_generator.execute();
         println!("Finished CSV generation in {} seconds.", now.elapsed().as_secs());
     }
@@ -53,7 +55,7 @@ fn main() {
 
     {
         use physical_operator::select_sum::SelectSum;
-        let select_operator = SelectSum::new(relation.clone(),2);
+        let select_operator = SelectSum::new(relation.clone(),2, Column::new("b".to_string(), 8));
         select_operator.execute();
 
     }
