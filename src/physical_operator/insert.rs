@@ -7,87 +7,59 @@ extern crate memmap;
 use std::mem;
 use std::{
     fs::OpenOptions,
+    io::{Seek, SeekFrom, Write},
 };
 
 #[derive(Debug)]
 pub struct Insert {
     relation: LogicalRelation,
-    column_index: usize
+    row: Row,
 }
 
 impl Insert {
-    pub fn new(relation: LogicalRelation, column_index:usize) -> Self {
-        SelectSum {
-            relation,column_index
+    pub fn new(relation: LogicalRelation, row:Row) -> Self {
+        Insert {
+            relation,row
         }
     }
 
 
     pub fn execute(&self) -> bool{
-        use std::thread;
-        use std::sync::Arc;
         let now = Instant::now();
-        let mut children = vec![];
 
-        let thread_relation = Arc::new(self.relation.clone());
-
-        let mut my_chunk_start:isize = -1*(CHUNK_SIZE as isize);
-        let mut my_chunk_end = 0;
-        let mut my_chunk_length = CHUNK_SIZE;
         let total_size = self.relation.get_total_size();
+        let row_size = self.relation.get_row_size();
 
-        while my_chunk_end < total_size {
-            use std::cmp;
-            let my_relation = thread_relation.clone();
+        let mut f = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .append(true)
+            .open(self.relation.get_filename())
+            .expect("Unable to open file");
 
-            my_chunk_start += CHUNK_SIZE as isize;
-            my_chunk_end = cmp::min(my_chunk_end + CHUNK_SIZE, total_size);
-            my_chunk_length = my_chunk_end - my_chunk_start as usize;
+        f.set_len((total_size + (row_size*2)) as u64);
 
-            children.push(thread::spawn(move|| {
+        let mut data = unsafe {
+            memmap::MmapOptions::new()
+                .offset(total_size-row_size)
+                .len(row_size*2)
+                .map_mut(&f)
+                .expect("Could not access data from memory mapped file")
+        };
 
-                let columns = my_relation.get_columns();
+        let mut n = 0;
+        for (i, column) in self.row.get_schema().get_columns().iter().enumerate() {
 
-                let f = OpenOptions::new()
-                    .read(true)
-                    .open("T.hsl")
-                    .expect("Unable to open file");
-
-                let data = unsafe {
-                    memmap::MmapOptions::new()
-                        .len(my_chunk_length)
-                        .offset(my_chunk_start as usize)
-                        .map(&f)
-                        .expect("Could not access data from memory mapped file")
-                };
-
-                let mut t :u128 = 0;
-                let mut t_v : [u8; 8] = [0,0,0,0,0,0,0,0];
-                let mut i = 0;
-                while i < my_chunk_length {
-                    for column in columns {
-                        t_v.clone_from_slice(&data[i..i+column.get_size()]);
-                        unsafe {
-                            let _t_v_p = mem::transmute::<[u8; 8], u64>(t_v) as u128;
-                            if column.get_name() == "b" {
-                                t += _t_v_p;
-                            }
-                        }
-                        i += column.get_size();
-                    }
-                }
-                t
-            }));
+            let a = self.row.get_values()[i];
+            unsafe {
+                let c = mem::transmute::<u64, [u8; 8]>(a);
+                data[n..n + column.get_size()].clone_from_slice(&c); // 0  8
+                n = n + column.get_size();
+            }
         }
 
-        let mut intermediate_sums = vec![];
-        for child in children {
-            let intermediate_sum = child.join().unwrap();
-            intermediate_sums.push(intermediate_sum);
-        }
-        let final_result = intermediate_sums.iter().sum::<u128>();
-        println!("Final Sum: {}", final_result);
-        println!("Finished Reading MemMap After {} milli-seconds.", now.elapsed().subsec_millis());
+        println!("Finished Insert After {} milli-seconds.", now.elapsed().subsec_millis());
         true
     }
 }

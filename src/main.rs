@@ -48,6 +48,12 @@ fn main() {
         use physical_operator::import_csv::ImportCsv;
         let import_operator = ImportCsv::new("data.csv".to_string(), relation.clone());
         import_operator.execute();
+
+        use physical_operator::insert::Insert;
+        use logical_operator::row::Row;
+        let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(1,11)));
+        insert_operator.execute();
+        insert_operator.execute();
     }
 
 

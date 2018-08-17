@@ -23,6 +23,10 @@ impl LogicalRelation {
         &self.schema.get_columns()
     }
 
+    pub fn get_schema(&self) -> &Schema {
+        return &self.schema;
+    }
+
     pub fn get_filename(&self) -> String {
         format!("{}{}",self.get_name(),".hsl")
     }

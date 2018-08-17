@@ -12,4 +12,12 @@ impl Row {
             schema, values
         }
     }
+
+    pub fn get_schema(&self) -> &Schema {
+        return &self.schema;
+    }
+
+    pub fn get_values(&self) -> &Vec<u64> {
+        return &self.values;
+    }
 }
