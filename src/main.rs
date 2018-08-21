@@ -9,7 +9,7 @@ use std::time::{Instant};
 
 
 const GENERATE_DATA: bool = true; // Generates the CSV File with Data
-const RECORD_COUNT: usize = 1024*16;
+const RECORD_COUNT: usize = 1024;
 
 const CONVERT_DATA_TO_SQLITE: bool = true; // Loads data from CSV file into sqlite3
 const CONVERT_DATA_TO_HUSTLE: bool = true; // Loads data from CSV file into hustle
@@ -55,8 +55,8 @@ fn main() {
         use physical_operator::insert::Insert;
         use logical_operator::row::Row;
         let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(1,11)));
-        insert_operator.execute();
-        insert_operator.execute();
+        //insert_operator.execute();
+        //insert_operator.execute();
     }
 
 
@@ -88,5 +88,34 @@ fn main() {
         let mut select_operator = SelectOutput::new(relation.clone());
         select_operator.execute();
         //select_operator.print();
+    }
+
+    {
+        use physical_operator::join::Join;
+        use physical_operator::select_sum::SelectSum;
+        let join_operator = Join::new(relation.clone(), relation.clone());
+        let joined_relation = join_operator.execute();
+        let mut select_operator = SelectSum::new(joined_relation.clone(),Column::new("b".to_string(), 8));
+        select_operator.execute();
+
+        use physical_operator::select_output::SelectOutput;
+        let mut select_operator = SelectOutput::new(joined_relation.clone());
+        select_operator.execute();
+       //select_operator.print();
+    }
+
+    {
+        extern crate sqlite;
+        let now = Instant::now();
+        let connection = sqlite::open("sqlite.data").unwrap();
+        connection
+            .iterate("SELECT SUM(t1.b)+SUM(t2.b) FROM t as t1 JOIN t as t2;", |pairs| {
+                for &(column, value) in pairs.iter() {
+                    println!("{} = {}", column, value.expect("Value not valid."));
+                }
+                true
+            })
+            .expect("Query failed.");
+        println!("Finished SQL Join After {} seconds.", now.elapsed().as_secs());
     }
 }

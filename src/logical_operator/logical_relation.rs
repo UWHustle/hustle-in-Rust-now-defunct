@@ -40,7 +40,7 @@ impl LogicalRelation {
             Ok(n) => {
                 let mut total_size = n.len() as usize;
                 total_size = total_size/self.get_row_size();
-                total_size = (total_size+1) * self.get_row_size();
+                total_size = (total_size) * self.get_row_size();
                 return total_size
             },
             Err(err) => {

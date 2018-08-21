@@ -35,13 +35,15 @@ impl ImportCsv {
 
         extern crate csv;
         let mut rdr = csv::Reader::from_path(&self.file_name).unwrap();
-        let record_count = rdr.records().count();
+        let record_count = rdr.records().count() + 1;
         rdr.seek(csv::Position::new()).unwrap();
 
         // Allocate space in the file first
-        f.seek(SeekFrom::Start((self.relation.get_row_size() * (record_count+2)) as u64)).unwrap();
+        f.seek(SeekFrom::Start((self.relation.get_row_size() * record_count) as u64)).unwrap();
         f.write_all(&[0]).unwrap();
         f.seek(SeekFrom::Start(0)).unwrap();
+
+        f.set_len((self.relation.get_row_size() * record_count) as u64);
 
         let mut data = unsafe {
             memmap::MmapOptions::new()
@@ -56,13 +58,9 @@ impl ImportCsv {
             for (i, column) in columns.iter().enumerate() {
 
                 let a = record.get(i).unwrap().parse::<u64>().unwrap();
+                println!("{}",a);
                 unsafe {
                     let c = mem::transmute::<u64, [u8; 8]>(a);
-                    //use std::slice;
-                    //let ip: *const u64 = &a;
-                    //let bp: *const u8 = ip as *const _;
-                    //let bs: &[u8] = unsafe { slice::from_raw_parts(bp, mem::size_of::<u64>()) };
-                    //let d:&[u8] =slice::from_raw_parts(bp, 8);//column.get_size());
                     data[n..n + column.get_size()].clone_from_slice(&c); // 0  8
                     n = n + column.get_size();
                 }
@@ -74,6 +72,7 @@ impl ImportCsv {
 
         for result in rdr.records() {
             let record = result.unwrap();
+
             process_record(&mut data,&record);
         }
         println!("Finished CSV to Hustle load in {} Seconds.", now.elapsed().as_secs());

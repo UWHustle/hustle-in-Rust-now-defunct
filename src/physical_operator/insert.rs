@@ -33,16 +33,15 @@ impl Insert {
             .read(true)
             .write(true)
             .create(true)
-            .append(true)
             .open(self.relation.get_filename())
             .expect("Unable to open file");
 
-        f.set_len((total_size + (row_size*2)) as u64).unwrap();
+        f.set_len((total_size + row_size) as u64).unwrap();
 
         let mut data = unsafe {
             memmap::MmapOptions::new()
-                .offset(total_size-row_size)
-                .len(row_size*2)
+                .offset(total_size)
+                .len(row_size)
                 .map_mut(&f)
                 .expect("Could not access data from memory mapped file")
         };
