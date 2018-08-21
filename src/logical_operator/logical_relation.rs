@@ -35,10 +35,46 @@ impl LogicalRelation {
 
     pub fn get_total_size(&self) -> usize {
         use std::fs;
-        let mut total_size = fs::metadata(self.get_filename()).unwrap().len() as usize;
-        total_size = total_size/self.get_row_size();
-        total_size = (total_size+1) * self.get_row_size();
 
-        return total_size;
+        match fs::metadata(self.get_filename()) {
+            Ok(n) => {
+                let mut total_size = n.len() as usize;
+                total_size = total_size/self.get_row_size();
+                total_size = (total_size+1) * self.get_row_size();
+                return total_size
+            },
+            Err(err) => {
+                println!("Error getting file size: {}",err);
+                return 0;
+            }
+        }
+    }
+}
+
+use std::os::raw::c_char;
+
+use logical_operator::schema::cSchema;
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cRelation {
+    name: *const c_char,
+    schema: cSchema,
+}
+
+impl cRelation {
+    pub fn to_relation(&self) -> LogicalRelation {
+        let c_name = self.name;
+        assert!(!c_name.is_null());
+
+        use std::ffi::CStr;
+        let c_str = unsafe { CStr::from_ptr(c_name) };
+        let name = c_str.to_str().expect("Relation name not a valid UTF-8 string").to_string();
+
+        let schema = self.schema.to_schema();
+
+        LogicalRelation {
+            name, schema
+        }
     }
 }

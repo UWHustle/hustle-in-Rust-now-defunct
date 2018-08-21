@@ -8,3 +8,7 @@ rand = "0.5.5"
 memmap = "0.6.2"
 sqlite = "0.23.9"
 csv = "1"
+
+[lib]
+name = "hustle"
+crate-type = ["dylib"]

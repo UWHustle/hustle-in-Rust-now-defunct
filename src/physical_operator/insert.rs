@@ -7,7 +7,6 @@ extern crate memmap;
 use std::mem;
 use std::{
     fs::OpenOptions,
-    io::{Seek, SeekFrom, Write},
 };
 
 #[derive(Debug)]
@@ -38,7 +37,7 @@ impl Insert {
             .open(self.relation.get_filename())
             .expect("Unable to open file");
 
-        f.set_len((total_size + (row_size*2)) as u64);
+        f.set_len((total_size + (row_size*2)) as u64).unwrap();
 
         let mut data = unsafe {
             memmap::MmapOptions::new()

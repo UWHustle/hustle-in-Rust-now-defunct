@@ -36,7 +36,7 @@ impl ImportCsv {
         extern crate csv;
         let mut rdr = csv::Reader::from_path(&self.file_name).unwrap();
         let record_count = rdr.records().count();
-        rdr.seek(csv::Position::new());
+        rdr.seek(csv::Position::new()).unwrap();
 
         // Allocate space in the file first
         f.seek(SeekFrom::Start((self.relation.get_row_size() * (record_count+2)) as u64)).unwrap();
@@ -54,6 +54,7 @@ impl ImportCsv {
 
         let mut process_record = |data: &mut memmap::MmapMut, record: &csv::StringRecord| {
             for (i, column) in columns.iter().enumerate() {
+
                 let a = record.get(i).unwrap().parse::<u64>().unwrap();
                 unsafe {
                     let c = mem::transmute::<u64, [u8; 8]>(a);
@@ -77,5 +78,16 @@ impl ImportCsv {
         }
         println!("Finished CSV to Hustle load in {} Seconds.", now.elapsed().as_secs());
         true
+    }
+
+    pub fn u8s_from_u64(a: &mut [u8], v: u64) {
+        a[0] = v as u8;
+        a[1] = (v >> 8) as u8;
+        a[2] = (v >> 16) as u8;
+        a[3] = (v >> 24) as u8;
+        a[4] = (v >> 32) as u8;
+        a[5] = (v >> 40) as u8;
+        a[6] = (v >> 48) as u8;
+        a[7] = (v >> 56) as u8;
     }
 }

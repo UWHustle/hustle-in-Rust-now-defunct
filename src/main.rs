@@ -1,20 +1,23 @@
-mod physical_operator;
-mod logical_operator;
+pub mod physical_operator;
+pub mod logical_operator;
 
 
 
 
 use std::time::{Instant};
 
-mod constants;
-
 
 
 const GENERATE_DATA: bool = true; // Generates the CSV File with Data
-const RECORD_COUNT: usize = 1024*64;
+const RECORD_COUNT: usize = 1024*16;
 
 const CONVERT_DATA_TO_SQLITE: bool = true; // Loads data from CSV file into sqlite3
 const CONVERT_DATA_TO_HUSTLE: bool = true; // Loads data from CSV file into hustle
+
+#[no_mangle]
+pub extern fn process() {
+
+}
 
 
 
@@ -61,9 +64,8 @@ fn main() {
 
     {
         use physical_operator::select_sum::SelectSum;
-        let select_operator = SelectSum::new(relation.clone(),2, Column::new("b".to_string(), 8));
+        let select_operator = SelectSum::new(relation.clone(),Column::new("b".to_string(), 8));
         select_operator.execute();
-
     }
 
     {
@@ -78,6 +80,13 @@ fn main() {
                 true
             })
             .expect("Query failed.");
-        println!("Finished SQL Sum After {} milli-seconds.", now.elapsed().subsec_millis());
+        println!("Finished SQL Sum After {} seconds.", now.elapsed().as_secs());
+    }
+
+    {
+        use physical_operator::select_output::SelectOutput;
+        let mut select_operator = SelectOutput::new(relation.clone());
+        select_operator.execute();
+        //select_operator.print();
     }
 }

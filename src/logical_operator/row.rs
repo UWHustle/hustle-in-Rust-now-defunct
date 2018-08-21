@@ -21,3 +21,24 @@ impl Row {
         return &self.values;
     }
 }
+
+
+use logical_operator::schema::cSchema;
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct cRow {
+    values: [u64; 2 ],
+    schema: cSchema,
+}
+
+impl cRow {
+    pub fn to_row(&self) -> Row {
+        let values = self.values.iter().filter(|_value|{true}).map(|value|{*value as u64}).collect::<Vec<_>>();
+        let schema = self.schema.to_schema();
+
+        Row {
+            schema,values
+        }
+    }
+}

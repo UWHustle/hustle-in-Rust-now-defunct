@@ -15,19 +15,19 @@ use logical_operator::column::Column;
 #[derive(Debug)]
 pub struct SelectSum {
     relation: LogicalRelation,
-    column_index: usize,
     column: Column,
 }
 
 impl SelectSum {
-    pub fn new(relation: LogicalRelation, column_index:usize, column:Column) -> Self {
+    pub fn new(relation: LogicalRelation, column:Column) -> Self {
         SelectSum {
-            relation,column_index,column
+            relation,column
         }
     }
 
 
-    pub fn execute(&self) -> bool{
+    pub fn execute(&self) -> u128{
+        //println!("{},{}", self.relation.get_name(), self.column.get_name());
         use std::thread;
         use std::sync::Arc;
         let now = Instant::now();
@@ -38,12 +38,12 @@ impl SelectSum {
 
         let mut my_chunk_start:isize = -1*(CHUNK_SIZE as isize);
         let mut my_chunk_end = 0;
-        let mut my_chunk_length = CHUNK_SIZE;
+        let mut my_chunk_length;
 
 
         let total_size = self.relation.get_total_size();
-        println!("{}",total_size);
-
+        //println!("{}",total_size);
+        //println!("{}",self.relation.get_filename());
         while my_chunk_end < total_size {
             use std::cmp;
             let my_relation = thread_relation.clone();
@@ -70,18 +70,19 @@ impl SelectSum {
                         .map(&f)
                         .expect("Could not access data from memory mapped file")
                 };
-
+                //println!("{}",my_relation.get_filename());
                 let mut t :u128 = 0;
                 let mut t_v : [u8; 8] = [0,0,0,0,0,0,0,0];
                 let mut i = 0;
                 while i < my_chunk_length {
                     for column in columns {
 
+
                         t_v.clone_from_slice(&data[i..i+column.get_size()]);
                         //println!("{},{},{}",i,column.get_size(),t_v[7]);
                         unsafe {
                             let _t_v_p = mem::transmute::<[u8; 8], u64>(t_v) as u128;
-
+                            //println!("{} - {}",column.get_name(),_t_v_p);
                             if column.get_name() == col_name{
                                 //println!("{} == {} => {}",column.get_name(), col_name, _t_v_p);
                                 t += _t_v_p;
@@ -101,7 +102,7 @@ impl SelectSum {
         }
         let final_result = intermediate_sums.iter().sum::<u128>();
         println!("Final Sum: {}", final_result);
-        println!("Finished Reading MemMap After {} milli-seconds.", now.elapsed().subsec_millis());
-        true
+        println!("Finished Reading MemMap After {} seconds.", now.elapsed().as_secs());
+        final_result
     }
 }
