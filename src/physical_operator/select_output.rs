@@ -1,4 +1,4 @@
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 use logical_operator::row::Row;
 
 use std::time::{Instant};
@@ -13,12 +13,12 @@ pub const CHUNK_SIZE:usize = 1024*1024;
 
 #[derive(Debug)]
 pub struct SelectOutput {
-    relation: LogicalRelation,
+    relation: Relation,
     result: Vec<Row>,
 }
 
 impl SelectOutput {
-    pub fn new(relation: LogicalRelation) -> SelectOutput {
+    pub fn new(relation: Relation) -> SelectOutput {
         let result = vec!();
         SelectOutput {
             relation,

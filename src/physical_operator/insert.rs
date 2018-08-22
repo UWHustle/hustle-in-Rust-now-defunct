@@ -1,4 +1,4 @@
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 use logical_operator::row::Row;
 
 use std::time::{Instant};
@@ -11,12 +11,12 @@ use std::{
 
 #[derive(Debug)]
 pub struct Insert {
-    relation: LogicalRelation,
+    relation: Relation,
     row: Row,
 }
 
 impl Insert {
-    pub fn new(relation: LogicalRelation, row:Row) -> Self {
+    pub fn new(relation: Relation, row:Row) -> Self {
         Insert {
             relation,row
         }

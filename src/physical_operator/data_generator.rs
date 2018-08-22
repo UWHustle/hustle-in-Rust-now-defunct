@@ -1,17 +1,17 @@
 extern crate rand;
 extern crate csv;
 
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 
 #[derive(Debug)]
 pub struct DataGenerator {
     file_name: String,
-    relation: LogicalRelation,
+    relation: Relation,
     size: usize
 }
 
 impl DataGenerator {
-    pub fn new(file_name: String, relation: LogicalRelation, size: usize) -> Self {
+    pub fn new(file_name: String, relation: Relation, size: usize) -> Self {
         DataGenerator {
             file_name,
             relation,

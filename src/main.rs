@@ -14,18 +14,13 @@ const RECORD_COUNT: usize = 1024;
 const CONVERT_DATA_TO_SQLITE: bool = true; // Loads data from CSV file into sqlite3
 const CONVERT_DATA_TO_HUSTLE: bool = true; // Loads data from CSV file into hustle
 
-#[no_mangle]
-pub extern fn process() {
-
-}
-
 
 
 fn main() {
-    use logical_operator::logical_relation::LogicalRelation;
+    use logical_operator::relation::Relation;
     use logical_operator::column::Column;
-    let relation = LogicalRelation::new("T".to_string(),
-                                        vec!(Column::new("a".to_string(),8),
+    let relation = Relation::new("T".to_string(),
+                                 vec!(Column::new("a".to_string(),8),
                                                       Column::new("b".to_string(),8)
                                         ));
 

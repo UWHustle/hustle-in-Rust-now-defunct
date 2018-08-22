@@ -1,4 +1,4 @@
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 
 use std::time::{Instant};
 
@@ -12,11 +12,11 @@ use std::{
 #[derive(Debug)]
 pub struct ImportCsv {
     file_name: String,
-    relation: LogicalRelation
+    relation: Relation
 }
 
 impl ImportCsv {
-    pub fn new(file_name: String, relation: LogicalRelation) -> Self {
+    pub fn new(file_name: String, relation: Relation) -> Self {
         ImportCsv {
             file_name,relation
         }
@@ -58,7 +58,6 @@ impl ImportCsv {
             for (i, column) in columns.iter().enumerate() {
 
                 let a = record.get(i).unwrap().parse::<u64>().unwrap();
-                println!("{}",a);
                 unsafe {
                     let c = mem::transmute::<u64, [u8; 8]>(a);
                     data[n..n + column.get_size()].clone_from_slice(&c); // 0  8

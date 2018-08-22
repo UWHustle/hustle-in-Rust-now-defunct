@@ -1,20 +1,20 @@
 
-pub mod logical_relation;
+pub mod relation;
 pub mod column;
 pub mod row;
 pub mod schema;
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 
 pub trait Operator {
-    fn output_relation(&self) -> &LogicalRelation;
+    fn output_relation(&self) -> &Relation;
 }
 
 struct Select {
-    relation: LogicalRelation,
+    relation: Relation,
 }
 
 impl Select {
-    pub fn new(relation: LogicalRelation) -> Self {
+    pub fn new(relation: Relation) -> Self {
         let operator = Select {
             relation:relation,
         };
@@ -23,24 +23,24 @@ impl Select {
     }
 }
 impl Operator for Select {
-    fn output_relation(&self) -> &LogicalRelation {
+    fn output_relation(&self) -> &Relation {
         &self.relation
     }
 }
 
 struct Join {
-    left_relation: LogicalRelation,
-    right_relation: LogicalRelation,
-    output_relation: LogicalRelation,
+    left_relation: Relation,
+    right_relation: Relation,
+    output_relation: Relation,
 }
 
 impl Join {
-    pub fn new(left_relation: LogicalRelation, right_relation: LogicalRelation) -> Self {
+    pub fn new(left_relation: Relation, right_relation: Relation) -> Self {
         let mut left_columns = left_relation.get_columns().clone();
         let right_columns = right_relation.get_columns().clone();
         left_columns.extend(right_columns.iter().cloned());
 
-        let output_relation = LogicalRelation::new(
+        let output_relation = Relation::new(
             format!("{}_join_{}", left_relation.get_name(), right_relation.get_name()),
             left_columns,
         );
@@ -53,7 +53,7 @@ impl Join {
     }
 }
 impl Operator for Join {
-    fn output_relation(&self) -> &LogicalRelation {
+    fn output_relation(&self) -> &Relation {
         &self.output_relation
     }
 }
@@ -63,12 +63,12 @@ mod tests {
     #[test]
     fn select_create() {
         use logical_operator::Select;
-        use logical_operator::logical_relation::LogicalRelation;
+        use logical_operator::relation::Relation;
         use logical_operator::Operator;
         use logical_operator::column::Column;
 
         let s = Select::new(
-            LogicalRelation::new(
+            Relation::new(
                 String::from("TableName"),
                 vec![Column::new(String::from("a"),8)])
         );
@@ -79,15 +79,15 @@ mod tests {
     #[test]
     fn join_create() {
         use logical_operator::Join;
-        use logical_operator::logical_relation::LogicalRelation;
+        use logical_operator::relation::Relation;
         use logical_operator::Operator;
         use logical_operator::column::Column;
 
         let s = Join::new(
-            LogicalRelation::new(
+            Relation::new(
                 String::from("Left"),
                 vec![Column::new(String::from("a"),8),Column::new(String::from("b"),8)]),
-        LogicalRelation::new(
+            Relation::new(
             String::from("Right"),
             vec![Column::new(String::from("c"),8),Column::new(String::from("d"),8)])
         );

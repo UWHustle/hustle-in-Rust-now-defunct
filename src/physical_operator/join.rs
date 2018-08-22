@@ -1,4 +1,4 @@
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 
 use std::time::{Instant};
 
@@ -11,19 +11,19 @@ use std::{
 
 #[derive(Debug)]
 pub struct Join {
-    relation_left: LogicalRelation,
-    relation_right: LogicalRelation,
+    relation_left: Relation,
+    relation_right: Relation,
 }
 
 impl Join {
-    pub fn new(relation_left: LogicalRelation, relation_right: LogicalRelation) -> Self {
+    pub fn new(relation_left: Relation, relation_right: Relation) -> Self {
         Join {
             relation_left,relation_right
         }
     }
 
 
-    pub fn execute(&self) -> LogicalRelation{
+    pub fn execute(&self) -> Relation {
         let now = Instant::now();
 
         let rel_l = &self.relation_left;
@@ -40,8 +40,8 @@ impl Join {
         let mut joined_cols = cols_l.clone();
         joined_cols.extend(cols_r.clone());
 
-        let _join_relation = LogicalRelation::new(format!("{}_j_{}",rel_l.get_name(),rel_r.get_name()),
-                                                                joined_cols);
+        let _join_relation = Relation::new(format!("{}_j_{}", rel_l.get_name(), rel_r.get_name()),
+                                           joined_cols);
 
 
         let f_l = OpenOptions::new()

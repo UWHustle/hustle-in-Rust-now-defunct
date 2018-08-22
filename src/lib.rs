@@ -5,7 +5,7 @@ mod logical_operator;
 
 
 use logical_operator::column::cColumn;
-use logical_operator::logical_relation::cRelation;
+use logical_operator::relation::cRelation;
 
 use physical_operator::select_sum::SelectSum;
 

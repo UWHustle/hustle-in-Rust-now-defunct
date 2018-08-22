@@ -1,4 +1,4 @@
-use logical_operator::logical_relation::LogicalRelation;
+use logical_operator::relation::Relation;
 
 use std::time::{Instant};
 
@@ -14,12 +14,12 @@ use logical_operator::column::Column;
 
 #[derive(Debug)]
 pub struct SelectSum {
-    relation: LogicalRelation,
+    relation: Relation,
     column: Column,
 }
 
 impl SelectSum {
-    pub fn new(relation: LogicalRelation, column:Column) -> Self {
+    pub fn new(relation: Relation, column:Column) -> Self {
         SelectSum {
             relation,column
         }
