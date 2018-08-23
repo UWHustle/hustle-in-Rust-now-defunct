@@ -1,4 +1,4 @@
-use logical_operator::schema::Schema;
+use logical_entities::schema::Schema;
 
 #[derive(Clone, Debug)]
 pub struct Row {
@@ -23,22 +23,31 @@ impl Row {
 }
 
 
-use logical_operator::schema::cSchema;
+use logical_entities::schema::ExtSchema;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct cRow {
+pub struct ExtRow {
     values: [u64; 2 ],
-    schema: cSchema,
+    schema: ExtSchema,
 }
 
-impl cRow {
+impl ExtRow {
     pub fn to_row(&self) -> Row {
         let values = self.values.iter().filter(|_value|{true}).map(|value|{*value as u64}).collect::<Vec<_>>();
         let schema = self.schema.to_schema();
 
         Row {
             schema,values
+        }
+    }
+
+    pub fn from_row(row: Row) -> ExtRow {
+        let values = [1,2];
+        let schema = ExtSchema::from_schema(row.get_schema().clone());
+
+        ExtRow {
+            values,schema
         }
     }
 }

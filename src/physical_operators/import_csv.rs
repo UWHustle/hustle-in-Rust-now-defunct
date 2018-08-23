@@ -1,4 +1,4 @@
-use logical_operator::relation::Relation;
+use logical_entities::relation::Relation;
 
 use std::time::{Instant};
 

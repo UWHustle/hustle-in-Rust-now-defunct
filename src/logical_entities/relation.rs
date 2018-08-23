@@ -1,5 +1,5 @@
-use logical_operator::schema::Schema;
-use logical_operator::column::Column;
+use logical_entities::schema::Schema;
+use logical_entities::column::Column;
 
 #[derive(Clone, Debug)]
 pub struct Relation {
@@ -8,8 +8,7 @@ pub struct Relation {
 }
 
 impl Relation {
-    pub fn new(name: String, columns: Vec<Column>) -> Self {
-        let schema = Schema::new(columns);
+    pub fn new(name: String, schema: Schema) -> Self {
         Relation {
             name, schema
         }
@@ -28,7 +27,7 @@ impl Relation {
     }
 
     pub fn get_filename(&self) -> String {
-        format!("{}{}",self.get_name(),".hsl")
+        format!("test-data/{}{}",self.get_name(),".hsl")
     }
 
     pub fn get_row_size(&self) -> usize {return self.schema.get_row_size();}
@@ -52,17 +51,16 @@ impl Relation {
 }
 
 use std::os::raw::c_char;
-
-use logical_operator::schema::cSchema;
+use logical_entities::schema::ExtSchema;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct cRelation {
+pub struct ExtRelation {
     name: *const c_char,
-    schema: cSchema,
+    schema: ExtSchema,
 }
 
-impl cRelation {
+impl ExtRelation {
     pub fn to_relation(&self) -> Relation {
         let c_name = self.name;
         assert!(!c_name.is_null());
@@ -76,5 +74,38 @@ impl cRelation {
         Relation {
             name, schema
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn relation_create() {
+        use logical_entities::relation::Relation;
+        use logical_entities::column::Column;
+        //let columns =
+        //let relation = Relation::new("test",);
+        let column = Column::new("test".to_string(),8);
+        assert_eq!(column.get_name(),&"test".to_string());
+        assert_eq!(column.get_size(), 8);
+    }
+
+    #[test]
+    fn c_column_create() {
+        use logical_entities::column::ExtColumn;
+        use logical_entities::column::Column;
+        let column = Column::new("test".to_string(),8);
+
+        use std::os::raw::c_char;
+        use std::ffi::CStr;
+        let c_column = ExtColumn::from_column(column);
+        //unsafe {
+         //   assert_eq!(CStr::from_ptr(c_column.name).to_str().unwrap(), "test");
+        //}
+
+        let r_column = c_column.to_column();
+        assert_eq!(r_column.get_name(),&"test".to_string());
+        assert_eq!(r_column.get_size(), 8);
     }
 }

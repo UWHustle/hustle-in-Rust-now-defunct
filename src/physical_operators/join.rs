@@ -1,4 +1,5 @@
-use logical_operator::relation::Relation;
+use logical_entities::relation::Relation;
+use logical_entities::schema::Schema;
 
 use std::time::{Instant};
 
@@ -41,7 +42,7 @@ impl Join {
         joined_cols.extend(cols_r.clone());
 
         let _join_relation = Relation::new(format!("{}_j_{}", rel_l.get_name(), rel_r.get_name()),
-                                           joined_cols);
+                                           Schema::new(joined_cols));
 
 
         let f_l = OpenOptions::new()

@@ -11,4 +11,5 @@ csv = "1"
 
 [lib]
 name = "hustle"
+path = "src/lib.rs"
 crate-type = ["dylib"]

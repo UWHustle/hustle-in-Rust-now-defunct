@@ -1,21 +1,21 @@
 extern crate rand;
 extern crate csv;
 
-use logical_operator::relation::Relation;
+use logical_entities::relation::Relation;
 
 #[derive(Debug)]
-pub struct DataGenerator {
+pub struct GenerateData {
     file_name: String,
     relation: Relation,
-    size: usize
+    row_count: usize
 }
 
-impl DataGenerator {
-    pub fn new(file_name: String, relation: Relation, size: usize) -> Self {
-        DataGenerator {
+impl GenerateData {
+    pub fn new(file_name: String, relation: Relation, row_count: usize) -> Self {
+        GenerateData {
             file_name,
             relation,
-            size
+            row_count
         }
     }
 
@@ -26,7 +26,7 @@ impl DataGenerator {
     pub fn execute(&self) -> bool {
         let mut wtr = csv::Writer::from_path(self.get_file_name()).unwrap();
 
-        let rows = self.size;
+        let rows = self.row_count;
         let columns = self.relation.get_columns();
 
         for _y in 0..rows {

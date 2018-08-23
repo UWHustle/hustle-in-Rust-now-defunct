@@ -1,5 +1,5 @@
-use logical_operator::relation::Relation;
-use logical_operator::row::Row;
+use logical_entities::relation::Relation;
+use logical_entities::row::Row;
 
 use std::time::{Instant};
 
@@ -26,7 +26,7 @@ impl SelectOutput {
         }
     }
 
-    fn get_result(&mut self) -> &mut Vec<Row> {
+    pub fn get_result(&mut self) -> &mut Vec<Row> {
         return &mut self.result;
     }
 

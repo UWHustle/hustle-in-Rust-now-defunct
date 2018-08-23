@@ -1,1 +1,0 @@
-sqlite3 -cmd "DROP TABLE IF EXISTS t;" -cmd "CREATE TABLE t (a INTEGER, b INTEGER);" -cmd ".mode csv" -cmd ".import data.csv t" sqlite.data

@@ -1,5 +1,5 @@
 /target
 **/*.rs.bk
-data.csv
+/test-data/*
 sqlite.data
-hustle.data
+/backup-data

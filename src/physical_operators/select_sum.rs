@@ -1,4 +1,4 @@
-use logical_operator::relation::Relation;
+use logical_entities::relation::Relation;
 
 use std::time::{Instant};
 
@@ -10,7 +10,7 @@ use std::{
 
 pub const CHUNK_SIZE:usize = 1024*1024;
 
-use logical_operator::column::Column;
+use logical_entities::column::Column;
 
 #[derive(Debug)]
 pub struct SelectSum {
