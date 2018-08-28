@@ -30,22 +30,16 @@ pub struct ExtSchema {
 impl ExtSchema {
     pub fn to_schema(&self) -> Schema {
         let columns = self.columns.iter().filter(|column:&&ExtColumn|{
-            println!("ColValid: {:?}",column);
             column.is_valid()
         }).map(|column:&ExtColumn|{
-            println!("ColMap: {:?}", column);
             column.to_column()}).collect::<Vec<_>>();
         Schema::new(columns)
     }
 
     pub fn from_schema(schema: Schema) -> ExtSchema {
-        println!("Schema: {:?}", schema);
         let ext_columns:Vec<ExtColumn> = schema.columns.iter().map(|column:&Column| {
-            println!("Col: {:?}",column);
             ExtColumn::from_column(column.clone())
         }).collect();
-
-        println!("actual {:?}",ext_columns);
 
         let columns = [ext_columns.first().unwrap().clone(), ext_columns.last().clone().unwrap().clone()];
 
@@ -75,7 +69,6 @@ mod tests {
 
     #[test]
     fn ext_schema_create() {
-        println!("Start test");
         use logical_entities::schema::Schema;
         use logical_entities::schema::ExtSchema;
         use logical_entities::column::Column;
@@ -86,11 +79,10 @@ mod tests {
         );
 
         let ext_schema = ExtSchema::from_schema(schema.clone());
-        println!("{:?}",ext_schema);
 
         let r_schema = ext_schema.to_schema();
 
         //assert_eq!(r_schema, schema);
-        println!("End test");
+        //TODO: Fix this test.  ExtColumn::from_column doesn't seem to work in from_schema.
     }
 }

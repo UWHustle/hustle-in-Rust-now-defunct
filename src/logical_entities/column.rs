@@ -41,24 +41,18 @@ impl ExtColumn {
         let name = c_str.to_str().expect("Column name not a valid UTF-8 string").to_string();
         let size = 8;
 
-        println!("to: {}",name);
-
         Column {
             name, size
         }
     }
 
-    pub fn from_column(column:Column)-> ExtColumn {
+    pub fn from_column(column:Column)-> (ExtColumn) {
         let r_name = column.get_name();
         let mut c_name;
-
-
 
         unsafe {
             c_name = r_name.as_ptr() as *const c_char;
         }
-
-        println!("from: {:?} {:?}",r_name, c_name);
 
         ExtColumn {
             name: c_name
