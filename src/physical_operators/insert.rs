@@ -57,7 +57,6 @@ impl Insert {
             }
         }
 
-        println!("Finished Insert After {} milli-seconds.", now.elapsed().subsec_millis());
         true
     }
 }

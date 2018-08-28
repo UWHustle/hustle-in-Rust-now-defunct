@@ -1,6 +1,6 @@
 
-mod logical_entities;
-mod physical_operators;
+pub mod logical_entities;
+pub mod physical_operators;
 
 use logical_entities::column::ExtColumn;
 use logical_entities::relation::ExtRelation;
