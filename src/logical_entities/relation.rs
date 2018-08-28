@@ -1,7 +1,7 @@
 use logical_entities::schema::Schema;
 use logical_entities::column::Column;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Relation {
     name: String,
     schema: Schema,
@@ -54,7 +54,7 @@ use std::os::raw::c_char;
 use logical_entities::schema::ExtSchema;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Clone, PartialEq)]
 pub struct ExtRelation {
     name: *const c_char,
     schema: ExtSchema,
@@ -75,6 +75,22 @@ impl ExtRelation {
             name, schema
         }
     }
+
+    pub fn from_relation(relation: Relation) -> ExtRelation {
+        use logical_entities::schema::ExtSchema;
+        let schema = ExtSchema::from_schema(relation.get_schema().clone());
+
+        let r_name = relation.get_name();
+        let mut name;
+
+        unsafe {
+            name = r_name.as_ptr() as *const c_char;
+        }
+
+        ExtRelation {
+            name,schema
+        }
+    }
 }
 
 
@@ -83,29 +99,54 @@ mod tests {
     #[test]
     fn relation_create() {
         use logical_entities::relation::Relation;
+        use logical_entities::schema::Schema;
         use logical_entities::column::Column;
-        //let columns =
-        //let relation = Relation::new("test",);
-        let column = Column::new("test".to_string(),8);
-        assert_eq!(column.get_name(),&"test".to_string());
-        assert_eq!(column.get_size(), 8);
+
+        let relation = Relation::new("Test".to_string(),
+                                   Schema::new(vec!(
+                                                Column::new("a".to_string(),8),
+                                                Column::new("b".to_string(), 8))
+                                   ));
+
+        assert_eq!(relation.get_name(),&"Test".to_string());
+
+        assert_eq!(relation.get_columns().first().unwrap().get_name(),&"a".to_string());
+        assert_eq!(relation.get_columns().last().unwrap().get_name(),&"b".to_string());
+
+        assert_eq!(relation.get_schema(),&Schema::new(vec!(
+            Column::new("a".to_string(),8),
+            Column::new("b".to_string(), 8))));
+
+        assert_eq!(relation.get_filename(),"test-data/Test.hsl".to_string());
+
+        assert_eq!(relation.get_row_size(), 16);
+
+        assert_eq!(relation.get_total_size(), 0);
     }
 
-    #[test]
-    fn c_column_create() {
-        use logical_entities::column::ExtColumn;
+    //#[test]
+    fn ext_relation_create() {
+        use logical_entities::relation::ExtRelation;
+        use logical_entities::relation::Relation;
+        use logical_entities::schema::Schema;
         use logical_entities::column::Column;
-        let column = Column::new("test".to_string(),8);
+
+        let relation = Relation::new("Test".to_string(),
+                                     Schema::new(vec!(
+                                         Column::new("a".to_string(),8),
+                                         Column::new("b".to_string(), 8))
+                                     ));
+
+        let ext_relation = ExtRelation::from_relation(relation.clone());
 
         use std::os::raw::c_char;
         use std::ffi::CStr;
-        let c_column = ExtColumn::from_column(column);
-        //unsafe {
-         //   assert_eq!(CStr::from_ptr(c_column.name).to_str().unwrap(), "test");
-        //}
+        unsafe {
+            assert_eq!(CStr::from_ptr(ext_relation.name).to_str().unwrap(), "Test");
+        }
 
-        let r_column = c_column.to_column();
-        assert_eq!(r_column.get_name(),&"test".to_string());
-        assert_eq!(r_column.get_size(), 8);
+        let r_relation = ext_relation.to_relation();
+
+        assert_eq!(r_relation, relation);
     }
 }

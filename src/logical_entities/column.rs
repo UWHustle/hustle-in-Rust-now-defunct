@@ -1,5 +1,5 @@
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Column {
     name: String,
     size: usize,
@@ -23,9 +23,10 @@ impl Column {
 
 use std::os::raw::c_char;
 use std::ffi::CStr;
+use std::ffi::CString;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ExtColumn {
     name: *const c_char,
 }
@@ -40,6 +41,8 @@ impl ExtColumn {
         let name = c_str.to_str().expect("Column name not a valid UTF-8 string").to_string();
         let size = 8;
 
+        println!("to: {}",name);
+
         Column {
             name, size
         }
@@ -49,9 +52,13 @@ impl ExtColumn {
         let r_name = column.get_name();
         let mut c_name;
 
+
+
         unsafe {
             c_name = r_name.as_ptr() as *const c_char;
         }
+
+        println!("from: {:?} {:?}",r_name, c_name);
 
         ExtColumn {
             name: c_name
@@ -75,20 +82,26 @@ mod tests {
     }
 
     #[test]
-    fn c_column_create() {
+    fn ext_column_create() {
         use logical_entities::column::ExtColumn;
         use logical_entities::column::Column;
-        let column = Column::new("test".to_string(),8);
+        let column1 = Column::new("test1".to_string(),8);
+        let column2 = Column::new("test2".to_string(),8);
 
         use std::os::raw::c_char;
         use std::ffi::CStr;
-        let c_column = ExtColumn::from_column(column);
+        let ext_column1 = ExtColumn::from_column(column1);
         unsafe {
-            assert_eq!(CStr::from_ptr(c_column.name).to_str().unwrap(), "test");
+            assert_eq!(CStr::from_ptr(ext_column1.name).to_str().unwrap(), "test1");
         }
 
-        let r_column = c_column.to_column();
-        assert_eq!(r_column.get_name(),&"test".to_string());
+        let ext_column2 = ExtColumn::from_column(column2);
+        unsafe {
+            assert_eq!(CStr::from_ptr(ext_column2.name).to_str().unwrap(), "test2");
+        }
+
+        let r_column = ext_column1.to_column();
+        assert_eq!(r_column.get_name(),&"test1".to_string());
         assert_eq!(r_column.get_size(), 8);
     }
 }
