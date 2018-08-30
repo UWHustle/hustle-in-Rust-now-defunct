@@ -4,7 +4,6 @@ use logical_entities::schema::Schema;
 use std::time::{Instant};
 
 extern crate memmap;
-use std::mem;
 use std::{
     fs::OpenOptions,
     io::{Seek, SeekFrom, Write},

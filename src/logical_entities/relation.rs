@@ -1,5 +1,6 @@
 use logical_entities::schema::Schema;
 use logical_entities::column::Column;
+use logical_entities::types::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Relation {
@@ -140,7 +141,6 @@ mod tests {
 
         let ext_relation = ExtRelation::from_relation(relation.clone());
 
-        use std::os::raw::c_char;
         use std::ffi::CStr;
         unsafe {
             assert_eq!(CStr::from_ptr(ext_relation.name).to_str().unwrap(), "Test");

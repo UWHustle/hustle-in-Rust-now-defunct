@@ -11,6 +11,7 @@ use std::{
 pub const CHUNK_SIZE:usize = 1024*1024;
 
 use logical_entities::column::Column;
+use logical_entities::types::DataType;
 
 #[derive(Debug)]
 pub struct SelectSum {

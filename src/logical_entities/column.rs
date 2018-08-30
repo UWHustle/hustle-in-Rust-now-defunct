@@ -1,3 +1,4 @@
+use logical_entities::types::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Column {
@@ -23,7 +24,6 @@ impl Column {
 
 use std::os::raw::c_char;
 use std::ffi::CStr;
-use std::ffi::CString;
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
@@ -82,7 +82,6 @@ mod tests {
         let column1 = Column::new("test1".to_string(),8);
         let column2 = Column::new("test2".to_string(),8);
 
-        use std::os::raw::c_char;
         use std::ffi::CStr;
         let ext_column1 = ExtColumn::from_column(column1);
         unsafe {

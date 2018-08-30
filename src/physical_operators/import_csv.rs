@@ -3,7 +3,6 @@ use logical_entities::relation::Relation;
 use std::time::{Instant};
 
 extern crate memmap;
-use std::mem;
 use std::{
     fs::OpenOptions,
     io::{Seek, SeekFrom, Write},
@@ -53,13 +52,13 @@ impl ImportCsv {
 
         let columns = self.relation.get_columns();
         let mut n : usize = 0;
-
+        use logical_entities::types::integer::IntegerType;
         let mut process_record = |data: &mut memmap::MmapMut, record: &csv::StringRecord| {
             for (i, column) in columns.iter().enumerate() {
 
-                let a = record.get(i).unwrap().parse::<u64>().unwrap();
+                let a = record.get(i).unwrap().to_string();
                 unsafe {
-                    let c = mem::transmute::<u64, [u8; 8]>(a);
+                    let c = IntegerType::parse_and_write(a); //mem::transmute::<u64, [u8; 8]>(a);
                     data[n..n + column.get_size()].clone_from_slice(&c); // 0  8
                     n = n + column.get_size();
                 }

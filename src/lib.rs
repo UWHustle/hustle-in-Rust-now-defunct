@@ -39,7 +39,6 @@ pub extern fn insert(c_relation: ExtRelation, c_row: ExtRow) -> u64{
 
 use physical_operators::join::Join;
 use physical_operators::select_output::SelectOutput;
-use logical_entities::row::Row;
 
 #[no_mangle]
 pub extern fn join(c_relation_left: ExtRelation, c_relation_right: ExtRelation) -> bool{
