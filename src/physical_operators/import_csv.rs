@@ -58,9 +58,9 @@ impl ImportCsv {
 
                 let a = record.get(i).unwrap().to_string();
                 unsafe {
-                    let c = IntegerType::parse_and_write(a); //mem::transmute::<u64, [u8; 8]>(a);
-                    data[n..n + column.get_size()].clone_from_slice(&c); // 0  8
-                    n = n + column.get_size();
+                    let (c,size) = IntegerType::parse_and_marshall(a); //mem::transmute::<u64, [u8; 8]>(a);
+                    data[n..n + size].clone_from_slice(&c); // 0  8
+                    n = n + size;
                 }
             }
         };

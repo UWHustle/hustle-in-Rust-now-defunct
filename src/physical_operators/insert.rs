@@ -49,6 +49,8 @@ impl Insert {
         let mut n = 0;
         for (i, column) in self.row.get_schema().get_columns().iter().enumerate() {
 
+            use logical_entities::types::integer::IntegerType;
+
             let a = self.row.get_values()[i];
             unsafe {
                 let c = mem::transmute::<u64, [u8; 8]>(a);

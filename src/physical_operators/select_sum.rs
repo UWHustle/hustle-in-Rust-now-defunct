@@ -8,6 +8,8 @@ use std::{
     fs::OpenOptions,
 };
 
+use logical_entities::types::integer::IntegerType;
+
 pub const CHUNK_SIZE:usize = 1024*1024;
 
 use logical_entities::column::Column;
@@ -72,26 +74,22 @@ impl SelectSum {
                         .expect("Could not access data from memory mapped file")
                 };
                 //println!("{}",my_relation.get_filename());
-                let mut t :u128 = 0;
-                let mut t_v : [u8; 8] = [0,0,0,0,0,0,0,0];
+
                 let mut i = 0;
+                let mut s:Vec<u8> = Vec::new();
+
                 while i < my_chunk_length {
                     for column in columns {
+                        let next_length = IntegerType::get_next_length(&data[i..]);
 
-
-                        t_v.clone_from_slice(&data[i..i+column.get_size()]);
-                        //println!("{},{},{}",i,column.get_size(),t_v[7]);
-                        unsafe {
-                            let _t_v_p = mem::transmute::<[u8; 8], u64>(t_v) as u128;
-                            //println!("{} - {}",column.get_name(),_t_v_p);
-                            if column.get_name() == col_name{
-                                //println!("{} == {} => {}",column.get_name(), col_name, _t_v_p);
-                                t += _t_v_p;
-                            }
+                        if column.get_name() == col_name {
+                            s = IntegerType::sum(&s, &data[i..i+next_length].to_vec()).0;
                         }
-                        i += column.get_size();
+
+                        i += next_length;
                     }
                 }
+                let t = IntegerType::to_int(&s);
                 t
             }));
         }

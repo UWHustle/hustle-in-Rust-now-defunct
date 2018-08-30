@@ -1,6 +1,6 @@
 
 pub mod integer;
+pub mod ip_address;
 
-pub trait DataType:Sized {
-    fn get_size() -> usize;
+pub trait DataType {
 }
