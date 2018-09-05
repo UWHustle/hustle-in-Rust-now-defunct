@@ -8,7 +8,7 @@ use std::{
     fs::OpenOptions,
 };
 
-use logical_entities::types::integer::IntegerType;
+use logical_entities::types::DataTypeTrait;
 
 pub const CHUNK_SIZE:usize = 1024*1024;
 
@@ -29,7 +29,7 @@ impl SelectSum {
     }
 
 
-    pub fn execute(&self) -> u128{
+    pub fn execute(&self) -> String{
         //println!("{},{}", self.relation.get_name(), self.column.get_name());
         use std::thread;
         use std::sync::Arc;
@@ -77,29 +77,35 @@ impl SelectSum {
 
                 let mut i = 0;
                 let mut s:Vec<u8> = Vec::new();
+                use std::collections::HashMap;
+                let mut column_sums = HashMap::new();
 
                 while i < my_chunk_length {
                     for column in columns {
-                        let next_length = IntegerType::get_next_length(&data[i..]);
+                        let next_length = column.get_datatype().get_next_length(&data[i..]);
 
                         if column.get_name() == col_name {
-                            s = IntegerType::sum(&s, &data[i..i+next_length].to_vec()).0;
+                            s = column.get_datatype().sum(&s, &data[i..i + next_length].to_vec()).0;
+                            let value = column_sums.entry(col_name.clone()).or_insert(s.clone());
+                            *value = s.clone();
                         }
 
                         i += next_length;
                     }
                 }
-                let t = IntegerType::to_int(&s);
-                t
+                column_sums
             }));
         }
 
-        let mut intermediate_sums = vec![];
+        let mut s:Vec<u8> = Vec::new();
         for child in children {
             let intermediate_sum = child.join().unwrap();
-            intermediate_sums.push(intermediate_sum);
+            s = match intermediate_sum.get(self.column.get_name()) {
+                Some(sum) => self.column.get_datatype().sum(&s, sum).0,
+                None => s,
+            }
         }
-        let final_result = intermediate_sums.iter().sum::<u128>();
+        let final_result = self.column.get_datatype().to_string(&s);
         println!("Final Sum: {}", final_result);
         println!("Finished Reading MemMap After {} seconds.", now.elapsed().as_secs());
         final_result

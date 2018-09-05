@@ -8,7 +8,7 @@ use logical_entities::relation::ExtRelation;
 use physical_operators::select_sum::SelectSum;
 
 #[no_mangle]
-pub extern fn sum_column(c_relation: ExtRelation, c_column: ExtColumn) -> u64{
+pub extern fn sum_column(c_relation: ExtRelation, c_column: ExtColumn) -> String{
     let column = c_column.to_column();
 
     let relation = c_relation.to_relation();
@@ -16,8 +16,8 @@ pub extern fn sum_column(c_relation: ExtRelation, c_column: ExtColumn) -> u64{
     let sum_operator = SelectSum::new(relation,column);
     let result = sum_operator.execute();
 
-    println!("Summing {}", result as u64);
-    result as u64
+    println!("Summing {}", result);
+    result
 }
 
 use logical_entities::row::ExtRow;

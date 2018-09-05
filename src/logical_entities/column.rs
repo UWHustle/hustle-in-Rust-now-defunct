@@ -4,12 +4,15 @@ use logical_entities::types::DataType;
 pub struct Column {
     name: String,
     size: usize,
+    datatype: DataType,
 }
 
 impl Column {
     pub fn new(name: String, size: usize) -> Self {
+        use logical_entities::types::integer::IntegerType;
+        let datatype = DataType::Integer;
         Column {
-            name, size
+            name, size, datatype
         }
     }
 
@@ -19,6 +22,7 @@ impl Column {
     pub fn get_size(&self) -> usize {
         return self.size;
     }
+    pub fn get_datatype(&self) -> DataType { return self.datatype.clone();}
 }
 
 
@@ -41,9 +45,7 @@ impl ExtColumn {
         let name = c_str.to_str().expect("Column name not a valid UTF-8 string").to_string();
         let size = 8;
 
-        Column {
-            name, size
-        }
+        Column::new(name,size)
     }
 
     pub fn from_column(column:Column)-> (ExtColumn) {

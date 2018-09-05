@@ -1,4 +1,5 @@
 use logical_entities::relation::Relation;
+use logical_entities::types::DataTypeTrait;
 
 use std::time::{Instant};
 
@@ -52,13 +53,13 @@ impl ImportCsv {
 
         let columns = self.relation.get_columns();
         let mut n : usize = 0;
-        use logical_entities::types::integer::IntegerType;
+
         let mut process_record = |data: &mut memmap::MmapMut, record: &csv::StringRecord| {
             for (i, column) in columns.iter().enumerate() {
 
                 let a = record.get(i).unwrap().to_string();
                 unsafe {
-                    let (c,size) = IntegerType::parse_and_marshall(a); //mem::transmute::<u64, [u8; 8]>(a);
+                    let (c,size) = column.get_datatype().parse_and_marshall(a);
                     data[n..n + size].clone_from_slice(&c); // 0  8
                     n = n + size;
                 }

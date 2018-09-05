@@ -19,7 +19,7 @@ use std::process::Command;
 use std::time::{Instant};
 
 const GENERATE_DATA: bool = true; // Generates the CSV File with Data
-const RECORD_COUNT: usize = 1024;
+const RECORD_COUNT: usize = 512;
 
 const CONVERT_DATA_TO_SQLITE: bool = true; // Loads data from CSV file into sqlite3
 const CONVERT_DATA_TO_HUSTLE: bool = true; // Loads data from CSV file into hustle
@@ -89,7 +89,7 @@ fn insert_into_hustle(count: u8, value: u64, relation: Relation){
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
     let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, 8));
-    select_operator.execute()
+    select_operator.execute().parse::<u128>().unwrap()
 }
 
 fn hustle_join(relation1:Relation, relation2:Relation) -> Relation {

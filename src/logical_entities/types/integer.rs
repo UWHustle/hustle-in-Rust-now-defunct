@@ -1,6 +1,8 @@
 use std::mem;
 use std::ptr;
+use logical_entities::types::DataTypeTrait;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct IntegerType;
 
 impl IntegerType {
@@ -32,27 +34,25 @@ impl IntegerType {
         let value = *s_safe.unwrap();
         value
     }
+}
 
-    pub fn get_next_length(payload: &[u8]) -> usize {
+impl DataTypeTrait for IntegerType {
+    fn get_next_length(payload: &[u8]) -> usize {
         return 8;
     }
 
-    pub fn parse_and_marshall(input: String) -> (Vec<u8>,usize) {
+    fn parse_and_marshall(input: String) -> (Vec<u8>,usize) {
         let a = input.parse::<u64>().unwrap();
         IntegerType::marshall(&a)
     }
 
-    pub fn sum(left:&Vec<u8>, right:&Vec<u8>) -> (Vec<u8>,usize) {
+    fn sum(left:&Vec<u8>, right:&Vec<u8>) -> (Vec<u8>,usize) {
         let left_u64 = IntegerType::unmarshall(left);
         let right_u64 = IntegerType::unmarshall(right);
         IntegerType::marshall(&(left_u64+right_u64))
     }
 
-    pub fn to_string(payload: &Vec<u8>) -> String {
+    fn to_string(payload: &Vec<u8>) -> String {
         format!("{}", IntegerType::unmarshall(payload))
-    }
-
-    pub fn to_int(payload: &Vec<u8>) -> u128 {
-        IntegerType::unmarshall(payload) as u128
     }
 }
