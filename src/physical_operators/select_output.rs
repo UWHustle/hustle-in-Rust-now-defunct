@@ -1,8 +1,6 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 
-use std::time::{Instant};
-
 extern crate memmap;
 use std::mem;
 use std::{
@@ -47,7 +45,6 @@ impl SelectOutput {
 
 
     pub fn execute(&mut self) -> bool{
-        let now = Instant::now();
 
         let total_size = self.relation.get_total_size();
 
@@ -87,7 +84,6 @@ impl SelectOutput {
             self.result.push(row);
         }
 
-        println!("Finished Select After {} milli-seconds.", now.elapsed().subsec_millis());
         true
     }
 }

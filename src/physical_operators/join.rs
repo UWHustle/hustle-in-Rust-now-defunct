@@ -1,8 +1,6 @@
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 
-use std::time::{Instant};
-
 extern crate memmap;
 use std::{
     fs::OpenOptions,
@@ -24,7 +22,6 @@ impl Join {
 
 
     pub fn execute(&self) -> Relation {
-        let now = Instant::now();
 
         let rel_l = &self.relation_left;
         let rel_r = &self.relation_right;
@@ -122,7 +119,6 @@ impl Join {
             i_l+=1;
             i_r = 0;
         }
-        println!("Finished Join After {} seconds.", now.elapsed().as_secs());
         _join_relation
     }
 }

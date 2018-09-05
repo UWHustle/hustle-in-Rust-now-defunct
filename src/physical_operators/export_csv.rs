@@ -1,18 +1,19 @@
-extern crate rand;
 extern crate csv;
+extern crate rand;
 
 use logical_entities::relation::Relation;
+use physical_operators::select_output::SelectOutput;
 
 #[derive(Debug)]
-pub struct GenerateCsv {
+pub struct ExportCsv {
     file_name: String,
     relation: Relation,
     row_count: usize
 }
 
-impl GenerateCsv {
+impl ExportCsv {
     pub fn new(file_name: String, relation: Relation, row_count: usize) -> Self {
-        GenerateCsv {
+        ExportCsv {
             file_name,
             relation,
             row_count
@@ -26,14 +27,14 @@ impl GenerateCsv {
     pub fn execute(&self) -> bool {
         let mut wtr = csv::Writer::from_path(self.get_file_name()).unwrap();
 
-        let rows = self.row_count;
-        let columns = self.relation.get_columns();
+        let mut select_operator = SelectOutput::new(self.relation.clone());
+        select_operator.execute();
+        let rows = select_operator.get_result();
 
-        for _y in 0..rows {
+        for row in rows {
             let mut r = Vec::new();
-            for _x in columns {
-                let b: u8 = rand::random();
-                r.push(b.to_string());
+            for value in row.get_values() {
+                r.push(value.to_string());
             }
             wtr.write_record(&r).unwrap();
         }

@@ -1,7 +1,5 @@
 use logical_entities::relation::Relation;
 
-use std::time::{Instant};
-
 extern crate memmap;
 use std::{
     fs::OpenOptions,
@@ -22,7 +20,6 @@ impl ImportCsv {
     }
 
     pub fn execute(&self) -> bool{
-        let now = Instant::now();
 
         let mut f = OpenOptions::new()
             .read(true)
@@ -72,7 +69,6 @@ impl ImportCsv {
 
             process_record(&mut data,&record);
         }
-        println!("Finished CSV to Hustle load in {} Seconds.", now.elapsed().as_secs());
         true
     }
 

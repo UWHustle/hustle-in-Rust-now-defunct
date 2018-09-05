@@ -5,11 +5,12 @@ use hustle::logical_entities::column::Column;
 use hustle::logical_entities::schema::Schema;
 use hustle::logical_entities::row::Row;
 
-use hustle::physical_operators::generate_csv::GenerateCsv;
 use hustle::physical_operators::import_csv::ImportCsv;
 use hustle::physical_operators::insert::Insert;
 use hustle::physical_operators::join::Join;
 use hustle::physical_operators::select_sum::SelectSum;
+use hustle::physical_operators::random_relation::RandomRelation;
+use hustle::physical_operators::export_csv::ExportCsv;
 
 extern crate csv;
 
@@ -26,7 +27,10 @@ fn test_flow() {
 
     let csv_file = "test-data/data.csv".to_string();
 
-    generate_csv_data(csv_file.clone(), relation.clone());
+    generate_data(relation.clone());
+    export_csv(csv_file.clone(), relation.clone());
+
+    //generate_csv_data(csv_file.clone(), relation.clone());
     import_csv_to_sqlite3();
     import_csv_to_hustle(csv_file.clone(), relation.clone());
 
@@ -50,14 +54,16 @@ fn test_flow() {
 }
 
 
+fn generate_data(relation: Relation){
+    let random_relation_generator = RandomRelation::new(relation.clone(), RECORD_COUNT);
+    random_relation_generator.execute();
+}
 
-
-fn generate_csv_data(csv_file: String, relation: Relation){
-
+fn export_csv(csv_file: String, relation: Relation) {
     Command::new("rm").arg(csv_file.clone()).output().unwrap();
 
-    let data_generator = GenerateCsv::new(csv_file.clone(), relation.clone(), RECORD_COUNT);
-    data_generator.execute();
+    let export_csv = ExportCsv::new(csv_file.clone(), relation.clone(), RECORD_COUNT);
+    export_csv.execute();
 }
 
 fn import_csv_to_sqlite3(){
