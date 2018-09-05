@@ -9,7 +9,6 @@ pub struct Column {
 
 impl Column {
     pub fn new(name: String, size: usize) -> Self {
-        use logical_entities::types::integer::IntegerType;
         let datatype = DataType::Integer;
         Column {
             name, size, datatype

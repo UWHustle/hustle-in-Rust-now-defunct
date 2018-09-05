@@ -1,10 +1,7 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 
-use std::time::{Instant};
-
 extern crate memmap;
-use std::mem;
 use std::{
     fs::OpenOptions,
 };

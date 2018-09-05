@@ -1,5 +1,4 @@
 use logical_entities::relation::Relation;
-use logical_entities::types::DataTypeTrait;
 
 use std::time::{Instant};
 

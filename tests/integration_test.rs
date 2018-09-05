@@ -5,7 +5,7 @@ use hustle::logical_entities::column::Column;
 use hustle::logical_entities::schema::Schema;
 use hustle::logical_entities::row::Row;
 
-use hustle::physical_operators::generate_data::GenerateData;
+use hustle::physical_operators::generate_csv::GenerateCsv;
 use hustle::physical_operators::import_csv::ImportCsv;
 use hustle::physical_operators::insert::Insert;
 use hustle::physical_operators::join::Join;
@@ -56,7 +56,7 @@ fn generate_csv_data(csv_file: String, relation: Relation){
 
     Command::new("rm").arg(csv_file.clone()).output().unwrap();
 
-    let data_generator = GenerateData::new(csv_file.clone(), relation.clone(), RECORD_COUNT);
+    let data_generator = GenerateCsv::new(csv_file.clone(), relation.clone(), RECORD_COUNT);
     data_generator.execute();
 }
 

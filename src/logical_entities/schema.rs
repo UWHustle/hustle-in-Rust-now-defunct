@@ -1,5 +1,4 @@
 use logical_entities::column::Column;
-use logical_entities::types::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Schema {

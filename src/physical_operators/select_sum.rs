@@ -3,17 +3,13 @@ use logical_entities::relation::Relation;
 use std::time::{Instant};
 
 extern crate memmap;
-use std::mem;
 use std::{
     fs::OpenOptions,
 };
 
-use logical_entities::types::DataTypeTrait;
-
 pub const CHUNK_SIZE:usize = 1024*1024;
 
 use logical_entities::column::Column;
-use logical_entities::types::DataType;
 
 #[derive(Debug)]
 pub struct SelectSum {

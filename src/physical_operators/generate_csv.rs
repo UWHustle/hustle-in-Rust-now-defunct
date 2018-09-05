@@ -4,15 +4,15 @@ extern crate csv;
 use logical_entities::relation::Relation;
 
 #[derive(Debug)]
-pub struct GenerateData {
+pub struct GenerateCsv {
     file_name: String,
     relation: Relation,
     row_count: usize
 }
 
-impl GenerateData {
+impl GenerateCsv {
     pub fn new(file_name: String, relation: Relation, row_count: usize) -> Self {
-        GenerateData {
+        GenerateCsv {
             file_name,
             relation,
             row_count

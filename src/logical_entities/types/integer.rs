@@ -1,5 +1,4 @@
 use std::mem;
-use std::ptr;
 use logical_entities::types::DataTypeTrait;
 
 #[derive(Clone, Debug, PartialEq)]
