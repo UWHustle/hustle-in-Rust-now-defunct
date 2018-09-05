@@ -43,7 +43,7 @@ impl ImportCsv {
         f.write_all(&[0]).unwrap();
         f.seek(SeekFrom::Start(0)).unwrap();
 
-        f.set_len((self.relation.get_row_size() * record_count) as u64);
+        f.set_len((self.relation.get_row_size() * record_count) as u64).unwrap();
 
         let mut data = unsafe {
             memmap::MmapOptions::new()
@@ -58,11 +58,10 @@ impl ImportCsv {
             for (i, column) in columns.iter().enumerate() {
 
                 let a = record.get(i).unwrap().to_string();
-                unsafe {
-                    let (c,size) = column.get_datatype().parse_and_marshall(a);
-                    data[n..n + size].clone_from_slice(&c); // 0  8
-                    n = n + size;
-                }
+
+                let (c,size) = column.get_datatype().parse_and_marshall(a);
+                data[n..n + size].clone_from_slice(&c); // 0  8
+                n = n + size;
             }
         };
 

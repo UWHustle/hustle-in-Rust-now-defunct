@@ -41,6 +41,7 @@ impl DataTypeTrait for IpAddressType {
         IpAddressType::marshall(&a)
     }
 
+    #[allow(unused_variables)]
     fn get_next_length(payload: &[u8]) -> usize {
         4
     }

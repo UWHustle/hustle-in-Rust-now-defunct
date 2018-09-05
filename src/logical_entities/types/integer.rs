@@ -37,6 +37,7 @@ impl IntegerType {
 }
 
 impl DataTypeTrait for IntegerType {
+    #[allow(unused_variables)]
     fn get_next_length(payload: &[u8]) -> usize {
         return 8;
     }

@@ -101,23 +101,21 @@ impl Join {
 
             while i_r < rows_r {
                 let mut col_offset_l = 0;
-                for (i, col_l) in cols_l.iter().enumerate() {
+                for col_l in cols_l.iter() {
                     v_l.clone_from_slice(&data_l[col_offset_l + i_l*rows_l_size.. col_offset_l + i_l*rows_l_size + col_l.get_size()]);
                     col_offset_l += col_l.get_size();
-                    unsafe {
-                        data_o[n..n + col_l.get_size()].clone_from_slice(&v_l); // 0  8
-                        n = n + col_l.get_size();
-                    }
+
+                    data_o[n..n + col_l.get_size()].clone_from_slice(&v_l); // 0  8
+                    n = n + col_l.get_size();
                 }
 
                 let mut col_offset_r = 0;
-                for (i , col_r) in cols_r.iter().enumerate() {
+                for col_r in cols_r.iter() {
                     v_r.clone_from_slice(&data_r[col_offset_r + i_r*rows_r_size.. col_offset_r + i_r*rows_r_size + col_r.get_size()]);
                     col_offset_r += col_r.get_size();
-                    unsafe {
-                        data_o[n..n + col_r.get_size()].clone_from_slice(&v_r); // 0  8
-                        n = n + col_r.get_size();
-                    }
+
+                    data_o[n..n + col_r.get_size()].clone_from_slice(&v_r); // 0  8
+                    n = n + col_r.get_size();
                 }
                 i_r+=1;
             }

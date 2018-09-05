@@ -10,23 +10,12 @@ use hustle::physical_operators::import_csv::ImportCsv;
 use hustle::physical_operators::insert::Insert;
 use hustle::physical_operators::join::Join;
 use hustle::physical_operators::select_sum::SelectSum;
-use hustle::physical_operators::select_output::SelectOutput;
 
 extern crate csv;
 
 use std::process::Command;
 
-use std::time::{Instant};
-
-const GENERATE_DATA: bool = true; // Generates the CSV File with Data
 const RECORD_COUNT: usize = 512;
-
-const CONVERT_DATA_TO_SQLITE: bool = true; // Loads data from CSV file into sqlite3
-const CONVERT_DATA_TO_HUSTLE: bool = true; // Loads data from CSV file into hustle
-
-
-
-
 
 #[test]
 fn test_flow() {
@@ -82,7 +71,7 @@ fn import_csv_to_hustle(csv_file: String, relation:Relation){
 
 fn insert_into_hustle(count: u8, value: u64, relation: Relation){
     let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(value,value)));
-    for i in 0..count {
+    for _ in 0..count {
         insert_operator.execute();
     }
 }
@@ -99,12 +88,11 @@ fn hustle_join(relation1:Relation, relation2:Relation) -> Relation {
 
 fn run_query_sqlite3(query : String) -> u128{
     extern crate sqlite;
-    let now = Instant::now();
     let connection = sqlite::open("test-data/sqlite.data").unwrap();
     let mut output_value:u128 = 0;
     connection
         .iterate(query , |pairs| {
-            for &(column, value) in pairs.iter() {
+            for &(_column, value) in pairs.iter() {
                 output_value = value.unwrap().to_string().parse::<u128>().unwrap();
             }
             true

@@ -50,11 +50,7 @@ impl ExtColumn {
 
     pub fn from_column(column:Column)-> (ExtColumn) {
         let r_name = column.get_name();
-        let mut c_name;
-
-        unsafe {
-            c_name = r_name.as_ptr() as *const c_char;
-        }
+        let c_name = r_name.as_ptr() as *const c_char;
 
         ExtColumn {
             name: c_name

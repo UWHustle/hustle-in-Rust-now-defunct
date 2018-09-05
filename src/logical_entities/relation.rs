@@ -80,13 +80,7 @@ impl ExtRelation {
     pub fn from_relation(relation: Relation) -> ExtRelation {
         use logical_entities::schema::ExtSchema;
         let schema = ExtSchema::from_schema(relation.get_schema().clone());
-
-        let r_name = relation.get_name();
-        let mut name;
-
-        unsafe {
-            name = r_name.as_ptr() as *const c_char;
-        }
+        let name = relation.get_name().as_ptr() as *const c_char;
 
         ExtRelation {
             name,schema
@@ -126,7 +120,7 @@ mod tests {
         //TODO: Support this in a unit test, not just integrated test
     }
 
-    //#[test]
+    /*#[test]
     fn ext_relation_create() {
         use logical_entities::relation::ExtRelation;
         use logical_entities::relation::Relation;
@@ -149,5 +143,5 @@ mod tests {
         let r_relation = ext_relation.to_relation();
 
         assert_eq!(r_relation, relation);
-    }
+    }*/
 }

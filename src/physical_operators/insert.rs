@@ -1,6 +1,5 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
-use logical_entities::types::DataTypeTrait;
 
 use std::time::{Instant};
 
@@ -25,12 +24,11 @@ impl Insert {
 
 
     pub fn execute(&self) -> bool{
-        let now = Instant::now();
 
         let total_size = self.relation.get_total_size();
         let row_size = self.relation.get_row_size();
 
-        let mut f = OpenOptions::new()
+        let f = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
@@ -51,11 +49,10 @@ impl Insert {
         for (i, column) in self.row.get_schema().get_columns().iter().enumerate() {
 
             let a = format!("{}",self.row.get_values()[i]);
-            unsafe {
-                let (marshalled_value, size) = column.get_datatype().parse_and_marshall(a);
-                data[n..n + size].clone_from_slice(&marshalled_value); // 0  8
-                n = n + size;
-            }
+
+            let (marshalled_value, size) = column.get_datatype().parse_and_marshall(a);
+            data[n..n + size].clone_from_slice(&marshalled_value); // 0  8
+            n = n + size;
         }
 
         true
