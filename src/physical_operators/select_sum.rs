@@ -1,6 +1,5 @@
 use logical_entities::relation::Relation;
-
-use std::time::{Instant};
+use logical_entities::column::Column;
 
 extern crate memmap;
 use std::{
@@ -9,7 +8,6 @@ use std::{
 
 pub const CHUNK_SIZE:usize = 1024*1024;
 
-use logical_entities::column::Column;
 
 #[derive(Debug)]
 pub struct SelectSum {
@@ -29,7 +27,6 @@ impl SelectSum {
         //println!("{},{}", self.relation.get_name(), self.column.get_name());
         use std::thread;
         use std::sync::Arc;
-        let now = Instant::now();
         let mut children = vec![];
 
         let thread_relation = Arc::new(self.relation.clone());
@@ -69,7 +66,6 @@ impl SelectSum {
                         .map(&f)
                         .expect("Could not access data from memory mapped file")
                 };
-                //println!("{}",my_relation.get_filename());
 
                 let mut i = 0;
                 let mut s:Vec<u8> = Vec::new();
@@ -102,8 +98,6 @@ impl SelectSum {
             }
         }
         let final_result = self.column.get_datatype().to_string(&s);
-        println!("Final Sum: {}", final_result);
-        println!("Finished Reading MemMap After {} seconds.", now.elapsed().as_secs());
         final_result
     }
 }

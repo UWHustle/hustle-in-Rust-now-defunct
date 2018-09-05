@@ -56,3 +56,38 @@ impl DataTypeTrait for IntegerType {
         format!("{}", IntegerType::unmarshall(payload))
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use logical_entities::types::integer::IntegerType;
+    use logical_entities::types::DataTypeTrait;
+
+    #[test]
+    fn parse_and_marshall() {
+        let (marshalled, _size) = IntegerType::parse_and_marshall("1".to_string());
+
+        let unmarshalled = IntegerType::to_string(&marshalled);
+        assert_eq!(unmarshalled,"1");
+    }
+
+    #[test]
+    fn get_length() {
+        let (marshalled, size) = IntegerType::parse_and_marshall("2".to_string());
+        assert_eq!(marshalled.len(), size);
+        assert_eq!(marshalled.len(), 8);
+    }
+
+    #[test]
+    fn sum() {
+        let (marshalled_a, _size) = IntegerType::parse_and_marshall("3".to_string());
+        let (marshalled_b, _size) = IntegerType::parse_and_marshall("5".to_string());
+
+        let (marshalled_sum, _size) = IntegerType::sum(&marshalled_a, &marshalled_b);
+
+        let unmarshalled_sum = IntegerType::to_string(&marshalled_sum);
+
+        assert_eq!(unmarshalled_sum, "8");
+    }
+
+}
