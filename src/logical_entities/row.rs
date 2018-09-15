@@ -20,6 +20,13 @@ impl Row {
     pub fn get_values(&self) -> &Vec<Value> {
         return &self.values;
     }
+    pub fn get_size(&self) -> usize {
+        let mut total_size = 0;
+        for value in &self.values {
+            total_size += value.get_size();
+        }
+        total_size
+    }
 }
 
 /*

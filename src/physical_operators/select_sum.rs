@@ -1,11 +1,6 @@
 use logical_entities::relation::Relation;
 use logical_entities::column::Column;
 
-extern crate memmap;
-use std::{
-    fs::OpenOptions,
-};
-
 use storage_manager::StorageManager;
 
 pub const CHUNK_SIZE:usize = 1024*1024;
@@ -26,7 +21,6 @@ impl SelectSum {
 
 
     pub fn execute(&self) -> String{
-        //println!("{},{}", self.relation.get_name(), self.column.get_name());
         use std::thread;
         use std::sync::Arc;
         let mut children = vec![];
@@ -40,8 +34,7 @@ impl SelectSum {
 
 
         let total_size = self.relation.get_total_size();
-        //println!("{}",total_size);
-        //println!("{}",self.relation.get_filename());
+
         while my_chunk_end < total_size {
             use std::cmp;
             let my_relation = thread_relation.clone();
@@ -56,20 +49,7 @@ impl SelectSum {
                 let columns = my_relation.get_columns();
                 let col_name = Arc::as_ref(&my_target_column_name);
 
-                let f = OpenOptions::new()
-                    .read(true)
-                    .open(my_relation.get_filename())
-                    .expect("Unable to open file");
-
-                let data = unsafe {
-                    memmap::MmapOptions::new()
-                        .len(my_chunk_length)
-                        .offset(my_chunk_start as usize)
-                        .map(&f)
-                        .expect("Could not access data from memory mapped file")
-                };
-
-                //let data = StorageManager::get_data(&my_relation);
+                let data = StorageManager::get_chunk_data(&my_relation, my_chunk_start as usize, my_chunk_length);
 
                 let mut i = 0;
                 let mut s:Vec<u8> = Vec::new();

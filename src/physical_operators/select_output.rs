@@ -44,8 +44,7 @@ impl SelectOutput {
     pub fn execute(&mut self) -> bool{
 
         let columns = self.relation.get_columns();
-
-        let data = StorageManager::get_data(self.relation.clone());
+        let data = StorageManager::get_full_data(&self.relation.clone());
 
         let mut i = 0;
         while i < data.len() {

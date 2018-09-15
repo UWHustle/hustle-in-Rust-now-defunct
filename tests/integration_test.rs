@@ -11,7 +11,6 @@ use hustle::physical_operators::join::Join;
 use hustle::physical_operators::select_sum::SelectSum;
 use hustle::physical_operators::random_relation::RandomRelation;
 use hustle::physical_operators::export_csv::ExportCsv;
-use hustle::physical_operators::select_output::SelectOutput;
 
 use hustle::logical_entities::value::Value;
 use hustle::logical_entities::types::DataType;
@@ -56,6 +55,7 @@ fn test_flow() {
     assert_eq!(hustle_calculation, sqlite3_calculation+30);
 
     /*
+    use hustle::physical_operators::select_output::SelectOutput;
     let mut select_operator = SelectOutput::new(relation.clone());
     select_operator.execute();
     select_operator.print();

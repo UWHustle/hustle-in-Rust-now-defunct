@@ -13,6 +13,10 @@ impl Value {
             datatype, value
         }
     }
+
+    pub fn get_size(&self) -> usize {
+        self.datatype.get_next_length(self.value.as_slice())
+    }
 }
 
 impl fmt::Display for Value {
