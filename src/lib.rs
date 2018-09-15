@@ -1,6 +1,7 @@
 
 pub mod logical_entities;
 pub mod physical_operators;
+pub mod storage_manager;
 
 use logical_entities::column::ExtColumn;
 use logical_entities::relation::ExtRelation;
@@ -19,7 +20,7 @@ pub extern fn sum_column(c_relation: ExtRelation, c_column: ExtColumn) -> String
     println!("Summing {}", result);
     result
 }
-
+/*
 use logical_entities::row::ExtRow;
 use physical_operators::insert::Insert;
 
@@ -36,7 +37,7 @@ pub extern fn insert(c_relation: ExtRelation, c_row: ExtRow) -> u64{
     insert_operator.execute();
     1
 }
-
+*/
 use physical_operators::join::Join;
 use physical_operators::select_output::SelectOutput;
 

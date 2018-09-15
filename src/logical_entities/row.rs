@@ -1,13 +1,14 @@
 use logical_entities::schema::Schema;
+use logical_entities::value::Value;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
     schema: Schema,
-    values: Vec<u64>,
+    values: Vec<Value>,
 }
 
 impl Row {
-    pub fn new(schema: Schema, values: Vec<u64>) -> Self {
+    pub fn new(schema: Schema, values: Vec<Value>) -> Self {
         Row {
             schema, values
         }
@@ -16,13 +17,14 @@ impl Row {
     pub fn get_schema(&self) -> &Schema {
         return &self.schema;
     }
-    pub fn get_values(&self) -> &Vec<u64> {
+    pub fn get_values(&self) -> &Vec<Value> {
         return &self.values;
     }
 }
 
-
+/*
 use logical_entities::schema::ExtSchema;
+
 
 #[repr(C)]
 #[derive(Clone, PartialEq)]
@@ -49,4 +51,4 @@ impl ExtRow {
             values,schema
         }
     }
-}
+}*/

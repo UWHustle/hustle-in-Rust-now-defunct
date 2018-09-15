@@ -1,11 +1,8 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
+use logical_entities::value::Value;
 
-extern crate memmap;
-use std::mem;
-use std::{
-    fs::OpenOptions,
-};
+use storage_manager::StorageManager;
 
 pub const CHUNK_SIZE:usize = 1024*1024;
 
@@ -46,38 +43,19 @@ impl SelectOutput {
 
     pub fn execute(&mut self) -> bool{
 
-        let total_size = self.relation.get_total_size();
-
-        let my_chunk_start = 0;
-        let my_chunk_length = total_size;
-
         let columns = self.relation.get_columns();
 
-        let f = OpenOptions::new()
-            .read(true)
-            .open(self.relation.get_filename())
-            .expect("Unable to open file");
+        let data = StorageManager::get_data(self.relation.clone());
 
-        let data = unsafe {
-            memmap::MmapOptions::new()
-                .len(my_chunk_length)
-                .offset(my_chunk_start as usize)
-                .map(&f)
-                .expect("Could not access data from memory mapped file")
-        };
-
-        let mut t_v : [u8; 8] = [0,0,0,0,0,0,0,0];
         let mut i = 0;
-        while i < my_chunk_length {
-            let mut row_values:Vec<u64> = vec!();
+        while i < data.len() {
+            let mut row_values:Vec<Value> = vec!();
 
             for column in columns {
-                t_v.clone_from_slice(&data[i..i+column.get_size()]);
-                unsafe {
-                    let _t_v_p = mem::transmute::<[u8; 8], u64>(t_v);
-                    row_values.push(_t_v_p);
-                }
-                i += column.get_size();
+                let value_length = column.get_datatype().get_next_length(&data[i..]);
+                let value = Value::new(column.get_datatype(), data[i..i+value_length].to_vec());
+                row_values.push(value);
+                i += value_length;
             }
 
             let row = Row::new(self.relation.get_schema().clone(), row_values);

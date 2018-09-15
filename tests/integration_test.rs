@@ -11,6 +11,10 @@ use hustle::physical_operators::join::Join;
 use hustle::physical_operators::select_sum::SelectSum;
 use hustle::physical_operators::random_relation::RandomRelation;
 use hustle::physical_operators::export_csv::ExportCsv;
+use hustle::physical_operators::select_output::SelectOutput;
+
+use hustle::logical_entities::value::Value;
+use hustle::logical_entities::types::DataType;
 
 extern crate csv;
 
@@ -30,7 +34,6 @@ fn test_flow() {
     generate_data(relation.clone());
     export_csv(csv_file.clone(), relation.clone());
 
-    //generate_csv_data(csv_file.clone(), relation.clone());
     import_csv_to_sqlite3();
     import_csv_to_hustle(csv_file.clone(), relation.clone());
 
@@ -46,11 +49,17 @@ fn test_flow() {
     assert_eq!(hustle_calculation, sqlite3_calculation);
 
 
-    insert_into_hustle(10, 3,  relation.clone());
+    let insert_value =  DataType::Integer.parse_to_value("3".to_string());
+    insert_into_hustle(10, insert_value,  relation.clone());
     let hustle_calculation = sum_column_hustle(relation.clone(), "b".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;".to_string());
     assert_eq!(hustle_calculation, sqlite3_calculation+30);
 
+    /*
+    let mut select_operator = SelectOutput::new(relation.clone());
+    select_operator.execute();
+    select_operator.print();
+    */
 }
 
 
@@ -75,8 +84,8 @@ fn import_csv_to_hustle(csv_file: String, relation:Relation){
     import_operator.execute();
 }
 
-fn insert_into_hustle(count: u8, value: u64, relation: Relation){
-    let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(value,value)));
+fn insert_into_hustle(count: u8, value: Value, relation: Relation){
+    let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(value.clone(),value.clone())));
     for _ in 0..count {
         insert_operator.execute();
     }

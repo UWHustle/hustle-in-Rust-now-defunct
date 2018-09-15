@@ -2,6 +2,8 @@
 pub mod integer;
 pub mod ip_address;
 
+use logical_entities::value::Value;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum DataType {
     Integer,
@@ -9,6 +11,10 @@ pub enum DataType {
 }
 
 impl DataType {
+    pub fn parse_to_value(&self, input: String) -> Value {
+        Value::new(self.clone(),self.parse_and_marshall(input).0)
+    }
+
     pub fn get_next_length(&self, payload: &[u8]) -> usize {
         match self {
             DataType::Integer => integer::IntegerType::get_next_length(payload),

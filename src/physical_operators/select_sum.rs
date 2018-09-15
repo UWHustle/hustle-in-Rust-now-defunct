@@ -6,6 +6,8 @@ use std::{
     fs::OpenOptions,
 };
 
+use storage_manager::StorageManager;
+
 pub const CHUNK_SIZE:usize = 1024*1024;
 
 
@@ -66,6 +68,8 @@ impl SelectSum {
                         .map(&f)
                         .expect("Could not access data from memory mapped file")
                 };
+
+                //let data = StorageManager::get_data(&my_relation);
 
                 let mut i = 0;
                 let mut s:Vec<u8> = Vec::new();
