@@ -1,4 +1,37 @@
 ---
+10/08/2018
+
+General [Yannis]
++ Proposed module design, flow and input and ouput of modules.
+![](./images/module_design.png)
+
+---
+10/01/2018
+
+Parser [Matt, Kevin]
++ Decided to re-implement the parser.
++ Examine if we can use Quickstep's parser.
++ Use SQLite parser's test to verify our parser, start by successfully 
+parsing the 7 million test queries.
+
+
+Catalog, Hustle[Robert]
++ Create a skeleton implementation (coordinate with Matt and Kevin) that creates and deletes a table.
++ The Rust side of the catalog is almost done, run into a garbage collection problem. 
+Arguments passed from C++ to Rust are garbage collected.
++ Need different concurrency control for stats and schema.
++ Catalog API will return a token that could be used to return the entire catalog or an id
+and the catalog module will store snapshots of the catalog.
+
+Optimizer [Yannis]
++ Quickstep's optimizer is a viable choice and we should use it.
+
+
+General
++ We need locks on views.
++ Parser should create a AST and only do grammar validation. 
++ CC module will verify the columns and tables and grab the necessary locks.
+---
 09/24/2018
 
 Storage Manager [Aarati]
