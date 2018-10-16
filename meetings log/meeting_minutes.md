@@ -1,4 +1,34 @@
 ---
+10/15/2018
+
+
+Parser [Kevin, Matt]
++ Met with Jianqiao.
++ Worked on a Rust interface to call C++ function. 
++ Working on testing to cover SQLite parser.
++ Test SQLite queries in Quickstep's parser and figure out what can be parsed.
++ By thanksgiving: produce ASTs for the quickstep surface, test json serialization and cleanly separate the parser.
+
+Catalog, Storage Manager [Robert]
++ Catalog done by by the end of the week.
++ Simple select query without predicates can run now on the storage manager.
++ By thanksgiving run simple select * query (no aggregations).
+
+
+Optimizer [Yannis]
++ Working through the Quickstep's code. No new progress to report.
+
+General
++ Target: TPC-DS run on Hustle.
++ Architecture Comments: Keep CC and resolver under a latch to avoid races. In the future we should push CC downstream.
+
+CRISP Report
++ Two key operations for ML applications, matrix multiplication (sparsity), transpose, matrix algebra.
++ We should support matrix operations and we should start from read, write, transpose a matrix.
++ CAPA project: Simple filter query on a key value (key: 8bytes, value: 100bytes) and see what the memory can do.
+
+
+---
 10/08/2018
 
 General [Yannis]
