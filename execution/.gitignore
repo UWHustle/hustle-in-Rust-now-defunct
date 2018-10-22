@@ -4,6 +4,6 @@ data.csv
 sqlite.data
 hustle.data
 /backup-data
-/test-data/
+/test-data/*
 /.idea
 /.DS_Store
