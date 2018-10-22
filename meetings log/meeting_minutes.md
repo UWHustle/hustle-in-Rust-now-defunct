@@ -1,6 +1,25 @@
 ---
-10/15/2018
+10/22/2018
 
+Catalog, Execution Engine [Robert]
++ Pushed v1 of the catalog to github
++ Reorganized github
++ Evaluate window queries from the start, look at TPC-DS look at this paper: http://www.vldb.org/pvldb/vol8/p702-tangwongsan.pdf
++ Find the other paper: ...
++ Cleared up the issue when C++ called Rust
++ Next step: simple scheduler
+
+Parser [Matt]
++ Working with a POC in lemon, problems with huge query space for testing
++ Automatically parse lemon rules and produce all possible sql commands up to a certain depth
++ Python that parses the lemon output into a structure, useful to test
++ Lemon rules can be easily exported to bison
++ RAGS: test generation of queries for given workloads
+
+General 
++ Quantum Resistant Cryptography, what does the space look like? What kind of properties do you get? Is oder maintained?
+---
+10/15/2018
 
 Parser [Kevin, Matt]
 + Met with Jianqiao.
