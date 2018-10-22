@@ -1,0 +1,15 @@
+[package]
+name = "execution"
+version = "0.1.0"
+authors = ["Robert Claus <robertclaus@gmail.com>"]
+
+[dependencies]
+rand = "0.5.5"
+memmap = "0.6.2"
+sqlite = "0.23.9"
+csv = "1"
+
+[lib]
+name = "execution"
+path = "src/lib.rs"
+crate-type = ["rlib", "dylib"]
