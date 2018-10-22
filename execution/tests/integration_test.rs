@@ -1,19 +1,19 @@
-extern crate hustle;
+extern crate execution;
 
-use hustle::logical_entities::relation::Relation;
-use hustle::logical_entities::column::Column;
-use hustle::logical_entities::schema::Schema;
-use hustle::logical_entities::row::Row;
+use execution::logical_entities::relation::Relation;
+use execution::logical_entities::column::Column;
+use execution::logical_entities::schema::Schema;
+use execution::logical_entities::row::Row;
 
-use hustle::physical_operators::import_csv::ImportCsv;
-use hustle::physical_operators::insert::Insert;
-use hustle::physical_operators::join::Join;
-use hustle::physical_operators::select_sum::SelectSum;
-use hustle::physical_operators::random_relation::RandomRelation;
-use hustle::physical_operators::export_csv::ExportCsv;
+use execution::physical_operators::import_csv::ImportCsv;
+use execution::physical_operators::insert::Insert;
+use execution::physical_operators::join::Join;
+use execution::physical_operators::select_sum::SelectSum;
+use execution::physical_operators::random_relation::RandomRelation;
+use execution::physical_operators::export_csv::ExportCsv;
 
-use hustle::logical_entities::value::Value;
-use hustle::logical_entities::types::DataType;
+use execution::logical_entities::value::Value;
+use execution::logical_entities::types::DataType;
 
 extern crate csv;
 
@@ -55,7 +55,7 @@ fn test_flow() {
     assert_eq!(hustle_calculation, sqlite3_calculation+30);
 
     /*
-    use hustle::physical_operators::select_output::SelectOutput;
+    use execution::physical_operators::select_output::SelectOutput;
     let mut select_operator = SelectOutput::new(relation.clone());
     select_operator.execute();
     select_operator.print();
