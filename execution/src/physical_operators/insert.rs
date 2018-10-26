@@ -21,6 +21,10 @@ impl Insert {
 }
 
 impl Operator for Insert {
+    fn get_target_relation(&self) -> Relation {
+        self.relation.clone()
+    }
+
     fn execute(&self) -> Relation {
         let row_size = self.row.get_size();
 
@@ -35,6 +39,6 @@ impl Operator for Insert {
             n = n + size;
         }
 
-        self.relation.clone()
+        self.get_target_relation()
     }
 }

@@ -23,6 +23,10 @@ impl RandomRelation {
 }
 
 impl Operator for RandomRelation{
+    fn get_target_relation(&self) -> Relation {
+        self.relation.clone()
+    }
+
     fn execute(&self) -> Relation {
         #[warn(unused_variables)]
         let mut data = StorageManager::create_relation(&self.relation, (self.relation.get_row_size() * self.row_count) as usize);
@@ -40,6 +44,6 @@ impl Operator for RandomRelation{
             }
         }
 
-        self.relation.clone()
+        self.get_target_relation()
     }
 }

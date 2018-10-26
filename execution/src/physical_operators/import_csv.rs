@@ -18,6 +18,10 @@ impl ImportCsv {
     }
 }
 impl Operator for ImportCsv{
+    fn get_target_relation(&self) -> Relation {
+        self.relation.clone()
+    }
+
     fn execute(&self) -> Relation{
 
         extern crate csv;
@@ -42,6 +46,6 @@ impl Operator for ImportCsv{
                 n = n + size;
             }
         }
-        self.relation.clone()
+        self.get_target_relation()
     }
 }

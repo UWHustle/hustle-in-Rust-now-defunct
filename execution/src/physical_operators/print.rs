@@ -20,6 +20,10 @@ impl Print {
     }
 }
 impl Operator for Print {
+    fn get_target_relation(&self) -> Relation {
+        Relation::null()
+    }
+
     fn execute(&self) -> Relation{
 
         let columns = self.relation.get_columns();
@@ -43,6 +47,6 @@ impl Operator for Print {
             println!("|");
         }
 
-        Relation::null()
+        self.get_target_relation()
     }
 }

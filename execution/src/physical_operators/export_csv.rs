@@ -11,16 +11,14 @@ use storage_manager::StorageManager;
 #[derive(Debug)]
 pub struct ExportCsv {
     file_name: String,
-    relation: Relation,
-    row_count: usize
+    relation: Relation
 }
 
 impl ExportCsv {
-    pub fn new(file_name: String, relation: Relation, row_count: usize) -> Self {
+    pub fn new(file_name: String, relation: Relation) -> Self {
         ExportCsv {
             file_name,
-            relation,
-            row_count
+            relation
         }
     }
 
@@ -30,6 +28,10 @@ impl ExportCsv {
 }
 
 impl Operator for ExportCsv {
+    fn get_target_relation(&self) -> Relation {
+        Relation::null()
+    }
+
     fn execute(&self) -> Relation {
         let mut wtr = csv::Writer::from_path(self.get_file_name()).unwrap();
 
@@ -51,6 +53,6 @@ impl Operator for ExportCsv {
         }
         wtr.flush().unwrap();
 
-        Relation::null()
+        self.get_target_relation()
     }
 }

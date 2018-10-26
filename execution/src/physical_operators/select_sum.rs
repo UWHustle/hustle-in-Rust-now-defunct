@@ -3,7 +3,9 @@ use logical_entities::column::Column;
 
 use storage_manager::StorageManager;
 
-pub const CHUNK_SIZE:usize = 1024*1024;
+//There's an off-by-one error somewhere in this operator when multi-threaded so setting this high.
+//Reproduce by setting this low and running integrated tests.
+pub const CHUNK_SIZE:usize = 1024*1024*1024*1024*1024;
 
 
 #[derive(Debug)]

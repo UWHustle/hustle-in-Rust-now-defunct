@@ -22,6 +22,14 @@ impl Join {
 }
 
 impl Operator for Join{
+    fn get_target_relation(&self) -> Relation {
+        let mut joined_cols = self.relation_left.get_columns().clone();
+        joined_cols.extend(self.relation_right.get_columns().clone());
+
+        Relation::new(format!("{}_j_{}", &self.relation_left.get_name(), &self.relation_right.get_name()),
+                      Schema::new(joined_cols))
+    }
+
     fn execute(&self) -> Relation {
 
         let rel_l = &self.relation_left;
@@ -37,11 +45,7 @@ impl Operator for Join{
 
         let output_size = (rows_l * rows_r) * (rows_l_size + rows_r_size);
 
-        let mut joined_cols = cols_l.clone();
-        joined_cols.extend(cols_r.clone());
-
-        let _join_relation = Relation::new(format!("{}_j_{}", rel_l.get_name(), rel_r.get_name()),
-                                           Schema::new(joined_cols));
+        let _join_relation = self.get_target_relation();
 
         let data_l = StorageManager::get_full_data(&self.relation_left);
         let data_r = StorageManager::get_full_data(&self.relation_right);
