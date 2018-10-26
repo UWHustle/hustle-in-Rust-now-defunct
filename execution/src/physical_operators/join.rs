@@ -4,6 +4,7 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 
 use storage_manager::StorageManager;
+use physical_operators::Operator;
 
 #[derive(Debug)]
 pub struct Join {
@@ -14,12 +15,14 @@ pub struct Join {
 impl Join {
     pub fn new(relation_left: Relation, relation_right: Relation) -> Self {
         Join {
-            relation_left,relation_right
+            relation_left,
+            relation_right
         }
     }
+}
 
-
-    pub fn execute(&self) -> Relation {
+impl Operator for Join{
+    fn execute(&self) -> Relation {
 
         let rel_l = &self.relation_left;
         let rel_r = &self.relation_right;

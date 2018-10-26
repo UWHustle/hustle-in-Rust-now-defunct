@@ -17,6 +17,10 @@ impl Value {
     pub fn get_size(&self) -> usize {
         self.datatype.get_next_length(self.value.as_slice())
     }
+
+    pub fn format(datatype: DataType, value: Vec<u8>) -> String {
+        format!("{}", datatype.to_string(&value))
+    }
 }
 
 impl fmt::Display for Value {
@@ -24,3 +28,4 @@ impl fmt::Display for Value {
         write!(f, "{}", self.datatype.to_string(&self.value))
     }
 }
+

@@ -1,4 +1,5 @@
 use logical_entities::relation::Relation;
+use physical_operators::Operator;
 
 use storage_manager::StorageManager;
 
@@ -11,11 +12,13 @@ pub struct ImportCsv {
 impl ImportCsv {
     pub fn new(file_name: String, relation: Relation) -> Self {
         ImportCsv {
-            file_name,relation
+            file_name,
+            relation
         }
     }
-
-    pub fn execute(&self) -> bool{
+}
+impl Operator for ImportCsv{
+    fn execute(&self) -> Relation{
 
         extern crate csv;
         let mut rdr = csv::Reader::from_path(&self.file_name).unwrap();
@@ -39,6 +42,6 @@ impl ImportCsv {
                 n = n + size;
             }
         }
-        true
+        self.relation.clone()
     }
 }

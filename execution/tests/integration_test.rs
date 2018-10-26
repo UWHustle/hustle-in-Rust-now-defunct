@@ -15,6 +15,8 @@ use execution::physical_operators::export_csv::ExportCsv;
 use execution::logical_entities::value::Value;
 use execution::logical_entities::types::DataType;
 
+use execution::physical_operators::Operator;
+
 extern crate csv;
 
 use std::process::Command;
@@ -55,8 +57,8 @@ fn test_flow() {
     assert_eq!(hustle_calculation, sqlite3_calculation+30);
 
     /*
-    use execution::physical_operators::select_output::SelectOutput;
-    let mut select_operator = SelectOutput::new(relation.clone());
+    use execution::physical_operators::select_output::Scan;
+    let mut select_operator = Scan::new(relation.clone());
     select_operator.execute();
     select_operator.print();
     */

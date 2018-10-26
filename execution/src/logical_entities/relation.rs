@@ -14,6 +14,14 @@ impl Relation {
         }
     }
 
+    pub fn null()-> Self {
+        let name = "Null".to_string();
+        let schema = Schema::new(vec!());
+        Relation{
+            name,schema
+        }
+    }
+
     pub fn get_name(&self) -> &String {
         &self.name
     }

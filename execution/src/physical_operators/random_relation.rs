@@ -5,6 +5,8 @@ use logical_entities::relation::Relation;
 
 use storage_manager::StorageManager;
 
+use physical_operators::Operator;
+
 #[derive(Debug)]
 pub struct RandomRelation {
     relation: Relation,
@@ -18,8 +20,10 @@ impl RandomRelation {
             row_count
         }
     }
+}
 
-    pub fn execute(&self) -> bool {
+impl Operator for RandomRelation{
+    fn execute(&self) -> Relation {
         #[warn(unused_variables)]
         let mut data = StorageManager::create_relation(&self.relation, (self.relation.get_row_size() * self.row_count) as usize);
 
@@ -36,6 +40,6 @@ impl RandomRelation {
             }
         }
 
-        true
+        self.relation.clone()
     }
 }

@@ -2,7 +2,11 @@ extern crate csv;
 extern crate rand;
 
 use logical_entities::relation::Relation;
-use physical_operators::select_output::SelectOutput;
+use logical_entities::value::Value;
+
+use physical_operators::Operator;
+
+use storage_manager::StorageManager;
 
 #[derive(Debug)]
 pub struct ExportCsv {
@@ -23,22 +27,30 @@ impl ExportCsv {
     pub fn get_file_name(&self) -> &String {
         return &self.file_name;
     }
+}
 
-    pub fn execute(&self) -> bool {
+impl Operator for ExportCsv {
+    fn execute(&self) -> Relation {
         let mut wtr = csv::Writer::from_path(self.get_file_name()).unwrap();
 
-        let mut select_operator = SelectOutput::new(self.relation.clone());
-        select_operator.execute();
-        let rows = select_operator.get_result();
+        let columns = self.relation.get_columns();
+        let data = StorageManager::get_full_data(&self.relation.clone());
 
-        for row in rows {
+        let mut i = 0;
+        while i < data.len() {
+
             let mut r = Vec::new();
-            for value in row.get_values() {
-                r.push(value.to_string());
+
+            for column in columns {
+                let value_length = column.get_datatype().get_next_length(&data[i..]);
+                r.push(Value::format(column.get_datatype(),data[i..i+value_length].to_vec()));
+                i += value_length;
             }
             wtr.write_record(&r).unwrap();
+
         }
         wtr.flush().unwrap();
-        true
+
+        Relation::null()
     }
 }

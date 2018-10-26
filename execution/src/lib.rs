@@ -20,26 +20,10 @@ pub extern fn sum_column(c_relation: ExtRelation, c_column: ExtColumn) -> String
     println!("Summing {}", result);
     result
 }
-/*
-use logical_entities::row::ExtRow;
-use physical_operators::insert::Insert;
 
-#[no_mangle]
-pub extern fn insert(c_relation: ExtRelation, c_row: ExtRow) -> u64{
-    println!("Start");
-    let row = c_row.to_row();
-    println!("row");
-    let relation = c_relation.to_relation();
-    println!("Relation");
-
-    let insert_operator = Insert::new(relation, row);
-    println!("Start execute");
-    insert_operator.execute();
-    1
-}
-*/
 use physical_operators::join::Join;
-use physical_operators::select_output::SelectOutput;
+use physical_operators::print::Print;
+use physical_operators::Operator;
 
 #[no_mangle]
 pub extern fn join(c_relation_left: ExtRelation, c_relation_right: ExtRelation) -> bool{
@@ -50,10 +34,7 @@ pub extern fn join(c_relation_left: ExtRelation, c_relation_right: ExtRelation) 
 
     let result_relation = join_operator.execute();
 
-    let mut select_operator = SelectOutput::new(result_relation);
-    select_operator.execute();
-    select_operator.print();
+    let print_operator = Print::new(result_relation);
+    print_operator.execute();
     true
-
-    //select_operator.get_result().iter().map(|row:&Row|{cRow::from_row(row.clone())}).collect()
 }

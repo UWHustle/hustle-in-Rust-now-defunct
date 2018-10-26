@@ -1,6 +1,8 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 
+use physical_operators::Operator;
+
 use storage_manager::StorageManager;
 
 #[derive(Debug)]
@@ -10,14 +12,16 @@ pub struct Insert {
 }
 
 impl Insert {
-    pub fn new(relation: Relation, row:Row) -> Self {
+    pub fn new(relation: Relation, row: Row) -> Self {
         Insert {
-            relation,row
+            relation,
+            row
         }
     }
+}
 
-
-    pub fn execute(&self) -> bool{
+impl Operator for Insert {
+    fn execute(&self) -> Relation {
         let row_size = self.row.get_size();
 
         let mut data = StorageManager::append_relation(&self.relation, row_size);
@@ -31,6 +35,6 @@ impl Insert {
             n = n + size;
         }
 
-        true
+        self.relation.clone()
     }
 }
