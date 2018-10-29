@@ -1,3 +1,14 @@
+10/28/2018
+Catalog [Matt, Kevin]
++ Quickstep's typesystem is too complicated for a standalone parser? How can we make it simpler? 
++ Meet with Jianqiao and figure out how we can simplify the typesystem.
+
+ 
+Execution Engine [Robert]
++ Physical Plans can be executed.
++ You can validate the result of a query execution with sqlite.
++ This week: explore how to integrate predicates.
+
 ---
 10/22/2018
 
@@ -18,6 +29,7 @@ Parser [Matt]
 
 General 
 + Quantum Resistant Cryptography, what does the space look like? What kind of properties do you get? Is oder maintained?
+
 ---
 10/15/2018
 
