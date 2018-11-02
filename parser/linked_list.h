@@ -19,7 +19,7 @@ typedef struct linked_list {
 
 linked_list* create_list();
 
-void delete_list();
+void free_list(linked_list *list);
 
 void add_after(list_node *position, void *contents);
 
