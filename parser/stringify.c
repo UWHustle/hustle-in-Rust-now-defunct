@@ -92,7 +92,7 @@ void traverse(string_builder *builder, parse_node *node, int indent) {
 }
 
 char *json_stringify(parse_node *node) {
-    string_builder *builder = create_builder();
+    string_builder *builder = alloc_builder();
     traverse(builder, node, 0);
     char *output = to_string(builder);
     free_builder(builder);

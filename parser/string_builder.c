@@ -7,7 +7,7 @@
 #include <string.h>
 #include "string_builder.h"
 
-string_builder *create_builder() {
+string_builder *alloc_builder() {
     string_builder *builder = malloc(sizeof(string_builder));
     builder->buf_size = 64;
     builder->end = 0;

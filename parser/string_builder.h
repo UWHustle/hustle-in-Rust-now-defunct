@@ -11,7 +11,7 @@ typedef struct string_builder {
     int end;
 } string_builder;
 
-string_builder *create_builder();
+string_builder *alloc_builder();
 
 void free_builder(string_builder *builder);
 
