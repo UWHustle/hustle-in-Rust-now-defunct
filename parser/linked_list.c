@@ -4,12 +4,12 @@
 
 #include "linked_list.h"
 
-linked_list *create_list() {
+linked_list *alloc_list() {
     linked_list *list = malloc(sizeof(linked_list));
+    list->first = malloc(sizeof(list_node));
     list->last = malloc(sizeof(list_node));
     list->last->next = NULL;
     list->last->contents = NULL;
-    list->first = malloc(sizeof(list_node));
     list->first->next = list->last;
     list->first->contents = NULL;
     return list;
@@ -18,9 +18,9 @@ linked_list *create_list() {
 void free_list(linked_list *list) {
     list_node *current = list->first;
     list_node *next;
-    while (current != NULL) {
+    // This method is not responsible for freeing contents
+    while (current->next != NULL) {
         next = current->next;
-        free(current->contents);
         free(current);
         current = next;
     }
@@ -41,4 +41,8 @@ void add_last(linked_list *list, void *contents) {
     list->last->next = new_end;
     list->last->contents = contents;
     list->last = new_end;
+}
+
+int is_empty(linked_list *list) {
+    return list->first->next->next == NULL;
 }
