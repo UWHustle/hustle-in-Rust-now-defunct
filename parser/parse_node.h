@@ -1,30 +1,43 @@
-//
-// Created by Matthew Dutson on 11/2/18.
-//
+#ifndef HUSTLE_PARSER_PARSE_NODE_H
+#define HUSTLE_PARSER_PARSE_NODE_H
 
-#ifndef HUSTLE_PARSER_NODE_H
-#define HUSTLE_PARSER_NODE_H
-
-#include "linked_list.h"
+#include "dynamic_array.h"
 
 typedef struct parse_node {
     char *name;
-    linked_list *attribute_names;
-    linked_list *attribute_values;
-    linked_list *child_names;
-    linked_list *child_values;
-    linked_list *child_list_names;
-    linked_list *child_lists;
+    dynamic_array *attribute_names;
+    dynamic_array *attribute_values;
+    dynamic_array *child_names;
+    dynamic_array *child_values;
+    dynamic_array *child_list_names;
+    dynamic_array *child_lists;
 } parse_node;
 
+/*
+ * Allocates the parse node and its underlying dynamics arrays on the heap.
+ */
 parse_node *alloc_node(char *name);
 
+/*
+ * Frees the heap-allocated parse node and its underlying dynamic arrays.
+ */
 void free_node(parse_node *node);
 
-void add_attribute(parse_node *current, char *name, char *value);
+/*
+ * Adds the inline attribute name=value by appending to attribute_names and
+ * attribute_values.
+ */
+void add_attribute(parse_node *node, char *name, char *value);
 
+/*
+ * Adds the child parse node by appending to child_names and child_values.
+ */
 void add_child(parse_node *current, char *name, parse_node *child);
 
-void add_child_list(parse_node *current, char *name, linked_list *child_list);
+/*
+ * Adds the child list by appending to child_list_names and child_lists.
+ */
+void
+add_child_list(parse_node *current, char *name, dynamic_array *child_list);
 
-#endif // HUSTLE_PARSER_NODE_H
+#endif // HUSTLE_PARSER_PARSE_NODE_H
