@@ -36,13 +36,13 @@ void json_traverse(string_builder *builder, parse_node *node, int indent) {
         json_traverse(builder, child, indent);
     }
 
-    for (size_t i = 0; i < node->child_list_names->size; i++) {
+    for (size_t i = 0; i < node->list_names->size; i++) {
         append_fmt(builder, ",");
         new_line(builder, indent);
-        char *name = node->child_list_names->array[i];
+        char *name = node->list_names->array[i];
         append_fmt(builder, "\"%s\": [", name);
 
-        dynamic_array *child_list = node->child_lists->array[i];
+        dynamic_array *child_list = node->list_values->array[i];
         for (size_t j = 0; j < child_list->size; j++) {
             new_line(builder, indent + 1);
             json_traverse(builder, child_list->array[i], indent + 1);
@@ -107,21 +107,21 @@ void quickstep_traverse(string_builder *builder, parse_node *node, int is_root,
         char *name = node->child_names->array[i];
         parse_node *child = node->child_values->array[i];
         int child_is_last = i == node->child_names->size - 1 &&
-                            is_empty(node->child_list_names);
+                            is_empty(node->list_names);
         quickstep_traverse(builder, child, 0, child_is_last, prefix, name);
     }
 
-    for (size_t i = 0; i < node->child_list_names->size; i++) {
-        char *name = node->child_list_names->array[i];
+    for (size_t i = 0; i < node->list_names->size; i++) {
+        char *name = node->list_names->array[i];
         if (strlen(name) > 0) {
             append_fmt(builder, "%s+-%s=\n", to_string(&prefix), name);
         }
         add_indented_prefix(&prefix, is_last);
 
-        dynamic_array *child_list = node->child_lists->array[i];
+        dynamic_array *child_list = node->list_values->array[i];
         for (size_t j = 0; j < child_list->size; j++) {
-            int child_is_last =
-                    child_list->size - 1 && node->child_list_names->size - 1;
+            int child_is_last = child_list->size - 1 &&
+                                node->list_names->size - 1;
             quickstep_traverse(builder, child_list->array[i], 0, child_is_last,
                                prefix, "");
             if (j < child_list->size - 1) {

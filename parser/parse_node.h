@@ -9,8 +9,8 @@ typedef struct parse_node {
     dynamic_array *attribute_values;
     dynamic_array *child_names;
     dynamic_array *child_values;
-    dynamic_array *child_list_names;
-    dynamic_array *child_lists;
+    dynamic_array *list_names;
+    dynamic_array *list_values;
 } parse_node;
 
 /*
@@ -35,7 +35,7 @@ void add_attribute(parse_node *node, char *name, char *value);
 void add_child(parse_node *current, char *name, parse_node *child);
 
 /*
- * Adds the child list by appending to child_list_names and child_lists.
+ * Adds the child list by appending to list_names and list_values.
  */
 void
 add_child_list(parse_node *current, char *name, dynamic_array *child_list);

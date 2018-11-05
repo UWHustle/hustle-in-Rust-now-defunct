@@ -9,8 +9,8 @@ parse_node *alloc_node(char *name) {
     node->attribute_values = alloc_array();
     node->child_names = alloc_array();
     node->child_values = alloc_array();
-    node->child_list_names = alloc_array();
-    node->child_lists = alloc_array();
+    node->list_names = alloc_array();
+    node->list_values = alloc_array();
     return node;
 }
 
@@ -19,8 +19,8 @@ void free_node(parse_node *node) {
     free_array(node->attribute_values);
     free_array(node->child_names);
     free_array(node->child_values);
-    free_array(node->child_list_names);
-    free_array(node->child_lists);
+    free_array(node->list_names);
+    free_array(node->list_values);
     free(node);
 }
 
@@ -35,6 +35,6 @@ void add_child(parse_node *node, char *name, parse_node *child) {
 }
 
 void add_child_list(parse_node *node, char *name, dynamic_array *child_list) {
-    add_last(node->child_list_names, name);
-    add_last(node->child_lists, child_list);
+    add_last(node->list_names, name);
+    add_last(node->list_values, child_list);
 }
