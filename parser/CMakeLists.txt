@@ -9,5 +9,11 @@ add_library(parse_node parse_node.h parse_node.c)
 add_library(string_builder string_builder.h string_builder.c)
 add_library(stringify stringify.h stringify.c)
 
-add_executable(main main.c)
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+bison_target(hustle_bison parser.y ${PROJECT_SOURCE_DIR}/parser.c)
+flex_target(hustle_flex lexer.l ${PROJECT_SOURCE_DIR}/lexer.c)
+add_flex_bison_dependency(hustle_flex hustle_bison)
+
+add_executable(main main.c ${BISON_hustle_bison_OUTPUTS} ${FLEX_hustle_flex_OUTPUTS})
 target_link_libraries(main dynamic_array parse_node string_builder stringify)
