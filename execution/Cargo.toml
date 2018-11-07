@@ -3,6 +3,9 @@ name = "execution"
 version = "0.1.0"
 authors = ["Robert Claus <robertclaus@gmail.com>"]
 
+[profile.dev]
+opt-level = 3
+
 [dependencies]
 rand = "0.5.5"
 memmap = "0.6.2"

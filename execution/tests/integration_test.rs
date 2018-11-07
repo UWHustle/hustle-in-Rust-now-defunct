@@ -18,7 +18,7 @@ use execution::physical_operators::Operator;
 extern crate csv;
 
 
-const RECORD_COUNT: usize = 512;
+const RECORD_COUNT: usize = 1024;
 
 
 #[test]
