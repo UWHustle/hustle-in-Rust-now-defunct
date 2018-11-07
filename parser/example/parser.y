@@ -34,7 +34,6 @@ typedef void* yyscan_t;
 %token FROM
 %token SELECT
 %token SEMI
-%token STAR
 %token <strval> ID
 
 %type <strval> nm id
@@ -68,7 +67,7 @@ distinct:
 ;
 
 selcollist:
-  sclp scanpt STAR
+  sclp scanpt expr scanpt as
 ;
 
 sclp:
@@ -77,6 +76,10 @@ sclp:
 
 scanpt:
   /* empty */
+;
+
+expr:
+  id
 ;
 
 from:

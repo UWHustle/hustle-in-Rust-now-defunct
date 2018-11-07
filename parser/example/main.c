@@ -33,7 +33,7 @@ Statement *get_ast(char *command) {
 }
 
 int main(void) {
-	char test[] = "SELECT * FROM test;";
+	char test[] = "SELECT a FROM test;";
 	Statement *statement = get_ast(test);
 	printf("result: %d\n", statement->type);
 	delete_statement(statement);
