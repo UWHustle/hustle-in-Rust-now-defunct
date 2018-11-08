@@ -1,4 +1,4 @@
-find_package(BISON REQUIRED)
+find_package(BISON 3.2.0 REQUIRED)
 find_package(FLEX REQUIRED)
 bison_target(hustle_bison parser.y ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
 flex_target(hustle_flex lexer.l ${CMAKE_CURRENT_SOURCE_DIR}/lexer.c)
