@@ -34,7 +34,6 @@ typedef void* yyscan_t;
 %token FROM
 %token SELECT
 %token SEMI
-%token STAR
 %token <strval> ID
 
 %type <strval> name id
@@ -83,7 +82,7 @@ distinct:
 ;
 
 select_column_list:
-  sclp scanpt STAR {
+  sclp scanpt expr scanpt as {
     $$ = alloc_node("SelectStar");
   }
 ;
@@ -94,6 +93,10 @@ sclp:
 
 scanpt:
   /* empty */
+;
+
+expr:
+  id
 ;
 
 from:
