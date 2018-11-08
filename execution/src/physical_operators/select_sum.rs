@@ -46,7 +46,7 @@ impl SelectSum {
             my_chunk_end = cmp::min(my_chunk_end + CHUNK_SIZE, total_size);
             my_chunk_length = my_chunk_end - my_chunk_start as usize;
 
-            children.push(thread::spawn(move|| {
+            children.push(thread::spawn(move || {
 
                 let columns = my_relation.get_columns();
                 let col_name = Arc::as_ref(&my_target_column_name);

@@ -9,7 +9,7 @@ pub const CHUNK_SIZE:usize = 1024*1024;
 
 #[derive(Debug)]
 pub struct Print {
-    relation: Relation,
+    relation: Relation
 }
 
 impl Print {
@@ -19,13 +19,13 @@ impl Print {
         }
     }
 }
+
 impl Operator for Print {
     fn get_target_relation(&self) -> Relation {
         Relation::null()
     }
 
     fn execute(&self) -> Relation{
-
         let columns = self.relation.get_columns();
         let data = StorageManager::get_full_data(&self.relation.clone());
 
