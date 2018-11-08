@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
             free(quickstep_output);
 
             char *json_output = json_stringify(node);
-            printf("%s", json_output);
+            printf("%s\n", json_output);
             free(json_output);
 
             free(node);
