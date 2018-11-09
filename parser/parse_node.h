@@ -1,7 +1,7 @@
 #ifndef HUSTLE_PARSER_PARSE_NODE_H
 #define HUSTLE_PARSER_PARSE_NODE_H
 
-#include "dynamic_array.h"
+#include "utility/dynamic_array.h"
 
 typedef struct parse_node {
     char *type;
@@ -19,7 +19,11 @@ typedef struct parse_node {
 parse_node *alloc_node(char *name);
 
 /*
- * Frees the heap-allocated parse node and its underlying dynamic arrays.
+ * Free all nodes and arrays rooted at this node. It is assumed all nodes were
+ * created with alloc_node and all arrays were created with alloc_array,
+ * otherwise this may result in an error. This function does NOT free strings
+ * contained in the *_names arrays (these are typically literals in the code
+ * segment).
  */
 void free_tree(parse_node *node);
 

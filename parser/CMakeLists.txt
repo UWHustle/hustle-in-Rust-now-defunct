@@ -12,13 +12,13 @@ add_flex_bison_dependency(hustle_flex hustle_bison)
 # Library target (build with --target parser)
 add_library(
         parser
-        dynamic_array.h dynamic_array.c
         parse_node.h parse_node.c
-        string_builder.h string_builder.c
-        stringify.h stringify.c
         parser_wrapper.h parser_wrapper.c
         ${BISON_hustle_bison_OUTPUTS}
         ${FLEX_hustle_flex_OUTPUTS}
+        utility/dynamic_array.h utility/dynamic_array.c
+        utility/string_builder.h utility/string_builder.c
+        utility/stringify.h utility/stringify.c
 )
 
 # Testing main target (build with --target parser_test)
