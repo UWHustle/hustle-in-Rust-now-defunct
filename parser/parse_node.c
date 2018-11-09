@@ -18,8 +18,17 @@ void free_tree(parse_node *node) {
     free_array(node->attribute_names);
     free_array(node->attribute_values);
     free_array(node->child_names);
+    for (int i = 0; i < node->child_values->size; i++) {
+        free_tree(node->child_values->array[i]);
+    }
     free_array(node->child_values);
     free_array(node->list_names);
+    for (int i = 0; i < node->list_values->size; i++) {
+        dynamic_array *child_list = node->list_values->array[i];
+        for (int j = 0; j < child_list->size; j++) {
+            free_tree(child_list->array[j]);
+        }
+    }
     free_array(node->list_values);
     free(node);
 }

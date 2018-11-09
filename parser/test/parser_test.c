@@ -2,11 +2,12 @@
 
 #include "parser_wrapper.h"
 #include "parse_node.h"
-#include "stringify.h"
+#include "utility/stringify.h"
 
 int main(void) {
-    char test[] = "SELECT c FROM test;";
+    char *test = "SELECT c FROM test;";
     parse_node *node = parse(test);
+
     char *quickstep_output = quickstep_stringify(node);
     printf("%s\n", quickstep_output);
     free(quickstep_output);
