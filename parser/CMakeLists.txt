@@ -1,9 +1,15 @@
-find_package(BISON 3.2.0 REQUIRED)
+cmake_minimum_required(VERSION 3.12)
+
+# Ensure that subdirectories can still see all top-level headers
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+find_package(BISON 3.1.0 REQUIRED)
 find_package(FLEX REQUIRED)
 bison_target(hustle_bison parser.y ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
 flex_target(hustle_flex lexer.l ${CMAKE_CURRENT_SOURCE_DIR}/lexer.c)
 add_flex_bison_dependency(hustle_flex hustle_bison)
 
+# Library target (build with --target parser)
 add_library(
         parser
         dynamic_array.h dynamic_array.c
@@ -14,3 +20,7 @@ add_library(
         ${BISON_hustle_bison_OUTPUTS}
         ${FLEX_hustle_flex_OUTPUTS}
 )
+
+# Testing main target (build with --target parser_test)
+add_executable(parser_test test/parser_test.c)
+target_link_libraries(parser_test parser)

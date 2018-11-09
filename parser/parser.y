@@ -16,7 +16,7 @@ typedef void* yyscan_t;
 #endif
 }
 
-%require "3.2"
+%require "3.1"
 
 %define api.pure full
 %lex-param   { yyscan_t scanner }

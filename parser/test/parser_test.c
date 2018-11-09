@@ -5,7 +5,7 @@
 #include "stringify.h"
 
 int main(void) {
-    char test[] = "SELECT * FROM test;";
+    char test[] = "SELECT t FROM test;";
     parse_node *node = parse(test);
     char *quickstep_output = quickstep_stringify(node);
     printf("%s\n", quickstep_output);
