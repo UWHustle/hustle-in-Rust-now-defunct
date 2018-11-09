@@ -4,7 +4,7 @@
 
 parse_node *alloc_node(char *name) {
     parse_node *node = malloc(sizeof(parse_node));
-    node->name = name;
+    node->type = name;
     node->attribute_names = alloc_array();
     node->attribute_values = alloc_array();
     node->child_names = alloc_array();
@@ -14,7 +14,7 @@ parse_node *alloc_node(char *name) {
     return node;
 }
 
-void free_node(parse_node *node) {
+void free_tree(parse_node *node) {
     free_array(node->attribute_names);
     free_array(node->attribute_values);
     free_array(node->child_names);

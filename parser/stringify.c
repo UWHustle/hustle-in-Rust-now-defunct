@@ -3,7 +3,7 @@
 #include "stringify.h"
 #include "string_builder.h"
 
-#define INDENT_SIZE 4
+#define INDENT_SIZE 2
 
 void new_line(string_builder *builder, int indent) {
     append_fmt(builder, "\n");
@@ -16,7 +16,7 @@ void json_traverse(string_builder *builder, parse_node *node, int indent) {
     append_fmt(builder, "{");
     indent++;
     new_line(builder, indent);
-    append_fmt(builder, "\"name\": \"%s\"", node->name);
+    append_fmt(builder, "\"type\": \"%s\"", node->type);
 
     for (size_t i = 0; i < node->attribute_names->size; i++) {
         append_fmt(builder, ",");
@@ -45,7 +45,7 @@ void json_traverse(string_builder *builder, parse_node *node, int indent) {
         dynamic_array *child_list = node->list_values->array[i];
         for (size_t j = 0; j < child_list->size; j++) {
             new_line(builder, indent + 1);
-            json_traverse(builder, child_list->array[i], indent + 1);
+            json_traverse(builder, child_list->array[j], indent + 1);
             if (j < child_list->size - 1) {
                 append_fmt(builder, ",");
             }
@@ -83,7 +83,7 @@ void quickstep_traverse(string_builder *builder, parse_node *node, int is_root,
     if (strlen(parent_name) > 0) {
         append_fmt(builder, "%s=", parent_name);
     }
-    append_fmt(builder, node->name);
+    append_fmt(builder, node->type);
 
     if (!is_empty(node->attribute_names)) {
         append_fmt(builder, "[");
@@ -122,7 +122,7 @@ void quickstep_traverse(string_builder *builder, parse_node *node, int is_root,
         for (size_t j = 0; j < child_list->size; j++) {
             int child_is_last = child_list->size - 1 &&
                                 node->list_names->size - 1;
-            quickstep_traverse(builder, child_list->array[i], 0, child_is_last,
+            quickstep_traverse(builder, child_list->array[j], 0, child_is_last,
                                prefix, "");
             if (j < child_list->size - 1) {
                 append_fmt(builder, ",");

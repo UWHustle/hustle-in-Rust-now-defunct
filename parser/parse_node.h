@@ -4,7 +4,7 @@
 #include "dynamic_array.h"
 
 typedef struct parse_node {
-    char *name;
+    char *type;
     dynamic_array *attribute_names;
     dynamic_array *attribute_values;
     dynamic_array *child_names;
@@ -21,7 +21,7 @@ parse_node *alloc_node(char *name);
 /*
  * Frees the heap-allocated parse node and its underlying dynamic arrays.
  */
-void free_node(parse_node *node);
+void free_tree(parse_node *node);
 
 /*
  * Adds the inline attribute name=value by appending to attribute_names and
