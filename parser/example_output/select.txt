@@ -1,0 +1,38 @@
+# The following format is used in this file:
+#   <query1>
+#   ---
+#   <json_output1>
+#   ===
+#
+#   <query2>
+#   ---
+#   <json_output2>
+#   ===
+
+SELECT c FROM table
+---
+{
+  "type": "ParseStatementSetOperation",
+  "set_operation_query": {
+    "type": "ParseSetOperation",
+    "set_operation_type": "Select",
+    "operands": [
+      {
+        "type": "ParseSelect",
+        "selection": [
+          {
+            "type": "ParseSelectionItem",
+            "expression": "c"
+          }
+        ],
+        "from_list": [
+          {
+            "type": "ParseSimpleTableReference",
+            "table_name": "test"
+          }
+        ]
+      }
+    ]
+  }
+}
+===

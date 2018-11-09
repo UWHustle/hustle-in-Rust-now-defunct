@@ -29,7 +29,8 @@ typedef void* yyscan_t;
 %union {
   int intval;
   char *strval;
-  parse_node *statement;
+  parse_node *node;
+  dynamic_array *list;
 }
 
 
@@ -38,9 +39,16 @@ typedef void* yyscan_t;
 %token SEMI
 %token <strval> ID
 
-%type <strval> name id
-%type <statement> cmd select_column_list from
-    select_table_list
+%type <strval>
+  name
+  id
+  expression
+%type <node>
+  cmd
+%type <list>
+  from
+  select_table_list
+  select_column_list
 
 %%
 input:
@@ -63,19 +71,20 @@ cmdx:
 
 cmd:
   SELECT distinct select_column_list from where_opt groupby_opt having_opt orderby_opt limit_opt {
-    $$ = alloc_node("SetOperationStatement");
-    parse_node *select_query = alloc_node("SetOperation");
+    $$ = alloc_node("ParseStatementSetOperation");
+
+    parse_node *select_query = alloc_node("ParseSetOperation");
     add_child($$, "set_operation_query", select_query);
     add_attribute(select_query, "set_operation_type", "Select");
 
-    dynamic_array *clauses = alloc_array();
-    add_child_list(select_query, "children", clauses);
+    dynamic_array *operands = alloc_array();
+    add_child_list(select_query, "operands", operands);
 
-    parse_node *select_child = alloc_node("Select");
-    add_last(clauses, select_child);
+    parse_node *select_child = alloc_node("ParseSelect");
+    add_last(operands, select_child);
 
-    add_child(select_child, "select_clause", $3);
-    add_child(select_child, "from_clause", $4);
+    add_child_list(select_child, "selection", $3);
+    add_child_list(select_child, "from_list", $4);
   }
 ;
 
@@ -84,8 +93,11 @@ distinct:
 ;
 
 select_column_list:
-  sclp scanpt expr scanpt as {
-    $$ = alloc_node("SelectStar");
+  sclp scanpt expression scanpt as {
+    $$ = alloc_array();
+    parse_node *selection_item = alloc_node("ParseSelectionItem");
+    add_attribute(selection_item, "expression", $3);
+    add_last($$, selection_item);
   }
 ;
 
@@ -97,7 +109,7 @@ scanpt:
   /* empty */
 ;
 
-expr:
+expression:
   id
 ;
 
@@ -108,11 +120,11 @@ from:
 ;
 
 select_table_list:
-  stl_prefix name dbname as indexed_opt on_opt using_opt {
-    $$ = alloc_node("");
-    parse_node *table_ref = alloc_node("TableReference");
-    add_child($$, "", table_ref);
-    add_attribute(table_ref, "table", $2);
+  stl_prefix name db_name as indexed_opt on_opt using_opt {
+    $$ = alloc_array();
+    parse_node *table_ref = alloc_node("ParseSimpleTableReference");
+    add_attribute(table_ref, "table_name", $2);
+    add_last($$, table_ref);
   }
 ;
 
@@ -128,7 +140,7 @@ id:
   ID
 ;
 
-dbname:
+db_name:
   /* empty */
 ;
 

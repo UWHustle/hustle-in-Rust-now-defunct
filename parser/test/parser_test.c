@@ -5,7 +5,7 @@
 #include "stringify.h"
 
 int main(void) {
-    char test[] = "SELECT t FROM test;";
+    char test[] = "SELECT c FROM test;";
     parse_node *node = parse(test);
     char *quickstep_output = quickstep_stringify(node);
     printf("%s\n", quickstep_output);
@@ -15,6 +15,6 @@ int main(void) {
     printf("%s", json_output);
     free(json_output);
 
-    free(node);
+    free_tree(node);
     return 0;
 }
