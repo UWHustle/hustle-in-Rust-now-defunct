@@ -5,8 +5,7 @@ Parser [Matt, Kevin]
 + Ongoing work expanding parser support.
 
 Optimizer [Yannis]
-+ Produce a plan at Quickstep's physical plan level for now, Ddscuss if we should use the execution level abstraction
-  or the physical plan to pass on to the execution engine in the future.
++ Produce a plan at Quickstep's physical plan level for now, in the future discuss if we should use the execution level abstraction or the physical plan to pass on to the execution engine in the future.
 + Working on physical plan serialization for execution engine.
 + Meeting with Parser and Execution teams on Tuesday to coordinate.
 
