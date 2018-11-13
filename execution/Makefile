@@ -7,4 +7,5 @@ libexecution.a libexecution.a.out : ./src/lib.rs Cargo.toml
 
 
 clean:
-	rm libexecution.a
+	$(RM) libexecution.a
+	$(RM) ./src/libexecution.a.out

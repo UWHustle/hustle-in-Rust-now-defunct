@@ -13,5 +13,5 @@ example.o: example.cpp
 
 
 clean:
-	rm example
-	rm *.o *.a
+	$(RM) example
+	$(RM) *.o *.a
