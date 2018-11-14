@@ -50,3 +50,52 @@ TopLevelPlan\n\
 
 	return 0;
 }
+
+int optimizer(char *input)
+{
+  char* plan_all = "Physical Plan\n\
+TopLevelPlan\n\
++-plan=Selection[has_repartition=false]\n\
+| +-input=TableReference[relation=T,alias=test]\n\
+| | +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
+| | +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
+| +-project_expressions=\n\
+|   +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
+|   +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
++-output_attributes=\n\
+  +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
+  +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
+"
+  ;
+
+  char* plan_a = "Physical Plan\n\
+TopLevelPlan\n\
++-plan=Selection[has_repartition=false]\n\
+| +-input=TableReference[relation=T,alias=test]\n\
+| | +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
+| | +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
+| +-project_expressions=\n\
+|   +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
++-output_attributes=\n\
+  +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
+"
+  ;
+
+  char* plan_b = "Physical Plan\n\
+TopLevelPlan\n\
++-plan=Selection[has_repartition=false]\n\
+| +-input=TableReference[relation=T,alias=test]\n\
+| | +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]\n\
+| | +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
+| +-project_expressions=\n\
+|   +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
++-output_attributes=\n\
+  +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]\n\
+"
+  ;
+
+  std::cout << "Optimizer input: " << input << std::endl;
+  execute_plan(plan_a);
+
+  return 0;
+}
