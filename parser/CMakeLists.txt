@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 # Ensure that subdirectories can still see all top-level headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-find_package(BISON 3.1.0 REQUIRED)
+find_package(BISON 3.0 REQUIRED)
 find_package(FLEX REQUIRED)
 bison_target(hustle_bison parser.y ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
 flex_target(hustle_flex lexer.l ${CMAKE_CURRENT_SOURCE_DIR}/lexer.c)
