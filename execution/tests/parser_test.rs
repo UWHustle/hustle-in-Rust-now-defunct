@@ -1,6 +1,3 @@
-
-/*
-
 extern crate execution;
 
 use execution::test_helpers::data_gen::generate_relation_into_hustle_and_sqlite3;
@@ -33,4 +30,3 @@ TopLevelPlan
     root_node.execute();
 
 }
-*/

@@ -17,11 +17,10 @@ use std::rc::Rc;
 extern crate regex;
 
 pub fn parse(string_plan:&str) -> Node {
-
-    let input_relation_regex = regex::Regex::new(r"\| \+\-input=TableReference\[relation=(.*),alias=(.*)\][\r\n](\| \| (.*)[\r\n])+").unwrap();
-    let output_relation_regex = regex::Regex::new(r"\| \+\-project_expressions=[\r\n](\|   \+\-(.*)[\r\n])+").unwrap();
+    let input_relation_regex = regex::Regex::new(r"\| \+\-input=TableReference\[relation=(.*),alias=(.*)\][\r\n]((\| \| (.*)[\r\n])+)").unwrap();
+    let output_relation_regex = regex::Regex::new(r"\| \+\-project_expressions=[\r\n]((\|   \+\-(.*)+[\r\n])+)").unwrap();
     let input_relation_column_regex = regex::Regex::new(r"\| \| \+\-AttributeReference\[id=([0-9]+),name=(.*),relation=(.*),type=(.*)\]").unwrap();
-
+    let output_relation_column_regex = regex::Regex::new(r"\|   \+\-AttributeReference\[id=([0-9]+),name=(.*),relation=(.*),type=(.*)\]").unwrap();
     let mut input_relations: Vec<Relation> = vec!();
 
     for rel_cap in input_relation_regex.captures_iter(string_plan) {
@@ -46,6 +45,7 @@ pub fn parse(string_plan:&str) -> Node {
         input_relations.push(relation);
     }
 
+
     let mut output_relation= Relation::null();
 
     for rel_cap in output_relation_regex.captures_iter(string_plan) {
@@ -56,7 +56,7 @@ pub fn parse(string_plan:&str) -> Node {
         let mut columns:Vec<Column> = vec!();
 
 
-        for col_cap in input_relation_column_regex.captures_iter(relation_column_string) {
+        for col_cap in output_relation_column_regex.captures_iter(relation_column_string) {
             let column_name: &str = &col_cap[2];
             let _column_type: &str = &col_cap[4];
 
@@ -67,6 +67,7 @@ pub fn parse(string_plan:&str) -> Node {
         let schema = Schema::new(columns);
         output_relation = Relation::new(relation_name.to_string(),schema);
     }
+
 
     let project_operator = Project::new(input_relations.first().unwrap().clone(), output_relation.get_columns().clone());
     let print_operator = Print::new(project_operator.get_target_relation());

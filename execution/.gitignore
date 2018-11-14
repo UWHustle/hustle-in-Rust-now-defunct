@@ -7,3 +7,5 @@ hustle.data
 /test-data/*
 /.idea
 /.DS_Store
+/libexecution.a
+/src/libexecution.a.out

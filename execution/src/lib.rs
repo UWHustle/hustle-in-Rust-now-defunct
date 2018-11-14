@@ -11,9 +11,9 @@ use physical_plan::parser::parse;
 
 #[no_mangle]
 pub extern fn execute_plan(name: *const c_char) -> (){
-    println!("In rust!!");
-   // let node = parse(from_cstr(name).as_str());
-   // node.execute();
+    let plan_string = from_cstr(name);
+    let node = parse(plan_string.as_str());
+    node.execute();
 }
 
 

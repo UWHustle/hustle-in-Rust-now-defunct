@@ -8,4 +8,4 @@ clean:
 	$(MAKE) -C ./execution clean
 
 run:
-	./optimizer/example
+	RUST_BACKTRACE=1 ./optimizer/example
