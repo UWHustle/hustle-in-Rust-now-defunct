@@ -46,7 +46,7 @@ TopLevelPlan\n\
 "
   ;
 
-    execute_plan(plan_all);
+    execute_plan(plan_a);
 
 	return 0;
 }

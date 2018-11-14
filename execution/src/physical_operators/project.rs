@@ -52,6 +52,8 @@ impl Operator for Project {
             }
         }
 
+        StorageManager::trim_relation(&self.output_relation, j);
+
         self.get_target_relation()
     }
 }

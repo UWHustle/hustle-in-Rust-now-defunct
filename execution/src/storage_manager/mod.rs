@@ -77,4 +77,13 @@ impl StorageManager {
                 .expect("Could not access data from memory mapped file")
         }
     }
+
+    pub fn trim_relation(relation: &Relation, total_length:usize) -> () {
+        let mut f = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(relation.get_filename())
+            .expect("Unable to open file");
+        f.set_len(total_length as u64);
+    }
 }
