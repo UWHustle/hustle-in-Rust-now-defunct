@@ -1,3 +1,46 @@
+11/12/2018
+Parser [Matt, Kevin]
++ Send the example plan for the Optimizer.
++ Wrote a cli.
++ Ongoing work expanding parser support.
+
+Optimizer [Yannis]
++ Produce a plan at Quickstep's physical plan level for now, in the future discuss if we should use the execution level abstraction or the physical plan to pass on to the execution engine in the future.
++ Working on physical plan serialization for execution engine.
++ Meeting with Parser and Execution teams on Tuesday to coordinate.
+
+Execution Engine [Robert, Somya]
++ Will work on Tuesday to work on execution plan de-serializer.
++ Working on custom type aggregation support.
++ Working on a quick "project" operator for initial query.
+
+Compiling [Somya]
++ Switched to Makefile instead of CMake.
++ Created example of how compiler structure will look.
++ Waiting on other efforts to implement final version.
+
+---
+11/7/2018
+
+Worked on the plan for the first query.
+
+Parser [Matt, Kevin]
++ Write the cli.
++ Support the first query in the parser.
++ Decide who should own the resolver with Yannis.
++ Create a parse tree example.
+
+Optimizer [Yannis]
++ Deserialize the input from the parser in a passthrough resolver class. 
++ Give an example of the output of the optimizer for the first query.
+
+Execution Engine [Robert]
++ Get ready for first query
++ Worked on CMake investigation.
+
+Compiling [Somya]
++ Investigate CMake, and Makefile and compile the modules at once.
+---
 10/28/2018
 Catalog [Matt, Kevin]
 + Quickstep's typesystem is too complicated for a standalone parser? How can we make it simpler? 

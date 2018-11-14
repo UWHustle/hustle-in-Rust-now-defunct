@@ -6,6 +6,7 @@ pub mod join;
 pub mod print;
 pub mod export_csv;
 pub mod random_relation;
+pub mod project;
 
 
 use logical_entities::relation::Relation;

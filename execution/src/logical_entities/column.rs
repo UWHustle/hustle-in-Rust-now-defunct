@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(column.get_name(),&"test".to_string());
         assert_eq!(column.get_size(), 8);
     }
-
+/*
     #[test]
     fn ext_column_create() {
         use logical_entities::column::ExtColumn;
@@ -93,5 +93,7 @@ mod tests {
         let r_column = ext_column1.to_column();
         assert_eq!(r_column.get_name(),&"test1".to_string());
         assert_eq!(r_column.get_size(), 8);
+
     }
+    */
 }
