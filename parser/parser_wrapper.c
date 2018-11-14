@@ -2,8 +2,8 @@
 #include "parser.h"
 #include "lexer.h"
 #include "utility/stringify.h"
-//#include "../optimizer/example.h"
-
+#include "../optimizer/example.hpp"
+int optimizer(char *input);
 parse_node *parse(char *command) {
     yyscan_t scanner;
     if (yylex_init(&scanner)) {
@@ -23,7 +23,7 @@ parse_node *parse(char *command) {
 
     printf("%s\n", json_output);
 
-//    optimizer(json_output);
+    optimizer(json_output);
 
     free(json_output);
     free(node);

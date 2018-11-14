@@ -1,8 +1,9 @@
 #include <iostream>
+#include "./example.hpp"
 using namespace std;
 
 extern "C" void execute_plan(char*);
-
+/*
 int main()
 {
     char* plan_all = "Physical Plan\n\
@@ -50,8 +51,9 @@ TopLevelPlan\n\
 
 	return 0;
 }
+*/
 
-int optimizer(char *input)
+extern "C" {int optimizer(char *input)
 {
   char* plan_all = "Physical Plan\n\
 TopLevelPlan\n\
@@ -98,4 +100,5 @@ TopLevelPlan\n\
   execute_plan(plan_a);
 
   return 0;
+}
 }

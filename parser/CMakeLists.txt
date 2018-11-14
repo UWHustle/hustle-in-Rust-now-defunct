@@ -22,5 +22,6 @@ add_library(
 )
 
 # Testing main target (build with --target parser_test)
-add_executable(parser_test test/parser_test.c)
-target_link_libraries(parser_test parser)
+# add_executable(parser_test test/parser_test.c)
+# target_link_libraries(parser_test parser)
+target_link_libraries(parser ${CMAKE_CURRENT_SOURCE_DIR}/../optimizer/optimizer.a)
