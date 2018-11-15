@@ -12,3 +12,4 @@ add_subdirectory(execution)
 add_executable(hustle cli/cli.c)
 
 target_link_libraries(hustle parser optimizer ${EXECUTION})
+add_dependencies(hustle execution)

@@ -1,15 +1,20 @@
-include(ExternalProject)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CARGO_BUILD cargo build)
+    set(TARGET_DIR debug)
+else()
+    set(CARGO_BUILD cargo build --release)
+    set(TARGET_DIR release)
+endif()
 
-ExternalProject_Add(
-        execution
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-        BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/target/debug
-        BUILD_COMMAND cargo build
-        INSTALL_COMMAND ""
+set(EXECUTION ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}execution${CMAKE_SHARED_LIBRARY_SUFFIX})
+set(EXECUTION ${EXECUTION} PARENT_SCOPE)
+
+add_custom_target(
+        execution ALL
+        COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR} ${CARGO_BUILD}
+        COMMAND cp ${EXECUTION} ${CMAKE_CURRENT_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-find_library(
-        EXECUTION
-        execution
-        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/target/debug
-)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test-data DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/scripts DESTINATION ${CMAKE_BINARY_DIR})
