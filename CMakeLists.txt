@@ -4,6 +4,8 @@ project(hustle)
 
 include_directories(${PROJECT_SOURCE_DIR})
 
+file(COPY ${CMAKE_SOURCE_DIR}/test-data DESTINATION ${CMAKE_BINARY_DIR})
+
 add_subdirectory(cli)
 add_subdirectory(parser)
 add_subdirectory(optimizer)
