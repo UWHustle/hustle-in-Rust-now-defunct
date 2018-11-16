@@ -1,8 +1,3 @@
-cmake_minimum_required(VERSION 3.12)
-
-# Ensure that subdirectories can still see all top-level headers
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 find_package(BISON 3.0 REQUIRED)
 find_package(FLEX REQUIRED)
 bison_target(hustle_bison parser.y ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
@@ -24,4 +19,3 @@ add_library(
 # Testing main target (build with --target parser_test)
 # add_executable(parser_test test/parser_test.c)
 # target_link_libraries(parser_test parser)
-target_link_libraries(parser ${CMAKE_CURRENT_SOURCE_DIR}/../optimizer/optimizer.a)
