@@ -19,5 +19,4 @@ add_library(
 target_link_libraries(parser optimizer)
 
 # Testing main target (build with --target parser_test)
-enable_testing()
 add_subdirectory(test)
