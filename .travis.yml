@@ -4,6 +4,9 @@ before_script:
 - sudo apt-get install cmake
 - sudo apt-get install bison
 - sudo apt-get install flex
+- sudo apt-get install gcc
+- sudo apt-get install g++
+- sudo apt-get install git
 - mkdir build
 - cd build
 - cmake ..
