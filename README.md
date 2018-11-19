@@ -32,6 +32,13 @@ and then run the executable.
 ./hustle
 ```
 
+To exit the shell, type the end of file character.
+
+Run unit tests with CTest.
+```bash
+ctest --verbose
+```
+
 Coding Guidelines
 =================
 - For Rust, we follow [these guidelines](https://github.com/rust-lang-nursery/fmt-rfcs).
