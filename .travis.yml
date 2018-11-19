@@ -1,10 +1,9 @@
-matrix:
-  include:
-  - language: cpp
-  - language: rust
-  - language: c
+language: rust
 
 before_script:
+- sudo apt-get install cmake
+- sudo apt-get install bison
+- sudo apt-get install flex
 - mkdir build
 - cd build
 - cmake ..
