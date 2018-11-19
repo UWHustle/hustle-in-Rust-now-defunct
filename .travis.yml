@@ -1,4 +1,4 @@
-language: cpp, rust
+language: cpp rust
 
 compiler:
 - gcc
