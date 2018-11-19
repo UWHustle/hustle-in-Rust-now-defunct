@@ -53,6 +53,7 @@ typedef void* yyscan_t;
   from
   select_table_list
   select_column_list
+  groupby_opt
   expression_list
   nonempty_expression_list
 
@@ -89,8 +90,12 @@ cmd:
     parse_node *select_child = alloc_node("ParseSelect");
     add_last(operands, select_child);
 
-    add_child_list(select_child, "selection", $3);
-    add_child_list(select_child, "from_list", $4);
+    add_child_list(select_child, "select", $3);
+    add_child_list(select_child, "from", $4);
+
+    if ($6) {
+      add_child_list(select_child, "group_by", $6);
+    }
   }
 ;
 
@@ -199,8 +204,12 @@ where_opt:
 ;
 
 groupby_opt:
-  /* empty */
-| GROUP BY nonempty_expression_list;
+  /* empty */ {
+    $$ = 0;
+  }
+| GROUP BY nonempty_expression_list {
+    $$ = $3;
+  }
 ;
 
 having_opt:
