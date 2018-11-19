@@ -42,9 +42,9 @@ typedef void* yyscan_t;
 %type <strval>
   name
   id
-  expression
 %type <node>
   cmd
+  expression
 %type <list>
   from
   select_table_list
@@ -96,7 +96,7 @@ select_column_list:
   sclp scanpt expression scanpt as {
     $$ = alloc_array();
     parse_node *selection_item = alloc_node("ParseSelectionItem");
-    add_attribute(selection_item, "expression", $3);
+    add_child(selection_item, "expression", $3);
     add_last($$, selection_item);
   }
 ;
@@ -110,7 +110,10 @@ scanpt:
 ;
 
 expression:
-  id
+  id {
+    $$ = alloc_node("AttributeReference");
+    add_attribute($$, "attribute_name", $1);
+  }
 ;
 
 from:
