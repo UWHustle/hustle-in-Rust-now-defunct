@@ -1,9 +1,8 @@
-language: rust
-
-#compiler:
-#- gcc
-#- g++
-#- rustc
+matrix:
+  include:
+  - language: cpp
+  - language: rust
+  - language: c
 
 before_script:
 - mkdir build
