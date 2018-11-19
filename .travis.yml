@@ -1,9 +1,9 @@
-language: cpp rust
+language: rust c cpp
 
-compiler:
-- gcc
-- g++
-- rustc
+#compiler:
+#- gcc
+#- g++
+#- rustc
 
 before_script:
 - mkdir build
