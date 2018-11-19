@@ -33,8 +33,10 @@ typedef void* yyscan_t;
   dynamic_array *list;
 }
 
+%token BY
 %token COMMA
 %token FROM
+%token GROUP
 %token LP
 %token RP
 %token SELECT
@@ -52,6 +54,7 @@ typedef void* yyscan_t;
   select_table_list
   select_column_list
   expression_list
+  nonempty_expression_list
 
 %%
 input:
@@ -125,16 +128,22 @@ expression:
 ;
 
 expression_list:
+  nonempty_expression_list {
+    $$ = $1;
+  }
+| /* empty */ {
+    $$ = alloc_array();
+  }
+;
+
+nonempty_expression_list:
   expression {
     $$ = alloc_array();
     add_last($$, $1);
   }
-| expression_list COMMA expression {
+| nonempty_expression_list COMMA expression {
     $$ = $1;
     add_last($$, $3);
-  }
-| /* empty */ {
-    $$ = alloc_array();
   }
 ;
 
@@ -191,6 +200,7 @@ where_opt:
 
 groupby_opt:
   /* empty */
+| GROUP BY nonempty_expression_list;
 ;
 
 having_opt:
