@@ -16,6 +16,8 @@ add_library(
         utility/stringify.h utility/stringify.c
 )
 
+target_link_libraries(parser optimizer)
+
 # Testing main target (build with --target parser_test)
-# add_executable(parser_test test/parser_test.c)
-# target_link_libraries(parser_test parser)
+enable_testing()
+add_subdirectory(test)

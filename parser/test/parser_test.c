@@ -1,12 +1,12 @@
 #include <stdio.h>
 
-#include "parser_wrapper.h"
-#include "parse_node.h"
-#include "utility/stringify.h"
+#include "parser/parser_wrapper.h"
+#include "parser/parse_node.h"
+#include "parser/utility/stringify.h"
 
 int main(void) {
     char *test = "SELECT c FROM test;";
-    parse_node *node = parse(test);
+    parse_node *node = get_parse_tree(test);
 
     char *quickstep_output = quickstep_stringify(node);
     printf("%s\n", quickstep_output);

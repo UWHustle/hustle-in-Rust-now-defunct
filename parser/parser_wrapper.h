@@ -5,7 +5,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void *parse(char *command);
+void parse(char *command);
+parse_node *get_parse_tree(char *command);
 #ifdef __cplusplus
 }
 #endif
