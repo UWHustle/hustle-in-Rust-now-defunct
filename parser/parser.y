@@ -51,6 +51,7 @@ typedef void* yyscan_t;
   from
   select_table_list
   select_column_list
+  expression_list
 
 %%
 input:
@@ -119,17 +120,22 @@ expression:
 | id LP distinct expression_list RP {
     $$ = alloc_node("FunctionCall");
     add_attribute($$, "name", $1);
+    add_child_list($$, "arguments", $4);
   }
 ;
 
 expression_list:
-  next_expression_list
-| /* empty */
-;
-
-next_expression_list:
-  next_expression_list COMMA expression
-| expression
+  expression {
+    $$ = alloc_array();
+    add_last($$, $1);
+  }
+| expression_list COMMA expression {
+    $$ = $1;
+    add_last($$, $3);
+  }
+| /* empty */ {
+    $$ = alloc_array();
+  }
 ;
 
 from:
