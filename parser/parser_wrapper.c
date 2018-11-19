@@ -5,7 +5,7 @@
 #include "optimizer/example.hpp"
 
 int optimizer(char *input);
-parse_node *parse(char *command) {
+void *parse(char *command) {
     yyscan_t scanner;
     if (yylex_init(&scanner)) {
         return NULL;
