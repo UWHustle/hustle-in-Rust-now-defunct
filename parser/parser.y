@@ -53,6 +53,7 @@ typedef void* yyscan_t;
   from
   select_table_list
   select_column_list
+  select_column_list_prefix
   groupby_opt
   expression_list
   nonempty_expression_list
@@ -103,17 +104,20 @@ distinct:
   /* empty */
 ;
 
-select_column_list:
-  sclp scanpt expression scanpt as {
+select_column_list_prefix:
+  select_column_list COMMA {
+    $$ = $1;
+  }
+| /* empty */ {
     $$ = alloc_array();
-    parse_node *selection_item = alloc_node("ParseSelectionItem");
-    add_child(selection_item, "expression", $3);
-    add_last($$, selection_item);
   }
 ;
 
-sclp:
-  /* empty */
+select_column_list:
+  select_column_list_prefix scanpt expression scanpt as {
+    $$ = $1;
+    add_last($$, $3);
+  }
 ;
 
 scanpt:
