@@ -12,6 +12,9 @@
 %%
 FROM					{ return TK_FROM; }
 SELECT					{ return TK_SELECT; }
+","                     { return TK_COMMA; }
+"("                     { return TK_LP; }
+")"                     { return TK_RP; }
 ";"						{ return TK_SEMI; }
 [a-zA-Z][a-zA-Z0-9]*	{ yylval->strval = strdup(yytext); return TK_ID; }
 [ \t]

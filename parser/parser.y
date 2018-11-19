@@ -33,8 +33,10 @@ typedef void* yyscan_t;
   dynamic_array *list;
 }
 
-
+%token COMMA
 %token FROM
+%token LP
+%token RP
 %token SELECT
 %token SEMI
 %token <strval> ID
@@ -114,6 +116,20 @@ expression:
     $$ = alloc_node("AttributeReference");
     add_attribute($$, "attribute_name", $1);
   }
+| id LP distinct expression_list RP {
+    $$ = alloc_node("FunctionCall");
+    add_attribute($$, "name", $1);
+  }
+;
+
+expression_list:
+  next_expression_list
+| /* empty */
+;
+
+next_expression_list:
+  next_expression_list COMMA expression
+| expression
 ;
 
 from:
