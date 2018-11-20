@@ -1,7 +1,6 @@
-# Hustle
+# Hustle    
+[![Build Status](https://travis-ci.com/UWHustle/hustle.svg?branch=master)](https://travis-ci.com/UWHustle/hustle)
 
-Hustle
-======
 Hustle is a scalable data platform using a relational kernel and a microservices-based architecture.
 
 Installation instructions:
