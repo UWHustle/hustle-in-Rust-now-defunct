@@ -3,6 +3,7 @@ find_package(FLEX REQUIRED)
 bison_target(hustle_bison parser.y ${CMAKE_CURRENT_SOURCE_DIR}/parser.c)
 flex_target(hustle_flex lexer.l ${CMAKE_CURRENT_SOURCE_DIR}/lexer.c)
 add_flex_bison_dependency(hustle_flex hustle_bison)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 # Library target (build with --target parser)
 add_library(
