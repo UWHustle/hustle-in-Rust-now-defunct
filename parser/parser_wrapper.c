@@ -5,7 +5,8 @@
 #include "optimizer/example.hpp"
 
 int optimizer(char *input);
-parse_node *parse(char *command) {
+
+parse_node *get_parse_tree(char *command) {
     yyscan_t scanner;
     if (yylex_init(&scanner)) {
         return NULL;
@@ -20,12 +21,13 @@ parse_node *parse(char *command) {
     yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
 
+    return node;
+}
+
+void parse(char *command) {
+    parse_node *node = get_parse_tree(command);
     char *json_output = json_stringify(node);
-
-    printf("%s\n", json_output);
-
     optimizer(json_output);
-
     free(json_output);
-    free(node);
+    free_tree(node);
 }

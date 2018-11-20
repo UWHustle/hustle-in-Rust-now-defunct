@@ -33,8 +33,12 @@ typedef void* yyscan_t;
   dynamic_array *list;
 }
 
-
+%token BY
+%token COMMA
 %token FROM
+%token GROUP
+%token LP
+%token RP
 %token SELECT
 %token SEMI
 %token <strval> ID
@@ -42,13 +46,17 @@ typedef void* yyscan_t;
 %type <strval>
   name
   id
-  expression
 %type <node>
   cmd
+  expression
 %type <list>
   from
   select_table_list
   select_column_list
+  select_column_list_prefix
+  groupby_opt
+  expression_list
+  nonempty_expression_list
 
 %%
 input:
@@ -83,8 +91,12 @@ cmd:
     parse_node *select_child = alloc_node("ParseSelect");
     add_last(operands, select_child);
 
-    add_child_list(select_child, "selection", $3);
-    add_child_list(select_child, "from_list", $4);
+    add_child_list(select_child, "select", $3);
+    add_child_list(select_child, "from", $4);
+
+    if ($6) {
+      add_child_list(select_child, "group_by", $6);
+    }
   }
 ;
 
@@ -92,17 +104,20 @@ distinct:
   /* empty */
 ;
 
-select_column_list:
-  sclp scanpt expression scanpt as {
+select_column_list_prefix:
+  select_column_list COMMA {
+    $$ = $1;
+  }
+| /* empty */ {
     $$ = alloc_array();
-    parse_node *selection_item = alloc_node("ParseSelectionItem");
-    add_attribute(selection_item, "expression", $3);
-    add_last($$, selection_item);
   }
 ;
 
-sclp:
-  /* empty */
+select_column_list:
+  select_column_list_prefix scanpt expression scanpt as {
+    $$ = $1;
+    add_last($$, $3);
+  }
 ;
 
 scanpt:
@@ -110,7 +125,35 @@ scanpt:
 ;
 
 expression:
-  id
+  id {
+    $$ = alloc_node("AttributeReference");
+    add_attribute($$, "attribute_name", $1);
+  }
+| id LP distinct expression_list RP {
+    $$ = alloc_node("FunctionCall");
+    add_attribute($$, "name", $1);
+    add_child_list($$, "arguments", $4);
+  }
+;
+
+expression_list:
+  nonempty_expression_list {
+    $$ = $1;
+  }
+| /* empty */ {
+    $$ = alloc_array();
+  }
+;
+
+nonempty_expression_list:
+  expression {
+    $$ = alloc_array();
+    add_last($$, $1);
+  }
+| nonempty_expression_list COMMA expression {
+    $$ = $1;
+    add_last($$, $3);
+  }
 ;
 
 from:
@@ -165,7 +208,12 @@ where_opt:
 ;
 
 groupby_opt:
-  /* empty */
+  /* empty */ {
+    $$ = 0;
+  }
+| GROUP BY nonempty_expression_list {
+    $$ = $3;
+  }
 ;
 
 having_opt:
