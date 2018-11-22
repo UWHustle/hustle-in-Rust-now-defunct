@@ -3,6 +3,7 @@
 #include "quickstep/query_optimizer/HustleOptimizer.hpp"
 using namespace std;
 
+
 extern "C" void execute_plan(char*);
 /*
 int main()
@@ -99,10 +100,15 @@ TopLevelPlan\n\
 
   std::cout << "Optimizer input: " << input << std::endl;
   const char t[50] = "select t from t;";
-   hustle_optimize();
-//  std::cout << "Optimizer outh: " << out << std::endl;
+  std::string pplan = hustle_optimize();
 
-  execute_plan(plan_a);
+  char * w = new char[pplan.size() + 1];
+  std::copy(pplan.begin(), pplan.end(), w);
+  w[pplan.size()] = '\0';
+
+  std::cout << "Optimizer outhfrgr: " << pplan << std::endl;
+
+  execute_plan(w);
 
   return 0;
 }
