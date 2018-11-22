@@ -1,5 +1,6 @@
 #include <iostream>
 #include "./example.hpp"
+#include "quickstep/query_optimizer/HustleOptimizer.hpp"
 using namespace std;
 
 extern "C" void execute_plan(char*);
@@ -53,8 +54,8 @@ TopLevelPlan\n\
 }
 */
 
-extern "C" {int optimizer(char *input)
-{
+extern "C" {
+int optimizer(char *input) {
   char* plan_all = "Physical Plan\n\
 TopLevelPlan\n\
 +-plan=Selection[has_repartition=false]\n\
@@ -97,6 +98,10 @@ TopLevelPlan\n\
   ;
 
   std::cout << "Optimizer input: " << input << std::endl;
+  const char t[50] = "select t from t;";
+   hustle_optimize();
+//  std::cout << "Optimizer outh: " << out << std::endl;
+
   execute_plan(plan_a);
 
   return 0;
