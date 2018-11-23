@@ -6,9 +6,8 @@ before_script:
 - sudo apt-get install flex
 - sudo apt-get install gcc
 - sudo apt-get install g++
-- mkdir build
-- cd build
-- cmake ..
+- ./init.sh
+
 
 script: make && ctest --verbose
 
