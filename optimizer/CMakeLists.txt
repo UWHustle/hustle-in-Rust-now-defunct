@@ -1,5 +1,4 @@
 add_subdirectory(quickstep)
-set (CMAKE_CXX_STANDARD 11)
 add_library(optimizer optimizer_wrapper.hpp optimizer_wrapper.cpp)
 
 target_link_libraries(optimizer
