@@ -136,6 +136,8 @@ class TestDatabaseLoader {
    * @return The test database.
    */
   CatalogRelation* createTestRelation(bool allow_vchar);
+  CatalogRelation* createHustleTestRelation(bool allow_vchar);
+
 
   /**
    * @brief Creates four relations a(w INT, x INT, y INT, z INT), b(w INT, x INT),
@@ -157,6 +159,7 @@ class TestDatabaseLoader {
    *          vchar_col, since the default layout does not support it.
    */
   void loadTestRelation();
+  void loadHustleTestRelation();
 
   /**
    * @brief Removes all data and drops all relations from the database.

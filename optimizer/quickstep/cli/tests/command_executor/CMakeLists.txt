@@ -15,21 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-add_test(quickstep_cli_tests_commandexecutor_analyze
-         "../quickstep_cli_tests_CommandExecutorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Analyze.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Analyze.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Analyze/")
-add_test(quickstep_cli_tests_commandexecutor_d
-         "../quickstep_cli_tests_CommandExecutorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/D.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/D.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/D/")
-add_test(quickstep_cli_tests_commandexecutor_dt
-         "../quickstep_cli_tests_CommandExecutorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Dt.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Dt.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Dt/")
+#add_test(quickstep_cli_tests_commandexecutor_analyze
+#         "../quickstep_cli_tests_CommandExecutorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Analyze.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Analyze.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Analyze/")
+#add_test(quickstep_cli_tests_commandexecutor_d
+#         "../quickstep_cli_tests_CommandExecutorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/D.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/D.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/D/")
+#add_test(quickstep_cli_tests_commandexecutor_dt
+#         "../quickstep_cli_tests_CommandExecutorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Dt.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Dt.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Dt/")
 
 if (ENABLE_DISTRIBUTED)
   add_test(quickstep_cli_tests_commandexecutor_analyze_distributed

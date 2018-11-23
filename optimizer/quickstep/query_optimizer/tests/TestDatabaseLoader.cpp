@@ -49,6 +49,48 @@ namespace optimizer {
 CatalogRelation *TestDatabaseLoader::createTestRelation(bool allow_vchar) {
   std::unique_ptr<CatalogRelation> catalog_relation;
   catalog_relation.reset(new CatalogRelation(&catalog_database_,
+                                             "Test" /* name */,
+                                             0 /* id */,
+                                             false /* temporary */));
+  int attr_id = -1;
+  catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
+                                                      "int_col" /* name */,
+                                                      TypeFactory::GetType(kInt, true /* nullable */),
+                                                      ++attr_id));
+  catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
+                                                      "long_col" /* name */,
+                                                      TypeFactory::GetType(kLong),
+                                                      ++attr_id));
+  catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
+                                                      "float_col" /* name */,
+                                                      TypeFactory::GetType(kFloat),
+                                                      ++attr_id));
+  catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
+                                                      "double_col" /* name */,
+                                                      TypeFactory::GetType(kDouble, true /* nullable */),
+                                                      ++attr_id));
+  catalog_relation->addAttribute(new CatalogAttribute(
+      catalog_relation.get(),
+      "char_col" /* name */,
+      TypeFactory::GetType(kChar, 20 /* length */, false /* nullable */),
+      ++attr_id));
+
+  if (allow_vchar) {
+    catalog_relation->addAttribute(new CatalogAttribute(
+        catalog_relation.get(),
+        "vchar_col",
+        TypeFactory::GetType(kVarChar, 20 /* length */, true /* nullable */),
+        ++attr_id));
+  }
+  test_relation_ = catalog_relation.get();
+  catalog_database_.addRelation(catalog_relation.release());
+  return test_relation_;
+}
+
+
+CatalogRelation *TestDatabaseLoader::createHustleTestRelation(bool allow_vchar) {
+  std::unique_ptr<CatalogRelation> catalog_relation;
+  catalog_relation.reset(new CatalogRelation(&catalog_database_,
                                              "T" /* name */,
                                              0 /* id */,
                                              false /* temporary */));
@@ -61,27 +103,6 @@ CatalogRelation *TestDatabaseLoader::createTestRelation(bool allow_vchar) {
                                                       "b" /* name */,
                                                       TypeFactory::GetType(kInt),
                                                       ++attr_id));
-//  catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
-//                                                      "float_col" /* name */,
-//                                                      TypeFactory::GetType(kFloat),
-//                                                      ++attr_id));
-//  catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
-//                                                      "double_col" /* name */,
-//                                                      TypeFactory::GetType(kDouble, true /* nullable */),
-//                                                      ++attr_id));
-//  catalog_relation->addAttribute(new CatalogAttribute(
-//      catalog_relation.get(),
-//      "char_col" /* name */,
-//      TypeFactory::GetType(kChar, 20 /* length */, false /* nullable */),
-//      ++attr_id));
-//
-//  if (allow_vchar) {
-//    catalog_relation->addAttribute(new CatalogAttribute(
-//        catalog_relation.get(),
-//        "vchar_col",
-//        TypeFactory::GetType(kVarChar, 20 /* length */, true /* nullable */),
-//        ++attr_id));
-//  }
 
   test_relation_ = catalog_relation.get();
   catalog_database_.addRelation(catalog_relation.release());
@@ -119,7 +140,58 @@ void TestDatabaseLoader::createJoinRelations() {
 
 void TestDatabaseLoader::loadTestRelation() {
   CHECK(test_relation_ != nullptr);
-//  CHECK(!test_relation_->hasAttributeWithName("vchar_col"));
+  CHECK(!test_relation_->hasAttributeWithName("vchar_col"));
+
+  BlockPoolInsertDestination destination(*test_relation_,
+                                         nullptr,
+                                         &storage_manager_,
+                                         0 /* dummy op index */,
+                                         0,  // dummy query ID.
+                                         scheduler_client_id_,
+                                         &bus_);
+  int sign = 1;
+  for (int x = 0; x < 25; ++x) {
+    // Column values: ((-1)^x*x, x^2, sqrt(x), (-1)^x*x*sqrt(x),
+    // concat(string(int_col), string(float_col)).
+    std::vector<TypedValue> attr_values;
+
+    if (x % 10 == 0) {
+      attr_values.emplace_back(kInt);
+    } else {
+      attr_values.emplace_back(sign * x);
+    }
+
+    attr_values.emplace_back(static_cast<std::int64_t>(x * x));
+    attr_values.emplace_back(TypedValue(static_cast<float>(std::sqrt(x))));
+
+    if (x % 10 == 0) {
+      attr_values.emplace_back(kDouble);
+    } else {
+      attr_values.emplace_back(sign * std::sqrt(x) * x);
+    }
+
+    std::string char_col_value;
+    char_col_value.append(std::to_string(sign * x)).append(" ").append(
+        std::to_string(std::sqrt(x)));
+    if (char_col_value.size() >= 20) {
+      char_col_value = char_col_value.substr(0, 19);
+    }
+
+    attr_values.emplace_back(
+        CharType::InstanceNonNullable(20)
+            .makeValue(char_col_value.c_str(), char_col_value.size() + 1));
+
+    Tuple tuple(std::move(attr_values));
+    destination.insertTuple(tuple);
+
+    sign = -sign;
+  }
+
+  processCatalogRelationNewBlockMessages();
+}
+
+void TestDatabaseLoader::loadHustleTestRelation() {
+  CHECK(test_relation_ != nullptr);
 
   BlockPoolInsertDestination destination(*test_relation_,
                                          nullptr,
@@ -145,26 +217,6 @@ void TestDatabaseLoader::loadTestRelation() {
     } else {
       attr_values.emplace_back(sign * x);
     }
-
-//    attr_values.emplace_back(static_cast<std::int64_t>(x * x));
-//    attr_values.emplace_back(TypedValue(static_cast<float>(std::sqrt(x))));
-//
-//    if (x % 10 == 0) {
-//      attr_values.emplace_back(kDouble);
-//    } else {
-//      attr_values.emplace_back(sign * std::sqrt(x) * x);
-//    }
-//
-//    std::string char_col_value;
-//    char_col_value.append(std::to_string(sign * x)).append(" ").append(
-//        std::to_string(std::sqrt(x)));
-//    if (char_col_value.size() >= 20) {
-//      char_col_value = char_col_value.substr(0, 19);
-//    }
-//
-//    attr_values.emplace_back(
-//        CharType::InstanceNonNullable(20)
-//            .makeValue(char_col_value.c_str(), char_col_value.size() + 1));
 
     Tuple tuple(std::move(attr_values));
     destination.insertTuple(tuple);

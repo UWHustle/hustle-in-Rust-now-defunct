@@ -255,7 +255,7 @@ target_link_libraries(CatalogRelationStatistics_unittest
                       quickstep_storage_StorageConstants
                       quickstep_storage_StorageManager
                       tmb)
-add_test(CatalogRelationStatistics_unittest CatalogRelationStatistics_unittest)
+#add_test(CatalogRelationStatistics_unittest CatalogRelationStatistics_unittest)
 
 if(QUICKSTEP_HAVE_LIBNUMA)
 add_executable(NUMAPlacementScheme_unittest

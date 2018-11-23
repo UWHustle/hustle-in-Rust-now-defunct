@@ -15,81 +15,81 @@
 # specific language governing permissions and limitations
 # under the License.
 
-add_test(quickstep_queryoptimizer_tests_executiongenerator_commonsubexpression
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/CommonSubexpression.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/CommonSubexpression.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/CommonSubexpression/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_copy
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Copy.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Copy.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Copy/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_create
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Create.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Create.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Create/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_delete
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Delete.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Delete.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Delete/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_distinct
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Distinct.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Distinct.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Distinct/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_drop
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Drop.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Drop.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Drop/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_index
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Index.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Index.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Index/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_insert
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Insert.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Insert.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Insert/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_join
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Join.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Join.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Join/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_partition
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Partition.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Partition.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Partition/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_select
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Select.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Select.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Select/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_stringpatternmatching
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/StringPatternMatching.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/StringPatternMatching.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/StringPatternMatching/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_tablegenerator
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/TableGenerator.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/TableGenerator.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/TableGenerator/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_union
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Union.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Union.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Union/")
-add_test(quickstep_queryoptimizer_tests_executiongenerator_update
-         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
-         "${CMAKE_CURRENT_SOURCE_DIR}/Update.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Update.test"
-         "${CMAKE_CURRENT_BINARY_DIR}/Update/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_commonsubexpression
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/CommonSubexpression.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/CommonSubexpression.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/CommonSubexpression/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_copy
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Copy.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Copy.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Copy/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_create
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Create.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Create.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Create/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_delete
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Delete.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Delete.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Delete/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_distinct
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Distinct.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Distinct.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Distinct/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_drop
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Drop.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Drop.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Drop/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_index
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Index.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Index.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Index/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_insert
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Insert.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Insert.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Insert/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_join
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Join.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Join.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Join/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_partition
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Partition.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Partition.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Partition/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_select
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Select.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Select.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Select/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_stringpatternmatching
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/StringPatternMatching.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/StringPatternMatching.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/StringPatternMatching/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_tablegenerator
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/TableGenerator.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/TableGenerator.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/TableGenerator/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_union
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Union.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Union.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Union/")
+#add_test(quickstep_queryoptimizer_tests_executiongenerator_update
+#         "../quickstep_queryoptimizer_tests_ExecutionGeneratorTest"
+#         "${CMAKE_CURRENT_SOURCE_DIR}/Update.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Update.test"
+#         "${CMAKE_CURRENT_BINARY_DIR}/Update/")
 
 if (ENABLE_DISTRIBUTED)
   add_test(quickstep_queryoptimizer_tests_executiongenerator_commonsubexpression_distributed
