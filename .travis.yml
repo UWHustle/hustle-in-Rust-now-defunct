@@ -7,7 +7,7 @@ before_script:
 - sudo apt-get install gcc
 - sudo apt-get install g++
 - ./init.sh
-
+- cd build
 
 script: make && ctest --verbose
 
