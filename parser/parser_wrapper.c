@@ -2,7 +2,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "utility/stringify.h"
-#include "optimizer/example.hpp"
+#include "optimizer/optimizer_wrapper.hpp"
 
 int optimizer(char *input);
 
@@ -27,7 +27,7 @@ parse_node *get_parse_tree(char *command) {
 void parse(char *command) {
     parse_node *node = get_parse_tree(command);
     char *json_output = json_stringify(node);
-    optimizer(json_output);
+    optimizer(command);
     free(json_output);
     free_tree(node);
 }

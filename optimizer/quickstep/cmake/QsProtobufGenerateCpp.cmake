@@ -48,17 +48,13 @@ function(QS_PROTOBUF_GENERATE_CPP SRCS HDRS)
       string(REGEX MATCH "import \"(.*)[.]proto\"" TMPMATCH ${PROTO_SRC_LINE})
       if (CMAKE_MATCH_1)
         string(REPLACE "/" "_" IMPORTED_PROTO_FLAT "${CMAKE_BINARY_DIR}/optimizer/quickstep/${CMAKE_MATCH_1}")
-#        message("a1111  ${CMAKE_BINARY_DIR}/optimier/quickstep/${CMAKE_MATCH_1}")
         string(REPLACE ":" "_" IMPORTED_PROTO_FLAT ${IMPORTED_PROTO_FLAT})
-#        message("a2222  ${IMPORTED_PROTO_FLAT}")
         list(APPEND PROTO_IMPORT_TARGETS "protoc_${IMPORTED_PROTO_FLAT}")
-#        message("a3333  ${IMPORTED_PROTO_FLAT}")
       endif ()
     endforeach ()
 
     list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
     list(APPEND ${HDRS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h")
-    message("a5555 ${PROTO_IMPORT_TARGETS}")
 
     # Note that this adds dependencies for the .proto file itself, as well as
     # for any proto imports and the protobuf library if we have to build it

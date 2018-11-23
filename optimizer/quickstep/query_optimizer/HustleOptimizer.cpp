@@ -32,35 +32,26 @@ quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(const quickst
   return physical_plan;
 }
 
-std::string hustle_optimize() {
-  std::cout << "1 \n";
+std::string hustle_optimize(char *input) {
   quickstep::SqlParserWrapper sql_parser_;
   quickstep::optimizer::Optimizer optimizer_;
-  std::string* query = new std::string("select a from t;");
+  std::string* query = new std::string(input);
 
   sql_parser_.feedNextBuffer(query);
   quickstep::ParseResult result = sql_parser_.getNextStatement();
 
-  std::cout << "2 \n";
   quickstep::optimizer::OptimizerContext optimizer_context;
   const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
 
-  std::cout << "3 \n";
-
   quickstep::optimizer::TestDatabaseLoader test_database_loader_;
 
-  std::cout << "3.1 \n";
   test_database_loader_.createTestRelation(false /* allow_vchar */);
-  std::cout << "3.2 \n";
   test_database_loader_.loadTestRelation();
 
-  std::cout << "4 \n";
   quickstep::optimizer::physical::PhysicalPtr pplan =
       hustle_getPhysicalPlan(parse_statement,
                              test_database_loader_.catalog_database(),
                              &optimizer_context);
-  std::cout << "5: " << pplan->toString() << std::endl;
-
 
   return pplan->toString();
 }
