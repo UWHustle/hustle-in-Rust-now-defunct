@@ -8,7 +8,7 @@ extern "C" void execute_plan(char*);
 
 extern "C" {
 int optimizer(char *input) {
-  std::cout << "Optimizer input: " << input << std::endl;
+  //std::cout << "Optimizer input: " << input << std::endl;
 
   std::string pplan = hustle_optimize(input);
   char *pplan_char = new char[pplan.size() + 1];
@@ -16,7 +16,7 @@ int optimizer(char *input) {
   pplan_char[pplan.size()] = '\0';
 
 
-  std::cout << "Optimizer out: " << pplan << std::endl;
+  //std::cout << "Optimizer out: " << pplan << std::endl;
   execute_plan(pplan_char);
 
   return 0;
