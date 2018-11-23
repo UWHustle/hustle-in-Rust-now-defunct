@@ -5,16 +5,25 @@ Hustle is a scalable data platform using a relational kernel and a microservices
 
 Installation instructions:
 ==========================
-To build Hustle, first run the script init.sh.
+To build Hustle, first create a build directory.
 
 ```bash
-./init.sh
+mkdir build
 ```
 
-This generates a build folder and a Makefile for the project and each of the modules. Finally, build the project with
+If you are using an IDE, sometimes this is done for you when the project is loaded.
+
+Move into the build directory and run CMake.
 
 ```bash
-make -j<number of cores>
+cd build
+cmake ..
+```
+
+This generates a Makefile for the project and each of the modules. Finally, build the project with
+
+```bash
+make
 ```
 
 and then run the executable.
