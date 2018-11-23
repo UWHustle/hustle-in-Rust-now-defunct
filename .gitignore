@@ -6,4 +6,3 @@ hustle.data
 /.idea
 cmake-build-debug
 Cargo.lock
-optimizer/quickstep/third_party/src
