@@ -11,10 +11,11 @@ To build Hustle, first run the script init.sh.
 ./init.sh
 ```
 
-This generates a build folder and a Makefile for the project and each of the modules. Finally, build the project with
+This generates a build folder and a Makefile for the project and each of the modules. Finally, build the project:
 
 ```bash
-make -j<number of cores>
+cd build
+make -j<number of cores of your machine>
 ```
 
 and then run the executable.
