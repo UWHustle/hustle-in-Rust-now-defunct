@@ -25,9 +25,9 @@ before_script:
 - $CXX --version
 - $CLINKER --version
 - cmake --version
-- (cd optimizer/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../)
+- (cd optimizer/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../../../)
 - (mkdir build)
-- (cd build ; cmake ..)
+- (cd build && cmake ..)
 
 script:
 - (cd build && make)
