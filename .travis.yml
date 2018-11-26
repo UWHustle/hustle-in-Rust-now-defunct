@@ -1,12 +1,23 @@
-language: rust
+language: cpp
 
 cache: ccache
 
 compiler:
 - gcc
 - clang
-- rustc
 
+env:
+- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
+- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
+- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
+- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=selection
+
+matrix:
+  exclude:  # Due to time-out.
+  - compiler: gcc
+    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
+  - compiler: gcc
+    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
 
 install:
 - export TEST_JOBS=2;
@@ -22,13 +33,7 @@ install:
 - export RELEASE_FLAGS="-O0 -DNDEBUG";
 - export LINKER_FLAGS="-s"
 
-
 before_script:
-- sudo apt-get install cmake
-- sudo apt-get install bison
-- sudo apt-get install flex
-- sudo apt-get install gcc
-- sudo apt-get install g++
 - $CC --version
 - $CXX --version
 - $CLINKER --version
@@ -48,10 +53,24 @@ before_script:
   -D USE_TCMALLOC=0
   -D VECTOR_COPY_ELISION_LEVEL=$VECTOR_COPY_ELISION_LEVEL
   -D ENABLE_COMPARISON_INLINE_EXPANSION=OFF ..)
-- ./init.sh
-- cd build
+- sudo apt-get install rust
 
-script: make && ctest --verbose
+script:
+- ./lint_everything.py
+- ./validate_cmakelists.py
+- ./cyclic_dependency.py
+- (cd build && make)
+- (cd build && ctest --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
+
+after_failure:
+- df -h
+- free -m
+- dmesg
+
+# Besides pull requests, we want to continuously test pushes/merges to master.
+branches:
+  only:
+  - master
 
 addons:
   apt:
