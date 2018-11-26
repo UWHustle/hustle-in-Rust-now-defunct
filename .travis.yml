@@ -76,6 +76,8 @@ addons:
     - george-edison55-precise-backports # For cmake 3.x
     packages:
     - gcc-5
+    - bison
+    - flex
     - g++-5
     - clang-3.7
     - binutils-gold
