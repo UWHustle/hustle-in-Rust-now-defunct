@@ -5,6 +5,7 @@ cache: ccache
 compiler:
 - gcc
 - clang
+-rustc
 
 env:
 - BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
