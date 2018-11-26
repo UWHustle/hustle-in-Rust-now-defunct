@@ -47,6 +47,8 @@ addons:
     - george-edison55-precise-backports # For cmake 3.x
     packages:
     - gcc-5
+    - cargo
+    - rustc
     - bison
     - flex
     - g++-5
