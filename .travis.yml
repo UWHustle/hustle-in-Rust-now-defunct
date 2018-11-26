@@ -67,10 +67,6 @@ after_failure:
 - free -m
 - dmesg
 
-# Besides pull requests, we want to continuously test pushes/merges to master.
-branches:
-  only:
-  - master
 
 addons:
   apt:
