@@ -5,7 +5,7 @@ cache: ccache
 compiler:
 - gcc
 - clang
--rustc
+- rustc
 
 env:
 - BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
@@ -54,7 +54,6 @@ before_script:
   -D USE_TCMALLOC=0
   -D VECTOR_COPY_ELISION_LEVEL=$VECTOR_COPY_ELISION_LEVEL
   -D ENABLE_COMPARISON_INLINE_EXPANSION=OFF ..)
-- sudo apt-get install rust
 
 script:
 - ./lint_everything.py
