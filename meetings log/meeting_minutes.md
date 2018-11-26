@@ -1,3 +1,19 @@
+11/26/2018
+Parser[Kevin]
++ Aggregated for query 2 are supported checked in.
+
+Optimizer[Yannis]
++ Hustle builds with Quickstep.
++ Work on commonprefix, resolver.
+
+Execution Engine [Somya, Robert]
++ Making datatypes flexible in size (current defaults to fixed sizes and only supports int and ipaddress)
++ Explore multi-threading support.
+
+General
++ CI is in place in travis.
+
+---
 11/12/2018
 Parser [Matt, Kevin]
 + Send the example plan for the Optimizer.
