@@ -177,5 +177,4 @@ WITHOUT         		{ return TK_WITHOUT; }
 
 void yyerror(parse_node **s, yyscan_t scanner, char const *msg) {
   fprintf(stderr, "Error: %s\n", msg);
-  exit(1);
 }

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "parser_wrapper.h"
 #include "parser.h"
 #include "lexer.h"
@@ -26,8 +27,10 @@ parse_node *get_parse_tree(char *command) {
 
 void parse(char *command) {
     parse_node *node = get_parse_tree(command);
-    char *json_output = json_stringify(node);
-    optimizer(json_output);
-    free(json_output);
-    free_tree(node);
+    if (node) {
+        char *json_output = json_stringify(node);
+        optimizer(json_output);
+        free(json_output);
+        free_tree(node);
+    }
 }
