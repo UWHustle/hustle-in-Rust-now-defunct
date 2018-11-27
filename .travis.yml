@@ -5,7 +5,18 @@ cache: ccache
 before_script:
 - (cd optimizer/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../../../)
 - (mkdir build)
-- (cd build && cmake ..)
+- (cd build &&
+  cmake
+  -D BUILD_SHARED_LIBS=On
+  -D CMAKE_C_FLAGS_DEBUG="$DEBUG_FLAGS"
+  -D CMAKE_CXX_FLAGS_DEBUG="$DEBUG_FLAGS"
+  -D CMAKE_C_FLAGS_RELEASE="$RELEASE_FLAGS"
+  -D CMAKE_CXX_FLAGS_RELEASE="$RELEASE_FLAGS"
+  -D CMAKE_EXE_LINKER_FLAGS="$LINKER_FLAGS"
+  -D CMAKE_C_COMPILER=$CC
+  -D CMAKE_CXX_COMPILER=$CXX
+  -D CMAKE_LINKER=$CLINKER
+  -D USE_TCMALLOC=0 ..)
 
 install:
 - export TEST_JOBS=2;
