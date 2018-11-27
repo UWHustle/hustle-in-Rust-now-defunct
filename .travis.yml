@@ -31,7 +31,7 @@ compiler:
 - gcc
 - clang
 
-#env:
+env:
 #- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
 #- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
 #- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
@@ -77,11 +77,13 @@ before_script:
   -D CMAKE_CXX_COMPILER=$CXX
   -D CMAKE_LINKER=$CLINKER
   -D USE_TCMALLOC=0
-  -D VECTOR_COPY_ELISION_LEVEL=$VECTOR_COPY_ELISION_LEVEL
+#  -D VECTOR_COPY_ELISION_LEVEL=$VECTOR_COPY_ELISION_LEVEL
   -D ENABLE_COMPARISON_INLINE_EXPANSION=OFF ..)
 
 script:
 - (cd build && make)
+- (cd build && ctest --verbose --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
+
 
 after_failure:
 - df -h
