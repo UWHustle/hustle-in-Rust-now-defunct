@@ -4,8 +4,6 @@ cache: ccache
 
 compiler:
 - gcc
-- clang
-- rustc
 
 install:
 - if [ "$CC" = "gcc" ]; then
@@ -30,7 +28,7 @@ before_script:
 - (cd build && cmake ..)
 
 script:
-- (cd build && make -j=4 VERBOSE=1)
+- (cd build && make -j4 VERBOSE=1)
 - (cd build && ctest --verbose)
 
 after_failure:
