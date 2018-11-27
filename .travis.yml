@@ -1,34 +1,14 @@
-language: cpp
+language: rust
 
 cache: ccache
 
-compiler:
-- gcc
-
-install:
-- if [ "$CC" = "gcc" ]; then
-  export CC="gcc-5";
-  export CXX="g++-5";
-  elif [ "$CC" = "clang" ]; then
-  export CC="clang-3.7";
-  export CXX="clang++-3.7";
-  fi
-- export CLINKER=`which gold`
-- export DEBUG_FLAGS="-g0";
-- export RELEASE_FLAGS="-O0 -DNDEBUG";
-- export LINKER_FLAGS="-s"
-
 before_script:
-- $CC --version
-- $CXX --version
-- $CLINKER --version
-- cmake --version
 - (cd optimizer/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../../../)
 - (mkdir build)
 - (cd build && cmake ..)
 
 script:
-- (cd build && make -j4 VERBOSE=1)
+- (cd build && make -j4)
 - (cd build && ctest --verbose)
 
 after_failure:
@@ -44,6 +24,7 @@ addons:
     - llvm-toolchain-precise-3.7
     - george-edison55-precise-backports # For cmake 3.x
     packages:
+    - cmake
     - gcc-5
     - cargo
     - rustc
