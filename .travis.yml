@@ -7,6 +7,20 @@ before_script:
 - (mkdir build)
 - (cd build && cmake ..)
 
+install:
+- export TEST_JOBS=2;
+- if [ "$CC" = "gcc" ]; then
+  export CC="gcc-5";
+  export CXX="g++-5";
+  elif [ "$CC" = "clang" ]; then
+  export CC="clang-3.7";
+  export CXX="clang++-3.7";
+  fi
+- export CLINKER=`which gold`
+- export DEBUG_FLAGS="-g0";
+- export RELEASE_FLAGS="-O0 -DNDEBUG";
+- export LINKER_FLAGS="-s"
+
 script:
 - (cd build && make -j2)
 - (cd build && ctest --verbose)
