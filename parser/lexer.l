@@ -22,7 +22,7 @@ SELECT					{ return TK_SELECT; }
 [ \t]
 %%
 
-int yyerror(const char *s) {
-  fprintf(stderr, "Error: %s\n", s);
+void yyerror(parse_node **s, yyscan_t scanner, char const *msg) {
+  fprintf(stderr, "Error: %s\n", msg);
   exit(1);
 }
