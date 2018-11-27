@@ -30,7 +30,7 @@ before_script:
 - (cd build && cmake ..)
 
 script:
-- (cd build && make)
+- (cd build && make -j=4 VERBOSE=1)
 - (cd build && ctest --verbose)
 
 after_failure:
