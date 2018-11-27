@@ -1,4 +1,3 @@
-#include <assert.h>
 #include "parser_wrapper.h"
 #include "parser.h"
 #include "lexer.h"
