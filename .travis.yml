@@ -1,6 +1,10 @@
-language: rust
+language: cpp
 
 cache: ccache
+
+compiler:
+  - gcc
+  - clang
 
 before_script:
 - (cd optimizer/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../../../)
@@ -34,7 +38,7 @@ install:
 
 script:
 - (cd build && make -j2)
-- (cd build && ctest --verbose)
+
 
 after_failure:
 - df -h
