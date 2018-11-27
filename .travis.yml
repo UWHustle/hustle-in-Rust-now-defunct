@@ -8,7 +8,7 @@ before_script:
 - (cd build && cmake ..)
 
 script:
-- (cd build && make -j4)
+- (cd build && make -j2)
 - (cd build && ctest --verbose)
 
 after_failure:
