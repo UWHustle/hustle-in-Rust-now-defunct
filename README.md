@@ -27,7 +27,7 @@ To exit the shell, type the end of file character.
 
 Run unit tests with CTest.
 ```bash
-ctest --verbose
+ctest --output-on-failure
 ```
 
 Coding Guidelines
