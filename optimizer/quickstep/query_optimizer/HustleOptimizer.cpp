@@ -45,8 +45,8 @@ std::string hustle_optimize(char *input) {
 
   quickstep::optimizer::TestDatabaseLoader test_database_loader_;
 
-  test_database_loader_.createTestRelation(false /* allow_vchar */);
-  test_database_loader_.loadTestRelation();
+  test_database_loader_.createHustleTestRelation(false /* allow_vchar */);
+  test_database_loader_.loadHustleTestRelation();
 
   quickstep::optimizer::physical::PhysicalPtr pplan =
       hustle_getPhysicalPlan(parse_statement,
