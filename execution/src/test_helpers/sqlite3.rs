@@ -17,13 +17,6 @@ pub fn run_query_sqlite3(query : &str, column_name: &str) -> u128{
 
 pub fn import_csv_to_sqlite3(){
     use std::process::Command;
-
-    use std::{thread, time};
-    thread::sleep(time::Duration::from_millis(100));
-    let output = Command::new("rm").arg("test-data/sqlite.data".to_string()).output().unwrap();
-    println!("Remove sqlite.data: {} \r\n {}",String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
-    thread::sleep(time::Duration::from_millis(100));
-    let output = Command::new("bash").arg("scripts/sqlite_import.sh").output().unwrap();
-    println!("Populate sqlite.data: {} \r\n {}",String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
-    thread::sleep(time::Duration::from_millis(100));
+    Command::new("rm").arg("test-data/sqlite.data".to_string()).output().unwrap();
+    Command::new("bash").arg("scripts/sqlite_import.sh").output().unwrap();
 }

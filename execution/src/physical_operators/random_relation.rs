@@ -36,7 +36,7 @@ impl Operator for RandomRelation{
 
         for _y in 0..self.row_count {
             for column in columns.iter() {
-                let random_value = rand::random::<u8>().to_string();
+                let random_value = rand::random::<u32>().to_string();
 
                 let (c,size) = column.get_datatype().parse_and_marshall(random_value);
                 data[n..n + size].clone_from_slice(&c);
