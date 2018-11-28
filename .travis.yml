@@ -81,7 +81,7 @@ before_script:
 
 script:
 - (cd build && make)
-- (cd build && ctest --verbose --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
+- (cd build && ctest --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
 
 
 after_failure:
