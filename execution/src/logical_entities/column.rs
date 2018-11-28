@@ -1,6 +1,6 @@
 use logical_entities::types::DataType;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
     name: String,
     size: usize,

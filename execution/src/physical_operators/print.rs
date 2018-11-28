@@ -13,7 +13,7 @@ pub struct Print {
 }
 
 impl Print {
-    pub fn new(relation: Relation) -> Print {
+    pub fn new(relation: Relation ) -> Print {
         Print {
             relation,
         }
