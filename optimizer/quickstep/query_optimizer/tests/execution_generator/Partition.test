@@ -1,0 +1,330 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+CREATE TABLE dim_4_hash_partitions (id INT NULL,
+                                    char_col CHAR(20))
+PARTITION BY HASH(id) PARTITIONS 4;
+CREATE TABLE dim_2_hash_partitions (id INT NULL,
+                                    char_col CHAR(20))
+PARTITION BY HASH(id) PARTITIONS 2;
+CREATE TABLE fact (id INT NULL,
+                   score DOUBLE NULL)
+PARTITION BY HASH(id) PARTITIONS 4;
+
+INSERT INTO dim_4_hash_partitions
+SELECT int_col, char_col
+FROM test
+WHERE int_col > 0 OR int_col < 0;
+
+INSERT INTO dim_2_hash_partitions
+SELECT int_col, char_col
+FROM test
+WHERE int_col > 0 OR int_col < 0;
+
+INSERT INTO fact
+SELECT int_col, double_col
+FROM test
+WHERE int_col % 2 = 0;
+
+SELECT * FROM dim_4_hash_partitions;
+--
++-----------+--------------------+
+|id         |char_col            |
++-----------+--------------------+
+|          4|          4 2.000000|
+|          8|          8 2.828427|
+|         12|         12 3.464102|
+|         16|         16 4.000000|
+|         24|         24 4.898979|
+|         -3|         -3 1.732051|
+|         -7|         -7 2.645751|
+|        -11|        -11 3.316625|
+|        -15|        -15 3.872983|
+|        -19|        -19 4.358899|
+|        -23|        -23 4.795832|
+|          2|          2 1.414214|
+|          6|          6 2.449490|
+|         14|         14 3.741657|
+|         18|         18 4.242641|
+|         22|         22 4.690416|
+|         -1|         -1 1.000000|
+|         -5|         -5 2.236068|
+|         -9|         -9 3.000000|
+|        -13|        -13 3.605551|
+|        -17|        -17 4.123106|
+|        -21|        -21 4.582576|
++-----------+--------------------+
+==
+
+# Partitioned Hash Join.
+SELECT fact.id, dim_4_hash_partitions.char_col
+FROM dim_4_hash_partitions JOIN fact ON dim_4_hash_partitions.id = fact.id;
+--
++-----------+--------------------+
+|id         |char_col            |
++-----------+--------------------+
+|          4|          4 2.000000|
+|          8|          8 2.828427|
+|         12|         12 3.464102|
+|         16|         16 4.000000|
+|         24|         24 4.898979|
+|          2|          2 1.414214|
+|          6|          6 2.449490|
+|         14|         14 3.741657|
+|         18|         18 4.242641|
+|         22|         22 4.690416|
++-----------+--------------------+
+==
+
+# Hash Join with two stored relations, one of which is partitioned.
+SELECT fact.id, test.char_col
+FROM test JOIN fact ON test.int_col = fact.id
+WHERE test.int_col > 0 OR test.int_col < 0;
+--
+[same as above]
+==
+
+# Hash Join with one stored, partitioned relation,
+# and a non-stored, non-partitioned one.
+SELECT fact.id, test.char_col
+FROM fact JOIN test ON fact.id = test.int_col
+WHERE test.int_col % 2 = 0;
+--
+[same as above]
+==
+
+# Repartitioned Hash Join.
+SELECT fact.id, dim_2_hash_partitions.char_col
+FROM dim_2_hash_partitions, fact
+WHERE dim_2_hash_partitions.id = fact.id
+  AND dim_2_hash_partitions.id % 2 = 0;
+--
++-----------+--------------------+
+|id         |char_col            |
++-----------+--------------------+
+|          4|          4 2.000000|
+|          8|          8 2.828427|
+|         12|         12 3.464102|
+|         16|         16 4.000000|
+|         24|         24 4.898979|
+|          2|          2 1.414214|
+|          6|          6 2.449490|
+|         14|         14 3.741657|
+|         18|         18 4.242641|
+|         22|         22 4.690416|
++-----------+--------------------+
+==
+
+# Partitioned aggregation.
+SELECT COUNT(*)
+FROM dim_4_hash_partitions;
+--
++--------------------+
+|COUNT(*)            |
++--------------------+
+|                  22|
++--------------------+
+==
+
+# Partitioned aggregation where the partition attributes are the subset of the group-by keys.
+SELECT id, COUNT(*)
+FROM dim_4_hash_partitions
+WHERE id > 0
+GROUP BY id;
+--
++-----------+--------------------+
+|id         |COUNT(*)            |
++-----------+--------------------+
+|          4|                   1|
+|          8|                   1|
+|         12|                   1|
+|         16|                   1|
+|         24|                   1|
+|          2|                   1|
+|          6|                   1|
+|         14|                   1|
+|         18|                   1|
+|         22|                   1|
++-----------+--------------------+
+==
+
+SELECT char_col, COUNT(*)
+FROM dim_4_hash_partitions
+WHERE id < 0
+GROUP BY char_col
+ORDER BY char_col;
+--
++--------------------+--------------------+
+|char_col            |COUNT(*)            |
++--------------------+--------------------+
+|         -1 1.000000|                   1|
+|        -11 3.316625|                   1|
+|        -13 3.605551|                   1|
+|        -15 3.872983|                   1|
+|        -17 4.123106|                   1|
+|        -19 4.358899|                   1|
+|        -21 4.582576|                   1|
+|        -23 4.795832|                   1|
+|         -3 1.732051|                   1|
+|         -5 2.236068|                   1|
+|         -7 2.645751|                   1|
+|         -9 3.000000|                   1|
++--------------------+--------------------+
+==
+
+SELECT fact.score, COUNT(*)
+FROM dim_4_hash_partitions JOIN fact ON dim_4_hash_partitions.id = fact.id
+GROUP BY fact.score;
+--
++------------------------+--------------------+
+|score                   |COUNT(*)            |
++------------------------+--------------------+
+|                       8|                   1|
+|      41.569219381653056|                   1|
+|                      64|                   1|
+|       52.38320341483518|                   1|
+|      76.367532368147124|                   1|
+|      22.627416997969522|                   1|
+|      117.57550765359254|                   1|
+|      2.8284271247461903|                   1|
+|      14.696938456699067|                   1|
+|      103.18914671611546|                   1|
++------------------------+--------------------+
+==
+
+SELECT fact.id, AVG(fact.score)
+FROM dim_4_hash_partitions JOIN fact ON dim_4_hash_partitions.id = fact.id
+GROUP BY fact.id;
+--
++-----------+------------------------+
+|id         |AVG(fact.score)         |
++-----------+------------------------+
+|          4|                       8|
+|          8|      22.627416997969522|
+|         12|      41.569219381653056|
+|         16|                      64|
+|         24|      117.57550765359254|
+|          2|      2.8284271247461903|
+|          6|      14.696938456699067|
+|         14|       52.38320341483518|
+|         18|      76.367532368147124|
+|         22|      103.18914671611546|
++-----------+------------------------+
+==
+
+# Partitioned NestedLoopsJoin w/ both stored relations.
+SELECT COUNT(*)
+FROM dim_4_hash_partitions, fact;
+--
++--------------------+
+|COUNT(*)            |
++--------------------+
+|                 220|
++--------------------+
+==
+
+# Partitioned NestedLoopsJoin w/ one stored relation.
+SELECT COUNT(*)
+FROM dim_4_hash_partitions, fact
+WHERE dim_4_hash_partitions.id > 20;
+--
++--------------------+
+|COUNT(*)            |
++--------------------+
+|                  20|
++--------------------+
+==
+
+# Partitioned NestedLoopsJoin w/ the other stored relation.
+SELECT COUNT(*)
+FROM dim_4_hash_partitions, fact
+WHERE fact.id > 0;
+--
++--------------------+
+|COUNT(*)            |
++--------------------+
+|                 220|
++--------------------+
+==
+
+# Partitioned NestedLoopsJoin w/ both non-stored relations.
+SELECT dim_4_hash_partitions.id as dim_id, fact.id as fact_id
+FROM dim_4_hash_partitions, fact
+WHERE dim_4_hash_partitions.id > 20 AND fact.id > 0;
+--
++-----------+-----------+
+|dim_id     |fact_id    |
++-----------+-----------+
+|         24|          4|
+|         24|          8|
+|         24|         12|
+|         24|         16|
+|         24|         24|
+|         24|          2|
+|         24|          6|
+|         24|         14|
+|         24|         18|
+|         24|         22|
+|         22|          4|
+|         22|          8|
+|         22|         12|
+|         22|         16|
+|         22|         24|
+|         22|          2|
+|         22|          6|
+|         22|         14|
+|         22|         18|
+|         22|         22|
++-----------+-----------+
+==
+
+# Repartitioned NestedLoopsJoin.
+SELECT dim_2_hash_partitions.id as dim_id, fact.id as fact_id
+FROM dim_2_hash_partitions, fact
+WHERE dim_2_hash_partitions.id > 20 AND fact.id > 0;
+--
+[same as above]
+==
+
+SELECT id, int_col
+FROM dim_4_hash_partitions, test
+WHERE int_col > 0 AND id > 20;
+--
++-----------+-----------+
+|id         |int_col    |
++-----------+-----------+
+|         24|          2|
+|         24|          4|
+|         24|          6|
+|         24|          8|
+|         24|         12|
+|         24|         14|
+|         24|         16|
+|         24|         18|
+|         24|         22|
+|         24|         24|
+|         22|          2|
+|         22|          4|
+|         22|          6|
+|         22|          8|
+|         22|         12|
+|         22|         14|
+|         22|         16|
+|         22|         18|
+|         22|         22|
+|         22|         24|
++-----------+-----------+

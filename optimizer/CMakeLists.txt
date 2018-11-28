@@ -1,7 +1,14 @@
-add_library(
-        optimizer
-        example.hpp example.cpp
-)
+add_subdirectory(quickstep)
+add_library(optimizer optimizer_wrapper.hpp optimizer_wrapper.cpp)
 
-target_link_libraries(optimizer ${EXECUTION})
-add_dependencies(optimizer execution)
+target_link_libraries(optimizer
+        ${EXECUTION}
+        hustle_optimizer
+        quickstep_queryoptimizer_tests_TestDatabaseLoader
+        quickstep_parser_SqlParserWrapper
+        )
+
+add_dependencies(optimizer execution hustle_optimizer)
+
+
+
