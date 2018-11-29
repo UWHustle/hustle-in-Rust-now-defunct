@@ -30,7 +30,7 @@ fn test_dag_double_join() {
 }
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, 8));
+    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, "Int".to_string()));
     select_operator.execute().parse::<u128>().unwrap()
 }
 
