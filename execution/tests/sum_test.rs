@@ -22,7 +22,7 @@ use std::rc::Rc;
 
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, 8));
+    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, "Int".to_string()));
     select_operator.execute().parse::<u128>().unwrap()
 }
 
@@ -38,9 +38,9 @@ fn test_dag_sum_aggregate() {
 
 
 fn hustle_sum(relation1:Relation) -> Relation {
-    let project_operator = Project::new(relation1.clone(), vec!(Column::new("a".to_string(), 8)));
+    let project_operator = Project::new(relation1.clone(), vec!(Column::new("a".to_string(), "Int".to_string())));
 
-    let sum_aggregation = Sum::new(project_operator.get_target_relation(), Column::new("a".to_string(), 8));
+    let sum_aggregation = Sum::new(project_operator.get_target_relation(), Column::new("a".to_string(), "Int".to_string()));
     let aggregate_operator = Rc::new(Aggregate::new( sum_aggregation));
 
 

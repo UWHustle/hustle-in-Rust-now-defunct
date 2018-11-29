@@ -32,7 +32,7 @@ impl AggregationTrait for Count {
     }
 
     fn output_schema(&self) -> Schema {
-        let col = Column::new("count".to_string(), 8);
+        let col = Column::new("count".to_string(), "Int".to_string());
         Schema::new(vec!(col))
     }
 

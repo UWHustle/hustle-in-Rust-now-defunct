@@ -33,7 +33,7 @@ impl AggregationTrait for Sum {
     }
 
     fn output_schema(&self) -> Schema {
-        let col = Column::new("sum".to_string(), 8);
+        let col = Column::new("sum".to_string(), "Int".to_string());
 
         let mut my_columns = self.group_by_columns();
         my_columns.push(col);

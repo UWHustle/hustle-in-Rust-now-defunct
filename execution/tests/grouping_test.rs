@@ -23,7 +23,7 @@ use std::rc::Rc;
 
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, 8));
+    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, "Int".to_string()));
     select_operator.execute().parse::<u128>().unwrap()
 }
 
@@ -40,7 +40,7 @@ fn test_dag_sum_group_by_aggregate() {
 
 
 fn hustle_sum_group_by(relation1:Relation) -> Relation {
-    let aggregate_operator = Rc::new(Aggregate::new(Sum::new(relation1.clone(), Column::new("a".to_string(), 8))));
+    let aggregate_operator = Rc::new(Aggregate::new(Sum::new(relation1.clone(), Column::new("a".to_string(), "Int".to_string()))));
     let print_operator = Rc::new(Print::new(relation1.clone()));
     let print_operator_after = Rc::new(Print::new(aggregate_operator.get_target_relation()));
 
