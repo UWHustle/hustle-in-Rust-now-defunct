@@ -1,6 +1,6 @@
 use logical_entities::types::DataType;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
     name: String,
     size: usize,
@@ -10,7 +10,7 @@ pub struct Column {
 impl Column {
     pub fn new(name: String, thistype: String) -> Self {
         let datatype;
-        if (thistype == "Int" || thistype == "Int NULL")
+        if thistype == "Int" || thistype == "Int NULL"
         {
             datatype = DataType::Integer;
         }

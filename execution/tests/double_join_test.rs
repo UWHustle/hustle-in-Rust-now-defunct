@@ -24,7 +24,7 @@ fn test_dag_double_join() {
 
     let join_relation = hustle_double_join(relation.clone(), relation.clone(), relation.clone());
     let hustle_calculation = sum_column_hustle(join_relation.clone(), "b".to_string());
-    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b)+SUM(t3.b) FROM t as t1 JOIN t as t2 JOIN t as t3;".to_string());
+    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b)+SUM(t3.b) AS Out FROM t as t1 JOIN t as t2 JOIN t as t3;","Out");
     assert_eq!(hustle_calculation, sqlite3_calculation);
 
 }

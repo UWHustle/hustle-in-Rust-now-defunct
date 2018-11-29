@@ -39,6 +39,7 @@ impl Operator for Insert {
             n = n + size;
         }
 
+        StorageManager::flush(&data);
         self.get_target_relation()
     }
 }
