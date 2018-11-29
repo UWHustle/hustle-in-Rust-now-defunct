@@ -1,0 +1,11 @@
+--- CMakeLists.txt	2017-12-27 13:11:46.000000002 -0600
++++ CMakeLists.txt.new	2017-12-27 13:12:28.000000002 -0600
+@@ -11,7 +11,7 @@
+   endif()
+ endforeach()
+ 
+-option(BENCHMARK_ENABLE_TESTING "Enable testing of the benchmark library." ON)
++option(BENCHMARK_ENABLE_TESTING "Enable testing of the benchmark library." OFF)
+ option(BENCHMARK_ENABLE_EXCEPTIONS "Enable the use of exceptions in the benchmark library." ON)
+ option(BENCHMARK_ENABLE_LTO "Enable link time optimisation of the benchmark library." OFF)
+ option(BENCHMARK_USE_LIBCXX "Build and test using libc++ as the standard library." OFF)
