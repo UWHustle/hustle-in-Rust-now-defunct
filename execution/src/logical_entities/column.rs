@@ -10,7 +10,7 @@ pub struct Column {
 impl Column {
     pub fn new(name: String, thistype: String) -> Self {
         let datatype;
-        if thistype == "Int"
+        if (thistype == "Int" || thistype == "Int NULL")
         {
             datatype = DataType::Integer;
         }
