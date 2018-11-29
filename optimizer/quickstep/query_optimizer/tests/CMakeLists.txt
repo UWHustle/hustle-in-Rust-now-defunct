@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-add_subdirectory(execution_generator)
+#add_subdirectory(execution_generator)
 add_subdirectory(logical_generator)
 add_subdirectory(physical_generator)
 add_subdirectory(resolver)
@@ -89,12 +89,12 @@ if (ENABLE_DISTRIBUTED)
                  "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
                  "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
 endif(ENABLE_DISTRIBUTED)
-add_executable(quickstep_queryoptimizer_tests_ExecutionGeneratorTest
-               ExecutionGeneratorTest.cpp
-               ExecutionGeneratorTestRunner.cpp
-               ExecutionGeneratorTestRunner.hpp
-               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
-               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
+#add_executable(quickstep_queryoptimizer_tests_ExecutionGeneratorTest
+#               ExecutionGeneratorTest.cpp
+#               ExecutionGeneratorTestRunner.cpp
+#               ExecutionGeneratorTestRunner.hpp
+#               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
+#               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
 add_executable(quickstep_queryoptimizer_tests_OptimizerTextTest
                OptimizerTextTest.cpp
                OptimizerTextTestRunner.cpp
@@ -133,31 +133,31 @@ if (ENABLE_DISTRIBUTED)
                         quickstep_utility_TextBasedTestDriver
                         tmb)
 endif(ENABLE_DISTRIBUTED)
-target_link_libraries(quickstep_queryoptimizer_tests_ExecutionGeneratorTest
-                      ${GFLAGS_LIB_NAME}
-                      ${LIBS}
-                      glog
-                      gtest
-                      quickstep_catalog_CatalogDatabase
-                      quickstep_cli_DropRelation
-                      quickstep_cli_PrintToScreen
-                      quickstep_parser_ParseStatement
-                      quickstep_parser_SqlParserWrapper
-                      quickstep_queryexecution_ForemanSingleNode
-                      quickstep_queryexecution_QueryExecutionTypedefs
-                      quickstep_queryexecution_QueryExecutionUtil
-                      quickstep_queryexecution_Worker
-                      quickstep_queryexecution_WorkerDirectory
-                      quickstep_queryoptimizer_Optimizer
-                      quickstep_queryoptimizer_OptimizerContext
-                      quickstep_queryoptimizer_QueryHandle
-                      quickstep_queryoptimizer_tests_TestDatabaseLoader
-                      quickstep_threading_ThreadIDBasedMap
-                      quickstep_utility_Macros
-                      quickstep_utility_MemStream
-                      quickstep_utility_SqlError
-                      quickstep_utility_TextBasedTestDriver
-                      tmb)
+#target_link_libraries(quickstep_queryoptimizer_tests_ExecutionGeneratorTest
+#                      ${GFLAGS_LIB_NAME}
+#                      ${LIBS}
+#                      glog
+#                      gtest
+#                      quickstep_catalog_CatalogDatabase
+#                      quickstep_cli_DropRelation
+#                      quickstep_cli_PrintToScreen
+#                      quickstep_parser_ParseStatement
+#                      quickstep_parser_SqlParserWrapper
+#                      quickstep_queryexecution_ForemanSingleNode
+#                      quickstep_queryexecution_QueryExecutionTypedefs
+#                      quickstep_queryexecution_QueryExecutionUtil
+#                      quickstep_queryexecution_Worker
+#                      quickstep_queryexecution_WorkerDirectory
+#                      quickstep_queryoptimizer_Optimizer
+#                      quickstep_queryoptimizer_OptimizerContext
+#                      quickstep_queryoptimizer_QueryHandle
+#                      quickstep_queryoptimizer_tests_TestDatabaseLoader
+#                      quickstep_threading_ThreadIDBasedMap
+#                      quickstep_utility_Macros
+#                      quickstep_utility_MemStream
+#                      quickstep_utility_SqlError
+#                      quickstep_utility_TextBasedTestDriver
+#                      tmb)
 target_link_libraries(quickstep_queryoptimizer_tests_OptimizerTextTest
                       ${GFLAGS_LIB_NAME}
                       ${LIBS}

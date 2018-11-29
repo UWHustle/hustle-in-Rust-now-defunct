@@ -132,101 +132,101 @@ target_link_libraries(quickstep_transaction
                       quickstep_transaction_Transaction
                       quickstep_transaction_TransactionTable)
 
-add_executable(AccessMode_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AccessMode_unittest.cpp")
-target_link_libraries(AccessMode_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_AccessMode)
-add_test(AccessMode_unittest AccessMode_unittest)
-
-add_executable(CycleDetector_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CycleDetector_unittest.cpp")
-target_link_libraries(CycleDetector_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_CycleDetector
-                      quickstep_transaction_DirectedGraph
-                      quickstep_transaction_StronglyConnectedComponents)
-add_test(CycleDetector_unittest CycleDetector_unittest)
-
-add_executable(DeadLockDetector_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DeadLockDetector_unittest.cpp")
-target_link_libraries(DeadLockDetector_unittest
-                      gtest
-                      gtest_main
-                      quickstep_threading_Thread
-                      quickstep_transaction_AccessMode
-                      quickstep_transaction_DeadLockDetector
-                      quickstep_transaction_LockTable
-                      quickstep_transaction_ResourceId
-                      quickstep_transaction_Transaction)
-add_test(DeadLockDetector_unittest DeadLockDetector_unittest)
-
-add_executable(DirectedGraph_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DirectedGraph_unittest.cpp")
-target_link_libraries(DirectedGraph_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_DirectedGraph
-                      quickstep_transaction_Transaction)
-add_test(DirectedGraph_unittest DirectedGraph_unittest)
-
-add_executable(Lock_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/Lock_unittest.cpp")
-target_link_libraries(Lock_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_AccessMode
-                      quickstep_transaction_Lock
-                      quickstep_transaction_ResourceId)
-add_test(Lock_unittest Lock_unittest)
-
-add_executable(LockRequest_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/LockRequest_unittest.cpp")
-target_link_libraries(LockRequest_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_AccessMode
-                      quickstep_transaction_ResourceId
-                      quickstep_transaction_Transaction)
-add_test(LockRequest_unittest LockRequest_unittest)
-
-add_executable(LockTable_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/LockTable_unittest.cpp")
-target_link_libraries(LockTable_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_AccessMode
-                      quickstep_transaction_LockTable
-                      quickstep_transaction_ResourceId
-                      quickstep_transaction_Transaction)
-add_test(LockTable_unittest LockTable_unittest)
-
-add_executable(ResourceId_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/ResourceId_unittest.cpp")
-target_link_libraries(ResourceId_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_ResourceId)
-add_test(ResourceId_unittest ResourceId_unittest)
-
-add_executable(StronglyConnectedComponents_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/StronglyConnectedComponents_unittest.cpp")
-target_link_libraries(StronglyConnectedComponents_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_DirectedGraph
-                      quickstep_transaction_StronglyConnectedComponents)
-add_test(StronglyConnectedComponents_unittest StronglyConnectedComponents_unittest)
-
-add_executable(TransactionTable_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/TransactionTable_unittest.cpp")
-target_link_libraries(TransactionTable_unittest
-                      gtest
-                      gtest_main
-                      quickstep_transaction_AccessMode
-                      quickstep_transaction_ResourceId
-                      quickstep_transaction_Transaction
-                      quickstep_transaction_TransactionTable)
-add_test(TransactionTable_unittest TransactionTable_unittest)
+#add_executable(AccessMode_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AccessMode_unittest.cpp")
+#target_link_libraries(AccessMode_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_AccessMode)
+#add_test(AccessMode_unittest AccessMode_unittest)
+#
+#add_executable(CycleDetector_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CycleDetector_unittest.cpp")
+#target_link_libraries(CycleDetector_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_CycleDetector
+#                      quickstep_transaction_DirectedGraph
+#                      quickstep_transaction_StronglyConnectedComponents)
+#add_test(CycleDetector_unittest CycleDetector_unittest)
+#
+#add_executable(DeadLockDetector_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DeadLockDetector_unittest.cpp")
+#target_link_libraries(DeadLockDetector_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_threading_Thread
+#                      quickstep_transaction_AccessMode
+#                      quickstep_transaction_DeadLockDetector
+#                      quickstep_transaction_LockTable
+#                      quickstep_transaction_ResourceId
+#                      quickstep_transaction_Transaction)
+#add_test(DeadLockDetector_unittest DeadLockDetector_unittest)
+#
+#add_executable(DirectedGraph_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DirectedGraph_unittest.cpp")
+#target_link_libraries(DirectedGraph_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_DirectedGraph
+#                      quickstep_transaction_Transaction)
+#add_test(DirectedGraph_unittest DirectedGraph_unittest)
+#
+#add_executable(Lock_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/Lock_unittest.cpp")
+#target_link_libraries(Lock_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_AccessMode
+#                      quickstep_transaction_Lock
+#                      quickstep_transaction_ResourceId)
+#add_test(Lock_unittest Lock_unittest)
+#
+#add_executable(LockRequest_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/LockRequest_unittest.cpp")
+#target_link_libraries(LockRequest_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_AccessMode
+#                      quickstep_transaction_ResourceId
+#                      quickstep_transaction_Transaction)
+#add_test(LockRequest_unittest LockRequest_unittest)
+#
+#add_executable(LockTable_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/LockTable_unittest.cpp")
+#target_link_libraries(LockTable_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_AccessMode
+#                      quickstep_transaction_LockTable
+#                      quickstep_transaction_ResourceId
+#                      quickstep_transaction_Transaction)
+#add_test(LockTable_unittest LockTable_unittest)
+#
+#add_executable(ResourceId_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/ResourceId_unittest.cpp")
+#target_link_libraries(ResourceId_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_ResourceId)
+#add_test(ResourceId_unittest ResourceId_unittest)
+#
+#add_executable(StronglyConnectedComponents_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/StronglyConnectedComponents_unittest.cpp")
+#target_link_libraries(StronglyConnectedComponents_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_DirectedGraph
+#                      quickstep_transaction_StronglyConnectedComponents)
+#add_test(StronglyConnectedComponents_unittest StronglyConnectedComponents_unittest)
+#
+#add_executable(TransactionTable_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/TransactionTable_unittest.cpp")
+#target_link_libraries(TransactionTable_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_transaction_AccessMode
+#                      quickstep_transaction_ResourceId
+#                      quickstep_transaction_Transaction
+#                      quickstep_transaction_TransactionTable)
+#add_test(TransactionTable_unittest TransactionTable_unittest)

@@ -61,7 +61,7 @@ if (ENABLE_NETWORK_CLI)
 endif()
 
 # Include subdirectories
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 if (ENABLE_DISTRIBUTED)
   add_subdirectory(distributed)

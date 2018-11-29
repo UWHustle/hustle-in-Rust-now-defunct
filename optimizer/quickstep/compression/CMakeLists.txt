@@ -55,24 +55,24 @@ target_link_libraries(quickstep_compression
                       quickstep_compression_CompressionDictionaryBuilder
                       quickstep_compression_CompressionDictionaryLite)
 
-# Tests:
-add_executable(CompressionDictionary_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/CompressionDictionary_unittest.cpp")
-target_link_libraries(CompressionDictionary_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_compression_CompressionDictionary
-                      quickstep_compression_CompressionDictionaryBuilder
-                      quickstep_types_CharType
-                      quickstep_types_DoubleType
-                      quickstep_types_IntType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_utility_ScopedBuffer)
-add_test(CompressionDictionary_unittest CompressionDictionary_unittest)
+## Tests:
+#add_executable(CompressionDictionary_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/CompressionDictionary_unittest.cpp")
+#target_link_libraries(CompressionDictionary_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_compression_CompressionDictionary
+#                      quickstep_compression_CompressionDictionaryBuilder
+#                      quickstep_types_CharType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_IntType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_utility_ScopedBuffer)
+#add_test(CompressionDictionary_unittest CompressionDictionary_unittest)

@@ -736,47 +736,47 @@ add_subdirectory(types)
 add_subdirectory(utility)
 add_subdirectory(yarn)
 
-# Build the quickstep_cli_shell executable.
-#add_executable(quickstep_cli_shell cli/QuickstepCli.cpp)
-add_executable(quick_opt query_optimizer/optmain.cpp)
-
-
-# Link against direct deps (will transitively pull in everything needed).
-target_link_libraries(quick_opt
-                      ${GFLAGS_LIB_NAME}
-                      glog
-                      quickstep_catalog_CatalogRelation
-                      quickstep_cli_CommandExecutor
-                      quickstep_cli_DefaultsConfigurator
-                      quickstep_cli_DropRelation
-                      quickstep_cli_Flags
-                      quickstep_cli_InputParserUtil
-                      quickstep_cli_LineReader
-                      quickstep_cli_LocalIO
-                      quickstep_cli_PrintToScreen
-                      quickstep_parser_ParseStatement
-                      quickstep_parser_SqlParserWrapper
-                      quickstep_queryexecution_ForemanSingleNode
-                      quickstep_queryexecution_QueryContext
-                      quickstep_queryexecution_QueryExecutionTypedefs
-                      quickstep_queryexecution_QueryExecutionUtil
-                      quickstep_queryexecution_Worker
-                      quickstep_queryexecution_WorkerDirectory
-                      quickstep_queryoptimizer_QueryHandle
-                      quickstep_queryoptimizer_QueryProcessor
-                      hustle_optimizer
-                      quickstep_storage_Flags
-                      quickstep_storage_PreloaderThread
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageManager
-                      quickstep_threading_ThreadIDBasedMap
-                      quickstep_utility_ExecutionDAGVisualizer
-                      quickstep_utility_Macros
-                      quickstep_utility_PtrVector
-                      quickstep_utility_ScopedReassignment
-                      quickstep_queryoptimizer_tests_TestDatabaseLoader
-                      quickstep_utility_SqlError
-                      quickstep_utility_StringUtil)
+## Build the quickstep_cli_shell executable.
+##add_executable(quickstep_cli_shell cli/QuickstepCli.cpp)
+#add_executable(quick_opt query_optimizer/optmain.cpp)
+#
+#
+## Link against direct deps (will transitively pull in everything needed).
+#target_link_libraries(quick_opt
+#                      ${GFLAGS_LIB_NAME}
+#                      glog
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_cli_CommandExecutor
+#                      quickstep_cli_DefaultsConfigurator
+#                      quickstep_cli_DropRelation
+#                      quickstep_cli_Flags
+#                      quickstep_cli_InputParserUtil
+#                      quickstep_cli_LineReader
+#                      quickstep_cli_LocalIO
+#                      quickstep_cli_PrintToScreen
+#                      quickstep_parser_ParseStatement
+#                      quickstep_parser_SqlParserWrapper
+#                      quickstep_queryexecution_ForemanSingleNode
+#                      quickstep_queryexecution_QueryContext
+#                      quickstep_queryexecution_QueryExecutionTypedefs
+#                      quickstep_queryexecution_QueryExecutionUtil
+#                      quickstep_queryexecution_Worker
+#                      quickstep_queryexecution_WorkerDirectory
+#                      quickstep_queryoptimizer_QueryHandle
+#                      quickstep_queryoptimizer_QueryProcessor
+#                      hustle_optimizer
+#                      quickstep_storage_Flags
+#                      quickstep_storage_PreloaderThread
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageManager
+#                      quickstep_threading_ThreadIDBasedMap
+#                      quickstep_utility_ExecutionDAGVisualizer
+#                      quickstep_utility_Macros
+#                      quickstep_utility_PtrVector
+#                      quickstep_utility_ScopedReassignment
+#                      quickstep_queryoptimizer_tests_TestDatabaseLoader
+#                      quickstep_utility_SqlError
+#                      quickstep_utility_StringUtil)
 #if (ENABLE_HDFS)
 #  target_link_libraries(quickstep_cli_shell
 #                        quickstep_storage_FileManagerHdfs)

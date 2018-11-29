@@ -395,102 +395,102 @@ if (ENABLE_DISTRIBUTED)
                         quickstep_queryexecution_ShiftbossDirectory)
 endif(ENABLE_DISTRIBUTED)
 
-# Tests:
-if (ENABLE_DISTRIBUTED)
-  add_executable(BlockLocator_unittest
-                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/BlockLocator_unittest.cpp")
-  target_link_libraries(BlockLocator_unittest
-                        ${GFLAGS_LIB_NAME}
-                        ${LIBS}
-                        glog
-                        gtest
-                        quickstep_catalog_CatalogAttribute
-                        quickstep_catalog_CatalogRelation
-                        quickstep_queryexecution_BlockLocator
-                        quickstep_queryexecution_BlockLocatorUtil
-                        quickstep_queryexecution_QueryExecutionMessages_proto
-                        quickstep_queryexecution_QueryExecutionTypedefs
-                        quickstep_queryexecution_QueryExecutionUtil
-                        quickstep_storage_StorageBlob
-                        quickstep_storage_StorageBlock
-                        quickstep_storage_StorageBlockInfo
-                        quickstep_storage_StorageConstants
-                        quickstep_storage_StorageManager
-                        quickstep_types_TypeFactory
-                        quickstep_types_TypeID
-                        tmb)
-  add_test(BlockLocator_unittest BlockLocator_unittest)
-endif(ENABLE_DISTRIBUTED)
-
-add_executable(ProbabilityStore_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/ProbabilityStore_unittest.cpp")
-target_link_libraries(ProbabilityStore_unittest
-                      gtest
-                      gtest_main
-                      quickstep_queryexecution_ProbabilityStore)
-add_test(ProbabilityStore_unittest ProbabilityStore_unittest)
-
-add_executable(QueryManagerSingleNode_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/QueryManagerSingleNode_unittest.cpp")
-target_link_libraries(QueryManagerSingleNode_unittest
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogDatabase
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_queryexecution_QueryContext
-                      quickstep_queryexecution_QueryContext_proto
-                      quickstep_queryexecution_QueryExecutionMessages_proto
-                      quickstep_queryexecution_QueryExecutionState
-                      quickstep_queryexecution_QueryExecutionTypedefs
-                      quickstep_queryexecution_QueryManagerSingleNode
-                      quickstep_queryexecution_WorkOrdersContainer
-                      quickstep_queryexecution_WorkerDirectory
-                      quickstep_queryexecution_WorkerMessage
-                      quickstep_queryoptimizer_QueryHandle
-                      quickstep_queryoptimizer_QueryPlan
-                      quickstep_relationaloperators_RelationalOperator
-                      quickstep_relationaloperators_WorkOrder
-                      quickstep_storage_InsertDestination
-                      quickstep_storage_InsertDestination_proto
-                      quickstep_storage_StorageBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageManager
-                      quickstep_utility_DAG
-                      quickstep_utility_Macros
-                      tmb)
-add_test(QueryManagerSingleNode_unittest QueryManagerSingleNode_unittest)
-
-add_executable(WorkOrdersContainer_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WorkOrdersContainer_unittest.cpp")
-target_link_libraries(WorkOrdersContainer_unittest
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_queryexecution_WorkOrdersContainer
-                      quickstep_relationaloperators_WorkOrder
-                      quickstep_utility_Macros
-                      quickstep_utility_PtrVector)
-add_test(WorkOrdersContainer_unittest WorkOrdersContainer_unittest)
-
-add_executable(WorkerDirectory_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WorkerDirectory_unittest.cpp")
-target_link_libraries(WorkerDirectory_unittest
-                      gtest
-                      gtest_main
-                      quickstep_queryexecution_QueryExecutionTypedefs
-                      quickstep_queryexecution_WorkerDirectory)
-add_test(WorkerDirectory_unittest WorkerDirectory_unittest)
-
-add_executable(WorkerSelectionPolicy_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WorkerSelectionPolicy_unittest.cpp")
-target_link_libraries(WorkerSelectionPolicy_unittest
-                      gtest
-                      gtest_main
-                      quickstep_queryexecution_QueryExecutionTypedefs
-                      quickstep_queryexecution_WorkerDirectory
-                      quickstep_queryexecution_WorkerSelectionPolicy)
-add_test(WorkerSelectionPolicy_unittest WorkerSelectionPolicy_unittest)
-
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/block_locator_test_data/)
+## Tests:
+#if (ENABLE_DISTRIBUTED)
+#  add_executable(BlockLocator_unittest
+#                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/BlockLocator_unittest.cpp")
+#  target_link_libraries(BlockLocator_unittest
+#                        ${GFLAGS_LIB_NAME}
+#                        ${LIBS}
+#                        glog
+#                        gtest
+#                        quickstep_catalog_CatalogAttribute
+#                        quickstep_catalog_CatalogRelation
+#                        quickstep_queryexecution_BlockLocator
+#                        quickstep_queryexecution_BlockLocatorUtil
+#                        quickstep_queryexecution_QueryExecutionMessages_proto
+#                        quickstep_queryexecution_QueryExecutionTypedefs
+#                        quickstep_queryexecution_QueryExecutionUtil
+#                        quickstep_storage_StorageBlob
+#                        quickstep_storage_StorageBlock
+#                        quickstep_storage_StorageBlockInfo
+#                        quickstep_storage_StorageConstants
+#                        quickstep_storage_StorageManager
+#                        quickstep_types_TypeFactory
+#                        quickstep_types_TypeID
+#                        tmb)
+#  add_test(BlockLocator_unittest BlockLocator_unittest)
+#endif(ENABLE_DISTRIBUTED)
+#
+#add_executable(ProbabilityStore_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/ProbabilityStore_unittest.cpp")
+#target_link_libraries(ProbabilityStore_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_queryexecution_ProbabilityStore)
+#add_test(ProbabilityStore_unittest ProbabilityStore_unittest)
+#
+#add_executable(QueryManagerSingleNode_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/QueryManagerSingleNode_unittest.cpp")
+#target_link_libraries(QueryManagerSingleNode_unittest
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogDatabase
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_queryexecution_QueryContext
+#                      quickstep_queryexecution_QueryContext_proto
+#                      quickstep_queryexecution_QueryExecutionMessages_proto
+#                      quickstep_queryexecution_QueryExecutionState
+#                      quickstep_queryexecution_QueryExecutionTypedefs
+#                      quickstep_queryexecution_QueryManagerSingleNode
+#                      quickstep_queryexecution_WorkOrdersContainer
+#                      quickstep_queryexecution_WorkerDirectory
+#                      quickstep_queryexecution_WorkerMessage
+#                      quickstep_queryoptimizer_QueryHandle
+#                      quickstep_queryoptimizer_QueryPlan
+#                      quickstep_relationaloperators_RelationalOperator
+#                      quickstep_relationaloperators_WorkOrder
+#                      quickstep_storage_InsertDestination
+#                      quickstep_storage_InsertDestination_proto
+#                      quickstep_storage_StorageBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageManager
+#                      quickstep_utility_DAG
+#                      quickstep_utility_Macros
+#                      tmb)
+#add_test(QueryManagerSingleNode_unittest QueryManagerSingleNode_unittest)
+#
+#add_executable(WorkOrdersContainer_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WorkOrdersContainer_unittest.cpp")
+#target_link_libraries(WorkOrdersContainer_unittest
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_queryexecution_WorkOrdersContainer
+#                      quickstep_relationaloperators_WorkOrder
+#                      quickstep_utility_Macros
+#                      quickstep_utility_PtrVector)
+#add_test(WorkOrdersContainer_unittest WorkOrdersContainer_unittest)
+#
+#add_executable(WorkerDirectory_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WorkerDirectory_unittest.cpp")
+#target_link_libraries(WorkerDirectory_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_queryexecution_QueryExecutionTypedefs
+#                      quickstep_queryexecution_WorkerDirectory)
+#add_test(WorkerDirectory_unittest WorkerDirectory_unittest)
+#
+#add_executable(WorkerSelectionPolicy_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WorkerSelectionPolicy_unittest.cpp")
+#target_link_libraries(WorkerSelectionPolicy_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_queryexecution_QueryExecutionTypedefs
+#                      quickstep_queryexecution_WorkerDirectory
+#                      quickstep_queryexecution_WorkerSelectionPolicy)
+#add_test(WorkerSelectionPolicy_unittest WorkerSelectionPolicy_unittest)
+#
+#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/block_locator_test_data/)

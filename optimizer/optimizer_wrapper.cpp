@@ -12,6 +12,7 @@ int optimizer(char *input) {
   char *pplan_char = new char[pplan.size() + 1];
   std::copy(pplan.begin(), pplan.end(), pplan_char);
   pplan_char[pplan.size()] = '\0';
+  std::cout<< pplan << std::endl;
   execute_plan(pplan_char);
   return 0;
 }

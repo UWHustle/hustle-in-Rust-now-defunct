@@ -411,7 +411,7 @@ endif()
 # in the lexer. For this, we turn off the sign compare.
 set_target_properties(quickstep_parser_SqlLexer PROPERTIES COMPILE_FLAGS "-Wno-sign-compare")
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 # Module all-in-one library:
 add_library(quickstep_parser ../empty_src.cpp ParserModule.hpp)
