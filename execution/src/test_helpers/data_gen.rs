@@ -18,8 +18,8 @@ use physical_operators::Operator;
 
 pub fn generate_relation_into_hustle_and_sqlite3(record_count:usize)->Relation{
     let relation = Relation::new("T".to_string(),
-                                 Schema::new(vec!(Column::new("a".to_string(),8),
-                                                  Column::new("b".to_string(),8)
+                                 Schema::new(vec!(Column::new("a".to_string(),"Int".to_string()),
+                                                  Column::new("b".to_string(),"Int".to_string())
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
