@@ -35,17 +35,16 @@ add_library(quickstep_catalog_CatalogDatabaseLite ../empty_src.cpp CatalogDataba
 add_library(quickstep_catalog_CatalogErrors ../empty_src.cpp CatalogErrors.hpp)
 add_library(quickstep_catalog_CatalogRelation CatalogRelation.cpp CatalogRelation.hpp)
 add_library(quickstep_catalog_CatalogRelationSchema
-        CatalogRelationSchema.cpp
-        CatalogRelationSchema.hpp)
+            CatalogRelationSchema.cpp
+            CatalogRelationSchema.hpp)
 add_library(quickstep_catalog_CatalogRelationStatistics
-        CatalogRelationStatistics.cpp
-        CatalogRelationStatistics.hpp)
+            CatalogRelationStatistics.cpp
+            CatalogRelationStatistics.hpp)
 add_library(quickstep_catalog_CatalogTypedefs ../empty_src.cpp CatalogTypedefs.hpp)
 add_library(quickstep_catalog_Catalog_proto ${catalog_Catalog_proto_srcs})
 add_library(quickstep_catalog_IndexScheme IndexScheme.cpp IndexScheme.hpp)
 add_library(quickstep_catalog_PartitionScheme PartitionScheme.cpp PartitionScheme.hpp)
 add_library(quickstep_catalog_PartitionSchemeHeader PartitionSchemeHeader.cpp PartitionSchemeHeader.hpp)
-
 
 if(QUICKSTEP_HAVE_LIBNUMA)
   add_library(quickstep_catalog_NUMAPlacementScheme NUMAPlacementScheme.cpp NUMAPlacementScheme.hpp)

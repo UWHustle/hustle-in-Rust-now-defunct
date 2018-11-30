@@ -1,0 +1,68 @@
+hustle> SELECT a FROM t;
+
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+
+
+hustle> SELECT a,b FROM t;
+
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+|   +-AttributeReference[id=1,name=b,relation=t,type=Int]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+  +-AttributeReference[id=1,name=b,relation=t,type=Int]
+
+hustle> SELECT SUM(a) FROM t;
+
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=Aggregate[has_repartition=false]
+| | +-input=TableReference[relation=T,alias=t]
+| | | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | +-grouping_expressions=
+| | | +-[]
+| | +-aggregate_expressions=
+| |   +-Alias[id=2,name=,alias=$aggregate0,relation=$aggregate,type=Long NULL]
+| |     +-AggregateFunction[function=SUM]
+| |       +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| +-project_expressions=
+|   +-Alias[id=2,name=,alias=SUM(a),relation=,type=Long NULL]
+|     +-AttributeReference[id=2,name=,alias=$aggregate0,relation=$aggregate,
+|       type=Long NULL]
++-output_attributes=
+  +-AttributeReference[id=2,name=,alias=SUM(a),relation=,type=Long NULL]
+
+ hustle> SELECT CommonPrefix(a) FROM t;
+
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=Aggregate[has_repartition=false]
+| | +-input=TableReference[relation=T,alias=t]
+| | | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | +-grouping_expressions=
+| | | +-[]
+| | +-aggregate_expressions=
+| |   +-Alias[id=2,name=,alias=$aggregate0,relation=$aggregate,type=Long NULL]
+| |     +-AggregateFunction[function=CommonPrefix]
+| |       +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| +-project_expressions=
+|   +-Alias[id=2,name=,alias=SUM(a),relation=,type=Long NULL]
+|     +-AttributeReference[id=2,name=,alias=$aggregate0,relation=$aggregate,
+|       type=Long NULL]
++-output_attributes=
+  +-AttributeReference[id=2,name=,alias=SUM(a),relation=,type=Long NULL]
