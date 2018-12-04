@@ -1,3 +1,6 @@
+sudo apt-get install cargo
+sudo apt-get install cmake
+
 git submodule init
 git submodule update
 
