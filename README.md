@@ -11,7 +11,7 @@ To build Hustle, first run the script init.sh.
 ./init.sh
 ```
 
-This generates a build folder and a Makefile for the project and each of the modules. Finally, build the project:
+This generates a build folder and a Makefile for the project and each of the modules and installs cmake and cargo if they are not installed. Finally, build the project:
 
 ```bash
 cd build

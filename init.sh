@@ -1,5 +1,9 @@
+if [[   -z  `which cargo` ]]; then
 sudo apt-get install cargo
-sudo apt-get install cmake
+fi
+if [[   -z  `which cmake` ]]; then
+  sudo apt-get install cmake
+fi
 
 git submodule init
 git submodule update
