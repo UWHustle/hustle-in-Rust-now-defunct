@@ -722,7 +722,7 @@ endif()
 # Add all of the module subdirectories. CMakeLists.txt in each of the subdirectories
 # defines how to build that module's libraries.
 add_subdirectory(catalog)
-#add_subdirectory(cli)
+add_subdirectory(cli)
 add_subdirectory(compression)
 add_subdirectory(expressions)
 add_subdirectory(parser)
