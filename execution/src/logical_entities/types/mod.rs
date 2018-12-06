@@ -4,7 +4,7 @@ pub mod ip_address;
 
 use logical_entities::value::Value;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub enum DataType {
     Integer,
     IpAddress,

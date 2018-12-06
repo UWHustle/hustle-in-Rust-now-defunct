@@ -79,11 +79,15 @@ impl StorageManager {
     }
 
     pub fn trim_relation(relation: &Relation, total_length:usize) -> () {
-        let mut f = OpenOptions::new()
+        let f = OpenOptions::new()
             .read(true)
             .write(true)
             .open(relation.get_filename())
             .expect("Unable to open file");
-        f.set_len(total_length as u64);
+        f.set_len(total_length as u64).unwrap();
+    }
+
+    pub fn flush(data: &memmap::MmapMut) -> () {
+        data.flush().unwrap();
     }
 }

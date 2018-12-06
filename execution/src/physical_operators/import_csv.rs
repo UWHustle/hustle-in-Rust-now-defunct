@@ -46,6 +46,9 @@ impl Operator for ImportCsv{
                 n = n + size;
             }
         }
+
+        StorageManager::flush(&data);
+
         self.get_target_relation()
     }
 }

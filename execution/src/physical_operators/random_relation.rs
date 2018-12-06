@@ -44,6 +44,7 @@ impl Operator for RandomRelation{
             }
         }
 
+        StorageManager::flush(&data);
         self.get_target_relation()
     }
 }

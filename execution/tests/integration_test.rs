@@ -26,25 +26,25 @@ fn test_flow() {
     let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
 
     let hustle_calculation = sum_column_hustle(relation.clone(), "b".to_string());
-    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;".to_string());
+    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;", "SUM(b)");
     assert_eq!(hustle_calculation, sqlite3_calculation);
 
 
     let join_relation = hustle_join(relation.clone(), relation.clone());
     let hustle_calculation = sum_column_hustle(join_relation.clone(), "b".to_string());
-    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b) FROM t as t1 JOIN t as t2;".to_string());
+    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b) as Out FROM t as t1 JOIN t as t2;", "Out");
     assert_eq!(hustle_calculation, sqlite3_calculation);
 
 
     let insert_value =  DataType::Integer.parse_to_value("3".to_string());
     insert_into_hustle(10, insert_value,  relation.clone());
     let hustle_calculation = sum_column_hustle(relation.clone(), "b".to_string());
-    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;".to_string());
+    let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;","SUM(b)");
     assert_eq!(hustle_calculation, sqlite3_calculation+30);
 }
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, 8));
+    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, "Int".to_string()));
     select_operator.execute().parse::<u128>().unwrap()
 }
 

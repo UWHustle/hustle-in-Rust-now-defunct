@@ -35,7 +35,7 @@ pub fn parse(string_plan:&str) -> Node {
             let column_name: &str = &col_cap[2];
             let _column_type: &str = &col_cap[4];
 
-            let column = Column::new(column_name.to_string(), 8);
+        let column = Column::new(column_name.to_string(), _column_type.to_string());
             columns.push(column);
         }
 
@@ -60,7 +60,7 @@ pub fn parse(string_plan:&str) -> Node {
             let column_name: &str = &col_cap[2];
             let _column_type: &str = &col_cap[4];
 
-            let column = Column::new(column_name.to_string(), 8);
+            let column = Column::new(column_name.to_string(), _column_type.to_string());
             columns.push(column);
         }
 
