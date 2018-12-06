@@ -169,6 +169,7 @@ target_link_libraries(quickstep_queryoptimizer_tests_OptimizerTextTest
                       quickstep_queryoptimizer_OptimizerContext
                       quickstep_queryoptimizer_PhysicalGenerator
                       quickstep_queryoptimizer_logical_Logical
+                      quickstep_queryexecution_QueryExecutionMessages_proto
                       quickstep_queryoptimizer_physical_Physical
                       quickstep_queryoptimizer_resolver_Resolver
                       quickstep_queryoptimizer_tests_TestDatabaseLoader

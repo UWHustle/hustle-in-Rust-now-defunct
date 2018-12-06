@@ -265,7 +265,7 @@ target_link_libraries(quickstep_queryoptimizer_QueryHandle
                       quickstep_utility_Macros
                       tmb)
 target_link_libraries(quickstep_queryoptimizer_QueryPlan
-                      quickstep_relationaloperators_RelationalOperator
+                      #quickstep_relationaloperators_RelationalOperator
                       quickstep_utility_DAG
                       quickstep_utility_Macros)
 #target_link_libraries(quickstep_queryoptimizer_QueryProcessor
