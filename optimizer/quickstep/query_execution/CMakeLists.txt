@@ -31,7 +31,7 @@ add_library(quickstep_queryexecution_AdmitRequestMessage ../empty_src.cpp AdmitR
 #add_library(quickstep_queryexecution_PolicyEnforcerBase PolicyEnforcerBase.cpp PolicyEnforcerBase.hpp)
 #add_library(quickstep_queryexecution_PolicyEnforcerSingleNode PolicyEnforcerSingleNode.cpp PolicyEnforcerSingleNode.hpp)
 #add_library(quickstep_queryexecution_ProbabilityStore ../empty_src.cpp ProbabilityStore.hpp)
-#add_library(quickstep_queryexecution_QueryContext QueryContext.cpp QueryContext.hpp)
+add_library(quickstep_queryexecution_QueryContext QueryContext.cpp QueryContext.hpp)
 add_library(quickstep_queryexecution_QueryContext_proto
             ${queryexecution_QueryContext_proto_srcs}
             ${queryexecution_QueryContext_proto_hdrs})
@@ -119,33 +119,33 @@ target_link_libraries(quickstep_queryexecution_AdmitRequestMessage
 #target_link_libraries(quickstep_queryexecution_ProbabilityStore
 #                      glog
 #                      quickstep_utility_Macros)
-#target_link_libraries(quickstep_queryexecution_QueryContext
-#                      glog
-#                      quickstep_catalog_CatalogDatabaseLite
-#                      quickstep_catalog_CatalogRelationSchema
-#                      quickstep_catalog_CatalogTypedefs
-#                      quickstep_expressions_ExpressionFactories
-#                      quickstep_expressions_predicate_Predicate
-#                      quickstep_expressions_scalar_Scalar
-#                      quickstep_expressions_tablegenerator_GeneratorFunctionFactory
-#                      quickstep_expressions_tablegenerator_GeneratorFunctionHandle
-#                      quickstep_expressions_tablegenerator_GeneratorFunction_proto
-#                      quickstep_queryexecution_QueryContext_proto
-#                      quickstep_storage_AggregationOperationState
-#                      quickstep_storage_HashTable
-#                      quickstep_storage_HashTableFactory
-#                      quickstep_storage_InsertDestination
-#                      quickstep_storage_InsertDestination_proto
-#                      quickstep_storage_WindowAggregationOperationState
-#                      quickstep_threading_SpinSharedMutex
-#                      quickstep_types_TypedValue
-#                      quickstep_types_containers_Tuple
-#                      quickstep_utility_Macros
-#                      quickstep_utility_SortConfiguration
-#                      quickstep_utility_lipfilter_LIPFilter
-#                      quickstep_utility_lipfilter_LIPFilterDeployment
-#                      quickstep_utility_lipfilter_LIPFilterFactory
-#                      tmb)
+target_link_libraries(quickstep_queryexecution_QueryContext
+                      glog
+                      quickstep_catalog_CatalogDatabaseLite
+                      quickstep_catalog_CatalogRelationSchema
+                      quickstep_catalog_CatalogTypedefs
+                      quickstep_expressions_ExpressionFactories
+                      quickstep_expressions_predicate_Predicate
+                      quickstep_expressions_scalar_Scalar
+                      quickstep_expressions_tablegenerator_GeneratorFunctionFactory
+                      quickstep_expressions_tablegenerator_GeneratorFunctionHandle
+                      quickstep_expressions_tablegenerator_GeneratorFunction_proto
+                      quickstep_queryexecution_QueryContext_proto
+                      quickstep_storage_AggregationOperationState
+                      quickstep_storage_HashTable
+                      quickstep_storage_HashTableFactory
+                      quickstep_storage_InsertDestination
+                      quickstep_storage_InsertDestination_proto
+                      quickstep_storage_WindowAggregationOperationState
+                      quickstep_threading_SpinSharedMutex
+                      quickstep_types_TypedValue
+                      quickstep_types_containers_Tuple
+                      quickstep_utility_Macros
+                      quickstep_utility_SortConfiguration
+                      quickstep_utility_lipfilter_LIPFilter
+                      quickstep_utility_lipfilter_LIPFilterDeployment
+                      quickstep_utility_lipfilter_LIPFilterFactory
+                      tmb)
 target_link_libraries(quickstep_queryexecution_QueryContext_proto
                       ${PROTOBUF_LIBRARY}
                       quickstep_expressions_Expressions_proto
