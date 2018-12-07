@@ -178,36 +178,36 @@ target_link_libraries(quickstep_expressions_windowaggregation
 
 # Tests:
 
-# Unified executable to ammortize cost of linking.
-add_executable(WindowAggregationHandle_tests
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WindowAggregationHandleAvg_unittest.cpp")
-target_link_libraries(WindowAggregationHandle_tests
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_scalar_Scalar
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_windowaggregation_WindowAggregateFunction
-                      quickstep_expressions_windowaggregation_WindowAggregateFunctionFactory
-                      quickstep_expressions_windowaggregation_WindowAggregationHandle
-                      quickstep_expressions_windowaggregation_WindowAggregationID
-                      quickstep_storage_ValueAccessor
-                      quickstep_types_CharType
-                      quickstep_types_DateOperatorOverloads
-                      quickstep_types_DatetimeIntervalType
-                      quickstep_types_DatetimeType
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_IntType
-                      quickstep_types_IntervalLit
-                      quickstep_types_LongType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_YearMonthIntervalType
-                      quickstep_types_containers_ColumnVector
-                      quickstep_types_containers_ColumnVectorsValueAccessor)
-add_test(WindowAggregationHandle_tests WindowAggregationHandle_tests)
+## Unified executable to ammortize cost of linking.
+#add_executable(WindowAggregationHandle_tests
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WindowAggregationHandleAvg_unittest.cpp")
+#target_link_libraries(WindowAggregationHandle_tests
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_scalar_Scalar
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_windowaggregation_WindowAggregateFunction
+#                      quickstep_expressions_windowaggregation_WindowAggregateFunctionFactory
+#                      quickstep_expressions_windowaggregation_WindowAggregationHandle
+#                      quickstep_expressions_windowaggregation_WindowAggregationID
+#                      quickstep_storage_ValueAccessor
+#                      quickstep_types_CharType
+#                      quickstep_types_DateOperatorOverloads
+#                      quickstep_types_DatetimeIntervalType
+#                      quickstep_types_DatetimeType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_IntType
+#                      quickstep_types_IntervalLit
+#                      quickstep_types_LongType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_YearMonthIntervalType
+#                      quickstep_types_containers_ColumnVector
+#                      quickstep_types_containers_ColumnVectorsValueAccessor)
+#add_test(WindowAggregationHandle_tests WindowAggregationHandle_tests)

@@ -254,196 +254,196 @@ target_link_libraries(quickstep_types
                       quickstep_types_operations
                       quickstep_types_port)
 
-# Tests:
-add_library(quickstep_types_tests_TypeTest_common
-            ../empty_src.cpp
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/TypeTest_common.hpp")
-target_link_libraries(quickstep_types_tests_TypeTest_common
-                      gtest
-                      gtest_main
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_IntType
-                      quickstep_types_LongType
-                      quickstep_types_NullType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue)
-
-add_executable(CharType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/CharType_unittest.cpp")
-target_link_libraries(CharType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(CharType_unittest CharType_unittest)
-
-add_executable(DateType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/DateType_unittest.cpp")
-target_link_libraries(DateType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_DateType
-                      quickstep_types_DatetimeLit
-                      quickstep_types_NullType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(DateType_unittest DateType_unittest)
-
-add_executable(DatetimeIntervalType_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DatetimeIntervalType_unittest.cpp")
-target_link_libraries(DatetimeIntervalType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_DatetimeIntervalType
-                      quickstep_types_IntervalLit
-                      quickstep_types_NullType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(DatetimeIntervalType_unittest DatetimeIntervalType_unittest)
-
-add_executable(DatetimeType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/DatetimeType_unittest.cpp")
-target_link_libraries(DatetimeType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_DatetimeLit
-                      quickstep_types_DatetimeType
-                      quickstep_types_NullType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(DatetimeType_unittest DatetimeType_unittest)
-
-add_executable(DoubleType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/DoubleType_unittest.cpp")
-target_link_libraries(DoubleType_unittest
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_types_DoubleType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(DoubleType_unittest DoubleType_unittest)
-
-add_executable(FloatType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/FloatType_unittest.cpp")
-target_link_libraries(FloatType_unittest
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_types_FloatType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(FloatType_unittest FloatType_unittest)
-
-add_executable(IntType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/IntType_unittest.cpp")
-target_link_libraries(IntType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_IntType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(IntType_unittest IntType_unittest)
-
-add_executable(LongType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/LongType_unittest.cpp")
-target_link_libraries(LongType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_LongType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(LongType_unittest LongType_unittest)
-
-add_executable(Type_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Type_unittest.cpp")
-target_link_libraries(Type_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_CharType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_Type_proto
-                      quickstep_types_VarCharType
-                      quickstep_utility_Macros)
-add_test(Type_unittest Type_unittest)
-
-add_executable(TypedValue_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/TypedValue_unittest.cpp")
-target_link_libraries(TypedValue_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_DatetimeLit
-                      quickstep_types_IntervalLit
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_TypedValue_proto
-                      quickstep_utility_Macros
-                      quickstep_utility_ScopedBuffer)
-add_test(TypedValue_unittest TypedValue_unittest)
-
-# We intentionally test self-move of TypedValues in the unittest. This disables
-# compiler warnings about self-moves in the test ONLY.
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wno-self-move" COMPILER_HAS_WNO_SELF_MOVE)
-if (COMPILER_HAS_WNO_SELF_MOVE)
-  set_target_properties(TypedValue_unittest PROPERTIES COMPILE_FLAGS "-Wno-self-move")
-endif()
-
-add_executable(VarCharType_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/VarCharType_unittest.cpp")
-target_link_libraries(VarCharType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(VarCharType_unittest VarCharType_unittest)
-
-add_executable(YearMonthIntervalType_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/YearMonthIntervalType_unittest.cpp")
-target_link_libraries(YearMonthIntervalType_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_IntervalLit
-                      quickstep_types_NullType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_YearMonthIntervalType
-                      quickstep_types_tests_TypeTest_common
-                      quickstep_utility_MemStream)
-add_test(YearMonthIntervalType_unittest YearMonthIntervalType_unittest)
+## Tests:
+#add_library(quickstep_types_tests_TypeTest_common
+#            ../empty_src.cpp
+#            "${CMAKE_CURRENT_SOURCE_DIR}/tests/TypeTest_common.hpp")
+#target_link_libraries(quickstep_types_tests_TypeTest_common
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_IntType
+#                      quickstep_types_LongType
+#                      quickstep_types_NullType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue)
+#
+#add_executable(CharType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/CharType_unittest.cpp")
+#target_link_libraries(CharType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(CharType_unittest CharType_unittest)
+#
+#add_executable(DateType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/DateType_unittest.cpp")
+#target_link_libraries(DateType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DateType
+#                      quickstep_types_DatetimeLit
+#                      quickstep_types_NullType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(DateType_unittest DateType_unittest)
+#
+#add_executable(DatetimeIntervalType_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DatetimeIntervalType_unittest.cpp")
+#target_link_libraries(DatetimeIntervalType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DatetimeIntervalType
+#                      quickstep_types_IntervalLit
+#                      quickstep_types_NullType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(DatetimeIntervalType_unittest DatetimeIntervalType_unittest)
+#
+#add_executable(DatetimeType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/DatetimeType_unittest.cpp")
+#target_link_libraries(DatetimeType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DatetimeLit
+#                      quickstep_types_DatetimeType
+#                      quickstep_types_NullType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(DatetimeType_unittest DatetimeType_unittest)
+#
+#add_executable(DoubleType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/DoubleType_unittest.cpp")
+#target_link_libraries(DoubleType_unittest
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DoubleType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(DoubleType_unittest DoubleType_unittest)
+#
+#add_executable(FloatType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/FloatType_unittest.cpp")
+#target_link_libraries(FloatType_unittest
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_FloatType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(FloatType_unittest FloatType_unittest)
+#
+#add_executable(IntType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/IntType_unittest.cpp")
+#target_link_libraries(IntType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_IntType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(IntType_unittest IntType_unittest)
+#
+#add_executable(LongType_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/LongType_unittest.cpp")
+#target_link_libraries(LongType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_LongType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(LongType_unittest LongType_unittest)
+#
+#add_executable(Type_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Type_unittest.cpp")
+#target_link_libraries(Type_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_CharType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_Type_proto
+#                      quickstep_types_VarCharType
+#                      quickstep_utility_Macros)
+#add_test(Type_unittest Type_unittest)
+#
+#add_executable(TypedValue_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/TypedValue_unittest.cpp")
+#target_link_libraries(TypedValue_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DatetimeLit
+#                      quickstep_types_IntervalLit
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_TypedValue_proto
+#                      quickstep_utility_Macros
+#                      quickstep_utility_ScopedBuffer)
+#add_test(TypedValue_unittest TypedValue_unittest)
+#
+## We intentionally test self-move of TypedValues in the unittest. This disables
+## compiler warnings about self-moves in the test ONLY.
+#include(CheckCXXCompilerFlag)
+#CHECK_CXX_COMPILER_FLAG("-Wno-self-move" COMPILER_HAS_WNO_SELF_MOVE)
+#if (COMPILER_HAS_WNO_SELF_MOVE)
+#  set_target_properties(TypedValue_unittest PROPERTIES COMPILE_FLAGS "-Wno-self-move")
+#endif()
+#
+#add_executable(VarCharType_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/VarCharType_unittest.cpp")
+#target_link_libraries(VarCharType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(VarCharType_unittest VarCharType_unittest)
+#
+#add_executable(YearMonthIntervalType_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/YearMonthIntervalType_unittest.cpp")
+#target_link_libraries(YearMonthIntervalType_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_IntervalLit
+#                      quickstep_types_NullType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_YearMonthIntervalType
+#                      quickstep_types_tests_TypeTest_common
+#                      quickstep_utility_MemStream)
+#add_test(YearMonthIntervalType_unittest YearMonthIntervalType_unittest)

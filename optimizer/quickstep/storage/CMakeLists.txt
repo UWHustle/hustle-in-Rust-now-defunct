@@ -1269,531 +1269,531 @@ elseif (QUICKSTEP_HAVE_FILE_MANAGER_WINDOWS)
 endif()
 
 # Tests:
-include(CheckTypeSize)
-CHECK_TYPE_SIZE("size_t" SIZEOF_SIZE_T)
-if (SIZEOF_SIZE_T GREATER 7)
-  set(QUICKSTEP_LONG_HASH_REVERSIBLE 1)
-endif()
-configure_file (
-  "${CMAKE_CURRENT_SOURCE_DIR}/tests/StorageTestConfig.h.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/tests/StorageTestConfig.h"
-)
-
-add_library(quickstep_storage_tests_FileManager_unittest_common
-            ../empty_src.cpp
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/FileManager_unittest_common.hpp")
-target_link_libraries(quickstep_storage_tests_FileManager_unittest_common
-                      gtest
-                      quickstep_storage_FileManager
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageConstants)
-
-add_library(quickstep_storage_tests_HashTable_unittest_common
-            ../empty_src.cpp
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/HashTable_unittest_common.hpp")
-target_link_libraries(quickstep_storage_tests_HashTable_unittest_common
-                      gtest
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_storage_HashTable
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageManager
-                      quickstep_threading_Thread
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_containers_ColumnVector
-                      quickstep_types_containers_ColumnVectorsValueAccessor
-                      quickstep_utility_Macros
-                      quickstep_utility_ScopedBuffer)
-
-add_library(quickstep_storage_tests_TupleStorePredicateUtil
-            ../empty_src.cpp
-            "${CMAKE_CURRENT_SOURCE_DIR}/tests/TupleStorePredicateUtil.hpp")
-target_link_libraries(quickstep_storage_tests_TupleStorePredicateUtil
-                      quickstep_expressions_predicate_Predicate
-                      quickstep_storage_IndexSubBlock
-                      quickstep_storage_SubBlocksReference
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_TupleStorageSubBlock
-                      quickstep_storage_ValueAccessor
-                      quickstep_utility_Macros
-                      quickstep_utility_PtrVector)
-
-add_executable(AggregationOperationState_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationOperationState_unittest.cpp")
-target_link_libraries(AggregationOperationState_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogDatabase
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_storage_AggregationOperationState
-                      quickstep_storage_AggregationOperationState_proto)
-add_test(AggregationOperationState_unittest AggregationOperationState_unittest)
-
-add_executable(BasicColumnStoreTupleStorageSubBlock_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/BasicColumnStoreTupleStorageSubBlock_unittest.cpp")
-target_link_libraries(BasicColumnStoreTupleStorageSubBlock_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_predicate_ComparisonPredicate
-                      quickstep_expressions_scalar_Scalar
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_scalar_ScalarLiteral
-                      quickstep_storage_BasicColumnStoreTupleStorageSubBlock
-                      quickstep_storage_StorageBlockLayout
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageErrors
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_TupleStorageSubBlock
-                      quickstep_storage_tests_TupleStorePredicateUtil
-                      quickstep_types_CharType
-                      quickstep_types_DoubleType
-                      quickstep_types_IntType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_types_operations_comparisons_ComparisonUtil
-                      quickstep_utility_BitVector
-                      quickstep_utility_ScopedBuffer)
-add_test(BasicColumnStoreTupleStorageSubBlock_unittest BasicColumnStoreTupleStorageSubBlock_unittest)
-
-add_executable(BloomFilterIndexSubBlock_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/BloomFilterIndexSubBlock_unittest.cpp")
-target_link_libraries(BloomFilterIndexSubBlock_unittest
-                      ${LIBS}
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_predicate_ComparisonPredicate
-                      quickstep_expressions_predicate_PredicateCost
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_scalar_ScalarLiteral
-                      quickstep_storage_BloomFilterIndexSubBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_TupleStorageSubBlock
-                      quickstep_types_CharType
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_LongType
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_utility_ScopedBuffer)
-add_test(BloomFilterIndexSubBlock_unittest BloomFilterIndexSubBlock_unittest)
-
-if(QUICKSTEP_HAVE_BITWEAVING)
-  add_executable(BitWeavingIndexSubBlock_unittest
-                 "${CMAKE_CURRENT_SOURCE_DIR}/bitweaving/tests/BitWeavingIndexSubBlock_unittest.cpp")
-  target_link_libraries(BitWeavingIndexSubBlock_unittest
-                        ${LIBS}
-                        glog
-                        gtest
-                        gtest_main
-                        quickstep_catalog_CatalogAttribute
-                        quickstep_catalog_CatalogRelation
-                        quickstep_catalog_CatalogTypedefs
-                        quickstep_expressions_predicate_ComparisonPredicate
-                        quickstep_expressions_scalar_Scalar
-                        quickstep_expressions_scalar_ScalarAttribute
-                        quickstep_expressions_scalar_ScalarLiteral
-                        quickstep_storage_BitWeavingHIndexSubBlock
-                        quickstep_storage_BitWeavingIndexSubBlock
-                        quickstep_storage_BitWeavingVIndexSubBlock
-                        quickstep_storage_StorageBlock
-                        quickstep_storage_StorageBlockInfo
-                        quickstep_storage_StorageBlockLayout_proto
-                        quickstep_storage_StorageErrors
-                        quickstep_storage_StorageManager
-                        quickstep_storage_TupleIdSequence
-                        quickstep_storage_TupleStorageSubBlock
-                        quickstep_types_CharType
-                        quickstep_types_FloatType
-                        quickstep_types_LongType
-                        quickstep_types_Type
-                        quickstep_types_TypeFactory
-                        quickstep_types_TypeID
-                        quickstep_types_TypedValue
-                        quickstep_types_VarCharType
-                        quickstep_types_containers_Tuple
-                        quickstep_types_operations_comparisons_Comparison
-                        quickstep_types_operations_comparisons_ComparisonFactory
-                        quickstep_types_operations_comparisons_ComparisonID
-                        quickstep_types_operations_comparisons_ComparisonUtil
-                        quickstep_utility_Macros
-                        quickstep_utility_ScopedBuffer)
-  add_test(BitWeavingIndexSubBlock_unittest BitWeavingIndexSubBlock_unittest)
-endif()
-
-add_executable(CompressedColumnStoreTupleStorageSubBlock_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CompressedColumnStoreTupleStorageSubBlock_unittest.cpp")
-target_link_libraries(CompressedColumnStoreTupleStorageSubBlock_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_predicate_ComparisonPredicate
-                      quickstep_expressions_scalar_Scalar
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_scalar_ScalarLiteral
-                      quickstep_storage_CompressedColumnStoreTupleStorageSubBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageBlockLayout
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageErrors
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_tests_TupleStorePredicateUtil
-                      quickstep_types_CharType
-                      quickstep_types_DoubleType
-                      quickstep_types_IntType
-                      quickstep_types_LongType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_utility_BitVector
-                      quickstep_utility_Macros
-                      quickstep_utility_PtrMap
-                      quickstep_utility_PtrVector
-                      quickstep_utility_ScopedBuffer)
-add_test(CompressedColumnStoreTupleStorageSubBlock_unittest CompressedColumnStoreTupleStorageSubBlock_unittest)
-
-add_executable(CompressedPackedRowStoreTupleStorageSubBlock_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CompressedPackedRowStoreTupleStorageSubBlock_unittest.cpp")
-target_link_libraries(CompressedPackedRowStoreTupleStorageSubBlock_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_predicate_ComparisonPredicate
-                      quickstep_expressions_scalar_Scalar
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_scalar_ScalarLiteral
-                      quickstep_storage_CompressedPackedRowStoreTupleStorageSubBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageBlockLayout
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageErrors
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_tests_TupleStorePredicateUtil
-                      quickstep_types_CharType
-                      quickstep_types_DoubleType
-                      quickstep_types_IntType
-                      quickstep_types_LongType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_utility_BitVector
-                      quickstep_utility_Macros
-                      quickstep_utility_PtrMap
-                      quickstep_utility_PtrVector
-                      quickstep_utility_ScopedBuffer)
-add_test(CompressedPackedRowStoreTupleStorageSubBlock_unittest CompressedPackedRowStoreTupleStorageSubBlock_unittest)
-
-if (ENABLE_DISTRIBUTED)
-  add_executable(DataExchange_unittest
-                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/DataExchange_unittest.cpp")
-  target_link_libraries(DataExchange_unittest
-                        ${GFLAGS_LIB_NAME}
-                        ${LIBS}
-                        glog
-                        gtest
-                        quickstep_catalog_CatalogAttribute
-                        quickstep_catalog_CatalogRelation
-                        quickstep_catalog_CatalogTypedefs
-                        quickstep_queryexecution_BlockLocator
-                        quickstep_queryexecution_BlockLocatorUtil
-                        quickstep_queryexecution_QueryExecutionTypedefs
-                        quickstep_queryexecution_QueryExecutionUtil
-                        quickstep_storage_CountedReference
-                        quickstep_storage_DataExchangerAsync
-                        quickstep_storage_StorageBlob
-                        quickstep_storage_StorageBlock
-                        quickstep_storage_StorageBlockInfo
-                        quickstep_storage_StorageConstants
-                        quickstep_storage_StorageManager
-                        quickstep_storage_TupleStorageSubBlock
-                        quickstep_types_TypeFactory
-                        quickstep_types_TypeID
-                        quickstep_types_TypedValue
-                        quickstep_types_containers_Tuple
-                        tmb)
-  add_test(DataExchange_unittest DataExchange_unittest)
-endif(ENABLE_DISTRIBUTED)
-
-if (ENABLE_NETWORK_CLI)
-  add_executable(DataProviderThread_unittest
-                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/DataProviderThread_unittest.cpp")
-  target_link_libraries(DataProviderThread_unittest
-                        ${GFLAGS_LIB_NAME}
-                        ${LIBS}
-                        glog
-                        gtest
-                        gtest_main
-                        quickstep_catalog_CatalogDatabase
-                        quickstep_catalog_CatalogRelation
-                        quickstep_queryexecution_ForemanSingleNode
-                        quickstep_queryexecution_QueryExecutionTypedefs
-                        quickstep_queryexecution_QueryExecutionUtil
-                        quickstep_queryexecution_Worker
-                        quickstep_queryexecution_WorkerDirectory
-                        quickstep_queryoptimizer_QueryProcessor
-                        quickstep_queryoptimizer_tests_TestDatabaseLoader
-                        quickstep_storage_BlockWire_proto
-                        quickstep_storage_DataProviderThread
-                        quickstep_storage_StorageConstants
-                        tmb)
-  add_test(DataProviderThread_unittest DataProviderThread_unittest)
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data_provider_thread_test_data)
-endif()
-
-add_executable(CSBTreeIndexSubBlock_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/CSBTreeIndexSubBlock_unittest.cpp")
-target_link_libraries(CSBTreeIndexSubBlock_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_predicate_ComparisonPredicate
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_scalar_ScalarLiteral
-                      quickstep_storage_CSBTreeIndexSubBlock
-                      quickstep_storage_CompressedPackedRowStoreTupleStorageSubBlock
-                      quickstep_storage_CompressedTupleStorageSubBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_StorageErrors
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_TupleStorageSubBlock
-                      quickstep_types_CharType
-                      quickstep_types_FloatType
-                      quickstep_types_LongType
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_types_operations_comparisons_ComparisonUtil
-                      quickstep_utility_BitVector
-                      quickstep_utility_Macros
-                      quickstep_utility_ScopedBuffer)
-add_test(CSBTreeIndexSubBlock_unittest CSBTreeIndexSubBlock_unittest)
-
-add_executable(EvictionPolicy_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/EvictionPolicy_unittest.cpp")
-target_link_libraries(EvictionPolicy_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_storage_EvictionPolicy
-                      quickstep_storage_StorageBlockInfo)
-add_test(EvictionPolicy_unittest EvictionPolicy_unittest)
-
-if (QUICKSTEP_HAVE_FILE_MANAGER_HDFS)
-add_executable(FileManagerHdfs_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/FileManagerHdfs_unittest.cpp")
-target_link_libraries(FileManagerHdfs_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_storage_FileManagerHdfs
-                      quickstep_storage_tests_FileManager_unittest_common)
-endif()
-
-add_executable(FileManagerLocal_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/FileManagerLocal_unittest.cpp")
-target_link_libraries(FileManagerLocal_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_storage_FileManagerLocal
-                      quickstep_storage_tests_FileManager_unittest_common)
-add_test(FileManagerLocal_unittest FileManagerLocal_unittest)
-
-add_executable(LinearOpenAddressingHashTable_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/LinearOpenAddressingHashTable_unittest.cpp")
-target_link_libraries(LinearOpenAddressingHashTable_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_storage_LinearOpenAddressingHashTable
-                      quickstep_storage_tests_HashTable_unittest_common)
-add_test(LinearOpenAddressingHashTable_unittest LinearOpenAddressingHashTable_unittest)
-
-add_executable(SMAIndexSubBlock_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/SMAIndexSubBlock_unittest.cpp")
-target_link_libraries(SMAIndexSubBlock_unittest
-                      ${LIBS}
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_predicate_ComparisonPredicate
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_expressions_scalar_ScalarLiteral
-                      quickstep_storage_CompressedColumnStoreTupleStorageSubBlock
-                      quickstep_storage_SMAIndexSubBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_TupleStorageSubBlock
-                      quickstep_types_CharType
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_IntType
-                      quickstep_types_LongType
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_utility_ScopedBuffer)
-add_test(SMAIndexSubBlock_unittest SMAIndexSubBlock_unittest)
-
-add_executable(SeparateChainingHashTable_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/SeparateChainingHashTable_unittest.cpp")
-target_link_libraries(SeparateChainingHashTable_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_storage_SeparateChainingHashTable
-                      quickstep_storage_tests_HashTable_unittest_common)
-add_test(SeparateChainingHashTable_unittest SeparateChainingHashTable_unittest)
-
-add_executable(SimpleScalarSeparateChainingHashTable_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/SimpleScalarSeparateChainingHashTable_unittest.cpp")
-target_link_libraries(SimpleScalarSeparateChainingHashTable_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_storage_SimpleScalarSeparateChainingHashTable
-                      quickstep_storage_tests_HashTable_unittest_common)
-add_test(SimpleScalarSeparateChainingHashTable_unittest
-         SimpleScalarSeparateChainingHashTable_unittest)
-
-add_executable(SplitRowStoreTupleStorageSubBlock_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/SplitRowStoreTupleStorageSubBlock_unittest.cpp")
-target_link_libraries(SplitRowStoreTupleStorageSubBlock_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_storage_SplitRowStoreTupleStorageSubBlock
-                      quickstep_storage_SplitRowStoreValueAccessor
-                      quickstep_storage_StorageBlockLayout
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageErrors
-                      quickstep_storage_TupleIdSequence
-                      quickstep_storage_TupleStorageSubBlock
-                      quickstep_storage_ValueAccessor
-                      quickstep_types_CharType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_containers_Tuple
-                      quickstep_utility_BitVector
-                      quickstep_utility_EqualsAnyConstant
-                      quickstep_utility_ScopedBuffer)
-add_test(SplitRowStoreTupleStorageSubBlock_unittest SplitRowStoreTupleStorageSubBlock_unittest)
-
-add_executable(StorageBlockSort_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/StorageBlockSort_unittest.cpp")
-target_link_libraries(StorageBlockSort_unittest
-                      ${LIBS}
-                      glog
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogRelation
-                      quickstep_expressions_scalar_Scalar
-                      quickstep_expressions_scalar_ScalarAttribute
-                      quickstep_storage_StorageBlockLayout
-                      quickstep_storage_StorageManager
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_IntType
-                      quickstep_types_LongType
-                      quickstep_types_containers_Tuple)
-add_test(StorageBlockSort_unittest StorageBlockSort_unittest)
-
-add_executable(StorageManager_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/StorageManager_unittest.cpp")
-target_link_libraries(StorageManager_unittest
-                      gtest
-                      gtest_main
-                      quickstep_storage_EvictionPolicy
-                      quickstep_storage_StorageBlob
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageManager
-                      quickstep_utility_ShardedLockManager)
-
-add_executable(WindowAggregationOperationState_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WindowAggregationOperationState_unittest.cpp")
-target_link_libraries(WindowAggregationOperationState_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogDatabase
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_storage_WindowAggregationOperationState
-                      quickstep_storage_WindowAggregationOperationState_proto)
-if (QUICKSTEP_HAVE_LIBNUMA)
-  target_link_libraries(StorageManager_unittest
-                        ${LIBNUMA_LIBRARY})
-endif()
-add_test(StorageManager_unittest StorageManager_unittest)
+#include(CheckTypeSize)
+#CHECK_TYPE_SIZE("size_t" SIZEOF_SIZE_T)
+#if (SIZEOF_SIZE_T GREATER 7)
+#  set(QUICKSTEP_LONG_HASH_REVERSIBLE 1)
+#endif()
+#configure_file (
+#  "${CMAKE_CURRENT_SOURCE_DIR}/tests/StorageTestConfig.h.in"
+#  "${CMAKE_CURRENT_BINARY_DIR}/tests/StorageTestConfig.h"
+#)
+#
+#add_library(quickstep_storage_tests_FileManager_unittest_common
+#            ../empty_src.cpp
+#            "${CMAKE_CURRENT_SOURCE_DIR}/tests/FileManager_unittest_common.hpp")
+#target_link_libraries(quickstep_storage_tests_FileManager_unittest_common
+#                      gtest
+#                      quickstep_storage_FileManager
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageConstants)
+#
+#add_library(quickstep_storage_tests_HashTable_unittest_common
+#            ../empty_src.cpp
+#            "${CMAKE_CURRENT_SOURCE_DIR}/tests/HashTable_unittest_common.hpp")
+#target_link_libraries(quickstep_storage_tests_HashTable_unittest_common
+#                      gtest
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_storage_HashTable
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageManager
+#                      quickstep_threading_Thread
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_containers_ColumnVector
+#                      quickstep_types_containers_ColumnVectorsValueAccessor
+#                      quickstep_utility_Macros
+#                      quickstep_utility_ScopedBuffer)
+#
+#add_library(quickstep_storage_tests_TupleStorePredicateUtil
+#            ../empty_src.cpp
+#            "${CMAKE_CURRENT_SOURCE_DIR}/tests/TupleStorePredicateUtil.hpp")
+#target_link_libraries(quickstep_storage_tests_TupleStorePredicateUtil
+#                      quickstep_expressions_predicate_Predicate
+#                      quickstep_storage_IndexSubBlock
+#                      quickstep_storage_SubBlocksReference
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_TupleStorageSubBlock
+#                      quickstep_storage_ValueAccessor
+#                      quickstep_utility_Macros
+#                      quickstep_utility_PtrVector)
+#
+#add_executable(AggregationOperationState_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationOperationState_unittest.cpp")
+#target_link_libraries(AggregationOperationState_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogDatabase
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_storage_AggregationOperationState
+#                      quickstep_storage_AggregationOperationState_proto)
+#add_test(AggregationOperationState_unittest AggregationOperationState_unittest)
+#
+#add_executable(BasicColumnStoreTupleStorageSubBlock_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/BasicColumnStoreTupleStorageSubBlock_unittest.cpp")
+#target_link_libraries(BasicColumnStoreTupleStorageSubBlock_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_predicate_ComparisonPredicate
+#                      quickstep_expressions_scalar_Scalar
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_scalar_ScalarLiteral
+#                      quickstep_storage_BasicColumnStoreTupleStorageSubBlock
+#                      quickstep_storage_StorageBlockLayout
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageErrors
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_TupleStorageSubBlock
+#                      quickstep_storage_tests_TupleStorePredicateUtil
+#                      quickstep_types_CharType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_IntType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_types_operations_comparisons_ComparisonUtil
+#                      quickstep_utility_BitVector
+#                      quickstep_utility_ScopedBuffer)
+#add_test(BasicColumnStoreTupleStorageSubBlock_unittest BasicColumnStoreTupleStorageSubBlock_unittest)
+#
+#add_executable(BloomFilterIndexSubBlock_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/BloomFilterIndexSubBlock_unittest.cpp")
+#target_link_libraries(BloomFilterIndexSubBlock_unittest
+#                      ${LIBS}
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_predicate_ComparisonPredicate
+#                      quickstep_expressions_predicate_PredicateCost
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_scalar_ScalarLiteral
+#                      quickstep_storage_BloomFilterIndexSubBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_TupleStorageSubBlock
+#                      quickstep_types_CharType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_LongType
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_utility_ScopedBuffer)
+#add_test(BloomFilterIndexSubBlock_unittest BloomFilterIndexSubBlock_unittest)
+#
+#if(QUICKSTEP_HAVE_BITWEAVING)
+#  add_executable(BitWeavingIndexSubBlock_unittest
+#                 "${CMAKE_CURRENT_SOURCE_DIR}/bitweaving/tests/BitWeavingIndexSubBlock_unittest.cpp")
+#  target_link_libraries(BitWeavingIndexSubBlock_unittest
+#                        ${LIBS}
+#                        glog
+#                        gtest
+#                        gtest_main
+#                        quickstep_catalog_CatalogAttribute
+#                        quickstep_catalog_CatalogRelation
+#                        quickstep_catalog_CatalogTypedefs
+#                        quickstep_expressions_predicate_ComparisonPredicate
+#                        quickstep_expressions_scalar_Scalar
+#                        quickstep_expressions_scalar_ScalarAttribute
+#                        quickstep_expressions_scalar_ScalarLiteral
+#                        quickstep_storage_BitWeavingHIndexSubBlock
+#                        quickstep_storage_BitWeavingIndexSubBlock
+#                        quickstep_storage_BitWeavingVIndexSubBlock
+#                        quickstep_storage_StorageBlock
+#                        quickstep_storage_StorageBlockInfo
+#                        quickstep_storage_StorageBlockLayout_proto
+#                        quickstep_storage_StorageErrors
+#                        quickstep_storage_StorageManager
+#                        quickstep_storage_TupleIdSequence
+#                        quickstep_storage_TupleStorageSubBlock
+#                        quickstep_types_CharType
+#                        quickstep_types_FloatType
+#                        quickstep_types_LongType
+#                        quickstep_types_Type
+#                        quickstep_types_TypeFactory
+#                        quickstep_types_TypeID
+#                        quickstep_types_TypedValue
+#                        quickstep_types_VarCharType
+#                        quickstep_types_containers_Tuple
+#                        quickstep_types_operations_comparisons_Comparison
+#                        quickstep_types_operations_comparisons_ComparisonFactory
+#                        quickstep_types_operations_comparisons_ComparisonID
+#                        quickstep_types_operations_comparisons_ComparisonUtil
+#                        quickstep_utility_Macros
+#                        quickstep_utility_ScopedBuffer)
+#  add_test(BitWeavingIndexSubBlock_unittest BitWeavingIndexSubBlock_unittest)
+#endif()
+#
+#add_executable(CompressedColumnStoreTupleStorageSubBlock_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CompressedColumnStoreTupleStorageSubBlock_unittest.cpp")
+#target_link_libraries(CompressedColumnStoreTupleStorageSubBlock_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_predicate_ComparisonPredicate
+#                      quickstep_expressions_scalar_Scalar
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_scalar_ScalarLiteral
+#                      quickstep_storage_CompressedColumnStoreTupleStorageSubBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageBlockLayout
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageErrors
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_tests_TupleStorePredicateUtil
+#                      quickstep_types_CharType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_IntType
+#                      quickstep_types_LongType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_utility_BitVector
+#                      quickstep_utility_Macros
+#                      quickstep_utility_PtrMap
+#                      quickstep_utility_PtrVector
+#                      quickstep_utility_ScopedBuffer)
+#add_test(CompressedColumnStoreTupleStorageSubBlock_unittest CompressedColumnStoreTupleStorageSubBlock_unittest)
+#
+#add_executable(CompressedPackedRowStoreTupleStorageSubBlock_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CompressedPackedRowStoreTupleStorageSubBlock_unittest.cpp")
+#target_link_libraries(CompressedPackedRowStoreTupleStorageSubBlock_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_predicate_ComparisonPredicate
+#                      quickstep_expressions_scalar_Scalar
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_scalar_ScalarLiteral
+#                      quickstep_storage_CompressedPackedRowStoreTupleStorageSubBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageBlockLayout
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageErrors
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_tests_TupleStorePredicateUtil
+#                      quickstep_types_CharType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_IntType
+#                      quickstep_types_LongType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_utility_BitVector
+#                      quickstep_utility_Macros
+#                      quickstep_utility_PtrMap
+#                      quickstep_utility_PtrVector
+#                      quickstep_utility_ScopedBuffer)
+#add_test(CompressedPackedRowStoreTupleStorageSubBlock_unittest CompressedPackedRowStoreTupleStorageSubBlock_unittest)
+#
+#if (ENABLE_DISTRIBUTED)
+#  add_executable(DataExchange_unittest
+#                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/DataExchange_unittest.cpp")
+#  target_link_libraries(DataExchange_unittest
+#                        ${GFLAGS_LIB_NAME}
+#                        ${LIBS}
+#                        glog
+#                        gtest
+#                        quickstep_catalog_CatalogAttribute
+#                        quickstep_catalog_CatalogRelation
+#                        quickstep_catalog_CatalogTypedefs
+#                        quickstep_queryexecution_BlockLocator
+#                        quickstep_queryexecution_BlockLocatorUtil
+#                        quickstep_queryexecution_QueryExecutionTypedefs
+#                        quickstep_queryexecution_QueryExecutionUtil
+#                        quickstep_storage_CountedReference
+#                        quickstep_storage_DataExchangerAsync
+#                        quickstep_storage_StorageBlob
+#                        quickstep_storage_StorageBlock
+#                        quickstep_storage_StorageBlockInfo
+#                        quickstep_storage_StorageConstants
+#                        quickstep_storage_StorageManager
+#                        quickstep_storage_TupleStorageSubBlock
+#                        quickstep_types_TypeFactory
+#                        quickstep_types_TypeID
+#                        quickstep_types_TypedValue
+#                        quickstep_types_containers_Tuple
+#                        tmb)
+#  add_test(DataExchange_unittest DataExchange_unittest)
+#endif(ENABLE_DISTRIBUTED)
+#
+#if (ENABLE_NETWORK_CLI)
+#  add_executable(DataProviderThread_unittest
+#                 "${CMAKE_CURRENT_SOURCE_DIR}/tests/DataProviderThread_unittest.cpp")
+#  target_link_libraries(DataProviderThread_unittest
+#                        ${GFLAGS_LIB_NAME}
+#                        ${LIBS}
+#                        glog
+#                        gtest
+#                        gtest_main
+#                        quickstep_catalog_CatalogDatabase
+#                        quickstep_catalog_CatalogRelation
+#                        quickstep_queryexecution_ForemanSingleNode
+#                        quickstep_queryexecution_QueryExecutionTypedefs
+#                        quickstep_queryexecution_QueryExecutionUtil
+#                        quickstep_queryexecution_Worker
+#                        quickstep_queryexecution_WorkerDirectory
+#                        quickstep_queryoptimizer_QueryProcessor
+#                        quickstep_queryoptimizer_tests_TestDatabaseLoader
+#                        quickstep_storage_BlockWire_proto
+#                        quickstep_storage_DataProviderThread
+#                        quickstep_storage_StorageConstants
+#                        tmb)
+#  add_test(DataProviderThread_unittest DataProviderThread_unittest)
+#  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data_provider_thread_test_data)
+#endif()
+#
+#add_executable(CSBTreeIndexSubBlock_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/CSBTreeIndexSubBlock_unittest.cpp")
+#target_link_libraries(CSBTreeIndexSubBlock_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_predicate_ComparisonPredicate
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_scalar_ScalarLiteral
+#                      quickstep_storage_CSBTreeIndexSubBlock
+#                      quickstep_storage_CompressedPackedRowStoreTupleStorageSubBlock
+#                      quickstep_storage_CompressedTupleStorageSubBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_StorageErrors
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_TupleStorageSubBlock
+#                      quickstep_types_CharType
+#                      quickstep_types_FloatType
+#                      quickstep_types_LongType
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_types_operations_comparisons_ComparisonUtil
+#                      quickstep_utility_BitVector
+#                      quickstep_utility_Macros
+#                      quickstep_utility_ScopedBuffer)
+#add_test(CSBTreeIndexSubBlock_unittest CSBTreeIndexSubBlock_unittest)
+#
+#add_executable(EvictionPolicy_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/EvictionPolicy_unittest.cpp")
+#target_link_libraries(EvictionPolicy_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_EvictionPolicy
+#                      quickstep_storage_StorageBlockInfo)
+#add_test(EvictionPolicy_unittest EvictionPolicy_unittest)
+#
+#if (QUICKSTEP_HAVE_FILE_MANAGER_HDFS)
+#add_executable(FileManagerHdfs_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/FileManagerHdfs_unittest.cpp")
+#target_link_libraries(FileManagerHdfs_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_FileManagerHdfs
+#                      quickstep_storage_tests_FileManager_unittest_common)
+#endif()
+#
+#add_executable(FileManagerLocal_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/FileManagerLocal_unittest.cpp")
+#target_link_libraries(FileManagerLocal_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_FileManagerLocal
+#                      quickstep_storage_tests_FileManager_unittest_common)
+#add_test(FileManagerLocal_unittest FileManagerLocal_unittest)
+#
+#add_executable(LinearOpenAddressingHashTable_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/LinearOpenAddressingHashTable_unittest.cpp")
+#target_link_libraries(LinearOpenAddressingHashTable_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_LinearOpenAddressingHashTable
+#                      quickstep_storage_tests_HashTable_unittest_common)
+#add_test(LinearOpenAddressingHashTable_unittest LinearOpenAddressingHashTable_unittest)
+#
+#add_executable(SMAIndexSubBlock_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/SMAIndexSubBlock_unittest.cpp")
+#target_link_libraries(SMAIndexSubBlock_unittest
+#                      ${LIBS}
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_predicate_ComparisonPredicate
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_expressions_scalar_ScalarLiteral
+#                      quickstep_storage_CompressedColumnStoreTupleStorageSubBlock
+#                      quickstep_storage_SMAIndexSubBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_TupleStorageSubBlock
+#                      quickstep_types_CharType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_IntType
+#                      quickstep_types_LongType
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_utility_ScopedBuffer)
+#add_test(SMAIndexSubBlock_unittest SMAIndexSubBlock_unittest)
+#
+#add_executable(SeparateChainingHashTable_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/SeparateChainingHashTable_unittest.cpp")
+#target_link_libraries(SeparateChainingHashTable_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_SeparateChainingHashTable
+#                      quickstep_storage_tests_HashTable_unittest_common)
+#add_test(SeparateChainingHashTable_unittest SeparateChainingHashTable_unittest)
+#
+#add_executable(SimpleScalarSeparateChainingHashTable_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/SimpleScalarSeparateChainingHashTable_unittest.cpp")
+#target_link_libraries(SimpleScalarSeparateChainingHashTable_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_SimpleScalarSeparateChainingHashTable
+#                      quickstep_storage_tests_HashTable_unittest_common)
+#add_test(SimpleScalarSeparateChainingHashTable_unittest
+#         SimpleScalarSeparateChainingHashTable_unittest)
+#
+#add_executable(SplitRowStoreTupleStorageSubBlock_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/SplitRowStoreTupleStorageSubBlock_unittest.cpp")
+#target_link_libraries(SplitRowStoreTupleStorageSubBlock_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_storage_SplitRowStoreTupleStorageSubBlock
+#                      quickstep_storage_SplitRowStoreValueAccessor
+#                      quickstep_storage_StorageBlockLayout
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageErrors
+#                      quickstep_storage_TupleIdSequence
+#                      quickstep_storage_TupleStorageSubBlock
+#                      quickstep_storage_ValueAccessor
+#                      quickstep_types_CharType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_containers_Tuple
+#                      quickstep_utility_BitVector
+#                      quickstep_utility_EqualsAnyConstant
+#                      quickstep_utility_ScopedBuffer)
+#add_test(SplitRowStoreTupleStorageSubBlock_unittest SplitRowStoreTupleStorageSubBlock_unittest)
+#
+#add_executable(StorageBlockSort_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/StorageBlockSort_unittest.cpp")
+#target_link_libraries(StorageBlockSort_unittest
+#                      ${LIBS}
+#                      glog
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_expressions_scalar_Scalar
+#                      quickstep_expressions_scalar_ScalarAttribute
+#                      quickstep_storage_StorageBlockLayout
+#                      quickstep_storage_StorageManager
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_IntType
+#                      quickstep_types_LongType
+#                      quickstep_types_containers_Tuple)
+#add_test(StorageBlockSort_unittest StorageBlockSort_unittest)
+#
+#add_executable(StorageManager_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/StorageManager_unittest.cpp")
+#target_link_libraries(StorageManager_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_storage_EvictionPolicy
+#                      quickstep_storage_StorageBlob
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageManager
+#                      quickstep_utility_ShardedLockManager)
+#
+#add_executable(WindowAggregationOperationState_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/WindowAggregationOperationState_unittest.cpp")
+#target_link_libraries(WindowAggregationOperationState_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogDatabase
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_storage_WindowAggregationOperationState
+#                      quickstep_storage_WindowAggregationOperationState_proto)
+#if (QUICKSTEP_HAVE_LIBNUMA)
+#  target_link_libraries(StorageManager_unittest
+#                        ${LIBNUMA_LIBRARY})
+#endif()
+#add_test(StorageManager_unittest StorageManager_unittest)

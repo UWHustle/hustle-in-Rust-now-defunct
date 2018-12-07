@@ -202,22 +202,22 @@ target_link_libraries(quickstep_types_operations_comparisons
                       quickstep_types_operations_comparisons_NotEqualComparison
                       quickstep_types_operations_comparisons_PatternMatchingComparators
                       quickstep_types_operations_comparisons_PatternMatchingComparison)
-
-# Tests:
-add_executable(Comparison_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Comparison_unittest.cpp")
-target_link_libraries(Comparison_unittest
-                      gtest
-                      gtest_main
-                      quickstep_types_DatetimeLit
-                      quickstep_types_IntervalLit
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_operations_Operation_proto
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID
-                      quickstep_utility_Macros
-                      quickstep_utility_ScopedBuffer)
-add_test(Comparison_unittest Comparison_unittest)
+#
+## Tests:
+#add_executable(Comparison_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Comparison_unittest.cpp")
+#target_link_libraries(Comparison_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DatetimeLit
+#                      quickstep_types_IntervalLit
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_operations_Operation_proto
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID
+#                      quickstep_utility_Macros
+#                      quickstep_utility_ScopedBuffer)
+#add_test(Comparison_unittest Comparison_unittest)

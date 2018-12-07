@@ -385,26 +385,26 @@ target_link_libraries(quickstep_threading
                       quickstep_threading_ThreadUtil
                       quickstep_threading_WinThreadsAPI)
 
-# Tests:
-add_executable(Mutex_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Mutex_unittest.cpp")
-target_link_libraries(Mutex_unittest
-                      ${CMAKE_THREAD_LIBS_INIT}
-                      gtest
-                      gtest_main
-                      quickstep_threading_Mutex
-                      quickstep_threading_SpinMutex
-                      quickstep_threading_Thread
-                      quickstep_utility_Macros)
-add_test(Mutex_unittest Mutex_unittest)
-
-add_executable(SharedMutex_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/SharedMutex_unittest.cpp")
-target_link_libraries(SharedMutex_unittest
-                      ${CMAKE_THREAD_LIBS_INIT}
-                      gtest
-                      gtest_main
-                      quickstep_threading_Mutex
-                      quickstep_threading_SharedMutex
-                      quickstep_threading_SpinSharedMutex
-                      quickstep_threading_Thread
-                      quickstep_utility_Macros)
-add_test(SharedMutex_unittest SharedMutex_unittest)
+## Tests:
+#add_executable(Mutex_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Mutex_unittest.cpp")
+#target_link_libraries(Mutex_unittest
+#                      ${CMAKE_THREAD_LIBS_INIT}
+#                      gtest
+#                      gtest_main
+#                      quickstep_threading_Mutex
+#                      quickstep_threading_SpinMutex
+#                      quickstep_threading_Thread
+#                      quickstep_utility_Macros)
+#add_test(Mutex_unittest Mutex_unittest)
+#
+#add_executable(SharedMutex_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/SharedMutex_unittest.cpp")
+#target_link_libraries(SharedMutex_unittest
+#                      ${CMAKE_THREAD_LIBS_INIT}
+#                      gtest
+#                      gtest_main
+#                      quickstep_threading_Mutex
+#                      quickstep_threading_SharedMutex
+#                      quickstep_threading_SpinSharedMutex
+#                      quickstep_threading_Thread
+#                      quickstep_utility_Macros)
+#add_test(SharedMutex_unittest SharedMutex_unittest)

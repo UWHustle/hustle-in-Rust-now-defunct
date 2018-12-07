@@ -63,15 +63,15 @@ target_link_libraries(quickstep_types_containers
                       quickstep_types_containers_Tuple
                       quickstep_types_containers_Tuple_proto)
 
-# Tests:
-add_executable(ColumnVector_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/ColumnVector_unittest.cpp")
-target_link_libraries(ColumnVector_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_containers_ColumnVector)
-add_test(ColumnVector_unittest ColumnVector_unittest)
+## Tests:
+#add_executable(ColumnVector_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/ColumnVector_unittest.cpp")
+#target_link_libraries(ColumnVector_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_containers_ColumnVector)
+#add_test(ColumnVector_unittest ColumnVector_unittest)

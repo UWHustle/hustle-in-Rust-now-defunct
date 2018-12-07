@@ -255,49 +255,49 @@ target_link_libraries(quickstep_expressions_aggregation
 
 # Tests:
 
-# Unified executable to ammortize cost of linking.
-add_executable(AggregationHandle_tests
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleAvg_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleCount_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleMax_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleMin_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleSum_unittest.cpp")
-target_link_libraries(AggregationHandle_tests
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_expressions_aggregation_AggregateFunction
-                      quickstep_expressions_aggregation_AggregateFunctionFactory
-                      quickstep_expressions_aggregation_AggregationHandle
-                      quickstep_expressions_aggregation_AggregationHandleAvg
-                      quickstep_expressions_aggregation_AggregationHandleCount
-                      quickstep_expressions_aggregation_AggregationHandleMax
-                      quickstep_expressions_aggregation_AggregationHandleMin
-                      quickstep_expressions_aggregation_AggregationHandleSum
-                      quickstep_expressions_aggregation_AggregationID
-                      quickstep_storage_AggregationOperationState
-                      quickstep_storage_HashTableBase
-                      quickstep_storage_PackedPayloadHashTable
-                      quickstep_storage_StorageManager
-                      quickstep_storage_ValueAccessorMultiplexer
-                      quickstep_types_CharType
-                      quickstep_types_DateOperatorOverloads
-                      quickstep_types_DatetimeIntervalType
-                      quickstep_types_DatetimeType
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_IntType
-                      quickstep_types_IntervalLit
-                      quickstep_types_LongType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_VarCharType
-                      quickstep_types_YearMonthIntervalType
-                      quickstep_types_containers_ColumnVector
-                      quickstep_types_containers_ColumnVectorsValueAccessor
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_ComparisonFactory
-                      quickstep_types_operations_comparisons_ComparisonID)
-add_test(AggregationHandle_tests AggregationHandle_tests)
+## Unified executable to ammortize cost of linking.
+#add_executable(AggregationHandle_tests
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleAvg_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleCount_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleMax_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleMin_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/AggregationHandleSum_unittest.cpp")
+#target_link_libraries(AggregationHandle_tests
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_expressions_aggregation_AggregateFunction
+#                      quickstep_expressions_aggregation_AggregateFunctionFactory
+#                      quickstep_expressions_aggregation_AggregationHandle
+#                      quickstep_expressions_aggregation_AggregationHandleAvg
+#                      quickstep_expressions_aggregation_AggregationHandleCount
+#                      quickstep_expressions_aggregation_AggregationHandleMax
+#                      quickstep_expressions_aggregation_AggregationHandleMin
+#                      quickstep_expressions_aggregation_AggregationHandleSum
+#                      quickstep_expressions_aggregation_AggregationID
+#                      quickstep_storage_AggregationOperationState
+#                      quickstep_storage_HashTableBase
+#                      quickstep_storage_PackedPayloadHashTable
+#                      quickstep_storage_StorageManager
+#                      quickstep_storage_ValueAccessorMultiplexer
+#                      quickstep_types_CharType
+#                      quickstep_types_DateOperatorOverloads
+#                      quickstep_types_DatetimeIntervalType
+#                      quickstep_types_DatetimeType
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_IntType
+#                      quickstep_types_IntervalLit
+#                      quickstep_types_LongType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_VarCharType
+#                      quickstep_types_YearMonthIntervalType
+#                      quickstep_types_containers_ColumnVector
+#                      quickstep_types_containers_ColumnVectorsValueAccessor
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_ComparisonFactory
+#                      quickstep_types_operations_comparisons_ComparisonID)
+#add_test(AggregationHandle_tests AggregationHandle_tests)

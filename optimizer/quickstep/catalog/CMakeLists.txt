@@ -206,85 +206,85 @@ if(QUICKSTEP_HAVE_LIBNUMA)
                         quickstep_catalog_NUMAPlacementScheme)
 endif()
 
-# Tests:
-add_executable(Catalog_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Catalog_unittest.cpp")
-target_link_libraries(Catalog_unittest
-                      gtest
-                      gtest_main
-                      quickstep_catalog_Catalog
-                      quickstep_catalog_CatalogAttribute
-                      quickstep_catalog_CatalogDatabase
-                      quickstep_catalog_CatalogDatabaseCache
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogRelationSchema
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_catalog_Catalog_proto
-                      quickstep_catalog_IndexScheme
-                      quickstep_storage_StorageBlock
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_storage_StorageBlockLayout
-                      quickstep_storage_StorageBlockLayout_proto
-                      quickstep_storage_SubBlockTypeRegistryMacros
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_utility_Macros
-                      quickstep_utility_PtrVector)
-add_test(Catalog_unittest Catalog_unittest)
-
-add_executable(CatalogRelationStatistics_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CatalogRelationStatistics_unittest.cpp")
-target_link_libraries(CatalogRelationStatistics_unittest
-                      gtest
-                      gtest_main
-                      quickstep_catalog_Catalog
-                      quickstep_catalog_CatalogDatabase
-                      quickstep_catalog_CatalogRelation
-                      quickstep_catalog_CatalogRelationStatistics
-                      quickstep_cli_CommandExecutor
-                      quickstep_cli_DropRelation
-                      quickstep_parser_ParseStatement
-                      quickstep_parser_SqlParserWrapper
-                      quickstep_queryexecution_ForemanSingleNode
-                      quickstep_queryexecution_QueryExecutionTypedefs
-                      quickstep_queryexecution_QueryExecutionUtil
-                      quickstep_queryexecution_Worker
-                      quickstep_queryexecution_WorkerDirectory
-                      quickstep_queryoptimizer_QueryHandle
-                      quickstep_queryoptimizer_QueryProcessor
-                      quickstep_storage_StorageConstants
-                      quickstep_storage_StorageManager
-                      tmb)
-#add_test(CatalogRelationStatistics_unittest CatalogRelationStatistics_unittest)
-
-if(QUICKSTEP_HAVE_LIBNUMA)
-add_executable(NUMAPlacementScheme_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/NUMAPlacementScheme_unittest.cpp")
-target_link_libraries(NUMAPlacementScheme_unittest
-                      ${LIBS}
-                      gtest
-                      gtest_main
-                      quickstep_catalog_NUMAPlacementScheme
-                      quickstep_catalog_PartitionSchemeHeader
-                      quickstep_storage_StorageBlockInfo)
-add_test(NUMAPlacementScheme_unittest NUMAPlacementScheme_unittest)
-endif()
-
-add_executable(PartitionScheme_unittest
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/PartitionScheme_unittest.cpp")
-target_link_libraries(PartitionScheme_unittest
-                      gtest
-                      gtest_main
-                      quickstep_catalog_CatalogTypedefs
-                      quickstep_catalog_PartitionScheme
-                      quickstep_catalog_PartitionSchemeHeader
-                      quickstep_storage_StorageBlockInfo
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_operations_comparisons_Comparison
-                      quickstep_types_operations_comparisons_EqualComparison
-                      quickstep_utility_CompositeHash)
-add_test(PartitionScheme_unittest PartitionScheme_unittest)
+## Tests:
+#add_executable(Catalog_unittest "${CMAKE_CURRENT_SOURCE_DIR}/tests/Catalog_unittest.cpp")
+#target_link_libraries(Catalog_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_Catalog
+#                      quickstep_catalog_CatalogAttribute
+#                      quickstep_catalog_CatalogDatabase
+#                      quickstep_catalog_CatalogDatabaseCache
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogRelationSchema
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_catalog_Catalog_proto
+#                      quickstep_catalog_IndexScheme
+#                      quickstep_storage_StorageBlock
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_storage_StorageBlockLayout
+#                      quickstep_storage_StorageBlockLayout_proto
+#                      quickstep_storage_SubBlockTypeRegistryMacros
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_utility_Macros
+#                      quickstep_utility_PtrVector)
+#add_test(Catalog_unittest Catalog_unittest)
+#
+#add_executable(CatalogRelationStatistics_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/CatalogRelationStatistics_unittest.cpp")
+#target_link_libraries(CatalogRelationStatistics_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_Catalog
+#                      quickstep_catalog_CatalogDatabase
+#                      quickstep_catalog_CatalogRelation
+#                      quickstep_catalog_CatalogRelationStatistics
+#                      quickstep_cli_CommandExecutor
+#                      quickstep_cli_DropRelation
+#                      quickstep_parser_ParseStatement
+#                      quickstep_parser_SqlParserWrapper
+#                      quickstep_queryexecution_ForemanSingleNode
+#                      quickstep_queryexecution_QueryExecutionTypedefs
+#                      quickstep_queryexecution_QueryExecutionUtil
+#                      quickstep_queryexecution_Worker
+#                      quickstep_queryexecution_WorkerDirectory
+#                      quickstep_queryoptimizer_QueryHandle
+#                      quickstep_queryoptimizer_QueryProcessor
+#                      quickstep_storage_StorageConstants
+#                      quickstep_storage_StorageManager
+#                      tmb)
+##add_test(CatalogRelationStatistics_unittest CatalogRelationStatistics_unittest)
+#
+#if(QUICKSTEP_HAVE_LIBNUMA)
+#add_executable(NUMAPlacementScheme_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/NUMAPlacementScheme_unittest.cpp")
+#target_link_libraries(NUMAPlacementScheme_unittest
+#                      ${LIBS}
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_NUMAPlacementScheme
+#                      quickstep_catalog_PartitionSchemeHeader
+#                      quickstep_storage_StorageBlockInfo)
+#add_test(NUMAPlacementScheme_unittest NUMAPlacementScheme_unittest)
+#endif()
+#
+#add_executable(PartitionScheme_unittest
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/PartitionScheme_unittest.cpp")
+#target_link_libraries(PartitionScheme_unittest
+#                      gtest
+#                      gtest_main
+#                      quickstep_catalog_CatalogTypedefs
+#                      quickstep_catalog_PartitionScheme
+#                      quickstep_catalog_PartitionSchemeHeader
+#                      quickstep_storage_StorageBlockInfo
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_operations_comparisons_Comparison
+#                      quickstep_types_operations_comparisons_EqualComparison
+#                      quickstep_utility_CompositeHash)
+#add_test(PartitionScheme_unittest PartitionScheme_unittest)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/catalog_relation_statistics_test_data)

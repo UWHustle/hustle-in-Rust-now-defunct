@@ -150,32 +150,32 @@ target_link_libraries(quickstep_types_operations_unaryoperations
 
 # Tests:
 
-# Unified test executable.
-add_executable(UnaryOperation_tests
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DateExtractOperation_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/NegateUnaryOperation_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/NumericCastOperation_unittest.cpp"
-               "${CMAKE_CURRENT_SOURCE_DIR}/tests/UnaryOperation_unittest.cpp")
-target_link_libraries(UnaryOperation_tests
-                      gtest
-                      gtest_main
-                      quickstep_types_DatetimeLit
-                      quickstep_types_DoubleType
-                      quickstep_types_FloatType
-                      quickstep_types_IntType
-                      quickstep_types_LongType
-                      quickstep_types_Type
-                      quickstep_types_TypeFactory
-                      quickstep_types_TypeID
-                      quickstep_types_TypedValue
-                      quickstep_types_containers_ColumnVector
-                      quickstep_types_operations_Operation_proto
-                      quickstep_types_operations_unaryoperations_ArithmeticUnaryOperations
-                      quickstep_types_operations_unaryoperations_DateExtractOperation
-                      quickstep_types_operations_unaryoperations_NumericCastOperation
-                      quickstep_types_operations_unaryoperations_UnaryOperation
-                      quickstep_types_operations_unaryoperations_UnaryOperationFactory
-                      quickstep_types_operations_unaryoperations_UnaryOperationID
-                      quickstep_utility_EqualsAnyConstant
-                      quickstep_utility_Macros)
-add_test(UnaryOperation_tests UnaryOperation_tests)
+## Unified test executable.
+#add_executable(UnaryOperation_tests
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/DateExtractOperation_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/NegateUnaryOperation_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/NumericCastOperation_unittest.cpp"
+#               "${CMAKE_CURRENT_SOURCE_DIR}/tests/UnaryOperation_unittest.cpp")
+#target_link_libraries(UnaryOperation_tests
+#                      gtest
+#                      gtest_main
+#                      quickstep_types_DatetimeLit
+#                      quickstep_types_DoubleType
+#                      quickstep_types_FloatType
+#                      quickstep_types_IntType
+#                      quickstep_types_LongType
+#                      quickstep_types_Type
+#                      quickstep_types_TypeFactory
+#                      quickstep_types_TypeID
+#                      quickstep_types_TypedValue
+#                      quickstep_types_containers_ColumnVector
+#                      quickstep_types_operations_Operation_proto
+#                      quickstep_types_operations_unaryoperations_ArithmeticUnaryOperations
+#                      quickstep_types_operations_unaryoperations_DateExtractOperation
+#                      quickstep_types_operations_unaryoperations_NumericCastOperation
+#                      quickstep_types_operations_unaryoperations_UnaryOperation
+#                      quickstep_types_operations_unaryoperations_UnaryOperationFactory
+#                      quickstep_types_operations_unaryoperations_UnaryOperationID
+#                      quickstep_utility_EqualsAnyConstant
+#                      quickstep_utility_Macros)
+#add_test(UnaryOperation_tests UnaryOperation_tests)
