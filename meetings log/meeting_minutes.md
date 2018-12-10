@@ -1,3 +1,27 @@
+12/10/2018
+Optimizer [Yannis]
++ Reduced build time of quickstep.
+
+Execution Engine [Somya]:
++ Sketch out the flow between physical operators
+
+Resolver [Kevin]:
++ Talked with Jianqiao about the Resolver.
++ The first version of the resolver will used a dummy catalog and type system.
+
+Execution Engine [Matt];
++ Familiazring with execution engine 
++ Adaptive aggregation exploration
+
+Next Steps:
++ Integrate resolver and optimizer
++ Create a dummy catalog
++ Join with nested loops
++ Aggregation
+
+
+
+---
 11/26/2018
 Parser[Kevin]
 + Aggregated for query 2 are supported checked in.
