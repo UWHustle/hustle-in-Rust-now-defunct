@@ -2,7 +2,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "utility/stringify.h"
-#include "resolver/resolver.h"
+#include "optimizer/resolver/resolver.h"
 
 
 parse_node *get_parse_tree(char *command) {
@@ -27,7 +27,7 @@ void parse(char *command) {
     parse_node *node = get_parse_tree(command);
     if (node) {
         char *json_output = json_stringify(node);
-        resolve(command);
+        resolve(node, command);
         free(json_output);
         free_tree(node);
     }
