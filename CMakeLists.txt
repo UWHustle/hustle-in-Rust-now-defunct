@@ -10,6 +10,7 @@ enable_testing()
 
 add_subdirectory(execution)
 add_subdirectory(optimizer)
+add_subdirectory(resolver)
 add_subdirectory(parser)
 add_subdirectory(cli)
 

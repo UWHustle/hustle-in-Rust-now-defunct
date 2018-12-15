@@ -2,9 +2,8 @@
 #include "parser.h"
 #include "lexer.h"
 #include "utility/stringify.h"
-#include "optimizer/optimizer_wrapper.hpp"
+#include "resolver/resolver.h"
 
-int optimizer(char *input);
 
 parse_node *get_parse_tree(char *command) {
     yyscan_t scanner;
@@ -28,7 +27,7 @@ void parse(char *command) {
     parse_node *node = get_parse_tree(command);
     if (node) {
         char *json_output = json_stringify(node);
-        optimizer(command);
+        resolve(command);
         free(json_output);
         free_tree(node);
     }

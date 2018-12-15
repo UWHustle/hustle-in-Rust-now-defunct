@@ -17,6 +17,6 @@ add_library(
         utility/stringify.h utility/stringify.c
 )
 
-target_link_libraries(parser optimizer)
+target_link_libraries(parser resolver)
 
 add_subdirectory(test)

@@ -1,4 +1,8 @@
-# Generate the library: optimizer
-add_library(resolver Resolver.cpp Resolver.hpp)
+set (CMAKE_CXX_STANDARD 11)
+
+add_library(
+        resolver
+        resolver.h resolver.cpp
+)
+
 target_link_libraries(resolver optimizer)
-target_link_libraries(resolver catalog)
