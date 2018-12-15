@@ -68,6 +68,50 @@ class TreeStringSerializable {
   }
 
   /**
+   * @return A JSON tree-structured string representation
+   */
+  void jsonString(const std::string parent_prefix, std::ostream &stream) const {
+      std::vector<std::string> inline_field_names;
+      std::vector<std::string> inline_field_values;
+      std::vector<std::string> non_container_child_field_names;
+      std::vector<TreeNodeType> non_container_child_fields;
+      std::vector<std::string> container_child_field_names;
+      std::vector<std::vector<TreeNodeType>> container_child_fields;
+
+      getFieldStringItems(&inline_field_names,
+                          &inline_field_values,
+                          &non_container_child_field_names,
+                          &non_container_child_fields,
+                          &container_child_field_names,
+                          &container_child_fields);
+
+      stream << '{' << std::endl;
+      stream << parent_prefix << "\"name\": " << getName() << ',' << std::endl;
+      for (size_t i = 0; i < inline_field_names.size(); i++) {
+          stream << parent_prefix
+            << '\"' << inline_field_names.at(i) << "\":"
+            << inline_field_values.at(i) << ',' << std::endl;
+      }
+      for (size_t i = 0; i < non_container_child_field_names.size(); i++) {
+          stream << parent_prefix
+            << '\"' << non_container_child_field_names.at(i) << "\":";
+          non_container_child_fields.at(i)->jsonString(parent_prefix + "  ", stream);
+          stream << ',' << std::endl;
+      }
+      for (size_t i = 0; i < container_child_field_names.size(); i++) {
+          stream << parent_prefix
+            << '\"' << container_child_field_names.size() << "\": [" << std::endl;
+          for (size_t j = 0; j < container_child_fields.at(i).size(); j++) {
+              container_child_fields.at(i).at(j)->jsonString(parent_prefix + "  ", stream);
+              stream << ',' << std::endl;
+          }
+          stream << ']' << std::endl;
+      }
+      stream << '}';
+
+  }
+
+  /**
    * @return A short one-line string representation.
    */
   std::string getShortString() const {

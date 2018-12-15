@@ -53,6 +53,12 @@ std::string hustle_optimize(char *input) {
                              test_database_loader_.catalog_database(),
                              &optimizer_context);
 
+  // TODO: for testing only
+  // TODO: write wrapper which takes care of stream
+  std::stringstream stream = std::stringstream();
+  pplan->jsonString("", stream);
+  std::cout << stream.str() << std::endl;
+
   return pplan->toString();
 }
 
