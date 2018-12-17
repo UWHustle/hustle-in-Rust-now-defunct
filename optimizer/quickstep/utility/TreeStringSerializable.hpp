@@ -68,47 +68,68 @@ class TreeStringSerializable {
   }
 
   /**
+   * @brief Add this node's JSON to the specified stream.
+   *
+   * @param stream The stream where this node's JSON should be pushed.
+   * @param indent This node's level of indentation.
+   */
+  void jsonTraverse(std::ostream &stream, int indent) const {
+    std::vector<std::string> attribute_names;
+    std::vector<std::string> attribute_values;
+    std::vector<std::string> child_names;
+    std::vector<TreeNodeType> child_values;
+    std::vector<std::string> list_names;
+    std::vector<std::vector<TreeNodeType>> list_values;
+
+    getFieldStringItems(&attribute_names, &attribute_values,
+                        &child_names, &child_values,
+                        &list_names, &list_values);
+
+    stream << '{';
+    indent++;
+    newLine(stream, indent);
+    stream << R"("json_name": ")" << getName() << '\"';
+
+    for (size_t i = 0; i < attribute_names.size(); i++) {
+      stream << ',';
+      newLine(stream, indent);
+      stream << '\"' << attribute_names.at(i) << "\": "
+             << '\"' << attribute_values.at(i) << '\"';
+    }
+
+    for (size_t i = 0; i < child_names.size(); i++) {
+      stream << ',';
+      newLine(stream, indent);
+      stream << '\"' << child_names.at(i) << "\": ";
+      child_values.at(i)->jsonTraverse(stream, indent);
+    }
+
+    for (size_t i = 0; i < list_names.size(); i++) {
+      stream << ',';
+      newLine(stream, indent);
+      stream << '\"' << list_names.at(i) << "\": [";
+
+      for (size_t j = 0; j < list_values.at(i).size(); j++) {
+        newLine(stream, indent + 1);
+        list_values.at(i).at(j)->jsonTraverse(stream, indent + 1);
+        if (j < list_values.at(i).size() - 1) {
+          stream << ',';
+        }
+      }
+      newLine(stream, indent);
+      stream << ']';
+    }
+    newLine(stream, indent - 1);
+    stream << '}';
+  }
+
+  /**
    * @return A JSON tree-structured string representation
    */
-  void jsonString(const std::string parent_prefix, std::ostream &stream) const {
-      std::vector<std::string> inline_field_names;
-      std::vector<std::string> inline_field_values;
-      std::vector<std::string> non_container_child_field_names;
-      std::vector<TreeNodeType> non_container_child_fields;
-      std::vector<std::string> container_child_field_names;
-      std::vector<std::vector<TreeNodeType>> container_child_fields;
-
-      getFieldStringItems(&inline_field_names,
-                          &inline_field_values,
-                          &non_container_child_field_names,
-                          &non_container_child_fields,
-                          &container_child_field_names,
-                          &container_child_fields);
-
-      stream << '{' << std::endl;
-      stream << parent_prefix << "\"name\": " << getName() << ',' << std::endl;
-      for (size_t i = 0; i < inline_field_names.size(); i++) {
-          stream << parent_prefix
-            << '\"' << inline_field_names.at(i) << "\":"
-            << inline_field_values.at(i) << ',' << std::endl;
-      }
-      for (size_t i = 0; i < non_container_child_field_names.size(); i++) {
-          stream << parent_prefix
-            << '\"' << non_container_child_field_names.at(i) << "\":";
-          non_container_child_fields.at(i)->jsonString(parent_prefix + "  ", stream);
-          stream << ',' << std::endl;
-      }
-      for (size_t i = 0; i < container_child_field_names.size(); i++) {
-          stream << parent_prefix
-            << '\"' << container_child_field_names.size() << "\": [" << std::endl;
-          for (size_t j = 0; j < container_child_fields.at(i).size(); j++) {
-              container_child_fields.at(i).at(j)->jsonString(parent_prefix + "  ", stream);
-              stream << ',' << std::endl;
-          }
-          stream << ']' << std::endl;
-      }
-      stream << '}';
-
+  std::string jsonString() const {
+    std::stringstream stream = std::stringstream();
+    jsonTraverse(stream, 0);
+    return stream.str();
   }
 
   /**
@@ -398,6 +419,15 @@ class TreeStringSerializable {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(TreeStringSerializable);
+
+  const static int INDENT_SIZE = 2;
+
+  static void newLine(std::ostream &stream, int indent) {
+    stream << std::endl;
+    for (int i = 0; i < indent * INDENT_SIZE; i++) {
+      stream << ' ';
+    }
+  }
 };
 
 /** @} */
