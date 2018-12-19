@@ -2,6 +2,8 @@ extern crate execution;
 
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::test_helpers::data_gen::generate_relation_into_hustle_and_sqlite3;
+use execution::test_helpers::data_gen::generate_relation_a_into_hustle_and_sqlite3;
+use execution::test_helpers::data_gen::generate_relation_b_into_hustle_and_sqlite3;
 
 use execution::logical_entities::relation::Relation;
 use execution::logical_entities::column::Column;
@@ -27,6 +29,13 @@ fn test_dag_double_join() {
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b)+SUM(t3.b) AS Out FROM t as t1 JOIN t as t2 JOIN t as t3;","Out");
     assert_eq!(hustle_calculation, sqlite3_calculation);
 
+}
+
+// Placeholder for a test that joins two different tables
+#[test]
+fn test_create_join_rels(){
+    let ra = generate_relation_a_into_hustle_and_sqlite3(RECORD_COUNT);
+    let rb = generate_relation_b_into_hustle_and_sqlite3(RECORD_COUNT);
 }
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {

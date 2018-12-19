@@ -1,7 +1,7 @@
 {relation name, {column, type}}
 
 {T, {a:int}, {b:int}}
-{a, {w:int}, {x:int}, {y:int}, {z:int}}
-{b, {w:int}, {x:int}}
-
-
+{A, {w:int}, {x:int}, {y:int}, {z:int}}
+{B, {w:int}, {x:int}}
+{C, {x:int}, {y:int}}
+{D, {y:int}, {z:int}}
