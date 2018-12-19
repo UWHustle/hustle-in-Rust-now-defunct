@@ -1,8 +1,21 @@
+case "$OSTYPE" in
+  darwin*)
+    update="brew update"
+    command="brew install -y" ;;
+  linux*)
+    update="sudo apt-get update"
+    command="sudo apt-get install" ;;
+  *)
+    echo "unknown OS: $OSTYPE" ;;
+esac
+
 if [[   -z  `which cargo` ]]; then
-sudo apt-get install cargo
+  $update
+  $command cargo
 fi
 if [[   -z  `which cmake` ]]; then
-  sudo apt-get install cmake
+  $update
+  $command cmake
 fi
 
 git submodule init
@@ -15,4 +28,3 @@ cd ../../..
 mkdir -p build
 cd build
 cmake ..
-
