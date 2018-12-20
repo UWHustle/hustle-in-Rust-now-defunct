@@ -151,3 +151,52 @@ TopLevelPlan
 |   +-Literal[value=2,type=Int]
 +-output_attributes=
   +-[]
+
+hustle>  SELECT a FROM t WHERE b = 5;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-filter_predicate=Equal
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | +-Literal[value=5,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+
+hustle> SELECT a FROM t WHERE b > 5;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-filter_predicate=Greater
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | +-Literal[value=5,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+
+hustle>  SELECT a FROM t WHERE b > 5 and b < 7 and a = 2;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-filter_predicate=And
+| | +-Greater
+| | | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | | +-Literal[value=5,type=Int]
+| | +-Less
+| | | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | | +-Literal[value=7,type=Int]
+| | +-Equal
+| |   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| |   +-Literal[value=2,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
