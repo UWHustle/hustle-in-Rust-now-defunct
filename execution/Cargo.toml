@@ -12,7 +12,6 @@ memmap = "0.6.2"
 sqlite = "0.23.9"
 csv = "1"
 regex = "1"
-
 serde = "1.0"
 
 # Support for #[derive(Serialize, Deserialize)]. Required if you want Serde
