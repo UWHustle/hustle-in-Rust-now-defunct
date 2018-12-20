@@ -31,13 +31,6 @@ fn test_dag_double_join() {
 
 }
 
-// Placeholder for a test that joins two different tables
-#[test]
-fn test_create_join_rels(){
-    let ra = generate_relation_a_into_hustle_and_sqlite3(RECORD_COUNT);
-    let rb = generate_relation_b_into_hustle_and_sqlite3(RECORD_COUNT);
-}
-
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
     let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, "Int".to_string()));
     select_operator.execute().parse::<u128>().unwrap()
