@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "../parser/parser_wrapper.h"
+#include "../parser/ParserDriver.h"
 
 #define HUSTLE_VERSION "0.1.0"
 #define BUFFER_SIZE 1024
@@ -14,7 +14,8 @@ int main(int argc, char **argv) {
     while (!feof(stdin)) {
         printf("%s", PROMPT);
         if (fgets(buffer, BUFFER_SIZE, stdin)) {
-            parse(buffer);
+            ParserDriver parser_driver;
+            int res = parser_driver.parse(buffer);
         }
     }
 

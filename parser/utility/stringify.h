@@ -1,7 +1,7 @@
 #ifndef HUSTLE_PARSER_STRINGIFY_H
 #define HUSTLE_PARSER_STRINGIFY_H
 
-#include "parser/parse_node.h"
+#include "parser/ParseNode.h"
 
 /*
  * Returns a JSON string representing the tree of which the node is the root.

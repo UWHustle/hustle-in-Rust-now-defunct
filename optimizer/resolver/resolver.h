@@ -1,7 +1,7 @@
 #ifndef HUSTLE_RESOLVER_H
 #define HUSTLE_RESOLVER_H
 
-#include "parser/parse_node.h"
+#include "parser/ParseNode.h"
 
 #ifdef __cplusplus
 namespace resolver {
