@@ -68,6 +68,71 @@ class TreeStringSerializable {
   }
 
   /**
+   * @brief Add this node's JSON to the specified stream.
+   *
+   * @param stream The stream where this node's JSON should be pushed.
+   * @param indent This node's level of indentation.
+   */
+  void jsonTraverse(std::ostream &stream, int indent) const {
+    std::vector<std::string> attribute_names;
+    std::vector<std::string> attribute_values;
+    std::vector<std::string> child_names;
+    std::vector<TreeNodeType> child_values;
+    std::vector<std::string> list_names;
+    std::vector<std::vector<TreeNodeType>> list_values;
+
+    getFieldStringItems(&attribute_names, &attribute_values,
+                        &child_names, &child_values,
+                        &list_names, &list_values);
+
+    stream << '{';
+    indent++;
+    newLine(stream, indent);
+    stream << R"("json_name": ")" << getName() << '\"';
+
+    for (size_t i = 0; i < attribute_names.size(); i++) {
+      stream << ',';
+      newLine(stream, indent);
+      stream << '\"' << attribute_names.at(i) << "\": "
+             << '\"' << attribute_values.at(i) << '\"';
+    }
+
+    for (size_t i = 0; i < child_names.size(); i++) {
+      stream << ',';
+      newLine(stream, indent);
+      stream << '\"' << child_names.at(i) << "\": ";
+      child_values.at(i)->jsonTraverse(stream, indent);
+    }
+
+    for (size_t i = 0; i < list_names.size(); i++) {
+      stream << ',';
+      newLine(stream, indent);
+      stream << '\"' << list_names.at(i) << "\": [";
+
+      for (size_t j = 0; j < list_values.at(i).size(); j++) {
+        newLine(stream, indent + 1);
+        list_values.at(i).at(j)->jsonTraverse(stream, indent + 1);
+        if (j < list_values.at(i).size() - 1) {
+          stream << ',';
+        }
+      }
+      newLine(stream, indent);
+      stream << ']';
+    }
+    newLine(stream, indent - 1);
+    stream << '}';
+  }
+
+  /**
+   * @return A JSON tree-structured string representation
+   */
+  std::string jsonString() const {
+    std::stringstream stream = std::stringstream();
+    jsonTraverse(stream, 0);
+    return stream.str();
+  }
+
+  /**
    * @return A short one-line string representation.
    */
   std::string getShortString() const {
@@ -354,6 +419,15 @@ class TreeStringSerializable {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(TreeStringSerializable);
+
+  const static int INDENT_SIZE = 2;
+
+  static void newLine(std::ostream &stream, int indent) {
+    stream << std::endl;
+    for (int i = 0; i < indent * INDENT_SIZE; i++) {
+      stream << ' ';
+    }
+  }
 };
 
 /** @} */

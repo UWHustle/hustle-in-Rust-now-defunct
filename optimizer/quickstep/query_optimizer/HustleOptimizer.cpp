@@ -53,7 +53,7 @@ std::string hustle_optimize(char *input) {
                              test_database_loader_.catalog_database(),
                              &optimizer_context);
 
-  return pplan->toString();
+  return pplan->jsonString();
 }
 
 //}  // namespace optimizer
