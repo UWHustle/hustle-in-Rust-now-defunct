@@ -248,7 +248,7 @@ namespace yy {
       case 197: // selectnowith
       case 199: // oneselect
       case 227: // expr
-        value.YY_MOVE_OR_COPY< ParseNode > (YY_MOVE (that.value));
+        value.YY_MOVE_OR_COPY< ParseNode* > (YY_MOVE (that.value));
         break;
 
       case 69: // ID
@@ -267,7 +267,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        value.YY_MOVE_OR_COPY< std::vector<ParseNode> > (YY_MOVE (that.value));
+        value.YY_MOVE_OR_COPY< std::vector<ParseNode*> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -290,7 +290,7 @@ namespace yy {
       case 197: // selectnowith
       case 199: // oneselect
       case 227: // expr
-        value.move< ParseNode > (YY_MOVE (that.value));
+        value.move< ParseNode* > (YY_MOVE (that.value));
         break;
 
       case 69: // ID
@@ -309,7 +309,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        value.move< std::vector<ParseNode> > (YY_MOVE (that.value));
+        value.move< std::vector<ParseNode*> > (YY_MOVE (that.value));
         break;
 
       default:
@@ -332,7 +332,7 @@ namespace yy {
       case 197: // selectnowith
       case 199: // oneselect
       case 227: // expr
-        value.move< ParseNode > (that.value);
+        value.move< ParseNode* > (that.value);
         break;
 
       case 69: // ID
@@ -351,7 +351,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        value.move< std::vector<ParseNode> > (that.value);
+        value.move< std::vector<ParseNode*> > (that.value);
         break;
 
       default:
@@ -598,7 +598,7 @@ namespace yy {
       case 197: // selectnowith
       case 199: // oneselect
       case 227: // expr
-        yylhs.value.emplace< ParseNode > ();
+        yylhs.value.emplace< ParseNode* > ();
         break;
 
       case 69: // ID
@@ -617,7 +617,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        yylhs.value.emplace< std::vector<ParseNode> > ();
+        yylhs.value.emplace< std::vector<ParseNode*> > ();
         break;
 
       default:
@@ -642,7 +642,7 @@ namespace yy {
             {
   case 10:
 #line 241 "parser.y" // lalr1.cc:906
-    { drv.syntax_tree = &yystack_[0].value.as< ParseNode > (); }
+    { drv.syntax_tree = yystack_[0].value.as< ParseNode* > (); }
 #line 647 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
@@ -714,7 +714,7 @@ namespace yy {
 
   case 22:
 #line 256 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< ParseNode > () = yystack_[0].value.as< ParseNode > (); }
+    { yylhs.value.as< ParseNode* > () = yystack_[0].value.as< ParseNode* > (); }
 #line 719 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
@@ -906,13 +906,13 @@ namespace yy {
 
   case 140:
 #line 473 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< ParseNode > () = yystack_[0].value.as< ParseNode > (); }
+    { yylhs.value.as< ParseNode* > () = yystack_[0].value.as< ParseNode* > (); }
 #line 911 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 141:
 #line 477 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< ParseNode > () = yystack_[0].value.as< ParseNode > (); }
+    { yylhs.value.as< ParseNode* > () = yystack_[0].value.as< ParseNode* > (); }
 #line 917 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
@@ -925,7 +925,7 @@ namespace yy {
   case 147:
 #line 489 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< ParseNode > () = SelectNode(&yystack_[6].value.as< std::vector<ParseNode> > (), &yystack_[5].value.as< std::vector<ParseNode> > (), &yystack_[3].value.as< std::vector<ParseNode> > ());
+    yylhs.value.as< ParseNode* > () = new SelectNode(yystack_[6].value.as< std::vector<ParseNode*> > (), yystack_[5].value.as< std::vector<ParseNode*> > (), yystack_[3].value.as< std::vector<ParseNode*> > ());
   }
 #line 931 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -945,7 +945,7 @@ namespace yy {
   case 155:
 #line 508 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > () = yystack_[1].value.as< std::vector<ParseNode> > ();
+    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[1].value.as< std::vector<ParseNode*> > ();
   }
 #line 951 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -959,8 +959,8 @@ namespace yy {
   case 157:
 #line 515 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > () = yystack_[4].value.as< std::vector<ParseNode> > ();
-    yylhs.value.as< std::vector<ParseNode> > ().push_back(yystack_[2].value.as< ParseNode > ());
+    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[4].value.as< std::vector<ParseNode*> > ();
+    yylhs.value.as< std::vector<ParseNode*> > ().push_back(yystack_[2].value.as< ParseNode* > ());
   }
 #line 966 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -986,7 +986,7 @@ namespace yy {
   case 164:
 #line 531 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > () = yystack_[0].value.as< std::vector<ParseNode> > ();
+    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[0].value.as< std::vector<ParseNode*> > ();
   }
 #line 992 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -994,7 +994,7 @@ namespace yy {
   case 167:
 #line 542 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > ().push_back(ReferenceNode(yystack_[5].value.as< std::string > ()));
+    yylhs.value.as< std::vector<ParseNode*> > ().push_back(new ReferenceNode(yystack_[5].value.as< std::string > ()));
   }
 #line 1000 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -1026,7 +1026,7 @@ namespace yy {
   case 199:
 #line 609 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > () = yystack_[0].value.as< std::vector<ParseNode> > ();
+    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[0].value.as< std::vector<ParseNode*> > ();
   }
 #line 1032 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -1046,7 +1046,7 @@ namespace yy {
   case 224:
 #line 663 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< ParseNode > () = ReferenceNode(yystack_[0].value.as< std::string > ());
+    yylhs.value.as< ParseNode* > () = new ReferenceNode(yystack_[0].value.as< std::string > ());
   }
 #line 1052 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -1090,7 +1090,7 @@ namespace yy {
   case 231:
 #line 672 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< ParseNode > () = FunctionNode(yystack_[4].value.as< std::string > (), &yystack_[1].value.as< std::vector<ParseNode> > ());
+    yylhs.value.as< ParseNode* > () = new FunctionNode(yystack_[4].value.as< std::string > (), yystack_[1].value.as< std::vector<ParseNode*> > ());
   }
 #line 1096 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -1344,7 +1344,7 @@ namespace yy {
   case 293:
 #line 760 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > () = yystack_[0].value.as< std::vector<ParseNode> > ();
+    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[0].value.as< std::vector<ParseNode*> > ();
   }
 #line 1350 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -1358,8 +1358,8 @@ namespace yy {
   case 295:
 #line 767 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > () = yystack_[2].value.as< std::vector<ParseNode> > ();
-    yylhs.value.as< std::vector<ParseNode> > ().push_back(yystack_[0].value.as< ParseNode > ());
+    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[2].value.as< std::vector<ParseNode*> > ();
+    yylhs.value.as< std::vector<ParseNode*> > ().push_back(yystack_[0].value.as< ParseNode* > ());
   }
 #line 1365 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
@@ -1367,7 +1367,7 @@ namespace yy {
   case 296:
 #line 771 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode> > ().push_back(yystack_[0].value.as< ParseNode > ());
+    yylhs.value.as< std::vector<ParseNode*> > ().push_back(yystack_[0].value.as< ParseNode* > ());
   }
 #line 1373 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;

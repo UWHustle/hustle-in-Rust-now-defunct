@@ -8,11 +8,12 @@ using namespace std;
 
 class FunctionNode: public ParseNode {
 public:
-    FunctionNode(string name, const vector<ParseNode> *arguments);
+    FunctionNode(string name, vector<ParseNode*> arguments);
+    void json_stringify();
 
 private:
     string name;
-    const vector<ParseNode> *arguments;
+    vector<ParseNode*> arguments;
 };
 
 

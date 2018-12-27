@@ -8,12 +8,12 @@ using namespace std;
 
 class SelectNode: public ParseNode {
 public:
-    SelectNode(const vector<ParseNode> *target, const vector<ParseNode> *from, const vector<ParseNode> *group_by);
-
+    SelectNode(vector<ParseNode*> target, vector<ParseNode*> from, vector<ParseNode*> group_by);
+    void json_stringify();
 private:
-    const vector<ParseNode> *target;
-    const vector<ParseNode> *from;
-    const vector<ParseNode> *group_by;
+    vector<ParseNode*> target;
+    vector<ParseNode*> from;
+    vector<ParseNode*> group_by;
 };
 
 

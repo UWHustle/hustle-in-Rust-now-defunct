@@ -9,6 +9,7 @@ using namespace std;
 class ReferenceNode: public ParseNode {
 public:
     explicit ReferenceNode(string reference);
+    void json_stringify();
 private:
     string reference;
 };

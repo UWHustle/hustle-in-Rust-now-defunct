@@ -10,6 +10,7 @@ int ParserDriver::parse(std::string s) {
     yy::parser parser(*this);
     parser.set_debug_level(true);
     int res = parser.parse();
+    this->syntax_tree->json_stringify();
     yy_delete_buffer(state);
     return res;
 }
