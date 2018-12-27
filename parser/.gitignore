@@ -1,4 +1,4 @@
-lexer.c
+lexer.cpp
 lexer.h
-parser.c
+parser.cpp
 parser.h
