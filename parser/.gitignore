@@ -2,3 +2,6 @@ lexer.cpp
 lexer.h
 parser.cpp
 parser.h
+location.hh
+position.hh
+stack.hh

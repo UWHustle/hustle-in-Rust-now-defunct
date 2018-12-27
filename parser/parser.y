@@ -239,7 +239,7 @@ explain:
 ;
 
 cmdx:
-  cmd { drv.syntax_tree = $1; }
+  cmd { drv.syntax_tree = std::move($1); }
 ;
 
 cmd:
@@ -254,7 +254,7 @@ cmd:
 | DROP TABLE ifexists fullname { error(drv.location, "DROP TABLE not yet supported"); }
 | createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select { error(drv.location, "CREATE VIEW not yet supported"); }
 | DROP VIEW ifexists fullname { error(drv.location, "DROP VIEW not yet supported"); }
-| select { $$ = $1; }
+| select { $$ = std::move($1); }
 | with DELETE FROM xfullname indexed_opt where_opt orderby_opt limit_opt { error(drv.location, "DELETE not yet supported"); }
 | with UPDATE orconf xfullname indexed_opt SET setlist where_opt orderby_opt limit_opt { error(drv.location, "UPDATE not yet supported"); }
 | with insert_cmd INTO xfullname idlist_opt select upsert { error(drv.location, "INSERT not yet supported"); }
@@ -471,11 +471,11 @@ ifexists:
 select:
   WITH wqlist selectnowith { error(drv.location, "WITH SELECT not yet supported"); }
 | WITH RECURSIVE wqlist selectnowith  { error(drv.location, "WITH RECURSIVE SELECT not yet supported"); }
-| selectnowith { $$ = $1; }
+| selectnowith { $$ = std::move($1); }
 ;
 
 selectnowith:
-  oneselect { $$ = $1; }
+  oneselect { $$ = std::move($1); }
 | selectnowith multiselect_op oneselect { error(drv.location, "multiselect not yet supported"); }
 ;
 
@@ -488,7 +488,7 @@ multiselect_op:
 
 oneselect:
   SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt {
-    $$ = std::unique_ptr<SelectNode>(new SelectNode($3, $4, $6));
+    $$ = std::unique_ptr<SelectNode>(new SelectNode(std::move($3), std::move($4), std::move($6)));
   }
 | SELECT distinct selcollist from where_opt groupby_opt having_opt window_clause orderby_opt limit_opt { error(drv.location, "window queries not yet supported"); }
 | values { error(drv.location, "VALUES not yet supported"); }
@@ -507,15 +507,15 @@ distinct:
 
 sclp:
   selcollist COMMA {
-    $$ = $1;
+    $$ = std::move($1);
   }
 | /* empty */ {}
 ;
 
 selcollist:
   sclp scanpt expr scanpt as {
-    $$ = $1;
-    $$.push_back($3);
+    $$ = std::move($1);
+    $$.push_back(std::move($3));
   }
 | sclp scanpt STAR { error(drv.location, "SELECT *  not yet supported"); }
 | sclp scanpt nm DOT STAR { error(drv.location, "SELECT .* not yet supported"); }
@@ -530,7 +530,7 @@ as:
 from:
   /* empty */ {}
 | FROM seltablist {
-    $$ = $2;
+    $$ = std::move($2);
   }
 ;
 
@@ -608,7 +608,7 @@ sortorder:
 groupby_opt:
   /* empty */ {}
 | GROUP BY nexprlist {
-    $$ = $3;
+    $$ = std::move($3);
   }
 ;
 
@@ -671,7 +671,7 @@ expr:
 | expr COLLATE ids { error(drv.location, "COLLATE not yet supported"); }
 | CAST LP expr AS typetoken RP { error(drv.location, "CAST not yet supported"); }
 | id LP distinct exprlist RP {
-    $$ = std::unique_ptr<FunctionNode>(new FunctionNode($1, $4));
+    $$ = std::unique_ptr<FunctionNode>(new FunctionNode($1, std::move($4)));
   }
 | id LP STAR RP { error(drv.location, "(*) in expression not yet supported"); }
 | id LP distinct exprlist RP over_clause { error(drv.location, "OVER not yet supported"); }
@@ -759,18 +759,18 @@ case_operand:
 
 exprlist:
   nexprlist {
-    $$ = $1;
+    $$ = std::move($1);
   }
 | /* empty */ {}
 ;
 
 nexprlist:
   nexprlist COMMA expr {
-    $$ = $1;
-    $$.push_back($3);
+    $$ = std::move($1);
+    $$.push_back(std::move($3));
   }
 | expr {
-    $$.push_back($1);
+    $$.push_back(std::move($1));
   }
 ;
 
