@@ -4,7 +4,7 @@
 
 using namespace std;
 
-ReferenceNode::ReferenceNode(string reference) : ParseNode(REFERENCE) {
+ReferenceNode::ReferenceNode(const string reference) : ParseNode(REFERENCE) {
     this->reference = reference;
 }
 

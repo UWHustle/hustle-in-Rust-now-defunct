@@ -1,5 +1,3 @@
-set (CMAKE_CXX_STANDARD 11)
-
 find_package(BISON 3.0 REQUIRED)
 find_package(FLEX REQUIRED)
 bison_target(PARSER parser.y ${CMAKE_CURRENT_SOURCE_DIR}/parser.cpp)

@@ -4,9 +4,8 @@
 
 using namespace std;
 
-FunctionNode::FunctionNode(const string name, vector<ParseNode*> arguments) : ParseNode(FUNCTION) {
+FunctionNode::FunctionNode(const string name, vector<unique_ptr<ParseNode> > arguments) : ParseNode(FUNCTION), arguments(std::move(arguments)) {
     this->name = name;
-    this->arguments = arguments;
 }
 
 void FunctionNode::json_stringify() {

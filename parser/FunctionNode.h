@@ -4,16 +4,14 @@
 #include <string>
 #include "ParseNode.h"
 
-using namespace std;
-
 class FunctionNode: public ParseNode {
 public:
-    FunctionNode(string name, vector<ParseNode*> arguments);
+    FunctionNode(std::string name, std::vector<std::unique_ptr<ParseNode> > arguments);
     void json_stringify();
 
 private:
-    string name;
-    vector<ParseNode*> arguments;
+    std::string name;
+    std::vector<std::unique_ptr<ParseNode> > arguments;
 };
 
 

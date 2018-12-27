@@ -4,17 +4,15 @@
 #include <vector>
 #include "ParseNode.h"
 
-using namespace std;
-
 class SelectNode: public ParseNode {
 public:
-    SelectNode(vector<ParseNode*> target, vector<ParseNode*> from, vector<ParseNode*> group_by);
+    SelectNode(std::vector<std::unique_ptr<ParseNode> > target, std::vector<std::unique_ptr<ParseNode> > from,
+            std::vector<std::unique_ptr<ParseNode> > group_by);
     void json_stringify();
 private:
-    vector<ParseNode*> target;
-    vector<ParseNode*> from;
-    vector<ParseNode*> group_by;
+    std::vector<std::unique_ptr<ParseNode> > target;
+    std::vector<std::unique_ptr<ParseNode> > from;
+    std::vector<std::unique_ptr<ParseNode> > group_by;
 };
-
 
 #endif //HUSTLE_SELECT_NODE_H

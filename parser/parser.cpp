@@ -41,7 +41,7 @@
 
 
 // Unqualified %code blocks.
-#line 27 "parser.y" // lalr1.cc:437
+#line 28 "parser.y" // lalr1.cc:437
 
 #include "ParserDriver.h"
 
@@ -243,14 +243,6 @@ namespace yy {
   {
     switch (that.type_get ())
     {
-      case 163: // cmd
-      case 196: // select
-      case 197: // selectnowith
-      case 199: // oneselect
-      case 227: // expr
-        value.YY_MOVE_OR_COPY< ParseNode* > (YY_MOVE (that.value));
-        break;
-
       case 69: // ID
       case 75: // INDEXED
       case 85: // JOIN_KW
@@ -260,6 +252,14 @@ namespace yy {
         value.YY_MOVE_OR_COPY< std::string > (YY_MOVE (that.value));
         break;
 
+      case 163: // cmd
+      case 196: // select
+      case 197: // selectnowith
+      case 199: // oneselect
+      case 227: // expr
+        value.YY_MOVE_OR_COPY< std::unique_ptr<ParseNode>  > (YY_MOVE (that.value));
+        break;
+
       case 202: // sclp
       case 203: // selcollist
       case 205: // from
@@ -267,7 +267,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        value.YY_MOVE_OR_COPY< std::vector<ParseNode*> > (YY_MOVE (that.value));
+        value.YY_MOVE_OR_COPY< std::vector<std::unique_ptr<ParseNode> >  > (YY_MOVE (that.value));
         break;
 
       default:
@@ -285,14 +285,6 @@ namespace yy {
   {
     switch (that.type_get ())
     {
-      case 163: // cmd
-      case 196: // select
-      case 197: // selectnowith
-      case 199: // oneselect
-      case 227: // expr
-        value.move< ParseNode* > (YY_MOVE (that.value));
-        break;
-
       case 69: // ID
       case 75: // INDEXED
       case 85: // JOIN_KW
@@ -302,6 +294,14 @@ namespace yy {
         value.move< std::string > (YY_MOVE (that.value));
         break;
 
+      case 163: // cmd
+      case 196: // select
+      case 197: // selectnowith
+      case 199: // oneselect
+      case 227: // expr
+        value.move< std::unique_ptr<ParseNode>  > (YY_MOVE (that.value));
+        break;
+
       case 202: // sclp
       case 203: // selcollist
       case 205: // from
@@ -309,7 +309,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        value.move< std::vector<ParseNode*> > (YY_MOVE (that.value));
+        value.move< std::vector<std::unique_ptr<ParseNode> >  > (YY_MOVE (that.value));
         break;
 
       default:
@@ -327,14 +327,6 @@ namespace yy {
     state = that.state;
     switch (that.type_get ())
     {
-      case 163: // cmd
-      case 196: // select
-      case 197: // selectnowith
-      case 199: // oneselect
-      case 227: // expr
-        value.move< ParseNode* > (that.value);
-        break;
-
       case 69: // ID
       case 75: // INDEXED
       case 85: // JOIN_KW
@@ -344,6 +336,14 @@ namespace yy {
         value.move< std::string > (that.value);
         break;
 
+      case 163: // cmd
+      case 196: // select
+      case 197: // selectnowith
+      case 199: // oneselect
+      case 227: // expr
+        value.move< std::unique_ptr<ParseNode>  > (that.value);
+        break;
+
       case 202: // sclp
       case 203: // selcollist
       case 205: // from
@@ -351,7 +351,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        value.move< std::vector<ParseNode*> > (that.value);
+        value.move< std::vector<std::unique_ptr<ParseNode> >  > (that.value);
         break;
 
       default:
@@ -593,14 +593,6 @@ namespace yy {
          when using variants.  */
       switch (yyr1_[yyn])
     {
-      case 163: // cmd
-      case 196: // select
-      case 197: // selectnowith
-      case 199: // oneselect
-      case 227: // expr
-        yylhs.value.emplace< ParseNode* > ();
-        break;
-
       case 69: // ID
       case 75: // INDEXED
       case 85: // JOIN_KW
@@ -610,6 +602,14 @@ namespace yy {
         yylhs.value.emplace< std::string > ();
         break;
 
+      case 163: // cmd
+      case 196: // select
+      case 197: // selectnowith
+      case 199: // oneselect
+      case 227: // expr
+        yylhs.value.emplace< std::unique_ptr<ParseNode>  > ();
+        break;
+
       case 202: // sclp
       case 203: // selcollist
       case 205: // from
@@ -617,7 +617,7 @@ namespace yy {
       case 218: // groupby_opt
       case 235: // exprlist
       case 236: // nexprlist
-        yylhs.value.emplace< std::vector<ParseNode*> > ();
+        yylhs.value.emplace< std::vector<std::unique_ptr<ParseNode> >  > ();
         break;
 
       default:
@@ -641,746 +641,746 @@ namespace yy {
           switch (yyn)
             {
   case 10:
-#line 241 "parser.y" // lalr1.cc:906
-    { drv.syntax_tree = yystack_[0].value.as< ParseNode* > (); }
+#line 242 "parser.y" // lalr1.cc:906
+    { drv.syntax_tree = YY_MOVE (yystack_[0].value.as< std::unique_ptr<ParseNode>  > ()); }
 #line 647 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 11:
-#line 245 "parser.y" // lalr1.cc:906
+#line 246 "parser.y" // lalr1.cc:906
     { error(drv.location, "BEGIN not yet supported"); }
 #line 653 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 12:
-#line 246 "parser.y" // lalr1.cc:906
+#line 247 "parser.y" // lalr1.cc:906
     { error(drv.location, "COMMIT not yet supported"); }
 #line 659 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 13:
-#line 247 "parser.y" // lalr1.cc:906
+#line 248 "parser.y" // lalr1.cc:906
     { error(drv.location, "END not yet supported"); }
 #line 665 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 14:
-#line 248 "parser.y" // lalr1.cc:906
+#line 249 "parser.y" // lalr1.cc:906
     { error(drv.location, "ROLLBACK not yet supported"); }
 #line 671 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 15:
-#line 249 "parser.y" // lalr1.cc:906
+#line 250 "parser.y" // lalr1.cc:906
     { error(drv.location, "SAVEPOINT not yet supported"); }
 #line 677 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 16:
-#line 250 "parser.y" // lalr1.cc:906
+#line 251 "parser.y" // lalr1.cc:906
     { error(drv.location, "RELEASE not yet supported"); }
 #line 683 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 17:
-#line 251 "parser.y" // lalr1.cc:906
+#line 252 "parser.y" // lalr1.cc:906
     { error(drv.location, "ROLLBACK not yet supported"); }
 #line 689 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 18:
-#line 252 "parser.y" // lalr1.cc:906
+#line 253 "parser.y" // lalr1.cc:906
     { error(drv.location, "CREATE TABLE not yet supported"); }
 #line 695 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 19:
-#line 253 "parser.y" // lalr1.cc:906
+#line 254 "parser.y" // lalr1.cc:906
     { error(drv.location, "DROP TABLE not yet supported"); }
 #line 701 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 20:
-#line 254 "parser.y" // lalr1.cc:906
+#line 255 "parser.y" // lalr1.cc:906
     { error(drv.location, "CREATE VIEW not yet supported"); }
 #line 707 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 21:
-#line 255 "parser.y" // lalr1.cc:906
+#line 256 "parser.y" // lalr1.cc:906
     { error(drv.location, "DROP VIEW not yet supported"); }
 #line 713 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 22:
-#line 256 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< ParseNode* > () = yystack_[0].value.as< ParseNode* > (); }
+#line 257 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::unique_ptr<ParseNode>  > () = YY_MOVE (yystack_[0].value.as< std::unique_ptr<ParseNode>  > ()); }
 #line 719 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 23:
-#line 257 "parser.y" // lalr1.cc:906
+#line 258 "parser.y" // lalr1.cc:906
     { error(drv.location, "DELETE not yet supported"); }
 #line 725 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 24:
-#line 258 "parser.y" // lalr1.cc:906
+#line 259 "parser.y" // lalr1.cc:906
     { error(drv.location, "UPDATE not yet supported"); }
 #line 731 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 25:
-#line 259 "parser.y" // lalr1.cc:906
+#line 260 "parser.y" // lalr1.cc:906
     { error(drv.location, "INSERT not yet supported"); }
 #line 737 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 26:
-#line 260 "parser.y" // lalr1.cc:906
+#line 261 "parser.y" // lalr1.cc:906
     { error(drv.location, "INSERT not yet supported"); }
 #line 743 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 27:
-#line 261 "parser.y" // lalr1.cc:906
+#line 262 "parser.y" // lalr1.cc:906
     { error(drv.location, "CREATE INDEX not yet supported"); }
 #line 749 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 28:
-#line 262 "parser.y" // lalr1.cc:906
+#line 263 "parser.y" // lalr1.cc:906
     { error(drv.location, "DROP INDEX not yet supported"); }
 #line 755 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 29:
-#line 263 "parser.y" // lalr1.cc:906
+#line 264 "parser.y" // lalr1.cc:906
     { error(drv.location, "VACUUM not yet supported"); }
 #line 761 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 30:
-#line 264 "parser.y" // lalr1.cc:906
+#line 265 "parser.y" // lalr1.cc:906
     { error(drv.location, "VACUUM not yet supported"); }
 #line 767 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 31:
-#line 265 "parser.y" // lalr1.cc:906
+#line 266 "parser.y" // lalr1.cc:906
     { error(drv.location, "PRAGMA not yet supported"); }
 #line 773 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 32:
-#line 266 "parser.y" // lalr1.cc:906
+#line 267 "parser.y" // lalr1.cc:906
     { error(drv.location, "PRAGMA not yet supported"); }
 #line 779 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 33:
-#line 267 "parser.y" // lalr1.cc:906
+#line 268 "parser.y" // lalr1.cc:906
     { error(drv.location, "PRAGMA not yet supported"); }
 #line 785 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 34:
-#line 268 "parser.y" // lalr1.cc:906
+#line 269 "parser.y" // lalr1.cc:906
     { error(drv.location, "PRAGMA not yet supported"); }
 #line 791 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 35:
-#line 269 "parser.y" // lalr1.cc:906
+#line 270 "parser.y" // lalr1.cc:906
     { error(drv.location, "PRAGMA not yet supported"); }
 #line 797 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 36:
-#line 270 "parser.y" // lalr1.cc:906
+#line 271 "parser.y" // lalr1.cc:906
     { error(drv.location, "CREATE BEGIN END not yet supported"); }
 #line 803 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 37:
-#line 271 "parser.y" // lalr1.cc:906
+#line 272 "parser.y" // lalr1.cc:906
     { error(drv.location, "DROP TRIGGER not yet supported"); }
 #line 809 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 38:
-#line 272 "parser.y" // lalr1.cc:906
+#line 273 "parser.y" // lalr1.cc:906
     { error(drv.location, "ATTACH not yet supported"); }
 #line 815 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 39:
-#line 273 "parser.y" // lalr1.cc:906
+#line 274 "parser.y" // lalr1.cc:906
     { error(drv.location, "DETACH not yet supported"); }
 #line 821 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 40:
-#line 274 "parser.y" // lalr1.cc:906
+#line 275 "parser.y" // lalr1.cc:906
     { error(drv.location, "REINDEX not yet supported"); }
 #line 827 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 41:
-#line 275 "parser.y" // lalr1.cc:906
+#line 276 "parser.y" // lalr1.cc:906
     { error(drv.location, "REINDEX not yet supported"); }
 #line 833 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 42:
-#line 276 "parser.y" // lalr1.cc:906
+#line 277 "parser.y" // lalr1.cc:906
     { error(drv.location, "ANALYZE not yet supported"); }
 #line 839 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 43:
-#line 277 "parser.y" // lalr1.cc:906
+#line 278 "parser.y" // lalr1.cc:906
     { error(drv.location, "ANALYZE not yet supported"); }
 #line 845 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 44:
-#line 278 "parser.y" // lalr1.cc:906
+#line 279 "parser.y" // lalr1.cc:906
     { error(drv.location, "ALTER TABLE not yet supported"); }
 #line 851 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 45:
-#line 279 "parser.y" // lalr1.cc:906
+#line 280 "parser.y" // lalr1.cc:906
     { error(drv.location, "ALTER TABLE not yet supported"); }
 #line 857 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 46:
-#line 280 "parser.y" // lalr1.cc:906
+#line 281 "parser.y" // lalr1.cc:906
     { error(drv.location, "ALTER TABLE not yet supported"); }
 #line 863 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 47:
-#line 281 "parser.y" // lalr1.cc:906
+#line 282 "parser.y" // lalr1.cc:906
     { error(drv.location, "VIRTUAL TABLE not yet supported"); }
 #line 869 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 48:
-#line 282 "parser.y" // lalr1.cc:906
+#line 283 "parser.y" // lalr1.cc:906
     { error(drv.location, "VIRTUAL TABLE not yet supported"); }
 #line 875 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 70:
-#line 337 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< std::string > () = yystack_[0].value.as< std::string > (); }
+#line 338 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::string > () = YY_MOVE (yystack_[0].value.as< std::string > ()); }
 #line 881 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 71:
-#line 338 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< std::string > () = yystack_[0].value.as< std::string > (); }
+#line 339 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::string > () = YY_MOVE (yystack_[0].value.as< std::string > ()); }
 #line 887 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 72:
-#line 339 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< std::string > () = yystack_[0].value.as< std::string > (); }
+#line 340 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::string > () = YY_MOVE (yystack_[0].value.as< std::string > ()); }
 #line 893 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 138:
-#line 471 "parser.y" // lalr1.cc:906
+#line 472 "parser.y" // lalr1.cc:906
     { error(drv.location, "WITH SELECT not yet supported"); }
 #line 899 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 139:
-#line 472 "parser.y" // lalr1.cc:906
+#line 473 "parser.y" // lalr1.cc:906
     { error(drv.location, "WITH RECURSIVE SELECT not yet supported"); }
 #line 905 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 140:
-#line 473 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< ParseNode* > () = yystack_[0].value.as< ParseNode* > (); }
+#line 474 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::unique_ptr<ParseNode>  > () = YY_MOVE (yystack_[0].value.as< std::unique_ptr<ParseNode>  > ()); }
 #line 911 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 141:
-#line 477 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< ParseNode* > () = yystack_[0].value.as< ParseNode* > (); }
+#line 478 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::unique_ptr<ParseNode>  > () = YY_MOVE (yystack_[0].value.as< std::unique_ptr<ParseNode>  > ()); }
 #line 917 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 142:
-#line 478 "parser.y" // lalr1.cc:906
+#line 479 "parser.y" // lalr1.cc:906
     { error(drv.location, "multiselect not yet supported"); }
 #line 923 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 147:
-#line 489 "parser.y" // lalr1.cc:906
+#line 490 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< ParseNode* > () = new SelectNode(yystack_[6].value.as< std::vector<ParseNode*> > (), yystack_[5].value.as< std::vector<ParseNode*> > (), yystack_[3].value.as< std::vector<ParseNode*> > ());
+    yylhs.value.as< std::unique_ptr<ParseNode>  > () = std::unique_ptr<SelectNode>(new SelectNode(YY_MOVE (yystack_[6].value.as< std::vector<std::unique_ptr<ParseNode> >  > ()), YY_MOVE (yystack_[5].value.as< std::vector<std::unique_ptr<ParseNode> >  > ()), YY_MOVE (yystack_[3].value.as< std::vector<std::unique_ptr<ParseNode> >  > ())));
   }
 #line 931 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 148:
-#line 492 "parser.y" // lalr1.cc:906
+#line 493 "parser.y" // lalr1.cc:906
     { error(drv.location, "window queries not yet supported"); }
 #line 937 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 149:
-#line 493 "parser.y" // lalr1.cc:906
+#line 494 "parser.y" // lalr1.cc:906
     { error(drv.location, "VALUES not yet supported"); }
 #line 943 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 155:
-#line 508 "parser.y" // lalr1.cc:906
+#line 509 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[1].value.as< std::vector<ParseNode*> > ();
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > () = YY_MOVE (yystack_[1].value.as< std::vector<std::unique_ptr<ParseNode> >  > ());
   }
 #line 951 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 156:
-#line 511 "parser.y" // lalr1.cc:906
+#line 512 "parser.y" // lalr1.cc:906
     {}
 #line 957 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 157:
-#line 515 "parser.y" // lalr1.cc:906
+#line 516 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[4].value.as< std::vector<ParseNode*> > ();
-    yylhs.value.as< std::vector<ParseNode*> > ().push_back(yystack_[2].value.as< ParseNode* > ());
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > () = YY_MOVE (yystack_[4].value.as< std::vector<std::unique_ptr<ParseNode> >  > ());
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > ().push_back(YY_MOVE (yystack_[2].value.as< std::unique_ptr<ParseNode>  > ()));
   }
 #line 966 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 158:
-#line 519 "parser.y" // lalr1.cc:906
+#line 520 "parser.y" // lalr1.cc:906
     { error(drv.location, "SELECT *  not yet supported"); }
 #line 972 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 159:
-#line 520 "parser.y" // lalr1.cc:906
+#line 521 "parser.y" // lalr1.cc:906
     { error(drv.location, "SELECT .* not yet supported"); }
 #line 978 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 163:
-#line 530 "parser.y" // lalr1.cc:906
+#line 531 "parser.y" // lalr1.cc:906
     {}
 #line 984 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 164:
-#line 531 "parser.y" // lalr1.cc:906
+#line 532 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[0].value.as< std::vector<ParseNode*> > ();
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > () = YY_MOVE (yystack_[0].value.as< std::vector<std::unique_ptr<ParseNode> >  > ());
   }
 #line 992 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 167:
-#line 542 "parser.y" // lalr1.cc:906
+#line 543 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > ().push_back(new ReferenceNode(yystack_[5].value.as< std::string > ()));
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > ().push_back(std::unique_ptr<ReferenceNode>(new ReferenceNode(YY_MOVE (yystack_[5].value.as< std::string > ()))));
   }
 #line 1000 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 168:
-#line 545 "parser.y" // lalr1.cc:906
+#line 546 "parser.y" // lalr1.cc:906
     { error(drv.location, "parentheses in FROM clause not yet supported"); }
 #line 1006 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 169:
-#line 546 "parser.y" // lalr1.cc:906
+#line 547 "parser.y" // lalr1.cc:906
     { error(drv.location, "nested select not yet supported"); }
 #line 1012 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 170:
-#line 547 "parser.y" // lalr1.cc:906
+#line 548 "parser.y" // lalr1.cc:906
     { error(drv.location, "parentheses in FROM clause not yet supported"); }
 #line 1018 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 198:
-#line 608 "parser.y" // lalr1.cc:906
+#line 609 "parser.y" // lalr1.cc:906
     {}
 #line 1024 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 199:
-#line 609 "parser.y" // lalr1.cc:906
+#line 610 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[0].value.as< std::vector<ParseNode*> > ();
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > () = YY_MOVE (yystack_[0].value.as< std::vector<std::unique_ptr<ParseNode> >  > ());
   }
 #line 1032 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 222:
-#line 661 "parser.y" // lalr1.cc:906
+#line 662 "parser.y" // lalr1.cc:906
     { error(drv.location, "expression terms not yet supported"); }
 #line 1038 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 223:
-#line 662 "parser.y" // lalr1.cc:906
+#line 663 "parser.y" // lalr1.cc:906
     { error(drv.location, "parentheses in expression not yet supported"); }
 #line 1044 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 224:
-#line 663 "parser.y" // lalr1.cc:906
+#line 664 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< ParseNode* > () = new ReferenceNode(yystack_[0].value.as< std::string > ());
+    yylhs.value.as< std::unique_ptr<ParseNode>  > () = std::unique_ptr<ReferenceNode>(new ReferenceNode(YY_MOVE (yystack_[0].value.as< std::string > ())));
   }
 #line 1052 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 225:
-#line 666 "parser.y" // lalr1.cc:906
+#line 667 "parser.y" // lalr1.cc:906
     { error(drv.location, "join keyword in expression not yet supported"); }
 #line 1058 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 226:
-#line 667 "parser.y" // lalr1.cc:906
+#line 668 "parser.y" // lalr1.cc:906
     { error(drv.location, "nm.nm in expression not yet supported"); }
 #line 1064 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 227:
-#line 668 "parser.y" // lalr1.cc:906
+#line 669 "parser.y" // lalr1.cc:906
     { error(drv.location, "nm.nm.nm in expression not yet supported"); }
 #line 1070 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 228:
-#line 669 "parser.y" // lalr1.cc:906
+#line 670 "parser.y" // lalr1.cc:906
     { error(drv.location, "VARIABLE not yet supported"); }
 #line 1076 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 229:
-#line 670 "parser.y" // lalr1.cc:906
+#line 671 "parser.y" // lalr1.cc:906
     { error(drv.location, "COLLATE not yet supported"); }
 #line 1082 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 230:
-#line 671 "parser.y" // lalr1.cc:906
+#line 672 "parser.y" // lalr1.cc:906
     { error(drv.location, "CAST not yet supported"); }
 #line 1088 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 231:
-#line 672 "parser.y" // lalr1.cc:906
+#line 673 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< ParseNode* > () = new FunctionNode(yystack_[4].value.as< std::string > (), yystack_[1].value.as< std::vector<ParseNode*> > ());
+    yylhs.value.as< std::unique_ptr<ParseNode>  > () = std::unique_ptr<FunctionNode>(new FunctionNode(YY_MOVE (yystack_[4].value.as< std::string > ()), YY_MOVE (yystack_[1].value.as< std::vector<std::unique_ptr<ParseNode> >  > ())));
   }
 #line 1096 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 232:
-#line 675 "parser.y" // lalr1.cc:906
+#line 676 "parser.y" // lalr1.cc:906
     { error(drv.location, "(*) in expression not yet supported"); }
 #line 1102 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 233:
-#line 676 "parser.y" // lalr1.cc:906
+#line 677 "parser.y" // lalr1.cc:906
     { error(drv.location, "OVER not yet supported"); }
 #line 1108 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 234:
-#line 677 "parser.y" // lalr1.cc:906
+#line 678 "parser.y" // lalr1.cc:906
     { error(drv.location, "OVER not yet supported"); }
 #line 1114 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 235:
-#line 678 "parser.y" // lalr1.cc:906
+#line 679 "parser.y" // lalr1.cc:906
     { error(drv.location, "expression lists not yet supported"); }
 #line 1120 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 236:
-#line 679 "parser.y" // lalr1.cc:906
+#line 680 "parser.y" // lalr1.cc:906
     { error(drv.location, "AND in expression not yet supported"); }
 #line 1126 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 237:
-#line 680 "parser.y" // lalr1.cc:906
+#line 681 "parser.y" // lalr1.cc:906
     { error(drv.location, "OR in expression not yet supported"); }
 #line 1132 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 238:
-#line 681 "parser.y" // lalr1.cc:906
+#line 682 "parser.y" // lalr1.cc:906
     { error(drv.location, "< in expression not yet supported"); }
 #line 1138 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 239:
-#line 682 "parser.y" // lalr1.cc:906
+#line 683 "parser.y" // lalr1.cc:906
     { error(drv.location, "> in expression not yet supported"); }
 #line 1144 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 240:
-#line 683 "parser.y" // lalr1.cc:906
+#line 684 "parser.y" // lalr1.cc:906
     { error(drv.location, ">= in expression not yet supported"); }
 #line 1150 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 241:
-#line 684 "parser.y" // lalr1.cc:906
+#line 685 "parser.y" // lalr1.cc:906
     { error(drv.location, "<= in expression not yet supported"); }
 #line 1156 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 242:
-#line 685 "parser.y" // lalr1.cc:906
+#line 686 "parser.y" // lalr1.cc:906
     { error(drv.location, "= in expression not yet supported"); }
 #line 1162 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 243:
-#line 686 "parser.y" // lalr1.cc:906
+#line 687 "parser.y" // lalr1.cc:906
     { error(drv.location, "<> in expression not yet supported"); }
 #line 1168 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 244:
-#line 687 "parser.y" // lalr1.cc:906
+#line 688 "parser.y" // lalr1.cc:906
     { error(drv.location, "& in expression not yet supported"); }
 #line 1174 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 245:
-#line 688 "parser.y" // lalr1.cc:906
+#line 689 "parser.y" // lalr1.cc:906
     { error(drv.location, "| in expression not yet supported"); }
 #line 1180 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 246:
-#line 689 "parser.y" // lalr1.cc:906
+#line 690 "parser.y" // lalr1.cc:906
     { error(drv.location, "<< in expression not yet supported"); }
 #line 1186 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 247:
-#line 690 "parser.y" // lalr1.cc:906
+#line 691 "parser.y" // lalr1.cc:906
     { error(drv.location, ">> in expression not yet supported"); }
 #line 1192 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 248:
-#line 691 "parser.y" // lalr1.cc:906
+#line 692 "parser.y" // lalr1.cc:906
     { error(drv.location, "+ in expression not yet supported"); }
 #line 1198 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 249:
-#line 692 "parser.y" // lalr1.cc:906
+#line 693 "parser.y" // lalr1.cc:906
     { error(drv.location, "- in expression not yet supported"); }
 #line 1204 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 250:
-#line 693 "parser.y" // lalr1.cc:906
+#line 694 "parser.y" // lalr1.cc:906
     { error(drv.location, "* in expression not yet supported"); }
 #line 1210 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 251:
-#line 694 "parser.y" // lalr1.cc:906
+#line 695 "parser.y" // lalr1.cc:906
     { error(drv.location, "/ in expression not yet supported"); }
 #line 1216 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 252:
-#line 695 "parser.y" // lalr1.cc:906
+#line 696 "parser.y" // lalr1.cc:906
     { error(drv.location, "% in expression not yet supported"); }
 #line 1222 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 253:
-#line 696 "parser.y" // lalr1.cc:906
+#line 697 "parser.y" // lalr1.cc:906
     { error(drv.location, "|| in expression not yet supported"); }
 #line 1228 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 254:
-#line 697 "parser.y" // lalr1.cc:906
+#line 698 "parser.y" // lalr1.cc:906
     { error(drv.location, "LIKE in expression not yet supported"); }
 #line 1234 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 255:
-#line 698 "parser.y" // lalr1.cc:906
+#line 699 "parser.y" // lalr1.cc:906
     { error(drv.location, "ESCAPE in expression not yet supported"); }
 #line 1240 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 256:
-#line 699 "parser.y" // lalr1.cc:906
+#line 700 "parser.y" // lalr1.cc:906
     { error(drv.location, "ISNULL in expression not yet supported"); }
 #line 1246 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 257:
-#line 700 "parser.y" // lalr1.cc:906
+#line 701 "parser.y" // lalr1.cc:906
     { error(drv.location, "NOTNULL in expression not yet supported"); }
 #line 1252 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 258:
-#line 701 "parser.y" // lalr1.cc:906
+#line 702 "parser.y" // lalr1.cc:906
     { error(drv.location, "NOT NULL in expression not yet supported"); }
 #line 1258 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 259:
-#line 702 "parser.y" // lalr1.cc:906
+#line 703 "parser.y" // lalr1.cc:906
     { error(drv.location, "IS in expression not yet supported"); }
 #line 1264 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 260:
-#line 703 "parser.y" // lalr1.cc:906
+#line 704 "parser.y" // lalr1.cc:906
     { error(drv.location, "NOT in expression not yet supported"); }
 #line 1270 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 261:
-#line 704 "parser.y" // lalr1.cc:906
+#line 705 "parser.y" // lalr1.cc:906
     { error(drv.location, "~ in expression not yet supported"); }
 #line 1276 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 262:
-#line 705 "parser.y" // lalr1.cc:906
+#line 706 "parser.y" // lalr1.cc:906
     { error(drv.location, "+ in expression not yet supported"); }
 #line 1282 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 263:
-#line 706 "parser.y" // lalr1.cc:906
+#line 707 "parser.y" // lalr1.cc:906
     { error(drv.location, "- in expression not yet supported"); }
 #line 1288 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 264:
-#line 707 "parser.y" // lalr1.cc:906
+#line 708 "parser.y" // lalr1.cc:906
     { error(drv.location, "BETWEEN in expression not yet supported"); }
 #line 1294 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 265:
-#line 708 "parser.y" // lalr1.cc:906
+#line 709 "parser.y" // lalr1.cc:906
     { error(drv.location, "IN in expression not yet supported"); }
 #line 1300 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 266:
-#line 709 "parser.y" // lalr1.cc:906
+#line 710 "parser.y" // lalr1.cc:906
     { error(drv.location, "SELECT in expression not yet supported"); }
 #line 1306 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 267:
-#line 710 "parser.y" // lalr1.cc:906
+#line 711 "parser.y" // lalr1.cc:906
     { error(drv.location, "IN in expression not yet supported"); }
 #line 1312 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 268:
-#line 711 "parser.y" // lalr1.cc:906
+#line 712 "parser.y" // lalr1.cc:906
     { error(drv.location, "IN in expression not yet supported"); }
 #line 1318 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 269:
-#line 712 "parser.y" // lalr1.cc:906
+#line 713 "parser.y" // lalr1.cc:906
     { error(drv.location, "EXISTS in expression not yet supported"); }
 #line 1324 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 270:
-#line 713 "parser.y" // lalr1.cc:906
+#line 714 "parser.y" // lalr1.cc:906
     { error(drv.location, "CASE in expression not yet supported"); }
 #line 1330 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 271:
-#line 714 "parser.y" // lalr1.cc:906
+#line 715 "parser.y" // lalr1.cc:906
     { error(drv.location, "RAISE in expression not yet supported"); }
 #line 1336 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 272:
-#line 715 "parser.y" // lalr1.cc:906
+#line 716 "parser.y" // lalr1.cc:906
     { error(drv.location, "RAISE in expression not yet supported"); }
 #line 1342 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 293:
-#line 760 "parser.y" // lalr1.cc:906
+#line 761 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[0].value.as< std::vector<ParseNode*> > ();
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > () = YY_MOVE (yystack_[0].value.as< std::vector<std::unique_ptr<ParseNode> >  > ());
   }
 #line 1350 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 294:
-#line 763 "parser.y" // lalr1.cc:906
+#line 764 "parser.y" // lalr1.cc:906
     {}
 #line 1356 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 295:
-#line 767 "parser.y" // lalr1.cc:906
+#line 768 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > () = yystack_[2].value.as< std::vector<ParseNode*> > ();
-    yylhs.value.as< std::vector<ParseNode*> > ().push_back(yystack_[0].value.as< ParseNode* > ());
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > () = YY_MOVE (yystack_[2].value.as< std::vector<std::unique_ptr<ParseNode> >  > ());
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > ().push_back(YY_MOVE (yystack_[0].value.as< std::unique_ptr<ParseNode>  > ()));
   }
 #line 1365 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 296:
-#line 771 "parser.y" // lalr1.cc:906
+#line 772 "parser.y" // lalr1.cc:906
     {
-    yylhs.value.as< std::vector<ParseNode*> > ().push_back(yystack_[0].value.as< ParseNode* > ());
+    yylhs.value.as< std::vector<std::unique_ptr<ParseNode> >  > ().push_back(YY_MOVE (yystack_[0].value.as< std::unique_ptr<ParseNode>  > ()));
   }
 #line 1373 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 388:
-#line 994 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< std::string > () = yystack_[0].value.as< std::string > (); }
+#line 995 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::string > () = YY_MOVE (yystack_[0].value.as< std::string > ()); }
 #line 1379 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
   case 389:
-#line 995 "parser.y" // lalr1.cc:906
-    { yylhs.value.as< std::string > () = yystack_[0].value.as< std::string > (); }
+#line 996 "parser.y" // lalr1.cc:906
+    { yylhs.value.as< std::string > () = YY_MOVE (yystack_[0].value.as< std::string > ()); }
 #line 1385 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:906
     break;
 
@@ -2652,46 +2652,46 @@ namespace yy {
   const unsigned short
   parser::yyrline_[] =
   {
-       0,   221,   221,   225,   226,   230,   231,   232,   236,   237,
-     241,   245,   246,   247,   248,   249,   250,   251,   252,   253,
-     254,   255,   256,   257,   258,   259,   260,   261,   262,   263,
-     264,   265,   266,   267,   268,   269,   270,   271,   272,   273,
-     274,   275,   276,   277,   278,   279,   280,   281,   282,   285,
-     287,   288,   291,   293,   294,   295,   299,   300,   304,   307,
-     309,   313,   314,   318,   319,   322,   324,   328,   329,   333,
-     337,   338,   339,   342,   344,   345,   346,   350,   351,   355,
-     356,   359,   364,   365,   369,   370,   371,   372,   373,   374,
-     375,   376,   377,   378,   379,   380,   381,   382,   385,   387,
-     390,   392,   396,   397,   398,   399,   403,   404,   405,   406,
-     407,   411,   412,   415,   417,   418,   421,   423,   427,   428,
-     432,   433,   437,   438,   439,   440,   441,   444,   446,   449,
-     451,   454,   456,   460,   461,   462,   466,   467,   471,   472,
-     473,   477,   478,   482,   483,   484,   485,   489,   492,   493,
-     497,   498,   502,   503,   504,   508,   511,   515,   519,   520,
-     524,   525,   526,   530,   531,   537,   538,   542,   545,   546,
-     547,   550,   552,   556,   557,   561,   562,   563,   564,   568,
-     569,   570,   571,   572,   576,   577,   580,   582,   583,   587,
-     588,   591,   593,   597,   598,   602,   603,   604,   608,   609,
-     614,   616,   619,   621,   622,   623,   626,   628,   632,   633,
-     634,   635,   638,   640,   641,   642,   646,   647,   650,   652,
-     656,   657,   661,   662,   663,   666,   667,   668,   669,   670,
-     671,   672,   675,   676,   677,   678,   679,   680,   681,   682,
-     683,   684,   685,   686,   687,   688,   689,   690,   691,   692,
-     693,   694,   695,   696,   697,   698,   699,   700,   701,   702,
-     703,   704,   705,   706,   707,   708,   709,   710,   711,   712,
-     713,   714,   715,   719,   720,   721,   722,   723,   724,   728,
-     729,   730,   731,   735,   736,   740,   741,   745,   746,   750,
-     751,   755,   756,   760,   763,   767,   771,   776,   778,   782,
-     783,   786,   788,   792,   793,   796,   798,   802,   803,   804,
-     805,   806,   810,   811,   815,   819,   823,   824,   825,   826,
-     830,   831,   832,   833,   836,   838,   841,   843,   847,   848,
-     852,   853,   856,   858,   859,   863,   864,   865,   866,   870,
-     871,   872,   875,   877,   881,   882,   886,   889,   891,   895,
-     899,   900,   903,   905,   909,   910,   914,   917,   919,   920,
-     923,   925,   926,   930,   931,   935,   936,   940,   944,   948,
-     949,   952,   954,   955,   959,   960,   964,   965,   969,   970,
-     974,   975,   976,   980,   984,   985,   988,   990,   994,   995,
-     999,  1000,  1004,  1005
+       0,   222,   222,   226,   227,   231,   232,   233,   237,   238,
+     242,   246,   247,   248,   249,   250,   251,   252,   253,   254,
+     255,   256,   257,   258,   259,   260,   261,   262,   263,   264,
+     265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
+     275,   276,   277,   278,   279,   280,   281,   282,   283,   286,
+     288,   289,   292,   294,   295,   296,   300,   301,   305,   308,
+     310,   314,   315,   319,   320,   323,   325,   329,   330,   334,
+     338,   339,   340,   343,   345,   346,   347,   351,   352,   356,
+     357,   360,   365,   366,   370,   371,   372,   373,   374,   375,
+     376,   377,   378,   379,   380,   381,   382,   383,   386,   388,
+     391,   393,   397,   398,   399,   400,   404,   405,   406,   407,
+     408,   412,   413,   416,   418,   419,   422,   424,   428,   429,
+     433,   434,   438,   439,   440,   441,   442,   445,   447,   450,
+     452,   455,   457,   461,   462,   463,   467,   468,   472,   473,
+     474,   478,   479,   483,   484,   485,   486,   490,   493,   494,
+     498,   499,   503,   504,   505,   509,   512,   516,   520,   521,
+     525,   526,   527,   531,   532,   538,   539,   543,   546,   547,
+     548,   551,   553,   557,   558,   562,   563,   564,   565,   569,
+     570,   571,   572,   573,   577,   578,   581,   583,   584,   588,
+     589,   592,   594,   598,   599,   603,   604,   605,   609,   610,
+     615,   617,   620,   622,   623,   624,   627,   629,   633,   634,
+     635,   636,   639,   641,   642,   643,   647,   648,   651,   653,
+     657,   658,   662,   663,   664,   667,   668,   669,   670,   671,
+     672,   673,   676,   677,   678,   679,   680,   681,   682,   683,
+     684,   685,   686,   687,   688,   689,   690,   691,   692,   693,
+     694,   695,   696,   697,   698,   699,   700,   701,   702,   703,
+     704,   705,   706,   707,   708,   709,   710,   711,   712,   713,
+     714,   715,   716,   720,   721,   722,   723,   724,   725,   729,
+     730,   731,   732,   736,   737,   741,   742,   746,   747,   751,
+     752,   756,   757,   761,   764,   768,   772,   777,   779,   783,
+     784,   787,   789,   793,   794,   797,   799,   803,   804,   805,
+     806,   807,   811,   812,   816,   820,   824,   825,   826,   827,
+     831,   832,   833,   834,   837,   839,   842,   844,   848,   849,
+     853,   854,   857,   859,   860,   864,   865,   866,   867,   871,
+     872,   873,   876,   878,   882,   883,   887,   890,   892,   896,
+     900,   901,   904,   906,   910,   911,   915,   918,   920,   921,
+     924,   926,   927,   931,   932,   936,   937,   941,   945,   949,
+     950,   953,   955,   956,   960,   961,   965,   966,   970,   971,
+     975,   976,   977,   981,   985,   986,   989,   991,   995,   996,
+    1000,  1001,  1005,  1006
   };
 
   // Print the state stack on the debug stream.
@@ -2727,7 +2727,7 @@ namespace yy {
 
 } // yy
 #line 2730 "/Users/kevingaffney/Dev/hustle/parser/parser.cpp" // lalr1.cc:1217
-#line 1007 "parser.y" // lalr1.cc:1218
+#line 1008 "parser.y" // lalr1.cc:1218
 
 
 void yy::parser::error(const location_type& l, const std::string& m)

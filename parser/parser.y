@@ -4,6 +4,7 @@
 
 %define api.token.constructor
 %define api.value.type variant
+%define api.value.automove
 %define parse.assert
 %define parse.trace
 %define parse.error verbose
@@ -201,13 +202,13 @@ class ParserDriver;
 %type <std::string>
   id
   nm
-%type <ParseNode*>
+%type <std::unique_ptr<ParseNode> >
   cmd
   expr
   select
   selectnowith
   oneselect
-%type <std::vector<ParseNode*>>
+%type <std::vector<std::unique_ptr<ParseNode> > >
   exprlist
   from
   groupby_opt
@@ -487,7 +488,7 @@ multiselect_op:
 
 oneselect:
   SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt {
-    $$ = new SelectNode($3, $4, $6);
+    $$ = std::unique_ptr<SelectNode>(new SelectNode($3, $4, $6));
   }
 | SELECT distinct selcollist from where_opt groupby_opt having_opt window_clause orderby_opt limit_opt { error(drv.location, "window queries not yet supported"); }
 | values { error(drv.location, "VALUES not yet supported"); }
@@ -540,7 +541,7 @@ stl_prefix:
 
 seltablist:
   stl_prefix nm dbnm as indexed_opt on_opt using_opt {
-    $$.push_back(new ReferenceNode($2));
+    $$.push_back(std::unique_ptr<ReferenceNode>(new ReferenceNode($2)));
   }
 | stl_prefix nm dbnm LP exprlist RP as on_opt using_opt { error(drv.location, "parentheses in FROM clause not yet supported"); }
 | stl_prefix LP select RP as on_opt using_opt { error(drv.location, "nested select not yet supported"); }
@@ -661,7 +662,7 @@ expr:
   term { error(drv.location, "expression terms not yet supported"); }
 | LP expr RP { error(drv.location, "parentheses in expression not yet supported"); }
 | id {
-    $$ = new ReferenceNode($1);
+    $$ = std::unique_ptr<ReferenceNode>(new ReferenceNode($1));
   }
 | JOIN_KW { error(drv.location, "join keyword in expression not yet supported"); }
 | nm DOT nm { error(drv.location, "nm.nm in expression not yet supported"); }
@@ -670,7 +671,7 @@ expr:
 | expr COLLATE ids { error(drv.location, "COLLATE not yet supported"); }
 | CAST LP expr AS typetoken RP { error(drv.location, "CAST not yet supported"); }
 | id LP distinct exprlist RP {
-    $$ = new FunctionNode($1, $4);
+    $$ = std::unique_ptr<FunctionNode>(new FunctionNode($1, $4));
   }
 | id LP STAR RP { error(drv.location, "(*) in expression not yet supported"); }
 | id LP distinct exprlist RP over_clause { error(drv.location, "OVER not yet supported"); }
