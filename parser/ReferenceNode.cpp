@@ -1,13 +1,13 @@
 #include "ReferenceNode.h"
 
-#include <iostream>
-
 using namespace std;
 
 ReferenceNode::ReferenceNode(const string reference) : ParseNode(REFERENCE) {
     this->reference = reference;
 }
 
-void ReferenceNode::json_stringify() {
-    cout << "type: REFERENCE" << endl;
+unordered_map<string, string> ReferenceNode::get_attributes() {
+    auto attributes = ParseNode::get_attributes();
+    attributes.insert({"reference", reference});
+    return attributes;
 }

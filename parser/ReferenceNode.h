@@ -2,16 +2,15 @@
 #define HUSTLE_REFERENCENODE_H
 
 #include <string>
+#include <unordered_map>
 #include "ParseNode.h"
-
-using namespace std;
 
 class ReferenceNode: public ParseNode {
 public:
-    explicit ReferenceNode(const string reference);
-    void json_stringify();
+    explicit ReferenceNode(std::string reference);
+    std::unordered_map<std::string, std::string> get_attributes() override;
 private:
-    string reference;
+    std::string reference;
 };
 
 
