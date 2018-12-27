@@ -109,3 +109,94 @@ TopLevelPlan
 +-output_attributes=
   +-AttributeReference[id=0,name=w,relation=a,type=Int]
   +-AttributeReference[id=5,name=x,relation=b,type=Int]
+
+hustle> CREATE TABLE foo (col1 int not null, col2 long, col3 double, col4 float, col5 char(5), col6 varchar(5), col7 int null, col8 long null, col9 double null,  col10 float null, col11 char(5) null, col12 varchar(5) null);
+TopLevelPlan
++-plan=CreateTable[relation=foo]
+| +-attributes=
+|   +-AttributeReference[id=0,name=col1,relation=foo,type=Int]
+|   +-AttributeReference[id=1,name=col2,relation=foo,type=Long]
+|   +-AttributeReference[id=2,name=col3,relation=foo,type=Double]
+|   +-AttributeReference[id=3,name=col4,relation=foo,type=Float]
+|   +-AttributeReference[id=4,name=col5,relation=foo,type=Char(5)]
+|   +-AttributeReference[id=5,name=col6,relation=foo,type=VarChar(5)]
+|   +-AttributeReference[id=6,name=col7,relation=foo,type=Int NULL]
+|   +-AttributeReference[id=7,name=col8,relation=foo,type=Long NULL]
+|   +-AttributeReference[id=8,name=col9,relation=foo,type=Double NULL]
+|   +-AttributeReference[id=9,name=col10,relation=foo,type=Float NULL]
+|   +-AttributeReference[id=10,name=col11,relation=foo,type=Char(5) NULL]
+|   +-AttributeReference[id=11,name=col12,relation=foo,type=VarChar(5) NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=col1,relation=foo,type=Int]
+  +-AttributeReference[id=1,name=col2,relation=foo,type=Long]
+  +-AttributeReference[id=2,name=col3,relation=foo,type=Double]
+  +-AttributeReference[id=3,name=col4,relation=foo,type=Float]
+  +-AttributeReference[id=4,name=col5,relation=foo,type=Char(5)]
+  +-AttributeReference[id=5,name=col6,relation=foo,type=VarChar(5)]
+  +-AttributeReference[id=6,name=col7,relation=foo,type=Int NULL]
+  +-AttributeReference[id=7,name=col8,relation=foo,type=Long NULL]
+  +-AttributeReference[id=8,name=col9,relation=foo,type=Double NULL]
+  +-AttributeReference[id=9,name=col10,relation=foo,type=Float NULL]
+  +-AttributeReference[id=10,name=col11,relation=foo,type=Char(5) NULL]
+  +-AttributeReference[id=11,name=col12,relation=foo,type=VarChar(5) NULL]
+
+hustle> INSERT INTO t VALUES (1, 2);
+TopLevelPlan
++-plan=InsertTuple
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-column_values=
+|   +-Literal[value=1,type=Int NULL]
+|   +-Literal[value=2,type=Int]
++-output_attributes=
+  +-[]
+
+hustle>  SELECT a FROM t WHERE b = 5;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-filter_predicate=Equal
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | +-Literal[value=5,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+
+hustle> SELECT a FROM t WHERE b > 5;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-filter_predicate=Greater
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | +-Literal[value=5,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+
+hustle>  SELECT a FROM t WHERE b > 5 and b < 7 and a = 2;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=T,alias=t]
+| | +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| +-filter_predicate=And
+| | +-Greater
+| | | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | | +-Literal[value=5,type=Int]
+| | +-Less
+| | | +-AttributeReference[id=1,name=b,relation=t,type=Int]
+| | | +-Literal[value=7,type=Int]
+| | +-Equal
+| |   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+| |   +-Literal[value=2,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]

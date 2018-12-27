@@ -138,6 +138,35 @@ void TestDatabaseLoader::createJoinRelations() {
   }
 }
 
+void TestDatabaseLoader::createHustleJoinRelations() {
+    std::vector<std::string> rel_names = { "A", "B", "C", "D" };
+    std::vector<std::vector<std::pair<std::string, TypeID>>> rel_columns = {
+            { { "w", kInt }, { "x", kInt }, { "y", kInt }, { "z", kInt } },
+            { { "w", kInt }, { "x", kInt } },
+            { { "x", kInt }, { "y", kInt } },
+            { { "y", kInt }, { "z", kInt } }
+    };
+
+    for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
+        std::unique_ptr<CatalogRelation> relation(
+                new CatalogRelation(&catalog_database_,
+                                    rel_names[rel_idx],
+                                    -1 /* id */,
+                                    true /* temporary */));
+
+        const std::vector<std::pair<std::string, TypeID>> &columns = rel_columns[rel_idx];
+        int attr_id = -1;
+        for (std::size_t col_idx = 0; col_idx < columns.size(); ++col_idx) {
+            relation->addAttribute(new CatalogAttribute(
+                    relation.get(),
+                    columns[col_idx].first,
+                    TypeFactory::GetType(columns[col_idx].second),
+                    ++attr_id));
+        }
+        catalog_database_.addRelation(relation.release());
+    }
+}
+
 void TestDatabaseLoader::loadTestRelation() {
   CHECK(test_relation_ != nullptr);
   CHECK(!test_relation_->hasAttributeWithName("vchar_col"));
