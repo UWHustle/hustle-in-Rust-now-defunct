@@ -15,6 +15,7 @@
 
 %code requires {
 class ParserDriver;
+#include <memory>
 #include "ParseNode.h"
 #include "SelectNode.h"
 #include "FunctionNode.h"

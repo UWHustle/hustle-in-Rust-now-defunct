@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#define ATTRIBUTE_NAME(x) #x
+
 using namespace std;
 
 ParseNode::ParseNode() {
@@ -13,5 +15,5 @@ ParseNode::ParseNode(NodeType type) {
 }
 
 void ParseNode::json_stringify() {
-    cout << "type: " << this->type << endl;
+    cout << ATTRIBUTE_NAME(this->type) << this->type << endl;
 }

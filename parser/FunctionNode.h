@@ -2,6 +2,7 @@
 #define HUSTLE_FUNCTIONNODE_H
 
 #include <string>
+#include <memory>
 #include "ParseNode.h"
 
 class FunctionNode: public ParseNode {
