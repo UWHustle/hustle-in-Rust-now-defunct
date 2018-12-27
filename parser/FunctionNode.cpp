@@ -4,7 +4,7 @@
 
 using namespace std;
 
-FunctionNode::FunctionNode(const string name, vector<unique_ptr<ParseNode> > arguments) : ParseNode(FUNCTION), arguments(std::move(arguments)) {
+FunctionNode::FunctionNode(const string name, vector<shared_ptr<ParseNode> > arguments) : ParseNode(FUNCTION), arguments(std::move(arguments)) {
     this->name = name;
 }
 

@@ -8,8 +8,8 @@
 
 using namespace std;
 
-SelectNode::SelectNode(vector<unique_ptr<ParseNode>> target, vector<unique_ptr<ParseNode>> from,
-                       vector<unique_ptr<ParseNode>> group_by) : ParseNode(SELECT),
+SelectNode::SelectNode(vector<shared_ptr<ParseNode>> target, vector<shared_ptr<ParseNode>> from,
+                       vector<shared_ptr<ParseNode>> group_by) : ParseNode(SELECT),
                        target(std::move(target)), from(std::move(from)), group_by(std::move(group_by)) { }
 
 //void SelectNode::json_stringify() {

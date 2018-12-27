@@ -8,7 +8,7 @@ YY_DECL;
 
 class ParserDriver {
 public:
-    std::unique_ptr<ParseNode> syntax_tree;
+    std::shared_ptr<ParseNode> syntax_tree;
     yy::location location;
     ParserDriver();
     int parse(std::string s);

@@ -7,12 +7,12 @@
 
 class FunctionNode: public ParseNode {
 public:
-    FunctionNode(std::string name, std::vector<std::unique_ptr<ParseNode> > arguments);
+    FunctionNode(std::string name, std::vector<std::shared_ptr<ParseNode> > arguments);
     void json_stringify();
 
 private:
     std::string name;
-    std::vector<std::unique_ptr<ParseNode> > arguments;
+    std::vector<std::shared_ptr<ParseNode> > arguments;
 };
 
 
