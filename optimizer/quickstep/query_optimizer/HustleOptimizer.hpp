@@ -17,7 +17,7 @@
 //                              OptimizerContext *optimizer_context);
 //
 
-std::string hustle_optimize(char * input);
+std::string hustle_optimize(std::string input);
 //
 //
 //}  // namespace optimizer

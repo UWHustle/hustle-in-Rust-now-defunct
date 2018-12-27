@@ -1,16 +1,12 @@
 #ifndef HUSTLE_RESOLVER_H
 #define HUSTLE_RESOLVER_H
 
+#include <memory>
+#include <string>
 #include "parser/ParseNode.h"
 
-#ifdef __cplusplus
 namespace resolver {
-    extern "C" {
-#endif
-        void resolve(parse_node* node, char* input);
-#ifdef __cplusplus
-    }
+    void resolve(std::shared_ptr<ParseNode> syntax_tree, std::string input);
 }
-#endif
 
 #endif //HUSTLE_RESOLVER_H

@@ -15,6 +15,6 @@ add_library(
         ${FLEX_LEXER_OUTPUTS}
 )
 
-#target_link_libraries(parser resolver)
+target_link_libraries(parser resolver)
 
 #add_subdirectory(test)

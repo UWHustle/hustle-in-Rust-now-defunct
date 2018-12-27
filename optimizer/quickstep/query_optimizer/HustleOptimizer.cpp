@@ -32,7 +32,7 @@ quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(const quickst
   return physical_plan;
 }
 
-std::string hustle_optimize(char *input) {
+std::string hustle_optimize(std::string input) {
   quickstep::SqlParserWrapper sql_parser_;
 //  quickstep::optimizer::Optimizer optimizer_;
   std::string* query = new std::string(input);

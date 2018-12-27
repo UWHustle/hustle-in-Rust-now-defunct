@@ -1,8 +1,8 @@
 #ifndef HUSTLE_OPTIMIZER_OPTIMIZER_WRAPPER_H
 #define HUSTLE_OPTIMIZER_OPTIMIZER_WRAPPER_H
 
-extern "C" {
-    int optimizer(char *input);
-}
+#include <string>
+
+int optimizer(std::string input);
 
 #endif //HUSTLE_OPTIMIZER_OPTIMIZER_WRAPPER_H
