@@ -1,6 +1,8 @@
 #ifndef QUICKSTEP_HUSTLEOPTIMIZER_H
 #define QUICKSTEP_HUSTLEOPTIMIZER_H
 #include <iostream>
+#include <memory>
+#include "parser/ParseNode.h"
 
 //namespace quickstep {
 //
@@ -17,7 +19,7 @@
 //                              OptimizerContext *optimizer_context);
 //
 
-std::string hustle_optimize(std::string input);
+std::string hustle_optimize(std::shared_ptr<ParseNode> syntax_tree);
 //
 //
 //}  // namespace optimizer

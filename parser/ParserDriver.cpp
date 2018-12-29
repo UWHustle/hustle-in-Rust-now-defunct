@@ -1,7 +1,7 @@
 #include "ParserDriver.h"
 #include "parser.h"
 #include "lexer.h"
-#include "optimizer/quickstep/query_optimizer/resolver/hustle_resolver.h"
+#include "optimizer/optimizer_wrapper.hpp"
 
 ParserDriver::ParserDriver() = default;
 
@@ -14,6 +14,6 @@ int ParserDriver::parse(std::string s) {
     int res = parser.parse();
     yy_delete_buffer(state);
 //    this->syntax_tree->json_stringify();
-    resolver::resolve(this->syntax_tree, input);
+    optimizer(syntax_tree);
     return res;
 }

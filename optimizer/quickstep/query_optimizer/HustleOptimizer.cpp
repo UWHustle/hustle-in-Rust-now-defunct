@@ -7,7 +7,7 @@
 #include "query_optimizer/tests/TestDatabaseLoader.hpp"
 
 
-quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(const quickstep::ParseStatement &parse_statement,
+quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(std::shared_ptr<ParseNode> syntax_tree,
                                    quickstep::CatalogDatabase *catalog_database,
                                    quickstep::optimizer::OptimizerContext *optimizer_context) {
   quickstep::optimizer::LogicalGenerator logical_generator(optimizer_context);
@@ -15,21 +15,21 @@ quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(const quickst
 
   quickstep::optimizer::physical::PhysicalPtr physical_plan =
       physical_generator.generatePlan(
-          logical_generator.generatePlan(*catalog_database, parse_statement),
+          logical_generator.generatePlan(*catalog_database, syntax_tree),
           catalog_database);
 
   return physical_plan;
 }
 
-std::string hustle_optimize(std::string input) {
-  quickstep::SqlParserWrapper sql_parser_;
-  std::string* query = new std::string(input);
+std::string hustle_optimize(std::shared_ptr<ParseNode> syntax_tree) {
+//  quickstep::SqlParserWrapper sql_parser_;
+//  std::string* query = new std::string(input);
 
-  sql_parser_.feedNextBuffer(query);
-  quickstep::ParseResult result = sql_parser_.getNextStatement();
+//  sql_parser_.feedNextBuffer(query);
+//  quickstep::ParseResult result = sql_parser_.getNextStatement();
 
   quickstep::optimizer::OptimizerContext optimizer_context;
-  const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
+//  const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
 
   quickstep::optimizer::TestDatabaseLoader test_database_loader_;
 
@@ -38,7 +38,7 @@ std::string hustle_optimize(std::string input) {
   test_database_loader_.createHustleJoinRelations();
 
   quickstep::optimizer::physical::PhysicalPtr pplan =
-      hustle_getPhysicalPlan(parse_statement,
+      hustle_getPhysicalPlan(syntax_tree,
                              test_database_loader_.catalog_database(),
                              &optimizer_context);
 

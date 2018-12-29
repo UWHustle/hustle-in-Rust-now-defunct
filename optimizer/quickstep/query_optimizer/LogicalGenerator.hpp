@@ -20,6 +20,7 @@
 #ifndef QUICKSTEP_QUERY_OPTIMIZER_LOGICAL_GENERATOR_HPP_
 #define QUICKSTEP_QUERY_OPTIMIZER_LOGICAL_GENERATOR_HPP_
 
+#include "parser/ParseNode.h"
 #include "query_optimizer/logical/Logical.hpp"
 #include "utility/Macros.hpp"
 
@@ -67,7 +68,7 @@ class LogicalGenerator {
    * @return An optimized logical plan.
    */
   logical::LogicalPtr generatePlan(const CatalogDatabase &catalog_database,
-                                   const ParseStatement &parse_statement);
+                                   std::shared_ptr<ParseNode> syntax_tree);
 
  private:
   /**
