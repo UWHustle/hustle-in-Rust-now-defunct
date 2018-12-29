@@ -1,23 +1,12 @@
 #include "query_optimizer/HustleOptimizer.hpp"
-//#include "query_optimizer/Optimizer.hpp"
-//#include "query_optimizer/ExecutionGenerator.hpp"
 #include "query_optimizer/LogicalGenerator.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
-//#include "query_optimizer/resolver/Resolver.hpp"
 #include "query_optimizer/PhysicalGenerator.hpp"
 #include "utility/Macros.hpp"
 #include "parser/SqlParserWrapper.hpp"
 #include "query_optimizer/tests/TestDatabaseLoader.hpp"
 
 
-//namespace quickstep {
-//namespace optimizer {
-////using namespace quickstep;
-////using namespace quickstep::optimizer;
-//
-//
-//}
-//}
 quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(const quickstep::ParseStatement &parse_statement,
                                    quickstep::CatalogDatabase *catalog_database,
                                    quickstep::optimizer::OptimizerContext *optimizer_context) {
@@ -34,7 +23,6 @@ quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(const quickst
 
 std::string hustle_optimize(char *input) {
   quickstep::SqlParserWrapper sql_parser_;
-//  quickstep::optimizer::Optimizer optimizer_;
   std::string* query = new std::string(input);
 
   sql_parser_.feedNextBuffer(query);
@@ -47,6 +35,7 @@ std::string hustle_optimize(char *input) {
 
   test_database_loader_.createHustleTestRelation(false /* allow_vchar */);
   test_database_loader_.loadHustleTestRelation();
+  test_database_loader_.createHustleJoinRelations();
 
   quickstep::optimizer::physical::PhysicalPtr pplan =
       hustle_getPhysicalPlan(parse_statement,
@@ -55,8 +44,3 @@ std::string hustle_optimize(char *input) {
 
   return pplan->jsonString();
 }
-
-//}  // namespace optimizer
-//}  // namespace quickstep
-
-//

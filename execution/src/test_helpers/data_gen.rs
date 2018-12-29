@@ -32,6 +32,40 @@ pub fn generate_relation_into_hustle_and_sqlite3(record_count:usize)->Relation{
     relation
 }
 
+pub fn generate_relation_a_into_hustle_and_sqlite3(record_count:usize)->Relation{
+    let relation = Relation::new("A".to_string(),
+                                 Schema::new(vec!(Column::new("w".to_string(),"Int".to_string()),
+                                                  Column::new("x".to_string(),"Int".to_string()),
+                                                  Column::new("y".to_string(),"Int".to_string()),
+                                                  Column::new("z".to_string(),"Int".to_string())
+                                 )));
+
+    let csv_file = "test-data/data.csv".to_string();
+
+    generate_data(relation.clone(), record_count);
+    export_csv(csv_file.clone(), relation.clone());
+
+    import_csv_to_sqlite3();
+    import_csv_to_hustle(csv_file.clone(), relation.clone());
+    relation
+}
+
+pub fn generate_relation_b_into_hustle_and_sqlite3(record_count:usize)->Relation{
+    let relation = Relation::new("B".to_string(),
+                                 Schema::new(vec!(Column::new("w".to_string(),"Int".to_string()),
+                                                  Column::new("x".to_string(),"Int".to_string())
+                                 )));
+
+    let csv_file = "test-data/data.csv".to_string();
+
+    generate_data(relation.clone(), record_count);
+    export_csv(csv_file.clone(), relation.clone());
+
+    import_csv_to_sqlite3();
+    import_csv_to_hustle(csv_file.clone(), relation.clone());
+    relation
+}
+
 pub fn generate_data(relation: Relation, record_count: usize){
     let random_relation_generator = RandomRelation::new(relation.clone(), record_count);
     random_relation_generator.execute();

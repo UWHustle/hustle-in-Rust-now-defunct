@@ -146,7 +146,7 @@ class TestDatabaseLoader {
    * @warning This can only be called once.
    */
   void createJoinRelations();
-
+  void createHustleJoinRelations();
   /**
    * @brief Loads data into the test relation. The test relation has 25 tuples.
    *        Each tuple is
