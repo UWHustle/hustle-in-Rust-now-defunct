@@ -12,8 +12,6 @@ public:
     yy::location location;
     ParserDriver();
     int parse(std::string s);
-private:
-
 };
 
 #endif //HUSTLE_PARSERDRIVER_H

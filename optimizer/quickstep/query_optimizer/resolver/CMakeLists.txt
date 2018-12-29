@@ -19,6 +19,9 @@
 add_library(quickstep_queryoptimizer_resolver_NameResolver NameResolver.cpp NameResolver.hpp)
 add_library(quickstep_queryoptimizer_resolver_Resolver Resolver.cpp Resolver.hpp)
 
+add_library(resolver hustle_resolver.h hustle_resolver.cpp)
+target_link_libraries(resolver optimizer)
+
 # Link dependencies:
 target_link_libraries(quickstep_queryoptimizer_resolver_NameResolver
                       glog

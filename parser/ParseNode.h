@@ -15,7 +15,6 @@ public:
     virtual std::unordered_map<std::string, std::string> get_attributes();
     virtual std::unordered_map<std::string, std::shared_ptr<ParseNode>> get_children();
     virtual std::unordered_map<std::string, std::vector<std::shared_ptr<ParseNode>>> get_children_lists();
-private:
     NodeType type;
 };
 
