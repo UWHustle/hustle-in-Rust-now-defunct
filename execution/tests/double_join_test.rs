@@ -18,7 +18,6 @@ const RECORD_COUNT: usize = 32;
 use execution::physical_plan::node::Node;
 use std::rc::Rc;
 
-#[test]
 fn test_dag_double_join() {
 
 
