@@ -68,7 +68,10 @@ class LogicalGenerator {
    * @return An optimized logical plan.
    */
   logical::LogicalPtr generatePlan(const CatalogDatabase &catalog_database,
-                                   std::shared_ptr<ParseNode> syntax_tree);
+                                   const ParseStatement &parse_statement);
+
+  logical::LogicalPtr hustleGeneratePlan(const CatalogDatabase &catalog_database,
+                                         std::shared_ptr<ParseNode> syntax_tree);
 
  private:
   /**

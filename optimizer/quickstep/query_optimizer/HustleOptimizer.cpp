@@ -15,7 +15,7 @@ quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(std::shared_p
 
   quickstep::optimizer::physical::PhysicalPtr physical_plan =
       physical_generator.generatePlan(
-          logical_generator.generatePlan(*catalog_database, syntax_tree),
+          logical_generator.hustleGeneratePlan(*catalog_database, syntax_tree),
           catalog_database);
 
   return physical_plan;
