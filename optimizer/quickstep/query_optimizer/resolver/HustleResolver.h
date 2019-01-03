@@ -10,6 +10,7 @@
 #include "catalog/CatalogDatabase.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
 #include "query_optimizer/logical/Logical.hpp"
+#include "query_optimizer/logical/TableReference.hpp"
 
 class HustleResolver {
 public:
@@ -29,7 +30,7 @@ private:
     quickstep::optimizer::logical::LogicalPtr logical_plan_;
 
     quickstep::optimizer::logical::LogicalPtr resolve_select(std::shared_ptr<SelectNode> select_node);
-    quickstep::optimizer::logical::LogicalPtr resolve_reference(std::shared_ptr<ReferenceNode> reference_node);
+    quickstep::optimizer::logical::TableReferencePtr resolve_reference(std::shared_ptr<ReferenceNode> reference_node);
 };
 
 
