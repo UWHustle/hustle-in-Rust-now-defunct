@@ -52,7 +52,6 @@ quickstep::optimizer::logical::LogicalPtr HustleResolver::resolve_select(shared_
 
     // resolve SELECT
     vector<expressions::NamedExpressionPtr> select_list_expressions;
-    vector<bool> has_aggregate_per_expression;
 
     for (const auto &project_parse : select_node->target) {
         auto project_reference_parse = dynamic_pointer_cast<ReferenceNode>(project_parse);
@@ -67,7 +66,6 @@ quickstep::optimizer::logical::LogicalPtr HustleResolver::resolve_select(shared_
                 found_attribute_reference[0], project_reference_parse->reference, project_reference_parse->reference);
 
         select_list_expressions.emplace_back(project_named_expression);
-        has_aggregate_per_expression.push_back(false);
     }
     
 
