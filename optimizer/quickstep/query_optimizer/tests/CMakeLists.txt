@@ -16,9 +16,9 @@
 # under the License.
 
 #add_subdirectory(execution_generator)
-add_subdirectory(logical_generator)
+#add_subdirectory(logical_generator)
 add_subdirectory(physical_generator)
-add_subdirectory(resolver)
+#add_subdirectory(resolver)
 
 set_gflags_lib_name ()
 
@@ -81,26 +81,26 @@ if (ENABLE_DISTRIBUTED)
                         quickstep_storage_StorageBlockInfo)
 endif(ENABLE_DISTRIBUTED)
 
-#if (ENABLE_DISTRIBUTED)
-#  add_executable(quickstep_queryoptimizer_tests_DistributedExecutionGeneratorTest
-#                 DistributedExecutionGeneratorTest.cpp
-#                 DistributedExecutionGeneratorTestRunner.cpp
-#                 DistributedExecutionGeneratorTestRunner.hpp
-#                 "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
-#                 "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
-#endif(ENABLE_DISTRIBUTED)
+if (ENABLE_DISTRIBUTED)
+  add_executable(quickstep_queryoptimizer_tests_DistributedExecutionGeneratorTest
+                 DistributedExecutionGeneratorTest.cpp
+                 DistributedExecutionGeneratorTestRunner.cpp
+                 DistributedExecutionGeneratorTestRunner.hpp
+                 "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
+                 "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
+endif(ENABLE_DISTRIBUTED)
 #add_executable(quickstep_queryoptimizer_tests_ExecutionGeneratorTest
 #               ExecutionGeneratorTest.cpp
 #               ExecutionGeneratorTestRunner.cpp
 #               ExecutionGeneratorTestRunner.hpp
 #               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
 #               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
-#add_executable(quickstep_queryoptimizer_tests_OptimizerTextTest
-#               OptimizerTextTest.cpp
-#               OptimizerTextTestRunner.cpp
-#               OptimizerTextTestRunner.hpp
-#               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
-#               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
+add_executable(quickstep_queryoptimizer_tests_OptimizerTextTest
+               OptimizerTextTest.cpp
+               OptimizerTextTestRunner.cpp
+               OptimizerTextTestRunner.hpp
+               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.cpp"
+               "${PROJECT_SOURCE_DIR}/utility/textbased_test/TextBasedTest.hpp")
 
 if (ENABLE_DISTRIBUTED)
   target_link_libraries(quickstep_queryoptimizer_tests_DistributedExecutionGeneratorTest
@@ -158,21 +158,21 @@ endif(ENABLE_DISTRIBUTED)
 #                      quickstep_utility_SqlError
 #                      quickstep_utility_TextBasedTestDriver
 #                      tmb)
-#target_link_libraries(quickstep_queryoptimizer_tests_OptimizerTextTest
-#                      ${GFLAGS_LIB_NAME}
-#                      ${LIBS}
-#                      glog
-#                      gtest
-#                      gtest_main
-#                      quickstep_parser_SqlParserWrapper
-#                      quickstep_queryoptimizer_LogicalGenerator
-#                      quickstep_queryoptimizer_OptimizerContext
-#                      quickstep_queryoptimizer_PhysicalGenerator
-#                      quickstep_queryoptimizer_logical_Logical
-#                      quickstep_queryexecution_QueryExecutionMessages_proto
-#                      quickstep_queryoptimizer_physical_Physical
-#                      quickstep_queryoptimizer_resolver_Resolver
-#                      quickstep_queryoptimizer_tests_TestDatabaseLoader
-#                      quickstep_utility_Macros
-#                      quickstep_utility_SqlError
-#                      quickstep_utility_TextBasedTestDriver)
+target_link_libraries(quickstep_queryoptimizer_tests_OptimizerTextTest
+                      ${GFLAGS_LIB_NAME}
+                      ${LIBS}
+                      glog
+                      gtest
+                      gtest_main
+                      quickstep_parser_SqlParserWrapper
+                      quickstep_queryoptimizer_LogicalGenerator
+                      quickstep_queryoptimizer_OptimizerContext
+                      quickstep_queryoptimizer_PhysicalGenerator
+                      quickstep_queryoptimizer_logical_Logical
+                      quickstep_queryexecution_QueryExecutionMessages_proto
+                      quickstep_queryoptimizer_physical_Physical
+                      quickstep_queryoptimizer_resolver_Resolver
+                      quickstep_queryoptimizer_tests_TestDatabaseLoader
+                      quickstep_utility_Macros
+                      quickstep_utility_SqlError
+                      quickstep_utility_TextBasedTestDriver)

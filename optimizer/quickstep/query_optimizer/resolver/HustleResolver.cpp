@@ -19,7 +19,7 @@ HustleResolver::HustleResolver(const quickstep::CatalogDatabase &catalog_databas
 quickstep::optimizer::logical::LogicalPtr HustleResolver::resolve(shared_ptr<ParseNode> syntax_tree) {
     switch (syntax_tree->type) {
         case SELECT:
-            logical_plan_ = resolve_select(dynamic_pointer_cast<SelectNode>(syntax_tree));
+            logical_plan_ = resolve_select(static_pointer_cast<SelectNode>(syntax_tree));
             break;
         default:
             cerr << "Unsupported top level node type: " << syntax_tree->type << endl;
@@ -37,7 +37,7 @@ quickstep::optimizer::logical::LogicalPtr HustleResolver::resolve_select(shared_
     // resolve FROM
     vector<logical::LogicalPtr> from_logical;
     for (const auto &from_parse : select_node->from) {
-        logical::TableReferencePtr table_reference = resolve_reference(dynamic_pointer_cast<ReferenceNode>(from_parse));
+        logical::TableReferencePtr table_reference = resolve_reference(static_pointer_cast<ReferenceNode>(from_parse));
         from_logical.emplace_back(table_reference);
         for (const auto &referenced_attribute : table_reference->getReferencedAttributes()) {
             attribute_references.emplace_back(referenced_attribute);
@@ -54,7 +54,7 @@ quickstep::optimizer::logical::LogicalPtr HustleResolver::resolve_select(shared_
     vector<expressions::NamedExpressionPtr> select_list_expressions;
 
     for (const auto &project_parse : select_node->target) {
-        auto project_reference_parse = dynamic_pointer_cast<ReferenceNode>(project_parse);
+        auto project_reference_parse = static_pointer_cast<ReferenceNode>(project_parse);
 
         auto found_attribute_reference = find_if(attribute_references.begin(), attribute_references.end(),
                 [&project_reference_parse](const expressions::AttributeReferencePtr attribute_reference) {
