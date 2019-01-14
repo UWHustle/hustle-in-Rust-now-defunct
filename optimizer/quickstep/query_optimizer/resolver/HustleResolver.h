@@ -4,9 +4,11 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "parser/ParseNode.h"
 #include "parser/SelectNode.h"
 #include "parser/ReferenceNode.h"
+#include "parser/FunctionNode.h"
 #include "catalog/CatalogDatabase.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
 #include "query_optimizer/logical/Logical.hpp"
@@ -31,6 +33,8 @@ private:
 
     quickstep::optimizer::logical::LogicalPtr resolve_select(std::shared_ptr<SelectNode> select_node);
     quickstep::optimizer::logical::TableReferencePtr resolve_reference(std::shared_ptr<ReferenceNode> reference_node);
+    quickstep::optimizer::expressions::ScalarPtr resolve_expression(std::shared_ptr<ParseNode> parse_node,
+            std::vector<quickstep::optimizer::expressions::AttributeReferencePtr> attribute_references);
 };
 
 
