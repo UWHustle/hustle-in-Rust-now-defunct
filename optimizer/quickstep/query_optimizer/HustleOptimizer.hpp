@@ -19,7 +19,7 @@
 //                              OptimizerContext *optimizer_context);
 //
 
-std::string hustle_optimize(std::shared_ptr<ParseNode> syntax_tree);
+std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree, const std::string &sql = std::string());
 //
 //
 //}  // namespace optimizer

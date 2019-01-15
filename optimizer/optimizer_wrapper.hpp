@@ -5,6 +5,6 @@
 #include <string>
 #include "parser/ParseNode.h"
 
-int optimizer(std::shared_ptr<ParseNode> syntax_tree);
+int optimizer(const std::shared_ptr<ParseNode> &syntax_tree, const std::string &sql = std::string());
 
 #endif //HUSTLE_OPTIMIZER_OPTIMIZER_WRAPPER_H

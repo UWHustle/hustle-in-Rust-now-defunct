@@ -1011,6 +1011,6 @@ number:
 void yy::parser::error(const location_type& l, const std::string& m)
 {
   std::ostringstream msg_stream;
-  msg_stream << l << ": " << m;
+  msg_stream << "Parser: " << l << ": " << m;
   throw msg_stream.str();
 }

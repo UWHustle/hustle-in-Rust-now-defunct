@@ -66,8 +66,6 @@ L::LogicalPtr LogicalGenerator::hustleGeneratePlan(
         const CatalogDatabase &catalog_database,
         std::shared_ptr<ParseNode> syntax_tree) {
     HustleResolver resolver(catalog_database, optimizer_context_);
-//  resolver::Resolver resolver(catalog_database, optimizer_context_);
-//  DVLOG(4) << "Parse tree:\n" << parse_statement.toString();
     logical_plan_ = resolver.resolve(syntax_tree);
     DVLOG(4) << "Initial logical plan:\n" << logical_plan_->toString();
 

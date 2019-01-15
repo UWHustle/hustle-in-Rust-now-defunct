@@ -7,29 +7,10 @@
 #include "query_optimizer/tests/TestDatabaseLoader.hpp"
 
 
-quickstep::optimizer::physical::PhysicalPtr hustle_getPhysicalPlan(std::shared_ptr<ParseNode> syntax_tree,
-                                   quickstep::CatalogDatabase *catalog_database,
-                                   quickstep::optimizer::OptimizerContext *optimizer_context) {
-  quickstep::optimizer::LogicalGenerator logical_generator(optimizer_context);
-  quickstep::optimizer::PhysicalGenerator physical_generator(optimizer_context);
+std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree, const std::string &sql) {
 
-  quickstep::optimizer::physical::PhysicalPtr physical_plan =
-      physical_generator.generatePlan(
-          logical_generator.hustleGeneratePlan(*catalog_database, syntax_tree),
-          catalog_database);
-
-  return physical_plan;
-}
-
-std::string hustle_optimize(std::shared_ptr<ParseNode> syntax_tree) {
-//  quickstep::SqlParserWrapper sql_parser_;
-//  std::string* query = new std::string(input);
-
-//  sql_parser_.feedNextBuffer(query);
-//  quickstep::ParseResult result = sql_parser_.getNextStatement();
 
   quickstep::optimizer::OptimizerContext optimizer_context;
-//  const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
 
   quickstep::optimizer::TestDatabaseLoader test_database_loader_;
 
@@ -37,10 +18,28 @@ std::string hustle_optimize(std::shared_ptr<ParseNode> syntax_tree) {
   test_database_loader_.loadHustleTestRelation();
   test_database_loader_.createHustleJoinRelations();
 
-  quickstep::optimizer::physical::PhysicalPtr pplan =
-      hustle_getPhysicalPlan(syntax_tree,
-                             test_database_loader_.catalog_database(),
-                             &optimizer_context);
+  quickstep::optimizer::LogicalGenerator logical_generator(&optimizer_context);
+  quickstep::optimizer::PhysicalGenerator physical_generator(&optimizer_context);
+
+  quickstep::optimizer::physical::PhysicalPtr pplan;
+  if (sql.empty()) {
+    pplan =
+            physical_generator.generatePlan(
+                    logical_generator.hustleGeneratePlan(*test_database_loader_.catalog_database(), syntax_tree),
+                    test_database_loader_.catalog_database());
+  } else {
+    quickstep::SqlParserWrapper sql_parser_;
+    auto query = new std::string(sql);
+    sql_parser_.feedNextBuffer(query);
+    quickstep::ParseResult result = sql_parser_.getNextStatement();
+    const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
+
+    pplan =
+            physical_generator.generatePlan(
+                    logical_generator.generatePlan(*test_database_loader_.catalog_database(), parse_statement),
+                    test_database_loader_.catalog_database());
+  }
+
 
   return pplan->jsonString();
 }
