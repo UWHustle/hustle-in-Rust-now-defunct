@@ -9,6 +9,3 @@ target_link_libraries(optimizer
         )
 
 add_dependencies(optimizer execution hustle_optimizer)
-
-
-
