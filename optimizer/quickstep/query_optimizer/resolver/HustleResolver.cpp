@@ -3,8 +3,10 @@
 #include "HustleResolver.h"
 
 #include "query_optimizer/expressions/Alias.hpp"
+#include "query_optimizer/expressions/ExpressionUtil.hpp"
 #include "query_optimizer/expressions/NamedExpression.hpp"
 #include "query_optimizer/expressions/AggregateFunction.hpp"
+#include "query_optimizer/logical/Aggregate.hpp"
 #include "query_optimizer/logical/MultiwayCartesianJoin.hpp"
 #include "query_optimizer/logical/Project.hpp"
 #include "query_optimizer/logical/TableReference.hpp"
@@ -57,10 +59,11 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
 
     // resolve SELECT
     vector<expressions::NamedExpressionPtr> select_list_expressions;
-
+    vector<expressions::AliasPtr> aggregate_expressions;
     for (const auto &project_parse : select_node->target) {
 
-        expressions::ScalarPtr project_expression = resolve_expression(project_parse, attribute_references);
+        expressions::ScalarPtr project_expression = resolve_expression(project_parse, attribute_references,
+                &aggregate_expressions);
 
         expressions::ExprId project_expression_id;
         expressions::NamedExpressionPtr project_named_expression;
@@ -82,6 +85,9 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
     vector<expressions::NamedExpressionPtr> group_by_expressions;
     // TODO: build this vector
 
+    if (!aggregate_expressions.empty()) {
+        logical_plan = logical::Aggregate::Create(logical_plan, group_by_expressions, aggregate_expressions);
+    }
     logical_plan = logical::Project::Create(logical_plan, select_list_expressions);
 
     return logical_plan;
@@ -92,8 +98,10 @@ logical::TableReferencePtr HustleResolver::resolve_reference(shared_ptr<Referenc
     return logical::TableReference::Create(relation, reference_node->reference, context_);
 }
 
-expressions::ScalarPtr HustleResolver::resolve_expression(shared_ptr<ParseNode> parse_node,
-        vector<expressions::AttributeReferencePtr> attribute_references) {
+expressions::ScalarPtr HustleResolver::resolve_expression(
+        shared_ptr<ParseNode> parse_node,
+        vector<expressions::AttributeReferencePtr> attribute_references,
+        vector<expressions::AliasPtr> *aggregate_expressions) {
     switch (parse_node->type) {
         case REFERENCE: {
             auto project_reference_parse = static_pointer_cast<ReferenceNode>(parse_node);
@@ -103,6 +111,23 @@ expressions::ScalarPtr HustleResolver::resolve_expression(shared_ptr<ParseNode> 
                         return attribute_reference->attribute_name() == project_reference_parse->reference;
                     });
             return found_attribute_reference[0];
+        }
+        case FUNCTION: {
+            auto project_function_parse = static_pointer_cast<FunctionNode>(parse_node);
+            auto aggregate = &quickstep::AggregateFunctionSum::Instance();
+
+            vector<expressions::ScalarPtr> arguments;
+            for (const auto &argument : project_function_parse->arguments) {
+                arguments.push_back(resolve_expression(argument, attribute_references, aggregate_expressions));
+            }
+
+            auto aggregate_function = expressions::AggregateFunction::Create(*aggregate, arguments, false, false);
+            auto aggregate_alias = expressions::Alias::Create(context_->nextExprId(), aggregate_function, "", "",
+                    "$aggregate");
+            aggregate_expressions->emplace_back(aggregate_alias);
+            return expressions::AttributeReference::Create(aggregate_alias->id(), aggregate_alias->attribute_name(),
+                    aggregate_alias->attribute_alias(), aggregate_alias->relation_name(),
+                    aggregate_alias->getValueType(), expressions::AttributeReferenceScope::kLocal);
         }
         default:
             ostringstream msg_stream;
