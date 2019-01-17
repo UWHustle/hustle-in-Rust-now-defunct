@@ -63,7 +63,6 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
     vector<expressions::NamedExpressionPtr> select_list_expressions;
     vector<expressions::AliasPtr> aggregate_expressions;
     for (const auto &project_parse : select_node->target) {
-
         expressions::ScalarPtr project_expression = resolve_expression(project_parse, attribute_references,
                 &aggregate_expressions);
 
@@ -85,13 +84,24 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
         }
         select_list_expressions.emplace_back(project_named_expression);
     }
-    
 
     // resolve GROUP BY
     vector<expressions::NamedExpressionPtr> group_by_expressions;
-    // TODO: build this vector
+    for (const auto &group_by_parse : select_node->group_by) {
+        expressions::ScalarPtr group_by_expression = resolve_expression(group_by_parse, attribute_references,
+                &aggregate_expressions);
 
-    if (!aggregate_expressions.empty()) {
+        expressions::NamedExpressionPtr group_by_named_expression;
+        if (!expressions::SomeNamedExpression::MatchesWithConditionalCast(group_by_expression,
+                &group_by_named_expression)) {
+            string internal_alias = "$group_by" + to_string(group_by_expressions.size());
+            group_by_named_expression = expressions::Alias::Create(context_->nextExprId(), group_by_expression, "",
+                    internal_alias, "$group_by");
+        }
+        group_by_expressions.push_back(group_by_named_expression);
+    }
+
+    if (!aggregate_expressions.empty() || !select_node->group_by.empty()) {
         logical_plan = logical::Aggregate::Create(logical_plan, group_by_expressions, aggregate_expressions);
     }
     logical_plan = logical::Project::Create(logical_plan, select_list_expressions);
