@@ -14,6 +14,7 @@ use physical_operators::project::Project;
 use physical_operators::Operator;
 use physical_operators::aggregate::Aggregate;
 use physical_operators::select_sum::SelectSum;
+use physical_operators::join::Join;
 
 use logical_entities::aggregations::sum::Sum;
 
@@ -22,6 +23,70 @@ extern crate serde_json;
 use self::serde_json::Value;
 
 use std::rc::Rc;
+
+// A guide for building the operator tree for the query:
+// SELECT a FROM t;
+fn simple_select() -> Node {
+    let a = Column::new("a".to_string(), "Int NULL".to_string());
+    let b = Column::new("b".to_string(), "Int".to_string());
+
+    let input_rel = Relation::new("T".to_string(), Schema::new(vec!(a.clone(), b.clone())));
+
+    let project_operator = Project::new(input_rel.clone(), vec!(a.clone()));
+    let print_operator = Print::new(project_operator.get_target_relation());
+
+    let project_node = Node::new(Rc::new(project_operator), vec!());
+    let print_node = Node::new(Rc::new(print_operator), vec!(Rc::new(project_node)));
+
+    print_node
+}
+
+// A guide for building the operator tree for the query:
+// SELECT SUM(a) FROM t;
+fn select_sum() -> Node {
+    let a = Column::new("a".to_string(), "Int NULL".to_string());
+    let b = Column::new("b".to_string(), "Int".to_string());
+
+    let input_rel = Relation::new("T".to_string(), Schema::new(vec!(a.clone(), b.clone())));
+
+    let project_operator = Project::new(input_rel.clone(), vec!(a.clone()));
+    let aggregate_operator = Aggregate::new(Sum::new(project_operator.get_target_relation(), a.clone()));
+    let print_operator = Print::new(aggregate_operator.get_target_relation());
+
+    let project_node = Node::new(Rc::new(project_operator), vec!());
+    let aggregate_node = Node::new(Rc::new(aggregate_operator), vec!(Rc::new(project_node)));
+    let print_node = Node::new(Rc::new(print_operator), vec!(Rc::new(aggregate_node)));
+
+    print_node
+}
+
+// A guide for building the operator tree for the query:
+// SELECT a, w FROM T INNER JOIN A;
+fn simple_join() -> Node {
+    let a = Column::new("a".to_string(), "Int NULL".to_string());
+    let b = Column::new("b".to_string(), "Int".to_string());
+
+    let t_schema = Schema::new(vec!(a.clone(), b.clone()));
+    let t_relation = Relation::new("T".to_string(), t_schema);
+
+    let w = Column::new("w".to_string(), "Int".to_string());
+    let x = Column::new("x".to_string(), "Int".to_string());
+    let y = Column::new("y".to_string(), "Int".to_string());
+    let z = Column::new("z".to_string(), "Int".to_string());
+
+    let a_schema = Schema::new(vec!(w.clone(), x.clone(), y.clone(), z.clone()));
+    let a_relation = Relation::new("A".to_string(), a_schema);
+
+    let join_operator = Join::new(t_relation, a_relation);
+    let project_operator = Project::new(join_operator.get_target_relation(), vec!(a.clone(), w.clone()));
+    let print_operator = Print::new(project_operator.get_target_relation());
+
+    let join_node = Node::new(Rc::new(join_operator), vec!());
+    let project_node = Node::new(Rc::new(project_operator), vec!(Rc::new(join_node)));
+    let print_node = Node::new(Rc::new(print_operator), vec!(Rc::new(project_node)));
+
+    print_node
+}
 
 pub fn parse(string_plan: &str) -> Node {
 
