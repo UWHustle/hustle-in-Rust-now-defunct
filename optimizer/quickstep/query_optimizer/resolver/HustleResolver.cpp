@@ -1,16 +1,18 @@
-
-#include <optimizer/quickstep/query_optimizer/expressions/PatternMatcher.hpp>
 #include "HustleResolver.h"
 
+#include <algorithm>
+
+#include "query_optimizer/expressions/AggregateFunction.hpp"
 #include "query_optimizer/expressions/Alias.hpp"
 #include "query_optimizer/expressions/ExpressionUtil.hpp"
 #include "query_optimizer/expressions/NamedExpression.hpp"
-#include "query_optimizer/expressions/AggregateFunction.hpp"
+#include "query_optimizer/expressions/PatternMatcher.hpp"
 #include "query_optimizer/logical/Aggregate.hpp"
 #include "query_optimizer/logical/MultiwayCartesianJoin.hpp"
 #include "query_optimizer/logical/Project.hpp"
 #include "query_optimizer/logical/TableReference.hpp"
 #include "query_optimizer/logical/TopLevelPlan.hpp"
+#include "expressions/aggregation/AggregateFunctionFactory.hpp"
 #include "expressions/aggregation/AggregateFunctionSum.hpp"
 
 namespace logical = ::quickstep::optimizer::logical;
@@ -76,6 +78,10 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
 
         if (project_named_expression == nullptr) {
             project_named_expression = expressions::Alias::Create(project_expression_id, project_expression, "", "");
+        } else if (project_named_expression->attribute_alias().at(0) == '$') {
+            project_named_expression = expressions::Alias::Create(project_named_expression->id(),
+                    project_named_expression, project_named_expression->attribute_name(),
+                    project_parse->to_sql_string(), "");
         }
         select_list_expressions.emplace_back(project_named_expression);
     }
@@ -114,7 +120,9 @@ expressions::ScalarPtr HustleResolver::resolve_expression(
         }
         case FUNCTION: {
             auto project_function_parse = static_pointer_cast<FunctionNode>(parse_node);
-            auto aggregate = &quickstep::AggregateFunctionSum::Instance();
+            string function_name = project_function_parse->name;
+            transform(function_name.begin(), function_name.end(), function_name.begin(), ::tolower);
+            const quickstep::AggregateFunction *aggregate = quickstep::AggregateFunctionFactory::GetByName(function_name);
 
             vector<expressions::ScalarPtr> arguments;
             for (const auto &argument : project_function_parse->arguments) {
@@ -122,8 +130,9 @@ expressions::ScalarPtr HustleResolver::resolve_expression(
             }
 
             auto aggregate_function = expressions::AggregateFunction::Create(*aggregate, arguments, false, false);
-            auto aggregate_alias = expressions::Alias::Create(context_->nextExprId(), aggregate_function, "", "",
-                    "$aggregate");
+            string internal_alias = "$aggregate" + to_string(aggregate_expressions->size());
+            auto aggregate_alias = expressions::Alias::Create(context_->nextExprId(), aggregate_function, "",
+                    internal_alias, "$aggregate");
             aggregate_expressions->emplace_back(aggregate_alias);
             return expressions::AttributeReference::Create(aggregate_alias->id(), aggregate_alias->attribute_name(),
                     aggregate_alias->attribute_alias(), aggregate_alias->relation_name(),

@@ -11,3 +11,7 @@ unordered_map<string, string> ReferenceNode::get_attributes() {
     attributes.insert({"reference", reference});
     return attributes;
 }
+
+string ReferenceNode::to_sql_string() {
+    return reference;
+}
