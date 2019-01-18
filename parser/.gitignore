@@ -1,4 +1,7 @@
-lexer.c
+lexer.cpp
 lexer.h
-parser.c
+parser.cpp
 parser.h
+location.hh
+position.hh
+stack.hh
