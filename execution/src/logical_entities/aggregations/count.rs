@@ -10,13 +10,15 @@ use logical_entities::aggregations::AggregationTrait;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Count {
     input_relation: Relation,
+    column: Column,
     running_total: u8
 }
 
 impl Count {
-    pub fn new(relation: Relation) -> Self {
+    pub fn new(relation: Relation, column: Column) -> Self {
         Count {
             input_relation: relation,
+            column: column,
             running_total: 0
         }
     }
@@ -32,7 +34,7 @@ impl AggregationTrait for Count {
     }
 
     fn output_schema(&self) -> Schema {
-        let col = Column::new("count".to_string(), "Int".to_string());
+        let col = Column::new(format!("COUNT({})", self.column.get_name()), "Int".to_string());
         Schema::new(vec!(col))
     }
 
