@@ -14,18 +14,66 @@ fn test_dag_double_join() {
 
     let root_node = parser::parse(
 "
-Physical Plan
-TopLevelPlan
-+-plan=Selection[has_repartition=false]
-| +-input=TableReference[relation=T,alias=test]
-| | +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]
-| | +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]
-| +-project_expressions=
-|   +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]
-|   +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]
-+-output_attributes=
-  +-AttributeReference[id=0,name=a,relation=test,type=Int NULL]
-  +-AttributeReference[id=1,name=b,relation=test,type=Int NULL]
+{
+  \"json_name\": \"TopLevelPlan\",
+  \"plan\": {
+    \"json_name\": \"Selection\",
+    \"has_repartition\": \"false\",
+    \"input\": {
+      \"json_name\": \"TableReference\",
+      \"relation\": \"T\",
+      \"alias\": \"t\",
+      \"\": [
+        {
+          \"json_name\": \"AttributeReference\",
+          \"id\": \"0\",
+          \"name\": \"a\",
+          \"relation\": \"t\",
+          \"type\": \"Int NULL\"
+        },
+        {
+          \"json_name\": \"AttributeReference\",
+          \"id\": \"1\",
+          \"name\": \"b\",
+          \"relation\": \"t\",
+          \"type\": \"Int\"
+        }
+      ]
+    },
+    \"project_expressions\": [
+      {
+        \"json_name\": \"AttributeReference\",
+        \"id\": \"0\",
+        \"name\": \"a\",
+        \"relation\": \"t\",
+        \"type\": \"Int NULL\"
+      },
+      {
+        \"json_name\": \"AttributeReference\",
+        \"id\": \"1\",
+        \"name\": \"b\",
+        \"relation\": \"t\",
+        \"type\": \"Int\"
+      }
+    ]
+  },
+  \"output_attributes\": [
+    {
+      \"json_name\": \"AttributeReference\",
+      \"id\": \"0\",
+      \"name\": \"a\",
+      \"relation\": \"t\",
+      \"type\": \"Int NULL\"
+    },
+    {
+      \"json_name\": \"AttributeReference\",
+      \"id\": \"1\",
+      \"name\": \"b\",
+      \"relation\": \"t\",
+      \"type\": \"Int\"
+    }
+  ]
+}
 ");
     root_node.execute();
 
