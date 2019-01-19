@@ -7,7 +7,6 @@ use logical_entities::aggregations::count::Count;
 
 use physical_plan::node::Node;
 
-use physical_operators::Operator;
 use physical_operators::aggregate::Aggregate;
 use physical_operators::join::Join;
 use physical_operators::print::Print;
