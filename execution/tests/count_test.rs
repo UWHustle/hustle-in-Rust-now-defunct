@@ -21,20 +21,19 @@ fn test_dag_count_aggregate() {
     let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
 
     let aggregated_relation = hustle_count(relation.clone());
-    let hustle_calculation = sum_column_hustle(aggregated_relation.clone(), "count".to_string());
+    let hustle_calculation = sum_column_hustle(aggregated_relation.clone(), "COUNT(a)".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT COUNT(t.a) FROM t;", "COUNT(t.a)");
     assert_eq!(hustle_calculation, sqlite3_calculation);
 }
 
-
-
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, "Int".to_string()));
+    let select_operator = SelectSum::new(relation.clone(), Column::new(column_name, "Int".to_string()));
     select_operator.execute().parse::<u128>().unwrap()
 }
 
-fn hustle_count(relation1:Relation) -> Relation {
-    let aggregate_operator = Rc::new(Aggregate::new(Count::new(relation1.clone())));
+fn hustle_count(relation: Relation) -> Relation {
+    let col = relation.get_columns().get(0).unwrap().clone();
+    let aggregate_operator = Rc::new(Aggregate::new(Count::new(relation.clone(), col)));
 
     let root_node = Node::new(aggregate_operator, vec!());
     root_node.execute()
