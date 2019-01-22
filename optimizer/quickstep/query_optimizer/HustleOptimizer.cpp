@@ -26,8 +26,8 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
   if (sql.empty()) {
     pplan =
         physical_generator.generatePlan(
-            logical_generator.hustleGeneratePlan(*test_database_loader_.catalog_database(),
-                                                 syntax_tree),
+            logical_generator.hustleGeneratePlan(
+                *test_database_loader_.catalog_database(), syntax_tree),
             test_database_loader_.catalog_database());
   } else {
     quickstep::SqlParserWrapper sql_parser_;
