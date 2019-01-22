@@ -4,7 +4,7 @@ case "$OSTYPE" in
     command="brew install -y" ;;
   linux*)
     update="sudo apt-get update"
-    command="sudo apt-get install" ;;
+    command="sudo apt-get -y install" ;;
   *)
     echo "unknown OS: $OSTYPE" ;;
 esac
@@ -28,3 +28,6 @@ cd ../../..
 mkdir -p build
 cd build
 cmake ..
+
+
+echo -e "\n\nTo build Hustle run: cd build; make -j<number of cores of your machine>"
