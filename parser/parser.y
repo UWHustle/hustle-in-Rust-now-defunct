@@ -21,6 +21,7 @@ class ParserDriver;
 #include "SelectNode.h"
 #include "FunctionNode.h"
 #include "ReferenceNode.h"
+#include "OperatorNode.h"
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T typedef void* yyscan_t;
 #endif
@@ -209,6 +210,7 @@ class ParserDriver;
   select
   selectnowith
   oneselect
+  where_opt
 %type <std::vector<std::shared_ptr<ParseNode> > >
   exprlist
   from
@@ -489,7 +491,7 @@ multiselect_op:
 
 oneselect:
   SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt {
-    $$ = std::shared_ptr<SelectNode>(new SelectNode(std::move($3), std::move($4), std::move($6)));
+    $$ = std::shared_ptr<SelectNode>(new SelectNode(std::move($3), std::move($4), std::move($5), std::move($6)));
   }
 | SELECT distinct selcollist from where_opt groupby_opt having_opt window_clause orderby_opt limit_opt { error(drv.location, "window queries not yet supported"); }
 | values { error(drv.location, "VALUES not yet supported"); }
@@ -626,8 +628,10 @@ limit_opt:
 ;
 
 where_opt:
-  /* empty */
-| WHERE expr
+  /* empty */ {}
+| WHERE expr {
+    $$ = std::move($2);
+  }
 ;
 
 setlist:
@@ -686,7 +690,9 @@ expr:
 | expr GT expr { error(drv.location, "> in expression not yet supported"); }
 | expr GE expr { error(drv.location, ">= in expression not yet supported"); }
 | expr LE expr { error(drv.location, "<= in expression not yet supported"); }
-| expr EQ expr { error(drv.location, "= in expression not yet supported"); }
+| expr EQ expr {
+    $$ = std::shared_ptr<OperatorNode>(new OperatorNode(EQ, {$1, $3}));
+  }
 | expr NE expr { error(drv.location, "<> in expression not yet supported"); }
 | expr BITAND expr { error(drv.location, "& in expression not yet supported"); }
 | expr BITOR expr { error(drv.location, "| in expression not yet supported"); }

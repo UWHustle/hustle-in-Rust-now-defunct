@@ -1,3 +1,4 @@
+#include <utility>
 #include <string>
 
 #include "OperatorNode.h"
@@ -5,7 +6,7 @@
 using namespace std;
 
 OperatorNode::OperatorNode(OperatorType operator_type, vector<shared_ptr<ParseNode>> operands)
-        : operator_type(operator_type), operands(operands) { }
+        : operator_type(operator_type), operands(move(operands)) { }
 
 unordered_map<string, string> OperatorNode::get_attributes() {
     auto attributes = ParseNode::get_attributes();
