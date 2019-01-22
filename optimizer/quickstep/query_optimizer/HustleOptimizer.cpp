@@ -51,6 +51,5 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
       return "";
     }
   }
-
   return pplan->jsonString();
 }
