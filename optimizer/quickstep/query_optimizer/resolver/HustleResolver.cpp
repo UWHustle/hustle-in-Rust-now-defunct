@@ -110,8 +110,8 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
 }
 
 logical::TableReferencePtr HustleResolver::resolve_reference(shared_ptr<ReferenceNode> reference_node) {
-    const quickstep::CatalogRelation *relation = catalog_database_.getRelationByName(reference_node->reference);
-    return logical::TableReference::Create(relation, reference_node->reference, context_);
+    const quickstep::CatalogRelation *relation = catalog_database_.getRelationByName(reference_node->attribute);
+    return logical::TableReference::Create(relation, reference_node->attribute, context_);
 }
 
 expressions::ScalarPtr HustleResolver::resolve_expression(
@@ -124,7 +124,7 @@ expressions::ScalarPtr HustleResolver::resolve_expression(
 
             auto found_attribute_reference = find_if(attribute_references.begin(), attribute_references.end(),
                     [&project_reference_parse](const expressions::AttributeReferencePtr attribute_reference) {
-                        return attribute_reference->attribute_name() == project_reference_parse->reference;
+                        return attribute_reference->attribute_name() == project_reference_parse->attribute;
                     });
             return found_attribute_reference[0];
         }

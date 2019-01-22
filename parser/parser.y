@@ -666,7 +666,9 @@ expr:
     $$ = std::shared_ptr<ReferenceNode>(new ReferenceNode($1));
   }
 | JOIN_KW { error(drv.location, "join keyword in expression not yet supported"); }
-| nm DOT nm { error(drv.location, "nm.nm in expression not yet supported"); }
+| nm DOT nm {
+    $$ = std::shared_ptr<ReferenceNode>(new ReferenceNode($3, $1));
+  }
 | nm DOT nm DOT nm { error(drv.location, "nm.nm.nm in expression not yet supported"); }
 | VARIABLE { error(drv.location, "VARIABLE not yet supported"); }
 | expr COLLATE ids { error(drv.location, "COLLATE not yet supported"); }
