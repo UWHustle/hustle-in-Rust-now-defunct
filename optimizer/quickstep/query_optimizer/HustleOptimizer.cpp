@@ -5,6 +5,7 @@
 #include "utility/Macros.hpp"
 #include "parser/SqlParserWrapper.hpp"
 #include "query_optimizer/tests/TestDatabaseLoader.hpp"
+#include "utility/SqlError.hpp"
 
 
 std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree, const std::string &sql) {
@@ -28,18 +29,22 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree, const
                     logical_generator.hustleGeneratePlan(*test_database_loader_.catalog_database(), syntax_tree),
                     test_database_loader_.catalog_database());
   } else {
-    quickstep::SqlParserWrapper sql_parser_;
-    auto query = new std::string(sql);
-    sql_parser_.feedNextBuffer(query);
-    quickstep::ParseResult result = sql_parser_.getNextStatement();
-    const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
+    try {
+      quickstep::SqlParserWrapper sql_parser_;
+      auto query = new std::string(sql);
+      sql_parser_.feedNextBuffer(query);
+      quickstep::ParseResult result = sql_parser_.getNextStatement();
+      const quickstep::ParseStatement &parse_statement = *result.parsed_statement;
 
-    pplan =
-            physical_generator.generatePlan(
-                    logical_generator.generatePlan(*test_database_loader_.catalog_database(), parse_statement),
-                    test_database_loader_.catalog_database());
+      pplan =
+              physical_generator.generatePlan(
+                      logical_generator.generatePlan(*test_database_loader_.catalog_database(), parse_statement),
+                      test_database_loader_.catalog_database());
+    } catch (const quickstep::SqlError &sql_error) {
+      printf("%s", sql_error.formatMessage(sql).c_str());
+      return "";
+    }
   }
-
 
   return pplan->jsonString();
 }
