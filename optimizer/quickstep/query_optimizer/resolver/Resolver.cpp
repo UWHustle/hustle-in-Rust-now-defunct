@@ -1509,8 +1509,8 @@ L::LogicalPtr Resolver::resolveSelect(
   } else if (select_query.limit() != nullptr) {
     logical_plan = L::Limit::Create(logical_plan,
         select_query.limit()->limit_expression()->long_value());
-    THROW_SQL_ERROR_AT(select_query.limit())
-        << "LIMIT is not supported without ORDER BY";
+//    THROW_SQL_ERROR_AT(select_query.limit())
+//        << "LIMIT is not supported without ORDER BY";
   }
 
   logical_plan = L::Project::Create(logical_plan, select_list_expressions);

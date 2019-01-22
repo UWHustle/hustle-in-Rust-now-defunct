@@ -88,6 +88,27 @@ class Limit : public Logical {
                               limit));
   }
 
+  LogicalPtr copyWithNewChildren(
+      const std::vector<LogicalPtr> &new_children) const override {
+    DCHECK_EQ(children().size(), new_children.size());
+    return Limit::Create(new_children[0], limit_);
+  }
+
+  void getFieldStringItems(
+      std::vector<std::string> *inline_field_names,
+      std::vector<std::string> *inline_field_values,
+      std::vector<std::string> *non_container_child_field_names,
+      std::vector<OptimizerTreeBaseNodePtr> *non_container_child_fields,
+      std::vector<std::string> *container_child_field_names,
+      std::vector<std::vector<OptimizerTreeBaseNodePtr>> *container_child_fields) const override {
+    non_container_child_field_names->emplace_back("input");
+    non_container_child_fields->emplace_back(input());
+
+    inline_field_names->emplace_back("limit");
+    inline_field_values->emplace_back(std::to_string(limit_));
+  }
+
+
  private:
   Limit(const LogicalPtr &input, const int limit)
       : input_(input), limit_(limit) {}
