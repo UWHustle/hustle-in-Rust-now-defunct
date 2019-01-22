@@ -4,8 +4,6 @@ project(hustle)
 
 set(CMAKE_CXX_STANDARD 14)
 
-execute_process(COMMAND init.sh)
-
 include_directories(${PROJECT_SOURCE_DIR})
 
 file(COPY ${CMAKE_SOURCE_DIR}/test-data DESTINATION ${CMAKE_BINARY_DIR})
