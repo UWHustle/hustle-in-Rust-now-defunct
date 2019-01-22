@@ -54,7 +54,8 @@ enum class PhysicalType {
   kTopLevelPlan,
   kUnionAll,
   kUpdateTable,
-  kWindowAggregate
+  kWindowAggregate,
+  kLimit
 };
 
 /** @} */

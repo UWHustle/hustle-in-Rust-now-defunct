@@ -44,6 +44,7 @@ add_library(quickstep_queryoptimizer_physical_SharedSubplanReference
             SharedSubplanReference.cpp
             SharedSubplanReference.hpp)
 add_library(quickstep_queryoptimizer_physical_Sort Sort.cpp Sort.hpp)
+add_library(quickstep_queryoptimizer_physical_Limit  ../../empty_src.cpp Limit.hpp)
 add_library(quickstep_queryoptimizer_physical_TableGenerator ../../empty_src.cpp TableGenerator.hpp)
 add_library(quickstep_queryoptimizer_physical_TableReference TableReference.cpp TableReference.hpp)
 add_library(quickstep_queryoptimizer_physical_TopLevelPlan TopLevelPlan.cpp TopLevelPlan.hpp)
