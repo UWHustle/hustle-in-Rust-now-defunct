@@ -2,12 +2,23 @@
 
 using namespace std;
 
-ReferenceNode::ReferenceNode(const string reference) : ParseNode(REFERENCE) {
-    this->reference = reference;
+ReferenceNode::ReferenceNode(const string attribute, const string relation) : ParseNode(REFERENCE) {
+    this->attribute = attribute;
+    this->relation = relation;
 }
 
 unordered_map<string, string> ReferenceNode::get_attributes() {
     auto attributes = ParseNode::get_attributes();
-    attributes.insert({"reference", reference});
+    attributes.insert({
+        {"attribute", attribute},
+        {"relation", relation}
+    });
     return attributes;
+}
+
+string ReferenceNode::to_sql_string() {
+    if (relation.empty()) {
+        return attribute;
+    }
+    return relation + "." + attribute;
 }

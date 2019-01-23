@@ -1,6 +1,7 @@
 #include "ParseNode.h"
 
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -26,6 +27,17 @@ void ParseNode::json_stringify() {
         cout << attribute.first << ":" << attribute.second;
         if (key_index < num_keys - 1) {
             cout << ",";
+        }
+        key_index++;
+    }
+
+    for (const auto &child : children) {
+        if (child.second) {
+            cout << child.first << ":";
+            child.second->json_stringify();
+            if (key_index < num_keys - 1) {
+                cout << ",";
+            }
         }
         key_index++;
     }
@@ -60,4 +72,19 @@ unordered_map<string, shared_ptr<ParseNode>> ParseNode::get_children() {
 
 unordered_map<string, vector<shared_ptr<ParseNode>>> ParseNode::get_children_lists() {
     return {};
+}
+
+string ParseNode::to_sql_string() {
+    return string();
+}
+
+string ParseNode::to_sql_string(vector<shared_ptr<ParseNode>> nodes) {
+    stringstream sql_stream;
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        if (i != 0) {
+            sql_stream << ", ";
+        }
+        sql_stream << nodes[i]->to_sql_string();
+    }
+    return sql_stream.str();
 }

@@ -1,8 +1,11 @@
 #include "FunctionNode.h"
 
+#include <sstream>
+
 using namespace std;
 
-FunctionNode::FunctionNode(const string name, vector<shared_ptr<ParseNode>> arguments) : ParseNode(FUNCTION), arguments(move(arguments)) {
+FunctionNode::FunctionNode(const string name, vector<shared_ptr<ParseNode>> arguments)
+        : ParseNode(FUNCTION), arguments(arguments) {
     this->name = name;
 }
 
@@ -16,4 +19,10 @@ unordered_map<string, vector<shared_ptr<ParseNode>>> FunctionNode::get_children_
     return {
             {"arguments", arguments}
     };
+}
+
+string FunctionNode::to_sql_string() {
+    stringstream sql_stream;
+    sql_stream << name << "(" << ParseNode::to_sql_string(arguments) << ")";
+    return sql_stream.str();
 }

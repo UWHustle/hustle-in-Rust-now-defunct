@@ -7,9 +7,11 @@
 
 class ReferenceNode: public ParseNode {
 public:
-    explicit ReferenceNode(std::string reference);
+    explicit ReferenceNode(std::string attribute, std::string relation = "");
     std::unordered_map<std::string, std::string> get_attributes() override;
-    std::string reference;
+    std::string to_sql_string() override;
+    std::string attribute;
+    std::string relation;
 };
 
 

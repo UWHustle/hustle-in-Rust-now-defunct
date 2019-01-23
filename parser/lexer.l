@@ -56,7 +56,6 @@ DROP            		{ return yy::parser::make_DROP(loc); }
 EACH            		{ return yy::parser::make_EACH(loc); }
 ELSE            		{ return yy::parser::make_ELSE(loc); }
 END             		{ return yy::parser::make_END(loc); }
-EQ              		{ return yy::parser::make_EQ(loc); }
 ESCAPE          		{ return yy::parser::make_ESCAPE(loc); }
 EXCEPT          		{ return yy::parser::make_EXCEPT(loc); }
 EXCLUSIVE       		{ return yy::parser::make_EXCLUSIVE(loc); }
@@ -154,6 +153,7 @@ WITHOUT         		{ return yy::parser::make_WITHOUT(loc); }
 ","                   	{ return yy::parser::make_COMMA(loc); }
 "||"                  	{ return yy::parser::make_CONCAT(loc); }
 "."						{ return yy::parser::make_DOT(loc); }
+"="                     { return yy::parser::make_EQ(loc); }
 [0-9]*\.[0-9]+			{ return yy::parser::make_FLOAT(loc); }
 ">="					{ return yy::parser::make_GE(loc); }
 ">"						{ return yy::parser::make_GT(loc); }
