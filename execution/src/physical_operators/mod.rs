@@ -1,4 +1,3 @@
-
 pub mod import_csv;
 pub mod select_sum;
 pub mod insert;
@@ -8,6 +7,7 @@ pub mod export_csv;
 pub mod random_relation;
 pub mod project;
 pub mod aggregate;
+pub mod table_reference;
 
 
 use logical_entities::relation::Relation;
