@@ -4,6 +4,19 @@ project(hustle)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# Update git submodules
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    message(STATUS "Updating git submodules")
+    execute_process(
+            COMMAND ${GIT_EXECUTABLE} submodule update --init
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}")
+    endif()
+endif()
+
 include_directories(${PROJECT_SOURCE_DIR})
 
 file(COPY ${CMAKE_SOURCE_DIR}/test-data DESTINATION ${CMAKE_BINARY_DIR})
