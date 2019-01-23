@@ -2,18 +2,21 @@
 
 #include <algorithm>
 
+#include "expressions/aggregation/AggregateFunctionFactory.hpp"
+#include "expressions/aggregation/AggregateFunctionSum.hpp"
 #include "query_optimizer/expressions/AggregateFunction.hpp"
 #include "query_optimizer/expressions/Alias.hpp"
+#include "query_optimizer/expressions/ComparisonExpression.hpp"
 #include "query_optimizer/expressions/ExpressionUtil.hpp"
 #include "query_optimizer/expressions/NamedExpression.hpp"
 #include "query_optimizer/expressions/PatternMatcher.hpp"
 #include "query_optimizer/logical/Aggregate.hpp"
+#include "query_optimizer/logical/Filter.hpp"
 #include "query_optimizer/logical/MultiwayCartesianJoin.hpp"
 #include "query_optimizer/logical/Project.hpp"
 #include "query_optimizer/logical/TableReference.hpp"
 #include "query_optimizer/logical/TopLevelPlan.hpp"
-#include "expressions/aggregation/AggregateFunctionFactory.hpp"
-#include "expressions/aggregation/AggregateFunctionSum.hpp"
+#include "types/operations/comparisons/ComparisonFactory.hpp"
 
 namespace logical = ::quickstep::optimizer::logical;
 namespace expressions = ::quickstep::optimizer::expressions;
@@ -30,9 +33,7 @@ logical::LogicalPtr HustleResolver::resolve(shared_ptr<ParseNode> syntax_tree) {
             logical_plan_ = resolve_select(static_pointer_cast<SelectNode>(syntax_tree));
             break;
         default:
-            ostringstream msg_stream;
-            msg_stream << "Resolver: unsupported top-level node type: " << syntax_tree->type;
-            throw msg_stream.str();
+            throw "Resolver: unsupported top-level node type: " + to_string(syntax_tree->type);
     }
 
     logical_plan_ = logical::TopLevelPlan::Create(logical_plan_, with_queries_info_.with_query_plans);
@@ -57,6 +58,34 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
         logical_plan = logical::MultiwayCartesianJoin::Create(from_logical);
     } else {
         logical_plan = from_logical[0];
+    }
+
+    // resolve WHERE
+    if (select_node->where != nullptr) {
+        if (select_node->where->type != OPERATOR) {
+            throw "Resolver: unsupported predicate node type: " + to_string(select_node->where->type);
+        }
+        auto where_operator_node = static_pointer_cast<OperatorNode>(select_node->where);
+        expressions::PredicatePtr predicate;
+        switch (where_operator_node->operator_type) {
+            case EQ: {
+                if (where_operator_node->operands.size() != 2) {
+                    throw "Resolver: operator EQ must have 2 operands; actual: " +
+                          to_string(where_operator_node->operands.size());
+                }
+                expressions::ScalarPtr left_operand = resolve_expression(where_operator_node->operands[0],
+                                                                         attribute_references, nullptr);
+                expressions::ScalarPtr right_operand = resolve_expression(where_operator_node->operands[1],
+                                                                          attribute_references, nullptr);
+                predicate = expressions::ComparisonExpression::Create(
+                        quickstep::ComparisonFactory::GetComparison(quickstep::ComparisonID::kEqual), left_operand,
+                        right_operand);
+                break;
+            }
+            default:
+                throw "Resolver: unsupported operator type: " + to_string(where_operator_node->operator_type);
+        }
+        logical_plan = logical::Filter::Create(logical_plan, predicate);
     }
 
     // resolve SELECT
@@ -149,8 +178,6 @@ expressions::ScalarPtr HustleResolver::resolve_expression(
                     aggregate_alias->getValueType(), expressions::AttributeReferenceScope::kLocal);
         }
         default:
-            ostringstream msg_stream;
-            msg_stream << "Resolver: unsupported expression node type: " << parse_node->type;
-            throw msg_stream.str();
+            "Resolver: unsupported expression node type: " + to_string(parse_node->type);
     }
 }

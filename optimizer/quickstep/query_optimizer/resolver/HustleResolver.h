@@ -9,6 +9,7 @@
 #include "parser/SelectNode.h"
 #include "parser/ReferenceNode.h"
 #include "parser/FunctionNode.h"
+#include "parser/OperatorNode.h"
 #include "catalog/CatalogDatabase.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
 #include "query_optimizer/expressions/Alias.hpp"

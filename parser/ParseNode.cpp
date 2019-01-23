@@ -31,6 +31,17 @@ void ParseNode::json_stringify() {
         key_index++;
     }
 
+    for (const auto &child : children) {
+        if (child.second) {
+            cout << child.first << ":";
+            child.second->json_stringify();
+            if (key_index < num_keys - 1) {
+                cout << ",";
+            }
+        }
+        key_index++;
+    }
+
     for (const auto &child : children_lists) {
         cout << child.first << ":[";
         for (size_t i = 0; i < child.second.size(); ++i) {

@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-enum NodeType {NONE, SELECT, REFERENCE, FUNCTION};
+enum NodeType {NONE, SELECT, REFERENCE, FUNCTION, OPERATOR};
 
 class ParseNode {
 public:
