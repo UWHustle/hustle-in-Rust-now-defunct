@@ -47,7 +47,15 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
     // resolve FROM
     vector<logical::LogicalPtr> from_logical;
     for (const auto &from_parse : select_node->from) {
-        logical::TableReferencePtr table_reference = resolve_reference(static_pointer_cast<ReferenceNode>(from_parse));
+        if (from_parse->type != REFERENCE) {
+            throw "Resolver: unsupported from node type: " + to_string(from_parse->type);
+        }
+        auto reference_node = static_pointer_cast<ReferenceNode>(from_parse);
+        if (reference_node->relation.empty()) {
+            throw "Resolver: relation for reference node in FROM clause cannot be empty";
+        }
+        const quickstep::CatalogRelation *relation = catalog_database_.getRelationByName(reference_node->relation);
+        logical::TableReferencePtr table_reference = logical::TableReference::Create(relation, reference_node->relation, context_);
         from_logical.emplace_back(table_reference);
         for (const auto &referenced_attribute : table_reference->getReferencedAttributes()) {
             attribute_references.emplace_back(referenced_attribute);
@@ -138,11 +146,6 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
     return logical_plan;
 }
 
-logical::TableReferencePtr HustleResolver::resolve_reference(shared_ptr<ReferenceNode> reference_node) {
-    const quickstep::CatalogRelation *relation = catalog_database_.getRelationByName(reference_node->attribute);
-    return logical::TableReference::Create(relation, reference_node->attribute, context_);
-}
-
 expressions::ScalarPtr HustleResolver::resolve_expression(
         shared_ptr<ParseNode> parse_node,
         vector<expressions::AttributeReferencePtr> attribute_references,
@@ -150,12 +153,14 @@ expressions::ScalarPtr HustleResolver::resolve_expression(
     switch (parse_node->type) {
         case REFERENCE: {
             auto project_reference_parse = static_pointer_cast<ReferenceNode>(parse_node);
-
-            auto found_attribute_reference = find_if(attribute_references.begin(), attribute_references.end(),
-                    [&project_reference_parse](const expressions::AttributeReferencePtr attribute_reference) {
-                        return attribute_reference->attribute_name() == project_reference_parse->attribute;
-                    });
-            return found_attribute_reference[0];
+            for (const auto &attribute_reference : attribute_references) {
+                if (attribute_reference->attribute_name() == project_reference_parse->attribute &&
+                    (project_reference_parse->relation.empty() ||
+                     attribute_reference->relation_name() == project_reference_parse->relation)) {
+                    return attribute_reference;
+                }
+            }
+            throw "Resolver: not found: " + project_reference_parse->relation + project_reference_parse->attribute;
         }
         case FUNCTION: {
             auto project_function_parse = static_pointer_cast<FunctionNode>(parse_node);

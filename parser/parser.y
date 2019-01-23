@@ -218,6 +218,7 @@ class ParserDriver;
   nexprlist
   sclp
   selcollist
+  stl_prefix
   seltablist
 
 %%
@@ -538,13 +539,16 @@ from:
 ;
 
 stl_prefix:
-  seltablist joinop
-| /* empty */
+  seltablist joinop {
+    $$ = std::move($1);
+  }
+| /* empty */ {}
 ;
 
 seltablist:
   stl_prefix nm dbnm as indexed_opt on_opt using_opt {
-    $$.push_back(std::shared_ptr<ReferenceNode>(new ReferenceNode($2)));
+    $$ = std::move($1);
+    $$.push_back(std::shared_ptr<ReferenceNode>(new ReferenceNode(std::string(), $2)));
   }
 | stl_prefix nm dbnm LP exprlist RP as on_opt using_opt { error(drv.location, "parentheses in FROM clause not yet supported"); }
 | stl_prefix LP select RP as on_opt using_opt { error(drv.location, "nested select not yet supported"); }
