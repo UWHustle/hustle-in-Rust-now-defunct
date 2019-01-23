@@ -43,7 +43,7 @@ namespace physical {
 
 class Limit;
 
-typedef std::shared_ptr<const Sort> LimitPtr;
+typedef std::shared_ptr<const Limit> LimitPtr;
 
 /**
  * @brief Limit operator.
@@ -79,18 +79,19 @@ class Limit : public Physical {
   }
 
   /**
-* @return The number of output sorted rows.
+* @return The number of output rows.
 */
   int limit() const {
     return limit_;
   }
 
-  void getFieldStringItems(std::vector<std::string> *inline_field_names,
-                           std::vector<std::string> *inline_field_values,
-                           std::vector<std::string> *non_container_child_field_names,
-                           std::vector<TreeNodeType> *non_container_child_fields,
-                           std::vector<std::string> *container_child_field_names,
-                           std::vector<std::vector<TreeNodeType>> *container_child_fields) const override {
+  void getFieldStringItems(
+      std::vector<std::string> *inline_field_names,
+      std::vector<std::string> *inline_field_values,
+      std::vector<std::string> *non_container_child_field_names,
+      std::vector<OptimizerTreeBaseNodePtr> *non_container_child_fields,
+      std::vector<std::string> *container_child_field_names,
+      std::vector<std::vector<OptimizerTreeBaseNodePtr>> *container_child_fields) const override {
     non_container_child_field_names->emplace_back("input");
     non_container_child_fields->emplace_back(input());
 
@@ -99,31 +100,27 @@ class Limit : public Physical {
   }
 
   /**
-* @brief Creates a physical Sort operator.
+* @brief Creates a physical Limit operator.
 *
 * @param input The input to the Limit.
-* @param limit The number of output rows. -1 for a full table sort.
+* @param limit The number of output rows.
 *
 * @return An immutable physical Limit.
 */
-  static SortPtr Create(const PhysicalPtr &input,
+  static LimitPtr Create(const PhysicalPtr &input,
                         const int limit) {
     DCHECK_GE(limit, 0);
-
-    return SortPtr(new Sort(input,
-                            limit));
+    return LimitPtr(new Limit(input, limit));
   }
 
  private:
-  Sort(const PhysicalPtr &input,
-       const int limit) : input_(input),
-
-                          limit_(limit) {}
+  Limit(const PhysicalPtr &input,
+        const int limit) : input_(input), limit_(limit) {}
 
   const PhysicalPtr input_;
   const int limit_;
 
-  DISALLOW_COPY_AND_ASSIGN(Sort);
+  DISALLOW_COPY_AND_ASSIGN(Limit);
 };
 
 /** @} */

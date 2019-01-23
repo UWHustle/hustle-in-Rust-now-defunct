@@ -67,7 +67,7 @@ class Limit : public Logical {
   }
 
   /**
-   * @return The number of output sorted rows. -1 for a full table sort.
+   * @return The number of output rows.
    */
   int limit() const {
     return limit_;
@@ -77,7 +77,7 @@ class Limit : public Logical {
   * @brief Creates a Limit logical node.
   *
   * @param input The input to the Limit.
-  * @param limit The number of output rows. -1 for a full table sort.
+  * @param limit The number of output rows.
   *
   * @return An immutable Limit.
   */
