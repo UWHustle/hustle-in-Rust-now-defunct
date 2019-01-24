@@ -58,6 +58,10 @@ impl DataTypeTrait for IpAddressType {
         IpAddressType::marshall(&(left_u32+right_u32))
     }
 
+    fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8 {
+        return 0;
+    }
+
     fn to_string(payload: &Vec<u8>) -> String {
         let ip = IpAddressType::unmarshall(payload);
         let bytes = [ip & 0xFF,

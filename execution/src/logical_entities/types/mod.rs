@@ -36,6 +36,14 @@ impl DataType {
         }
     }
 
+    pub fn compare(&self, left:&Vec<u8>, right:&Vec<u8>) -> i8 {
+        match self {
+            DataType::Integer => integer::IntegerType::compare(left, right),
+            DataType::IpAddress => ip_address::IpAddressType::compare(left, right),
+        }
+    }
+
+
     pub fn to_string(&self, payload: &Vec<u8>) -> String {
         match self {
             DataType::Integer => integer::IntegerType::to_string(payload),
@@ -52,6 +60,8 @@ pub trait DataTypeTrait {
     fn parse_and_marshall(input: String) -> (Vec<u8>,usize);
 
     fn sum(left:&Vec<u8>, right:&Vec<u8>) -> (Vec<u8>,usize);
+
+    fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8;
 
     fn to_string(payload: &Vec<u8>) -> String;
 }

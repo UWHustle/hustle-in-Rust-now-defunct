@@ -55,6 +55,9 @@ pub fn parse(string_plan: &str) -> Node {
     let project_operator = Project::new(
         input_relation.clone(),
         output_relation.get_columns().clone(),
+        "".to_string(),
+        2,
+        Vec::new(),
     );
     let print_operator = Print::new(project_operator.get_target_relation());
 
