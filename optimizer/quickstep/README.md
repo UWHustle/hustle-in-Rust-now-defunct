@@ -1,4 +1,4 @@
-# Apache Quickstep (Incubating)
+# UW Quickstep
 
 [![Travis Widget]][Travis]
 
@@ -6,14 +6,10 @@
 [Travis Widget]: https://travis-ci.org/apache/incubator-quickstep.svg?branch=master
 
 ## What is Quickstep?
-Apache Quickstep is high-performance database engine designed to exploit the full potential of hardware that is packed in modern computing boxes (servers and laptops). The initial version (available now!) targets single-node in-memory environments. If your data spills overs the memory limit Quickstep will still work, so you don't have to obsessively worry about the in-memory part. Also, if your working set fits in memory then Quickstep will transparently and automatically figure that out, and cache that hot set to  deliver in-memory performance.
-
-Distributed execution is the next big feature for Quickstep.
+Quickstep is high-performance database engine designed to exploit the full potential of hardware that is packed in modern computing boxes (servers and laptops). The initial version (available now!) targets single-node in-memory environments. If your data spills overs the memory limit Quickstep will still work, so you don't have to obsessively worry about the in-memory part. Also, if your working set fits in memory then Quickstep will transparently and automatically figure that out, and cache that hot set to  deliver in-memory performance.
 
 Quickstep began life in 2011 as a
-[research project at the University of Wisconsin](https://www.cs.wisc.edu/~jignesh)
-and entered incubation at the
-[Apache Software Foundation](https://www.apache.org) in April, 2016.
+[research project at the University of Wisconsin](https://www.cs.wisc.edu/~jignesh). 
 
 ## Why Quickstep?
 Did you know that the hardware that you have in your laptop was spread across a small cluster just a decade ago? (PS: Hopefully you are not using a very old laptop!) If you look at a high-end server box, then that packs compute and storage power that was a full rack about 5 years ago! And, the way hardware technology is going, that box is going to become even more powerful in the future. In fact, it is likely that the computing power in each box is going to grow faster than other hardware components (e.g. networking) in data centers. So, if you care about performance and/or total operating costs, paying attention to single box performance is likely to be super important in the long run.
@@ -126,16 +122,3 @@ CREATE TABLE City (cid Integer, name VARCHAR(80), state CHAR(2));
 ## Licensing
 
 Quickstep is licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/apache/incubator-quickstep/blob/master/LICENSE) for the full license text.
-
-## Disclaimer
-Apache Quickstep is an effort undergoing incubation at the Apache Software
-Foundation (ASF), sponsored by the Apache Incubator PMC.
-
-Incubation is required of all newly accepted projects until a further
-review indicates that the infrastructure, communications, and decision
-making process have stabilized in a manner consistent with other
-successful ASF projects.
-
-While incubation status is not necessarily a reflection of the
-completeness or stability of the code, it does indicate that the
-project has yet to be fully endorsed by the ASF.

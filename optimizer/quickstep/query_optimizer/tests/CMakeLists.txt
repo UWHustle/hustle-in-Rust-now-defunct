@@ -16,9 +16,9 @@
 # under the License.
 
 #add_subdirectory(execution_generator)
-add_subdirectory(logical_generator)
+#add_subdirectory(logical_generator)
 add_subdirectory(physical_generator)
-add_subdirectory(resolver)
+#add_subdirectory(resolver)
 
 set_gflags_lib_name ()
 

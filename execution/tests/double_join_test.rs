@@ -2,8 +2,6 @@ extern crate execution;
 
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::test_helpers::data_gen::generate_relation_into_hustle_and_sqlite3;
-use execution::test_helpers::data_gen::generate_relation_a_into_hustle_and_sqlite3;
-use execution::test_helpers::data_gen::generate_relation_b_into_hustle_and_sqlite3;
 
 use execution::logical_entities::relation::Relation;
 use execution::logical_entities::column::Column;

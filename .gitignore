@@ -5,4 +5,5 @@ sqlite.data
 hustle.data
 /.idea
 cmake-build-debug
+/build
 Cargo.lock

@@ -1,36 +1,34 @@
-%{
-#include "parse_node.h"
-#include "parser.h"
-#include "lexer.h"
-
-void yyerror(parse_node **s, yyscan_t scanner, char const *msg);
-%}
-
-%output "parser.c"
+%require "3.0"
+%language "c++"
 %defines "parser.h"
 
+%define api.token.constructor
+%define api.value.type variant
+%define parse.assert
+%define parse.trace
+%define parse.error verbose
+%define api.token.prefix {TK_}
+
+%locations
+
+%param { ParserDriver& drv }
+
 %code requires {
+class ParserDriver;
+#include <memory>
+#include <sstream>
+#include "ParseNode.h"
+#include "SelectNode.h"
+#include "FunctionNode.h"
+#include "ReferenceNode.h"
+#include "OperatorNode.h"
 #ifndef YY_TYPEDEF_YY_SCANNER_T
-#define YY_TYPEDEF_YY_SCANNER_T
-typedef void* yyscan_t;
+#define YY_TYPEDEF_YY_SCANNER_T typedef void* yyscan_t;
 #endif
 }
 
-%require "3.0"
-
-%define api.pure full
-%lex-param   { yyscan_t scanner }
-%parse-param { parse_node **parse_tree }
-%parse-param { yyscan_t scanner }
-
-%define api.token.prefix {TK_}
-%define parse.error verbose
-
-%union {
-  int intval;
-  char *strval;
-  parse_node *node;
-  dynamic_array *list;
+%code {
+#include "ParserDriver.h"
 }
 
 %token ABORT
@@ -99,13 +97,13 @@ typedef void* yyscan_t;
 %token GROUP
 %token GT
 %token HAVING
-%token <strval> ID
+%token <std::string> ID
 %token IF
 %token IGNORE
 %token IMMEDIATE
 %token IN
 %token INDEX
-%token <strval> INDEXED
+%token <std::string> INDEXED
 %token INITIALLY
 %token INSERT
 %token INSTEAD
@@ -115,7 +113,7 @@ typedef void* yyscan_t;
 %token IS
 %token ISNULL
 %token JOIN
-%token <strval> JOIN_KW
+%token <std::string> JOIN_KW
 %token KEY
 %token LE
 %token LIKE_KW
@@ -165,7 +163,7 @@ typedef void* yyscan_t;
 %token SET
 %token SLASH
 %token STAR
-%token <strval> STRING
+%token <std::string> STRING
 %token TABLE
 %token TEMP
 %token THEN
@@ -187,6 +185,7 @@ typedef void* yyscan_t;
 %token WINDOW
 %token WITH
 %token WITHOUT
+%token EOF 0
 
 %left OR
 %left AND
@@ -202,22 +201,24 @@ typedef void* yyscan_t;
 %right BITNOT
 %nonassoc ON
 
-%type <strval>
+%type <std::string>
   id
   nm
-%type <node>
+%type <std::shared_ptr<ParseNode> >
   cmd
   expr
   select
   selectnowith
   oneselect
-%type <list>
+  where_opt
+%type <std::vector<std::shared_ptr<ParseNode> > >
   exprlist
   from
   groupby_opt
   nexprlist
   sclp
   selcollist
+  stl_prefix
   seltablist
 
 %%
@@ -242,48 +243,48 @@ explain:
 ;
 
 cmdx:
-  cmd { *parse_tree = $1; }
+  cmd { drv.syntax_tree = std::move($1); }
 ;
 
 cmd:
-  BEGIN transtype trans_opt { yyerror(NULL, scanner, "BEGIN not yet supported"); }
-| COMMIT trans_opt { yyerror(NULL, scanner, "COMMIT not yet supported"); }
-| END trans_opt { yyerror(NULL, scanner, "END not yet supported"); }
-| ROLLBACK trans_opt { yyerror(NULL, scanner, "ROLLBACK not yet supported"); }
-| SAVEPOINT nm { yyerror(NULL, scanner, "SAVEPOINT not yet supported"); }
-| RELEASE savepoint_opt nm { yyerror(NULL, scanner, "RELEASE not yet supported"); }
-| ROLLBACK trans_opt TO savepoint_opt nm { yyerror(NULL, scanner, "ROLLBACK not yet supported"); }
-| createkw temp TABLE ifnotexists nm dbnm create_table_args { yyerror(NULL, scanner, "CREATE TABLE not yet supported"); }
-| DROP TABLE ifexists fullname { yyerror(NULL, scanner, "DROP TABLE not yet supported"); }
-| createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select { yyerror(NULL, scanner, "CREATE VIEW not yet supported"); }
-| DROP VIEW ifexists fullname { yyerror(NULL, scanner, "DROP VIEW not yet supported"); }
-| select { $$ = $1; }
-| with DELETE FROM xfullname indexed_opt where_opt orderby_opt limit_opt { yyerror(NULL, scanner, "DELETE not yet supported"); }
-| with UPDATE orconf xfullname indexed_opt SET setlist where_opt orderby_opt limit_opt { yyerror(NULL, scanner, "UPDATE not yet supported"); }
-| with insert_cmd INTO xfullname idlist_opt select upsert { yyerror(NULL, scanner, "INSERT not yet supported"); }
-| with insert_cmd INTO xfullname idlist_opt DEFAULT VALUES { yyerror(NULL, scanner, "INSERT not yet supported"); }
-| createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt { yyerror(NULL, scanner, "CREATE INDEX not yet supported"); }
-| DROP INDEX ifexists fullname { yyerror(NULL, scanner, "DROP INDEX not yet supported"); }
-| VACUUM { yyerror(NULL, scanner, "VACUUM not yet supported"); }
-| VACUUM nm { yyerror(NULL, scanner, "VACUUM not yet supported"); }
-| PRAGMA nm dbnm { yyerror(NULL, scanner, "PRAGMA not yet supported"); }
-| PRAGMA nm dbnm EQ nmnum { yyerror(NULL, scanner, "PRAGMA not yet supported"); }
-| PRAGMA nm dbnm LP nmnum RP { yyerror(NULL, scanner, "PRAGMA not yet supported"); }
-| PRAGMA nm dbnm EQ minus_num { yyerror(NULL, scanner, "PRAGMA not yet supported"); }
-| PRAGMA nm dbnm LP minus_num RP { yyerror(NULL, scanner, "PRAGMA not yet supported"); }
-| createkw trigger_decl BEGIN trigger_cmd_list END { yyerror(NULL, scanner, "CREATE BEGIN END not yet supported"); }
-| DROP TRIGGER ifexists fullname { yyerror(NULL, scanner, "DROP TRIGGER not yet supported"); }
-| ATTACH database_kw_opt expr AS expr key_opt { yyerror(NULL, scanner, "ATTACH not yet supported"); }
-| DETACH database_kw_opt expr { yyerror(NULL, scanner, "DETACH not yet supported"); }
-| REINDEX { yyerror(NULL, scanner, "REINDEX not yet supported"); }
-| REINDEX nm dbnm { yyerror(NULL, scanner, "REINDEX not yet supported"); }
-| ANALYZE { yyerror(NULL, scanner, "ANALYZE not yet supported"); }
-| ANALYZE nm dbnm { yyerror(NULL, scanner, "ANALYZE not yet supported"); }
-| ALTER TABLE fullname RENAME TO nm { yyerror(NULL, scanner, "ALTER TABLE not yet supported"); }
-| ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist { yyerror(NULL, scanner, "ALTER TABLE not yet supported"); }
-| ALTER TABLE fullname RENAME kwcolumn_opt nm TO nm { yyerror(NULL, scanner, "ALTER TABLE not yet supported"); }
-| create_vtab { yyerror(NULL, scanner, "VIRTUAL TABLE not yet supported"); }
-| create_vtab LP vtabarglist RP { yyerror(NULL, scanner, "VIRTUAL TABLE not yet supported"); }
+  BEGIN transtype trans_opt { error(drv.location, "BEGIN not yet supported"); }
+| COMMIT trans_opt { error(drv.location, "COMMIT not yet supported"); }
+| END trans_opt { error(drv.location, "END not yet supported"); }
+| ROLLBACK trans_opt { error(drv.location, "ROLLBACK not yet supported"); }
+| SAVEPOINT nm { error(drv.location, "SAVEPOINT not yet supported"); }
+| RELEASE savepoint_opt nm { error(drv.location, "RELEASE not yet supported"); }
+| ROLLBACK trans_opt TO savepoint_opt nm { error(drv.location, "ROLLBACK not yet supported"); }
+| createkw temp TABLE ifnotexists nm dbnm create_table_args { error(drv.location, "CREATE TABLE not yet supported"); }
+| DROP TABLE ifexists fullname { error(drv.location, "DROP TABLE not yet supported"); }
+| createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select { error(drv.location, "CREATE VIEW not yet supported"); }
+| DROP VIEW ifexists fullname { error(drv.location, "DROP VIEW not yet supported"); }
+| select { $$ = std::move($1); }
+| with DELETE FROM xfullname indexed_opt where_opt orderby_opt limit_opt { error(drv.location, "DELETE not yet supported"); }
+| with UPDATE orconf xfullname indexed_opt SET setlist where_opt orderby_opt limit_opt { error(drv.location, "UPDATE not yet supported"); }
+| with insert_cmd INTO xfullname idlist_opt select upsert { error(drv.location, "INSERT not yet supported"); }
+| with insert_cmd INTO xfullname idlist_opt DEFAULT VALUES { error(drv.location, "INSERT not yet supported"); }
+| createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt { error(drv.location, "CREATE INDEX not yet supported"); }
+| DROP INDEX ifexists fullname { error(drv.location, "DROP INDEX not yet supported"); }
+| VACUUM { error(drv.location, "VACUUM not yet supported"); }
+| VACUUM nm { error(drv.location, "VACUUM not yet supported"); }
+| PRAGMA nm dbnm { error(drv.location, "PRAGMA not yet supported"); }
+| PRAGMA nm dbnm EQ nmnum { error(drv.location, "PRAGMA not yet supported"); }
+| PRAGMA nm dbnm LP nmnum RP { error(drv.location, "PRAGMA not yet supported"); }
+| PRAGMA nm dbnm EQ minus_num { error(drv.location, "PRAGMA not yet supported"); }
+| PRAGMA nm dbnm LP minus_num RP { error(drv.location, "PRAGMA not yet supported"); }
+| createkw trigger_decl BEGIN trigger_cmd_list END { error(drv.location, "CREATE BEGIN END not yet supported"); }
+| DROP TRIGGER ifexists fullname { error(drv.location, "DROP TRIGGER not yet supported"); }
+| ATTACH database_kw_opt expr AS expr key_opt { error(drv.location, "ATTACH not yet supported"); }
+| DETACH database_kw_opt expr { error(drv.location, "DETACH not yet supported"); }
+| REINDEX { error(drv.location, "REINDEX not yet supported"); }
+| REINDEX nm dbnm { error(drv.location, "REINDEX not yet supported"); }
+| ANALYZE { error(drv.location, "ANALYZE not yet supported"); }
+| ANALYZE nm dbnm { error(drv.location, "ANALYZE not yet supported"); }
+| ALTER TABLE fullname RENAME TO nm { error(drv.location, "ALTER TABLE not yet supported"); }
+| ALTER TABLE add_column_fullname ADD kwcolumn_opt columnname carglist { error(drv.location, "ALTER TABLE not yet supported"); }
+| ALTER TABLE fullname RENAME kwcolumn_opt nm TO nm { error(drv.location, "ALTER TABLE not yet supported"); }
+| create_vtab { error(drv.location, "VIRTUAL TABLE not yet supported"); }
+| create_vtab LP vtabarglist RP { error(drv.location, "VIRTUAL TABLE not yet supported"); }
 ;
 
 trans_opt:
@@ -472,14 +473,14 @@ ifexists:
 ;
 
 select:
-  WITH wqlist selectnowith { yyerror(NULL, scanner, "WITH SELECT not yet supported"); }
-| WITH RECURSIVE wqlist selectnowith  { yyerror(NULL, scanner, "WITH RECURSIVE SELECT not yet supported"); }
-| selectnowith { $$ = $1; }
+  WITH wqlist selectnowith { error(drv.location, "WITH SELECT not yet supported"); }
+| WITH RECURSIVE wqlist selectnowith  { error(drv.location, "WITH RECURSIVE SELECT not yet supported"); }
+| selectnowith { $$ = std::move($1); }
 ;
 
 selectnowith:
-  oneselect { $$ = $1; }
-| selectnowith multiselect_op oneselect { yyerror(NULL, scanner, "multiselect not yet supported"); }
+  oneselect { $$ = std::move($1); }
+| selectnowith multiselect_op oneselect { error(drv.location, "multiselect not yet supported"); }
 ;
 
 multiselect_op:
@@ -491,27 +492,10 @@ multiselect_op:
 
 oneselect:
   SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt {
-    $$ = alloc_node("ParseStatementSetOperation");
-
-    parse_node *select_query = alloc_node("ParseSetOperation");
-    add_child($$, "set_operation_query", select_query);
-    add_attribute(select_query, "set_operation_type", "Select");
-
-    dynamic_array *operands = alloc_array();
-    add_child_list(select_query, "operands", operands);
-
-    parse_node *select_child = alloc_node("ParseSelect");
-    add_last(operands, select_child);
-
-    add_child_list(select_child, "select", $3);
-    add_child_list(select_child, "from", $4);
-
-    if ($6) {
-      add_child_list(select_child, "group_by", $6);
-    }
+    $$ = std::shared_ptr<SelectNode>(new SelectNode(std::move($3), std::move($4), std::move($5), std::move($6)));
   }
-| SELECT distinct selcollist from where_opt groupby_opt having_opt window_clause orderby_opt limit_opt { yyerror(NULL, scanner, "window queries not yet supported"); }
-| values { yyerror(NULL, scanner, "VALUES not yet supported"); }
+| SELECT distinct selcollist from where_opt groupby_opt having_opt window_clause orderby_opt limit_opt { error(drv.location, "window queries not yet supported"); }
+| values { error(drv.location, "VALUES not yet supported"); }
 ;
 
 values:
@@ -527,20 +511,18 @@ distinct:
 
 sclp:
   selcollist COMMA {
-    $$ = $1;
+    $$ = std::move($1);
   }
-| /* empty */ {
-    $$ = alloc_array();
-  }
+| /* empty */ {}
 ;
 
 selcollist:
   sclp scanpt expr scanpt as {
-    $$ = $1;
-    add_last($$, $3);
+    $$ = std::move($1);
+    $$.push_back(std::move($3));
   }
-| sclp scanpt STAR { yyerror(NULL, scanner, "SELECT *  not yet supported"); }
-| sclp scanpt nm DOT STAR { yyerror(NULL, scanner, "SELECT .* not yet supported"); }
+| sclp scanpt STAR { error(drv.location, "SELECT *  not yet supported"); }
+| sclp scanpt nm DOT STAR { error(drv.location, "SELECT .* not yet supported"); }
 ;
 
 as:
@@ -550,27 +532,27 @@ as:
 ;
 
 from:
-  /* empty */ { $$ = 0; }
+  /* empty */ {}
 | FROM seltablist {
-    $$ = $2;
+    $$ = std::move($2);
   }
 ;
 
 stl_prefix:
-  seltablist joinop
-| /* empty */
+  seltablist joinop {
+    $$ = std::move($1);
+  }
+| /* empty */ {}
 ;
 
 seltablist:
   stl_prefix nm dbnm as indexed_opt on_opt using_opt {
-    $$ = alloc_array();
-    parse_node *table_ref = alloc_node("ParseSimpleTableReference");
-    add_attribute(table_ref, "table_name", $2);
-    add_last($$, table_ref);
+    $$ = std::move($1);
+    $$.push_back(std::shared_ptr<ReferenceNode>(new ReferenceNode(std::string(), $2)));
   }
-| stl_prefix nm dbnm LP exprlist RP as on_opt using_opt { yyerror(NULL, scanner, "parentheses in FROM clause not yet supported"); }
-| stl_prefix LP select RP as on_opt using_opt { yyerror(NULL, scanner, "nested select not yet supported"); }
-| stl_prefix LP seltablist RP as on_opt using_opt { yyerror(NULL, scanner, "parentheses in FROM clause not yet supported"); }
+| stl_prefix nm dbnm LP exprlist RP as on_opt using_opt { error(drv.location, "parentheses in FROM clause not yet supported"); }
+| stl_prefix LP select RP as on_opt using_opt { error(drv.location, "nested select not yet supported"); }
+| stl_prefix LP seltablist RP as on_opt using_opt { error(drv.location, "parentheses in FROM clause not yet supported"); }
 ;
 
 dbnm:
@@ -631,9 +613,9 @@ sortorder:
 ;
 
 groupby_opt:
-  /* empty */ { $$ = 0; }
+  /* empty */ {}
 | GROUP BY nexprlist {
-    $$ = $3;
+    $$ = std::move($3);
   }
 ;
 
@@ -650,8 +632,10 @@ limit_opt:
 ;
 
 where_opt:
-  /* empty */
-| WHERE expr
+  /* empty */ {}
+| WHERE expr {
+    $$ = std::move($2);
+  }
 ;
 
 setlist:
@@ -684,64 +668,65 @@ idlist:
 ;
 
 expr:
-  term { yyerror(NULL, scanner, "expression terms not yet supported"); }
-| LP expr RP { yyerror(NULL, scanner, "parentheses in expression not yet supported"); }
+  term { error(drv.location, "expression terms not yet supported"); }
+| LP expr RP { error(drv.location, "parentheses in expression not yet supported"); }
 | id {
-    $$ = alloc_node("AttributeReference");
-    add_attribute($$, "attribute_name", $1);
+    $$ = std::shared_ptr<ReferenceNode>(new ReferenceNode($1));
   }
-| JOIN_KW { yyerror(NULL, scanner, "join keyword in expression not yet supported"); }
-| nm DOT nm { yyerror(NULL, scanner, "nm.nm in expression not yet supported"); }
-| nm DOT nm DOT nm { yyerror(NULL, scanner, "nm.nm.nm in expression not yet supported"); }
-| VARIABLE { yyerror(NULL, scanner, "VARIABLE not yet supported"); }
-| expr COLLATE ids { yyerror(NULL, scanner, "COLLATE not yet supported"); }
-| CAST LP expr AS typetoken RP { yyerror(NULL, scanner, "CAST not yet supported"); }
+| JOIN_KW { error(drv.location, "join keyword in expression not yet supported"); }
+| nm DOT nm {
+    $$ = std::shared_ptr<ReferenceNode>(new ReferenceNode($3, $1));
+  }
+| nm DOT nm DOT nm { error(drv.location, "nm.nm.nm in expression not yet supported"); }
+| VARIABLE { error(drv.location, "VARIABLE not yet supported"); }
+| expr COLLATE ids { error(drv.location, "COLLATE not yet supported"); }
+| CAST LP expr AS typetoken RP { error(drv.location, "CAST not yet supported"); }
 | id LP distinct exprlist RP {
-    $$ = alloc_node("FunctionCall");
-    add_attribute($$, "name", $1);
-    add_child_list($$, "arguments", $4);
+    $$ = std::shared_ptr<FunctionNode>(new FunctionNode($1, std::move($4)));
   }
-| id LP STAR RP { yyerror(NULL, scanner, "(*) in expression not yet supported"); }
-| id LP distinct exprlist RP over_clause { yyerror(NULL, scanner, "OVER not yet supported"); }
-| id LP STAR RP over_clause { yyerror(NULL, scanner, "OVER not yet supported"); }
-| LP nexprlist COMMA expr RP { yyerror(NULL, scanner, "expression lists not yet supported"); }
-| expr AND expr { yyerror(NULL, scanner, "AND in expression not yet supported"); }
-| expr OR expr { yyerror(NULL, scanner, "OR in expression not yet supported"); }
-| expr LT expr { yyerror(NULL, scanner, "< in expression not yet supported"); }
-| expr GT expr { yyerror(NULL, scanner, "> in expression not yet supported"); }
-| expr GE expr { yyerror(NULL, scanner, ">= in expression not yet supported"); }
-| expr LE expr { yyerror(NULL, scanner, "<= in expression not yet supported"); }
-| expr EQ expr { yyerror(NULL, scanner, "= in expression not yet supported"); }
-| expr NE expr { yyerror(NULL, scanner, "<> in expression not yet supported"); }
-| expr BITAND expr { yyerror(NULL, scanner, "& in expression not yet supported"); }
-| expr BITOR expr { yyerror(NULL, scanner, "| in expression not yet supported"); }
-| expr LSHIFT expr { yyerror(NULL, scanner, "<< in expression not yet supported"); }
-| expr RSHIFT expr { yyerror(NULL, scanner, ">> in expression not yet supported"); }
-| expr PLUS expr { yyerror(NULL, scanner, "+ in expression not yet supported"); }
-| expr MINUS expr { yyerror(NULL, scanner, "- in expression not yet supported"); }
-| expr STAR expr { yyerror(NULL, scanner, "* in expression not yet supported"); }
-| expr SLASH expr { yyerror(NULL, scanner, "/ in expression not yet supported"); }
-| expr REM expr { yyerror(NULL, scanner, "% in expression not yet supported"); }
-| expr CONCAT expr { yyerror(NULL, scanner, "|| in expression not yet supported"); }
-| expr likeop expr %prec LIKE_KW { yyerror(NULL, scanner, "LIKE in expression not yet supported"); }
-| expr likeop expr ESCAPE expr %prec LIKE_KW { yyerror(NULL, scanner, "ESCAPE in expression not yet supported"); }
-| expr ISNULL { yyerror(NULL, scanner, "ISNULL in expression not yet supported"); }
-| expr NOTNULL { yyerror(NULL, scanner, "NOTNULL in expression not yet supported"); }
-| expr NOT NULL { yyerror(NULL, scanner, "NOT NULL in expression not yet supported"); }
-| expr IS expr { yyerror(NULL, scanner, "IS in expression not yet supported"); }
-| NOT expr { yyerror(NULL, scanner, "NOT in expression not yet supported"); }
-| BITNOT expr { yyerror(NULL, scanner, "~ in expression not yet supported"); }
-| PLUS expr %prec BITNOT { yyerror(NULL, scanner, "+ in expression not yet supported"); }
-| MINUS expr %prec BITNOT { yyerror(NULL, scanner, "- in expression not yet supported"); }
-| expr between_op expr %prec BETWEEN { yyerror(NULL, scanner, "BETWEEN in expression not yet supported"); }
-| expr in_op LP exprlist RP %prec IN { yyerror(NULL, scanner, "IN in expression not yet supported"); }
-| LP select RP { yyerror(NULL, scanner, "SELECT in expression not yet supported"); }
-| expr in_op LP select RP %prec IN { yyerror(NULL, scanner, "IN in expression not yet supported"); }
-| expr in_op nm dbnm paren_exprlist %prec IN { yyerror(NULL, scanner, "IN in expression not yet supported"); }
-| EXISTS LP select RP { yyerror(NULL, scanner, "EXISTS in expression not yet supported"); }
-| CASE case_operand case_exprlist case_else END { yyerror(NULL, scanner, "CASE in expression not yet supported"); }
-| RAISE LP IGNORE RP { yyerror(NULL, scanner, "RAISE in expression not yet supported"); }
-| RAISE LP raisetype COMMA nm RP { yyerror(NULL, scanner, "RAISE in expression not yet supported"); }
+| id LP STAR RP { error(drv.location, "(*) in expression not yet supported"); }
+| id LP distinct exprlist RP over_clause { error(drv.location, "OVER not yet supported"); }
+| id LP STAR RP over_clause { error(drv.location, "OVER not yet supported"); }
+| LP nexprlist COMMA expr RP { error(drv.location, "expression lists not yet supported"); }
+| expr AND expr { error(drv.location, "AND in expression not yet supported"); }
+| expr OR expr { error(drv.location, "OR in expression not yet supported"); }
+| expr LT expr { error(drv.location, "< in expression not yet supported"); }
+| expr GT expr { error(drv.location, "> in expression not yet supported"); }
+| expr GE expr { error(drv.location, ">= in expression not yet supported"); }
+| expr LE expr { error(drv.location, "<= in expression not yet supported"); }
+| expr EQ expr {
+    $$ = std::shared_ptr<OperatorNode>(new OperatorNode(EQ, {$1, $3}));
+  }
+| expr NE expr { error(drv.location, "<> in expression not yet supported"); }
+| expr BITAND expr { error(drv.location, "& in expression not yet supported"); }
+| expr BITOR expr { error(drv.location, "| in expression not yet supported"); }
+| expr LSHIFT expr { error(drv.location, "<< in expression not yet supported"); }
+| expr RSHIFT expr { error(drv.location, ">> in expression not yet supported"); }
+| expr PLUS expr { error(drv.location, "+ in expression not yet supported"); }
+| expr MINUS expr { error(drv.location, "- in expression not yet supported"); }
+| expr STAR expr { error(drv.location, "* in expression not yet supported"); }
+| expr SLASH expr { error(drv.location, "/ in expression not yet supported"); }
+| expr REM expr { error(drv.location, "% in expression not yet supported"); }
+| expr CONCAT expr { error(drv.location, "|| in expression not yet supported"); }
+| expr likeop expr %prec LIKE_KW { error(drv.location, "LIKE in expression not yet supported"); }
+| expr likeop expr ESCAPE expr %prec LIKE_KW { error(drv.location, "ESCAPE in expression not yet supported"); }
+| expr ISNULL { error(drv.location, "ISNULL in expression not yet supported"); }
+| expr NOTNULL { error(drv.location, "NOTNULL in expression not yet supported"); }
+| expr NOT NULL { error(drv.location, "NOT NULL in expression not yet supported"); }
+| expr IS expr { error(drv.location, "IS in expression not yet supported"); }
+| NOT expr { error(drv.location, "NOT in expression not yet supported"); }
+| BITNOT expr { error(drv.location, "~ in expression not yet supported"); }
+| PLUS expr %prec BITNOT { error(drv.location, "+ in expression not yet supported"); }
+| MINUS expr %prec BITNOT { error(drv.location, "- in expression not yet supported"); }
+| expr between_op expr %prec BETWEEN { error(drv.location, "BETWEEN in expression not yet supported"); }
+| expr in_op LP exprlist RP %prec IN { error(drv.location, "IN in expression not yet supported"); }
+| LP select RP { error(drv.location, "SELECT in expression not yet supported"); }
+| expr in_op LP select RP %prec IN { error(drv.location, "IN in expression not yet supported"); }
+| expr in_op nm dbnm paren_exprlist %prec IN { error(drv.location, "IN in expression not yet supported"); }
+| EXISTS LP select RP { error(drv.location, "EXISTS in expression not yet supported"); }
+| CASE case_operand case_exprlist case_else END { error(drv.location, "CASE in expression not yet supported"); }
+| RAISE LP IGNORE RP { error(drv.location, "RAISE in expression not yet supported"); }
+| RAISE LP raisetype COMMA nm RP { error(drv.location, "RAISE in expression not yet supported"); }
 ;
 
 term:
@@ -787,21 +772,18 @@ case_operand:
 
 exprlist:
   nexprlist {
-    $$ = $1;
+    $$ = std::move($1);
   }
-| /* empty */ {
-    $$ = alloc_array();
-  }
+| /* empty */ {}
 ;
 
 nexprlist:
   nexprlist COMMA expr {
-    $$ = $1;
-    add_last($$, $3);
+    $$ = std::move($1);
+    $$.push_back(std::move($3));
   }
 | expr {
-    $$ = alloc_array();
-    add_last($$, $1);
+    $$.push_back(std::move($1));
   }
 ;
 
@@ -1037,3 +1019,10 @@ number:
 | FLOAT
 ;
 %%
+
+void yy::parser::error(const location_type& l, const std::string& m)
+{
+  std::ostringstream msg_stream;
+  msg_stream << "Parser: " << l << ": " << m;
+  throw msg_stream.str();
+}

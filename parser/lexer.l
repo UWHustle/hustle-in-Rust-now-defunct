@@ -1,180 +1,178 @@
 %{
-#include "parse_node.h"
-#include "parser.h"
-#include <stdio.h>
+#include "ParserDriver.h"
 %}
 
-%option outfile="lexer.c" header-file="lexer.h"
-
-%option reentrant noyywrap
-%option bison-bridge
+%option header-file="lexer.h"
+%option noyywrap
 
 %%
-ABORT           		{ return TK_ABORT; }
-ACTION          		{ return TK_ACTION; }
-ADD             		{ return TK_ADD; }
-AFTER           		{ return TK_AFTER; }
-ALL             		{ return TK_ALL; }
-ALTER           		{ return TK_ALTER; }
-ANALYZE         		{ return TK_ANALYZE; }
-AND             		{ return TK_AND; }
-ANY             		{ return TK_ANY; }
-AS              		{ return TK_AS; }
-ASC             		{ return TK_ASC; }
-ATTACH          		{ return TK_ATTACH; }
-AUTOINCREMENT   		{ return TK_AUTOINCR; }
-BEFORE          		{ return TK_BEFORE; }
-BEGIN           		{ return TK_BEGIN; }
-BETWEEN         		{ return TK_BETWEEN; }
-BY              		{ return TK_BY; }
-CASCADE         		{ return TK_CASCADE; }
-CASE            		{ return TK_CASE; }
-CAST            		{ return TK_CAST; }
-CHECK           		{ return TK_CHECK; }
-COLLATE         		{ return TK_COLLATE; }
-COLUMN          		{ return TK_COLUMNKW; }
-COMMIT          		{ return TK_COMMIT; }
-CONFLICT        		{ return TK_CONFLICT; }
-CONSTRAINT      		{ return TK_CONSTRAINT; }
-CREATE          		{ return TK_CREATE; }
-CROSS					{ return TK_JOIN_KW; }
-CURRENT         		{ return TK_CURRENT; }
-CURRENT_DATE			{ return TK_CTIME_KW; }
-CURRENT_TIME			{ return TK_CTIME_KW; }
-CURRENT_TIMESTAMP		{ return TK_CTIME_KW; }
-DATABASE        		{ return TK_DATABASE; }
-DEFAULT         		{ return TK_DEFAULT; }
-DEFERRABLE      		{ return TK_DEFERRABLE; }
-DEFERRED        		{ return TK_DEFERRED; }
-DELETE          		{ return TK_DELETE; }
-DESC            		{ return TK_DESC; }
-DETACH          		{ return TK_DETACH; }
-DISTINCT        		{ return TK_DISTINCT; }
-DO              		{ return TK_DO; }
-DROP            		{ return TK_DROP; }
-EACH            		{ return TK_EACH; }
-ELSE            		{ return TK_ELSE; }
-END             		{ return TK_END; }
-EQ              		{ return TK_EQ; }
-ESCAPE          		{ return TK_ESCAPE; }
-EXCEPT          		{ return TK_EXCEPT; }
-EXCLUSIVE       		{ return TK_EXCLUSIVE; }
-EXISTS          		{ return TK_EXISTS; }
-EXPLAIN         		{ return TK_EXPLAIN; }
-FAIL            		{ return TK_FAIL; }
-FILTER          		{ return TK_FILTER; }
-FOLLOWING       		{ return TK_FOLLOWING; }
-FOR             		{ return TK_FOR; }
-FOREIGN         		{ return TK_FOREIGN; }
-FROM            		{ return TK_FROM; }
-GLOB					{ return TK_LIKE_KW; }
-GROUP           		{ return TK_GROUP; }
-HAVING          		{ return TK_HAVING; }
-IF              		{ return TK_IF; }
-IGNORE          		{ return TK_IGNORE; }
-IMMEDIATE       		{ return TK_IMMEDIATE; }
-IN              		{ return TK_IN; }
-INDEX           		{ return TK_INDEX; }
-INDEXED         		{ return TK_INDEXED; }
-INITIALLY       		{ return TK_INITIALLY; }
-INNER					{ return TK_JOIN_KW; }
-INSERT          		{ return TK_INSERT; }
-INSTEAD         		{ return TK_INSTEAD; }
-INTERSECT       		{ return TK_INTERSECT; }
-INTO            		{ return TK_INTO; }
-IS              		{ return TK_IS; }
-ISNULL          		{ return TK_ISNULL; }
-JOIN            		{ return TK_JOIN; }
-KEY             		{ return TK_KEY; }
-LEFT					{ return TK_JOIN_KW; }
-LIKE            		{ return TK_LIKE_KW; }
-LIMIT           		{ return TK_LIMIT; }
-MATCH           		{ return TK_MATCH; }
-NO              		{ return TK_NO; }
-NOT             		{ return TK_NOT; }
-NOTHING         		{ return TK_NOTHING; }
-NOTNULL         		{ return TK_NOTNULL; }
-NULL            		{ return TK_NULL; }
-OF              		{ return TK_OF; }
-OFFSET          		{ return TK_OFFSET; }
-ON              		{ return TK_ON; }
-OR              		{ return TK_OR; }
-ORDER           		{ return TK_ORDER; }
-OUTER					{ return TK_JOIN_KW; }
-OVER            		{ return TK_OVER; }
-PARTITION       		{ return TK_PARTITION; }
-PLAN            		{ return TK_PLAN; }
-PRAGMA          		{ return TK_PRAGMA; }
-PRECEDING       		{ return TK_PRECEDING; }
-PRIMARY         		{ return TK_PRIMARY; }
-QUERY           		{ return TK_QUERY; }
-RAISE           		{ return TK_RAISE; }
-RANGE           		{ return TK_RANGE; }
-RECURSIVE       		{ return TK_RECURSIVE; }
-REFERENCES      		{ return TK_REFERENCES; }
-REGEXP					{ return TK_LIKE_KW; }
-REINDEX         		{ return TK_REINDEX; }
-RELEASE         		{ return TK_RELEASE; }
-RENAME          		{ return TK_RENAME; }
-REPLACE         		{ return TK_REPLACE; }
-RESTRICT        		{ return TK_RESTRICT; }
-RIGHT					{ return TK_JOIN_KW; }
-ROLLBACK        		{ return TK_ROLLBACK; }
-ROW             		{ return TK_ROW; }
-ROWS            		{ return TK_ROWS; }
-SAVEPOINT       		{ return TK_SAVEPOINT; }
-SELECT          		{ return TK_SELECT; }
-SET             		{ return TK_SET; }
-TABLE           		{ return TK_TABLE; }
-TEMP            		{ return TK_TEMP; }
-TEMPORARY				{ return TK_TEMP; }
-THEN            		{ return TK_THEN; }
-TO              		{ return TK_TO; }
-TRANSACTION     		{ return TK_TRANSACTION; }
-TRIGGER         		{ return TK_TRIGGER; }
-UNBOUNDED       		{ return TK_UNBOUNDED; }
-UNION           		{ return TK_UNION; }
-UNIQUE          		{ return TK_UNIQUE; }
-UPDATE          		{ return TK_UPDATE; }
-USING           		{ return TK_USING; }
-VACUUM          		{ return TK_VACUUM; }
-VALUES          		{ return TK_VALUES; }
-VIEW            		{ return TK_VIEW; }
-VIRTUAL         		{ return TK_VIRTUAL; }
-WHEN            		{ return TK_WHEN; }
-WHERE           		{ return TK_WHERE; }
-WINDOW          		{ return TK_WINDOW; }
-WITH            		{ return TK_WITH; }
-WITHOUT         		{ return TK_WITHOUT; }
+%{
+  yy::location& loc = drv.location;
+  loc.step ();
+%}
 
-"&"                   	{ return TK_BITAND; }
-"|"                   	{ return TK_BITOR; }
-"~"                   	{ return TK_BITNOT; }
-[xX]'[a-zA-Z0-9]'   	{ return TK_BLOB; }
-","                   	{ return TK_COMMA; }
-"||"                  	{ return TK_CONCAT; }
-"."						{ return TK_DOT; }
-[0-9]*\.[0-9]+			{ return TK_FLOAT; }
-">="					{ return TK_GE; }
-">"						{ return TK_GT; }
-[0-9]+					{ return TK_INTEGER; }
-"<="					{ return TK_LE; }
-"("  					{ return TK_LP; }
-"<"						{ return TK_LT; }
-"-"						{ return TK_MINUS; }
-"<>"					{ return TK_NE; }
-"+"						{ return TK_PLUS; }
-"%"						{ return TK_REM; }
-")"						{ return TK_RP; }
-">>"					{ return TK_RSHIFT; }
-"/"						{ return TK_SLASH; }
-"*"						{ return TK_STAR; }
-\'.*\'					{ return TK_STRING; }
-";"						{ return TK_SEMI; }
-[a-zA-Z][a-zA-Z0-9_]*	{ yylval->strval = strdup(yytext); return TK_ID; }
-[ \t]
+ABORT           		{ return yy::parser::make_ABORT(loc); }
+ACTION          		{ return yy::parser::make_ACTION(loc); }
+ADD             		{ return yy::parser::make_ADD(loc); }
+AFTER           		{ return yy::parser::make_AFTER(loc); }
+ALL             		{ return yy::parser::make_ALL(loc); }
+ALTER           		{ return yy::parser::make_ALTER(loc); }
+ANALYZE         		{ return yy::parser::make_ANALYZE(loc); }
+AND             		{ return yy::parser::make_AND(loc); }
+ANY             		{ return yy::parser::make_ANY(loc); }
+AS              		{ return yy::parser::make_AS(loc); }
+ASC             		{ return yy::parser::make_ASC(loc); }
+ATTACH          		{ return yy::parser::make_ATTACH(loc); }
+AUTOINCREMENT   		{ return yy::parser::make_AUTOINCR(loc); }
+BEFORE          		{ return yy::parser::make_BEFORE(loc); }
+BEGIN           		{ return yy::parser::make_BEGIN(loc); }
+BETWEEN         		{ return yy::parser::make_BETWEEN(loc); }
+BY              		{ return yy::parser::make_BY(loc); }
+CASCADE         		{ return yy::parser::make_CASCADE(loc); }
+CASE            		{ return yy::parser::make_CASE(loc); }
+CAST            		{ return yy::parser::make_CAST(loc); }
+CHECK           		{ return yy::parser::make_CHECK(loc); }
+COLLATE         		{ return yy::parser::make_COLLATE(loc); }
+COLUMN          		{ return yy::parser::make_COLUMNKW(loc); }
+COMMIT          		{ return yy::parser::make_COMMIT(loc); }
+CONFLICT        		{ return yy::parser::make_CONFLICT(loc); }
+CONSTRAINT      		{ return yy::parser::make_CONSTRAINT(loc); }
+CREATE          		{ return yy::parser::make_CREATE(loc); }
+CROSS					{ return yy::parser::make_JOIN_KW(yytext, loc); }
+CURRENT         		{ return yy::parser::make_CURRENT(loc); }
+CURRENT_DATE			{ return yy::parser::make_CTIME_KW(loc); }
+CURRENT_TIME			{ return yy::parser::make_CTIME_KW(loc); }
+CURRENT_TIMESTAMP		{ return yy::parser::make_CTIME_KW(loc); }
+DATABASE        		{ return yy::parser::make_DATABASE(loc); }
+DEFAULT         		{ return yy::parser::make_DEFAULT(loc); }
+DEFERRABLE      		{ return yy::parser::make_DEFERRABLE(loc); }
+DEFERRED        		{ return yy::parser::make_DEFERRED(loc); }
+DELETE          		{ return yy::parser::make_DELETE(loc); }
+DESC            		{ return yy::parser::make_DESC(loc); }
+DETACH          		{ return yy::parser::make_DETACH(loc); }
+DISTINCT        		{ return yy::parser::make_DISTINCT(loc); }
+DO              		{ return yy::parser::make_DO(loc); }
+DROP            		{ return yy::parser::make_DROP(loc); }
+EACH            		{ return yy::parser::make_EACH(loc); }
+ELSE            		{ return yy::parser::make_ELSE(loc); }
+END             		{ return yy::parser::make_END(loc); }
+ESCAPE          		{ return yy::parser::make_ESCAPE(loc); }
+EXCEPT          		{ return yy::parser::make_EXCEPT(loc); }
+EXCLUSIVE       		{ return yy::parser::make_EXCLUSIVE(loc); }
+EXISTS          		{ return yy::parser::make_EXISTS(loc); }
+EXPLAIN         		{ return yy::parser::make_EXPLAIN(loc); }
+FAIL            		{ return yy::parser::make_FAIL(loc); }
+FILTER          		{ return yy::parser::make_FILTER(loc); }
+FOLLOWING       		{ return yy::parser::make_FOLLOWING(loc); }
+FOR             		{ return yy::parser::make_FOR(loc); }
+FOREIGN         		{ return yy::parser::make_FOREIGN(loc); }
+FROM            		{ return yy::parser::make_FROM(loc); }
+GLOB					{ return yy::parser::make_LIKE_KW(loc); }
+GROUP           		{ return yy::parser::make_GROUP(loc); }
+HAVING          		{ return yy::parser::make_HAVING(loc); }
+IF              		{ return yy::parser::make_IF(loc); }
+IGNORE          		{ return yy::parser::make_IGNORE(loc); }
+IMMEDIATE       		{ return yy::parser::make_IMMEDIATE(loc); }
+IN              		{ return yy::parser::make_IN(loc); }
+INDEX           		{ return yy::parser::make_INDEX(loc); }
+INDEXED         		{ return yy::parser::make_INDEXED(yytext, loc); }
+INITIALLY       		{ return yy::parser::make_INITIALLY(loc); }
+INNER					{ return yy::parser::make_JOIN_KW(yytext, loc); }
+INSERT          		{ return yy::parser::make_INSERT(loc); }
+INSTEAD         		{ return yy::parser::make_INSTEAD(loc); }
+INTERSECT       		{ return yy::parser::make_INTERSECT(loc); }
+INTO            		{ return yy::parser::make_INTO(loc); }
+IS              		{ return yy::parser::make_IS(loc); }
+ISNULL          		{ return yy::parser::make_ISNULL(loc); }
+JOIN            		{ return yy::parser::make_JOIN(loc); }
+KEY             		{ return yy::parser::make_KEY(loc); }
+LEFT					{ return yy::parser::make_JOIN_KW(yytext, loc); }
+LIKE            		{ return yy::parser::make_LIKE_KW(loc); }
+LIMIT           		{ return yy::parser::make_LIMIT(loc); }
+MATCH           		{ return yy::parser::make_MATCH(loc); }
+NO              		{ return yy::parser::make_NO(loc); }
+NOT             		{ return yy::parser::make_NOT(loc); }
+NOTHING         		{ return yy::parser::make_NOTHING(loc); }
+NOTNULL         		{ return yy::parser::make_NOTNULL(loc); }
+NULL            		{ return yy::parser::make_NULL(loc); }
+OF              		{ return yy::parser::make_OF(loc); }
+OFFSET          		{ return yy::parser::make_OFFSET(loc); }
+ON              		{ return yy::parser::make_ON(loc); }
+OR              		{ return yy::parser::make_OR(loc); }
+ORDER           		{ return yy::parser::make_ORDER(loc); }
+OUTER					{ return yy::parser::make_JOIN_KW(yytext, loc); }
+OVER            		{ return yy::parser::make_OVER(loc); }
+PARTITION       		{ return yy::parser::make_PARTITION(loc); }
+PLAN            		{ return yy::parser::make_PLAN(loc); }
+PRAGMA          		{ return yy::parser::make_PRAGMA(loc); }
+PRECEDING       		{ return yy::parser::make_PRECEDING(loc); }
+PRIMARY         		{ return yy::parser::make_PRIMARY(loc); }
+QUERY           		{ return yy::parser::make_QUERY(loc); }
+RAISE           		{ return yy::parser::make_RAISE(loc); }
+RANGE           		{ return yy::parser::make_RANGE(loc); }
+RECURSIVE       		{ return yy::parser::make_RECURSIVE(loc); }
+REFERENCES      		{ return yy::parser::make_REFERENCES(loc); }
+REGEXP					{ return yy::parser::make_LIKE_KW(loc); }
+REINDEX         		{ return yy::parser::make_REINDEX(loc); }
+RELEASE         		{ return yy::parser::make_RELEASE(loc); }
+RENAME          		{ return yy::parser::make_RENAME(loc); }
+REPLACE         		{ return yy::parser::make_REPLACE(loc); }
+RESTRICT        		{ return yy::parser::make_RESTRICT(loc); }
+RIGHT					{ return yy::parser::make_JOIN_KW(yytext, loc); }
+ROLLBACK        		{ return yy::parser::make_ROLLBACK(loc); }
+ROW             		{ return yy::parser::make_ROW(loc); }
+ROWS            		{ return yy::parser::make_ROWS(loc); }
+SAVEPOINT       		{ return yy::parser::make_SAVEPOINT(loc); }
+SELECT          		{ return yy::parser::make_SELECT(loc); }
+SET             		{ return yy::parser::make_SET(loc); }
+TABLE           		{ return yy::parser::make_TABLE(loc); }
+TEMP            		{ return yy::parser::make_TEMP(loc); }
+TEMPORARY				{ return yy::parser::make_TEMP(loc); }
+THEN            		{ return yy::parser::make_THEN(loc); }
+TO              		{ return yy::parser::make_TO(loc); }
+TRANSACTION     		{ return yy::parser::make_TRANSACTION(loc); }
+TRIGGER         		{ return yy::parser::make_TRIGGER(loc); }
+UNBOUNDED       		{ return yy::parser::make_UNBOUNDED(loc); }
+UNION           		{ return yy::parser::make_UNION(loc); }
+UNIQUE          		{ return yy::parser::make_UNIQUE(loc); }
+UPDATE          		{ return yy::parser::make_UPDATE(loc); }
+USING           		{ return yy::parser::make_USING(loc); }
+VACUUM          		{ return yy::parser::make_VACUUM(loc); }
+VALUES          		{ return yy::parser::make_VALUES(loc); }
+VIEW            		{ return yy::parser::make_VIEW(loc); }
+VIRTUAL         		{ return yy::parser::make_VIRTUAL(loc); }
+WHEN            		{ return yy::parser::make_WHEN(loc); }
+WHERE           		{ return yy::parser::make_WHERE(loc); }
+WINDOW          		{ return yy::parser::make_WINDOW(loc); }
+WITH            		{ return yy::parser::make_WITH(loc); }
+WITHOUT         		{ return yy::parser::make_WITHOUT(loc); }
+"&"                   	{ return yy::parser::make_BITAND(loc); }
+"|"                   	{ return yy::parser::make_BITOR(loc); }
+"~"                   	{ return yy::parser::make_BITNOT(loc); }
+[xX]'[a-zA-Z0-9]'   	{ return yy::parser::make_BLOB(loc); }
+","                   	{ return yy::parser::make_COMMA(loc); }
+"||"                  	{ return yy::parser::make_CONCAT(loc); }
+"."						{ return yy::parser::make_DOT(loc); }
+"="                     { return yy::parser::make_EQ(loc); }
+[0-9]*\.[0-9]+			{ return yy::parser::make_FLOAT(loc); }
+">="					{ return yy::parser::make_GE(loc); }
+">"						{ return yy::parser::make_GT(loc); }
+[0-9]+					{ return yy::parser::make_INTEGER(loc); }
+"<="					{ return yy::parser::make_LE(loc); }
+"("  					{ return yy::parser::make_LP(loc); }
+"<"						{ return yy::parser::make_LT(loc); }
+"-"						{ return yy::parser::make_MINUS(loc); }
+"<>"					{ return yy::parser::make_NE(loc); }
+"+"						{ return yy::parser::make_PLUS(loc); }
+"%"						{ return yy::parser::make_REM(loc); }
+")"						{ return yy::parser::make_RP(loc); }
+">>"					{ return yy::parser::make_RSHIFT(loc); }
+"/"						{ return yy::parser::make_SLASH(loc); }
+"*"						{ return yy::parser::make_STAR(loc); }
+\'.*\'					{ return yy::parser::make_STRING(yytext, loc); }
+";"						{ return yy::parser::make_SEMI(loc); }
+[a-zA-Z][a-zA-Z0-9_]*	{ return yy::parser::make_ID(yytext, loc); }
+[ \t]+                  { loc.step(); }
+.                       { throw yy::parser::syntax_error(loc, "invalid character: " + std::string(yytext)); }
+<<EOF>>                 { return yy::parser::make_EOF (loc); }
 %%
-
-void yyerror(parse_node **s, yyscan_t scanner, char const *msg) {
-  fprintf(stderr, "Error: %s\n", msg);
-}
