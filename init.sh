@@ -18,10 +18,6 @@ if [[   -z  `which cmake` ]]; then
   $command cmake
 fi
 
-cd optimizer/quickstep/third_party
-./download_and_patch_prerequisites.sh
-cd ../../..
-
 mkdir -p build
 cd build
 cmake ..
