@@ -19,6 +19,12 @@ else()
     message(FATAL_ERROR "git executable not found")
 endif()
 
+# Download and patch Quickstep prerequisites
+message(STATUS "Downloading and patching Quickstep prerequisites")
+execute_process(
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/optimizer/quickstep/third_party/download_and_patch_prerequisites.sh
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/optimizer/quickstep/third_party)
+
 include_directories(${PROJECT_SOURCE_DIR})
 
 file(COPY ${CMAKE_SOURCE_DIR}/test-data DESTINATION ${CMAKE_BINARY_DIR})
