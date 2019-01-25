@@ -59,7 +59,12 @@ impl DataTypeTrait for IpAddressType {
     }
 
     fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8 {
-        return 0;
+        //last four implementation
+        let left_u32 = IpAddressType::unmarshall(left);
+        let right_u32 = IpAddressType::unmarshall(right);
+        if left_u32 % 10000  == right_u32{
+            return  1;}
+        else {return 0;}
     }
 
     fn to_string(payload: &Vec<u8>) -> String {
