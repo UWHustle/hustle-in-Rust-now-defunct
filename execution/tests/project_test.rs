@@ -34,7 +34,7 @@ fn test_project_predicate() {
     let predicated_relation = hustle_where(relation.clone());
     let hustle_calculation = sum_column_hustle(predicated_relation.clone(), "a".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t.a) FROM t WHERE t.a<50;", "SUM(t.a)");
-    assert_eq!(hustle_calculation, sqlite3_calculation);
+    assert_eq!(hustle_calculation, sqlite3_calculation); // Add one to fail and see
 }
 
 

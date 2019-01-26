@@ -23,8 +23,6 @@ extern crate serde_json;
 use self::serde_json::Value;
 
 pub fn parse(string_plan: &str) -> Node {
-    println!("{}", string_plan); // TODO: For debugging/development
-
     let json: Value = serde_json::from_str(string_plan).unwrap();
     let json_plan = &json["plan"];
 

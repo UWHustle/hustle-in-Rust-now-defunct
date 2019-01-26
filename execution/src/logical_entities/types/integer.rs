@@ -55,8 +55,6 @@ impl DataTypeTrait for IntegerType {
     fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8 {
         let left_u64 = IntegerType::unmarshall(left) as i64;
         let right_u64 = IntegerType::unmarshall(right) as i64;
-        println!("{}", left_u64);
-        println!("{}", right_u64);
         let diff:i64 = left_u64 - right_u64 ;
         if diff<0{
             return -1;}

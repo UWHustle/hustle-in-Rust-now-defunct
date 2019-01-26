@@ -15,83 +15,21 @@ fn main() {
 fn run_select_sum_a_comma_b_from_t_group_by_b() {
     let plan_str = r#"
         {
-            "json_name": "TopLevelPlan",
-            "plan": {
-              "json_name": "Selection",
-              "has_repartition": "false",
-              "input": {
-                "json_name": "Aggregate",
-                "has_repartition": "false",
-                "input": {
-                  "json_name": "TableReference",
-                  "relation": "T",
-                  "alias": "t",
-                  "": [
-                    {
-                      "json_name": "AttributeReference",
-                      "id": "0",
-                      "name": "a",
-                      "relation": "t",
-                      "type": "Int NULL"
-                    },
-                    {
-                      "json_name": "AttributeReference",
-                      "id": "1",
-                      "name": "b",
-                      "relation": "t",
-                      "type": "Int"
-                    }
-                  ]
-                },
-                "grouping_expressions": [
-                  {
-                    "json_name": "AttributeReference",
-                    "id": "1",
-                    "name": "b",
-                    "relation": "t",
-                    "type": "Int"
-                  }
-                ],
-                "aggregate_expressions": [
-                  {
-                    "json_name": "Alias",
-                    "id": "2",
-                    "name": "",
-                    "alias": "$aggregate0",
-                    "relation": "$aggregate",
-                    "type": "Long NULL",
-                    "": {
-                      "json_name": "AggregateFunction",
-                      "function": "SUM",
-                      "": [
-                        {
-                          "json_name": "AttributeReference",
-                          "id": "0",
-                          "name": "a",
-                          "relation": "t",
-                          "type": "Int NULL"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              },
-              "project_expressions": [
+          "json_name": "TopLevelPlan",
+          "plan": {
+            "json_name": "Selection",
+            "has_repartition": "false",
+            "input": {
+              "json_name": "TableReference",
+              "relation": "T",
+              "alias": "t",
+              "array": [
                 {
-                  "json_name": "Alias",
-                  "id": "2",
-                  "name": "",
-                  "alias": "SUM(a)",
-                  "relation": "",
-                  "type": "Long NULL",
-                  "": {
-                    "json_name": "AttributeReference",
-                    "id": "2",
-                    "name": "",
-                    "alias": "$aggregate0",
-                    "relation": "$aggregate",
-                    "type": "Long NULL"
-                  }
+                  "json_name": "AttributeReference",
+                  "id": "0",
+                  "name": "a",
+                  "relation": "t",
+                  "type": "Int NULL"
                 },
                 {
                   "json_name": "AttributeReference",
@@ -102,23 +40,40 @@ fn run_select_sum_a_comma_b_from_t_group_by_b() {
                 }
               ]
             },
-            "output_attributes": [
-              {
+            "filter_predicate": {
+              "json_name": "Equal",
+              "attribute_reference": {
                 "json_name": "AttributeReference",
-                "id": "2",
-                "name": "",
-                "alias": "SUM(a)",
-                "relation": "",
-                "type": "Long NULL"
-              },
-              {
-                "json_name": "AttributeReference",
-                "id": "1",
-                "name": "b",
+                "id": "0",
+                "name": "a",
                 "relation": "t",
+                "type": "Int NULL"
+              },
+              "literal": {
+                "json_name": "Literal",
+                "value": "5",
                 "type": "Int"
               }
+            },
+            "project_expressions": [
+              {
+                "json_name": "AttributeReference",
+                "id": "0",
+                "name": "a",
+                "relation": "t",
+                "type": "Int NULL"
+              }
             ]
+          },
+          "output_attributes": [
+            {
+              "json_name": "AttributeReference",
+              "id": "0",
+              "name": "a",
+              "relation": "t",
+              "type": "Int NULL"
+            }
+          ]
         }"#;
 
     let node = parse(plan_str);
