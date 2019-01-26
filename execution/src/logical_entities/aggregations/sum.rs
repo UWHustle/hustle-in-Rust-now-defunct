@@ -7,15 +7,17 @@ use logical_entities::aggregations::AggregationTrait;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sum {
     input_relation: Relation,
-    column : Column,
+    column: Column,
+    group_by: Vec<Column>,
     running_total: Vec<u8>
 }
 
 impl Sum {
-    pub fn new(relation: Relation, column:Column) -> Self {
+    pub fn new(relation: Relation, column: Column, group_by: Vec<Column>) -> Self {
         Sum {
             input_relation: relation,
-            column: column,
+            column,
+            group_by,
             running_total: vec!()
         }
     }

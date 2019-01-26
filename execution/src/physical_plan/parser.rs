@@ -5,6 +5,9 @@ use logical_entities::schema::Schema;
 use logical_entities::aggregations::sum::Sum;
 use logical_entities::aggregations::count::Count;
 
+use logical_entities::types::DataType;
+use logical_entities::types::integer::IntegerType;
+
 use physical_plan::node::Node;
 
 use physical_operators::aggregate::Aggregate;
@@ -16,9 +19,12 @@ use physical_operators::table_reference::TableReference;
 use std::rc::Rc;
 
 extern crate serde_json;
+
 use self::serde_json::Value;
 
 pub fn parse(string_plan: &str) -> Node {
+    println!("{}", string_plan); // TODO: For debugging/development
+
     let json: Value = serde_json::from_str(string_plan).unwrap();
     let json_plan = &json["plan"];
 
@@ -55,23 +61,27 @@ fn parse_hash_join(json: &Value) -> Node {
 
 fn parse_aggregate(json: &Value) -> Node {
     let input = parse_node(&json["input"]);
-    let aggregate_function = &json["aggregate_expressions"].as_array().unwrap().get(0).unwrap()[""];
+    let aggregate_function = &json["aggregate_expressions"].as_array().unwrap().get(0).unwrap()["aggregate_function"];
     let function_type = aggregate_function["function"].as_str().unwrap();
 
-    // The projection is a temporary fix until we can get explicit and implicit GROUP BY working
-    let attribute = parse_column(&aggregate_function[""].as_array().unwrap().get(0).unwrap());
-    let project_operator = Project::new(input.get_output_relation(), vec!(attribute.clone()), "".to_string(), 2, Vec::new());
+    let aggregate_attribute = parse_column(&aggregate_function["array"].as_array().unwrap().get(0).unwrap());
+    let group_by_attributes = parse_column_list(&json["grouping_expressions"]);
+
+    // Project onto the union of the aggregate column and the group by columns
+    let mut project_attributes = group_by_attributes.clone();
+    project_attributes.push(aggregate_attribute.clone());
+    let project_operator = Project::new(input.get_output_relation(), project_attributes, "".to_string(), 2, Vec::new());
     let project_node = Node::new(Rc::new(project_operator), vec!(Rc::new(input)));
 
     match function_type {
         "SUM" => {
-            let sum_operator = Aggregate::new(Sum::new(project_node.get_output_relation(), attribute.clone()));
+            let sum_operator = Aggregate::new(Sum::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes));
             Node::new(Rc::new(sum_operator), vec!(Rc::new(project_node)))
-        },
+        }
         "COUNT" => {
-            let count_operator = Aggregate::new(Count::new(project_node.get_output_relation(), attribute.clone()));
+            let count_operator = Aggregate::new(Count::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes));
             Node::new(Rc::new(count_operator), vec!(Rc::new(project_node)))
-        },
+        }
         _ => panic!("Aggregate function {} not supported", function_type),
     }
 }
@@ -79,13 +89,32 @@ fn parse_aggregate(json: &Value) -> Node {
 fn parse_selection(json: &Value) -> Node {
     let input = parse_node(&json["input"]);
     let project_attributes = parse_column_list(&json["project_expressions"]);
-    let project_operator = Project::new(input.get_output_relation(), project_attributes,  "".to_string(), 2, Vec::new());
+
+    let filter_predicate = &json["filter_predicate"];
+    let project_operator: Project = match filter_predicate {
+        Value::Null => Project::new(input.get_output_relation(), project_attributes,  "".to_string(), 2, Vec::new()),
+        _ => {
+            let filter_attribute = parse_column(&filter_predicate["attribute_reference"]);
+            let str_value = get_string(&filter_predicate["literal"]["value"]);
+
+            let compare_value = DataType::Integer.parse_and_marshall(str_value);
+            let comparison_str = filter_predicate["json_name"].as_str().unwrap();
+
+            let comparator = match comparison_str {
+                "Equal" => 0,
+                "Greater" => 1,
+                "Less" => -1,
+                _ => panic!("Unknown comparison type {}", comparison_str)
+            };
+            Project::new(input.get_output_relation(), project_attributes,  filter_attribute.get_name().clone(), comparator, compare_value.0)
+        }
+    };
 
     Node::new(Rc::new(project_operator), vec!(Rc::new(input)))
 }
 
 fn parse_table_reference(json: &Value) -> Node {
-    let columns = parse_column_list(&json[""]);
+    let columns = parse_column_list(&json["array"]);
     let name = get_string(&json["relation"]);
     let relation = Relation::new(name, Schema::new(columns));
 

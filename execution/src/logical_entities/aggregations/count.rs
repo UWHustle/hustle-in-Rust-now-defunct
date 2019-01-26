@@ -11,14 +11,16 @@ use logical_entities::aggregations::AggregationTrait;
 pub struct Count {
     input_relation: Relation,
     column: Column,
+    group_by: Vec<Column>,
     running_total: u8
 }
 
 impl Count {
-    pub fn new(relation: Relation, column: Column) -> Self {
+    pub fn new(relation: Relation, column: Column, group_by: Vec<Column>) -> Self {
         Count {
             input_relation: relation,
-            column: column,
+            column,
+            group_by,
             running_total: 0
         }
     }
@@ -30,7 +32,7 @@ impl AggregationTrait for Count {
     }
 
     fn group_by_columns(&self) -> Vec<Column> {
-        return vec!();
+        return self.group_by.clone();
     }
 
     fn output_schema(&self) -> Schema {

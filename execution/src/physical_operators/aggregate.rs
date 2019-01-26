@@ -38,7 +38,7 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
     fn execute(&self) -> Relation{
         let mut output_data = StorageManager::create_relation(&self.output_relation, self.relation.get_total_size());
 
-        let input_columns:Vec<Column> = self.relation.get_columns().to_vec();
+        let input_columns: Vec<Column> = self.relation.get_columns().to_vec();
 
         let input_data = StorageManager::get_full_data(&self.relation.clone());
 
