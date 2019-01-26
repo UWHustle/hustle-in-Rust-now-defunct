@@ -1,17 +1,19 @@
 #include "FunctionNode.h"
 
 #include <sstream>
+#include <utility>
 
 using namespace std;
 
-FunctionNode::FunctionNode(const string name, vector<shared_ptr<ParseNode>> arguments)
-        : ParseNode(FUNCTION), arguments(arguments) {
-    this->name = name;
-}
+FunctionNode::FunctionNode(Function function, vector<shared_ptr<ParseNode>> arguments, const string name)
+        : ParseNode(FUNCTION), function(function), arguments(move(arguments)), name(name) { }
 
 unordered_map<string, string> FunctionNode::get_attributes() {
     auto attributes = ParseNode::get_attributes();
-    attributes.insert({"name", name});
+    attributes.insert({"function", to_string(function)});
+    if (function == NAMED) {
+        attributes.insert({"name", name});
+    }
     return attributes;
 }
 

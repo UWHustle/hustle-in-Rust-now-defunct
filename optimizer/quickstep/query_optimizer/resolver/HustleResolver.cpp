@@ -4,6 +4,8 @@
 
 #include "expressions/aggregation/AggregateFunctionFactory.hpp"
 #include "expressions/aggregation/AggregateFunctionSum.hpp"
+#include "parser/FunctionNode.h"
+#include "parser/ReferenceNode.h"
 #include "query_optimizer/expressions/AggregateFunction.hpp"
 #include "query_optimizer/expressions/Alias.hpp"
 #include "query_optimizer/expressions/ComparisonExpression.hpp"
@@ -70,20 +72,20 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
 
     // resolve WHERE
     if (select_node->where != nullptr) {
-        if (select_node->where->type != OPERATOR) {
+        if (select_node->where->type != FUNCTION) {
             throw "Resolver: unsupported predicate node type: " + to_string(select_node->where->type);
         }
-        auto where_operator_node = static_pointer_cast<OperatorNode>(select_node->where);
+        auto where_operator_node = static_pointer_cast<FunctionNode>(select_node->where);
         expressions::PredicatePtr predicate;
-        switch (where_operator_node->operator_type) {
+        switch (where_operator_node->function) {
             case EQ: {
-                if (where_operator_node->operands.size() != 2) {
+                if (where_operator_node->arguments.size() != 2) {
                     throw "Resolver: operator EQ must have 2 operands; actual: " +
-                          to_string(where_operator_node->operands.size());
+                          to_string(where_operator_node->arguments.size());
                 }
-                expressions::ScalarPtr left_operand = resolve_expression(where_operator_node->operands[0],
+                expressions::ScalarPtr left_operand = resolve_expression(where_operator_node->arguments[0],
                                                                          attribute_references, nullptr);
-                expressions::ScalarPtr right_operand = resolve_expression(where_operator_node->operands[1],
+                expressions::ScalarPtr right_operand = resolve_expression(where_operator_node->arguments[1],
                                                                           attribute_references, nullptr);
                 predicate = expressions::ComparisonExpression::Create(
                         quickstep::ComparisonFactory::GetComparison(quickstep::ComparisonID::kEqual), left_operand,
@@ -91,7 +93,7 @@ logical::LogicalPtr HustleResolver::resolve_select(shared_ptr<SelectNode> select
                 break;
             }
             default:
-                throw "Resolver: unsupported operator type: " + to_string(where_operator_node->operator_type);
+                throw "Resolver: unsupported operator type: " + to_string(where_operator_node->function);
         }
         logical_plan = logical::Filter::Create(logical_plan, predicate);
     }
@@ -183,6 +185,6 @@ expressions::ScalarPtr HustleResolver::resolve_expression(
                     aggregate_alias->getValueType(), expressions::AttributeReferenceScope::kLocal);
         }
         default:
-            "Resolver: unsupported expression node type: " + to_string(parse_node->type);
+            throw "Resolver: unsupported expression node type: " + to_string(parse_node->type);
     }
 }

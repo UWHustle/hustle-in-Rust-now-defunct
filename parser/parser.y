@@ -21,7 +21,6 @@ class ParserDriver;
 #include "SelectNode.h"
 #include "FunctionNode.h"
 #include "ReferenceNode.h"
-#include "OperatorNode.h"
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T typedef void* yyscan_t;
 #endif
@@ -682,7 +681,7 @@ expr:
 | expr COLLATE ids { error(drv.location, "COLLATE not yet supported"); }
 | CAST LP expr AS typetoken RP { error(drv.location, "CAST not yet supported"); }
 | id LP distinct exprlist RP {
-    $$ = std::shared_ptr<FunctionNode>(new FunctionNode($1, std::move($4)));
+    $$ = std::shared_ptr<FunctionNode>(new FunctionNode(NAMED, std::move($4), $1));
   }
 | id LP STAR RP { error(drv.location, "(*) in expression not yet supported"); }
 | id LP distinct exprlist RP over_clause { error(drv.location, "OVER not yet supported"); }
@@ -695,7 +694,7 @@ expr:
 | expr GE expr { error(drv.location, ">= in expression not yet supported"); }
 | expr LE expr { error(drv.location, "<= in expression not yet supported"); }
 | expr EQ expr {
-    $$ = std::shared_ptr<OperatorNode>(new OperatorNode(EQ, {$1, $3}));
+    $$ = std::shared_ptr<FunctionNode>(new FunctionNode(EQ, {$1, $3}));
   }
 | expr NE expr { error(drv.location, "<> in expression not yet supported"); }
 | expr BITAND expr { error(drv.location, "& in expression not yet supported"); }
