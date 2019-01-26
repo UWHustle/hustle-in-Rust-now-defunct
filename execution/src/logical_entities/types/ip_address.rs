@@ -59,7 +59,10 @@ impl DataTypeTrait for IpAddressType {
     }
 
     fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8 {
-        return 0;
+        //last four implementation
+        if left[0]&15 == right[0]&15{
+            return  1;}
+        else {return 0;}
     }
 
     fn to_string(payload: &Vec<u8>) -> String {
@@ -78,6 +81,7 @@ impl DataTypeTrait for IpAddressType {
 mod tests {
     use logical_entities::types::ip_address::IpAddressType;
     use logical_entities::types::DataTypeTrait;
+    use std::mem;
 
     #[test]
     fn parse_and_marshall() {
@@ -105,5 +109,21 @@ mod tests {
 
         assert_eq!(unmarshalled_sum, "6.8.10.12");
     }
+
+    #[test]
+    fn compare() {
+        let (marshalled_a, _size) = IpAddressType::parse_and_marshall("12.25.37.48".to_string());
+        let payload : &u64 = &48;
+        let array_representation;
+        unsafe {
+            array_representation = mem::transmute::<u64, [u8; 8]>(*payload);
+        }
+        let vector : Vec<u8> =  (array_representation.to_vec(), 8).0;
+        let check = IpAddressType::compare(&marshalled_a, &vector);
+        println!("{}", marshalled_a[0]);
+        println!("{}", vector[0]);
+        assert_eq!(check, 1);
+    }
+
 
 }
