@@ -1,7 +1,6 @@
 use std::mem;
 use logical_entities::types::DataTypeTrait;
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct IpAddressType;
 
