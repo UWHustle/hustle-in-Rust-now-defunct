@@ -20,8 +20,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_columns: Vec<Column>, predicate_name: String, comparator: i8, comp_value: Vec<u8>) -> Project {
-
+    pub fn new(relation: Relation, output_columns: Vec<Column>, predicate_name: String, comparator: i8, comp_value: Vec<u8>) -> Self {
         let schema = Schema::new(output_columns);
         let output_relation = Relation::new(format!("{}{}", relation.get_name(), "_project".to_string()), schema);
         Project {
@@ -31,6 +30,10 @@ impl Project {
             comparator,
             comp_value,
         }
+    }
+
+    pub fn pure_project(relation: Relation, output_columns: Vec<Column>) -> Self {
+        Self::new(relation, output_columns, String::new(), 2, vec!())
     }
 }
 
@@ -47,9 +50,9 @@ impl Operator for Project {
 
         let input_data = StorageManager::get_full_data(&self.relation.clone());
 
-        let mut i = 0;
-        let mut k = 0; // Current position in the input relation
-        let mut j = 0; // Current position in the output relation
+        let mut i = 0; // Beginning of the current row in the input buffer
+        let mut k = 0; // Current position in the input buffer
+        let mut j = 0; // Current position in the output buffer
 
         while i < input_data.len() {
             let mut filter: bool = true;
@@ -93,7 +96,6 @@ impl Operator for Project {
         }
 
         StorageManager::trim_relation(&self.output_relation, j);
-
         self.get_target_relation()
     }
 }
