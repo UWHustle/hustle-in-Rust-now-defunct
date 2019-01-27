@@ -4,8 +4,6 @@ pub mod storage_manager;
 pub mod physical_plan;
 pub mod test_helpers;
 
-use std::os::raw::c_char;
-
 use physical_plan::parser::parse;
 
 fn main() {

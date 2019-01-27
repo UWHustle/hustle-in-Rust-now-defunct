@@ -6,7 +6,6 @@ use logical_entities::aggregations::sum::Sum;
 use logical_entities::aggregations::count::Count;
 
 use logical_entities::types::DataType;
-use logical_entities::types::integer::IntegerType;
 
 use physical_plan::node::Node;
 
@@ -24,12 +23,11 @@ use self::serde_json::Value;
 
 pub fn parse(string_plan: &str) -> Node {
     let json: Value = serde_json::from_str(string_plan).unwrap();
-    let json_plan = &json["plan"];
 
-    let root_node = parse_node(json_plan);
-
+    let root_node = parse_node(&json["plan"]);
     let print_operator = Print::new(root_node.get_output_relation());
     let print_node = Node::new(Rc::new(print_operator), vec!(Rc::new(root_node)));
+
     print_node
 }
 
@@ -73,11 +71,11 @@ fn parse_aggregate(json: &Value) -> Node {
 
     match function_type {
         "SUM" => {
-            let sum_operator = Aggregate::new(Sum::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes));
+            let sum_operator = Aggregate::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes, Sum::new(aggregate_attribute.get_datatype()));
             Node::new(Rc::new(sum_operator), vec!(Rc::new(project_node)))
         }
         "COUNT" => {
-            let count_operator = Aggregate::new(Count::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes));
+            let count_operator = Aggregate::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes, Count::new());
             Node::new(Rc::new(count_operator), vec!(Rc::new(project_node)))
         }
         _ => panic!("Aggregate function {} not supported", function_type),

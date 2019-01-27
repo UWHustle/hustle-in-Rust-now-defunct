@@ -38,8 +38,9 @@ fn test_dag_sum_aggregate() {
 fn hustle_sum(relation1:Relation) -> Relation {
     let project_operator = Project::new(relation1.clone(), vec!(Column::new("a".to_string(), "Int".to_string())), "a".to_string(), 2, IntegerType::marshall(&50).0);
 
-    let sum_aggregation = Sum::new(project_operator.get_target_relation(), Column::new("a".to_string(), "Int".to_string()));
-    let aggregate_operator = Rc::new(Aggregate::new( sum_aggregation));
+    let agg_column = Column::new("a".to_string(), "Int".to_string());
+    let sum_aggregation = Sum::new(agg_column.get_datatype());
+    let aggregate_operator = Rc::new(Aggregate::new(project_operator.get_target_relation(), agg_column, vec!(), sum_aggregation));
 
 
     let project_node = Rc::new(Node::new(Rc::new(project_operator), vec!()));

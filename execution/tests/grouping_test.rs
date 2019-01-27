@@ -33,7 +33,8 @@ fn test_dag_sum_group_by_aggregate() {
 }
 
 fn hustle_sum_group_by(relation1:Relation) -> Relation {
-    let aggregate_operator = Rc::new(Aggregate::new(Sum::new(relation1.clone(), Column::new("a".to_string(), "Int".to_string()))));
+    let agg_column = Column::new("a".to_string(), "Int".to_string());
+    let aggregate_operator = Rc::new(Aggregate::new(relation1.clone(), agg_column.clone(), vec!(), Sum::new(agg_column.get_datatype())));
     let print_operator = Rc::new(Print::new(relation1.clone()));
     let print_operator_after = Rc::new(Print::new(aggregate_operator.get_target_relation()));
 

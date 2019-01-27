@@ -33,7 +33,7 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 
 fn hustle_count(relation: Relation) -> Relation {
     let col = relation.get_columns().get(0).unwrap().clone();
-    let aggregate_operator = Rc::new(Aggregate::new(Count::new(relation.clone(), col)));
+    let aggregate_operator = Rc::new(Aggregate::new(relation, col, vec!(), Count::new()));
 
     let root_node = Node::new(aggregate_operator, vec!());
     root_node.execute()
