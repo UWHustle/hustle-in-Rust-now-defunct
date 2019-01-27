@@ -51,7 +51,7 @@ fn parse_hash_join(json: &Value) -> Node {
     let join_node = Node::new(Rc::new(join_operator), vec!(Rc::new(left), Rc::new(right)));
 
     let project_attributes = parse_column_list(&json["project_expressions"]);
-    let project_operator = Project::new(join_node.get_output_relation(), project_attributes, "".to_string(), 2, Vec::new());
+    let project_operator = Project::pure_project(join_node.get_output_relation(), project_attributes);
     Node::new(Rc::new(project_operator), vec!(Rc::new(join_node)))
 }
 
@@ -66,7 +66,7 @@ fn parse_aggregate(json: &Value) -> Node {
     // Project onto the union of the aggregate column and the group by columns
     let mut project_attributes = group_by_attributes.clone();
     project_attributes.push(aggregate_attribute.clone());
-    let project_operator = Project::new(input.get_output_relation(), project_attributes, "".to_string(), 2, Vec::new());
+    let project_operator = Project::pure_project(input.get_output_relation(), project_attributes);
     let project_node = Node::new(Rc::new(project_operator), vec!(Rc::new(input)));
 
     match function_type {
@@ -88,7 +88,7 @@ fn parse_selection(json: &Value) -> Node {
 
     let filter_predicate = &json["filter_predicate"];
     let project_operator: Project = match filter_predicate {
-        Value::Null => Project::new(input.get_output_relation(), project_attributes,  "".to_string(), 2, Vec::new()),
+        Value::Null => Project::pure_project(input.get_output_relation(), project_attributes),
         _ => {
             let filter_attribute = parse_column(&filter_predicate["attribute_reference"]);
             let str_value = get_string(&filter_predicate["literal"]["value"]);
