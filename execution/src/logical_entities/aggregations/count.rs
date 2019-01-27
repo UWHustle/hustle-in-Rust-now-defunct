@@ -1,7 +1,6 @@
-use logical_entities::types::integer::IntegerType;
-use logical_entities::types::DataTypeTrait;
-
 use logical_entities::aggregations::AggregationTrait;
+use logical_entities::types::DataTypeTrait;
+use logical_entities::types::integer::IntegerType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Count {
@@ -15,7 +14,6 @@ impl Count {
 }
 
 impl AggregationTrait for Count {
-
     fn get_name(&self) -> &'static str {
         "COUNT"
     }

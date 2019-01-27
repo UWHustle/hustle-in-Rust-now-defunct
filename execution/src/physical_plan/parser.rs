@@ -2,8 +2,10 @@ use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 
-use logical_entities::aggregations::sum::Sum;
 use logical_entities::aggregations::count::Count;
+use logical_entities::aggregations::sum::Sum;
+use logical_entities::aggregations::max::Max;
+use logical_entities::aggregations::min::Min;
 
 use logical_entities::types::DataType;
 
@@ -77,6 +79,14 @@ fn parse_aggregate(json: &Value) -> Node {
         "COUNT" => {
             let count_operator = Aggregate::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes, Count::new());
             Node::new(Rc::new(count_operator), vec!(Rc::new(project_node)))
+        }
+        "MIN" => {
+            let min_operator = Aggregate::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes, Min::new(aggregate_attribute.get_datatype()));
+            Node::new(Rc::new(min_operator), vec!(Rc::new(project_node)))
+        }
+        "MAX" => {
+            let max_operator = Aggregate::new(project_node.get_output_relation(), aggregate_attribute.clone(), group_by_attributes, Max::new(aggregate_attribute.get_datatype()));
+            Node::new(Rc::new(max_operator), vec!(Rc::new(project_node)))
         }
         _ => panic!("Aggregate function {} not supported", function_type),
     }

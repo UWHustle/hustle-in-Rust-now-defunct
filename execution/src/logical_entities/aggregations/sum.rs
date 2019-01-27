@@ -1,6 +1,5 @@
-use logical_entities::types::DataType;
-
 use logical_entities::aggregations::AggregationTrait;
+use logical_entities::types::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sum {
