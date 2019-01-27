@@ -37,7 +37,10 @@ impl AggregationTrait for Count {
 
     fn output_schema(&self) -> Schema {
         let col = Column::new(format!("COUNT({})", self.column.get_name()), "Int".to_string());
-        Schema::new(vec!(col))
+        let mut my_columns = self.group_by_columns();
+        my_columns.push(col);
+
+        Schema::new(my_columns)
     }
 
     fn initialize(&mut self) -> () {
@@ -46,9 +49,7 @@ impl AggregationTrait for Count {
 
     #[allow(unused_variables)]
     fn consider_value(&mut self, data: Vec<u8>, column: Column) -> () {
-        if column.get_name() == self.input_relation.get_columns().first().unwrap().get_name() {
-            self.running_total += 1;
-        }
+        self.running_total += 1;
     }
 
     fn output(&self) -> (Vec<u8>) {

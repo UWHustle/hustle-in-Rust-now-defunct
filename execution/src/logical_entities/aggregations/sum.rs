@@ -47,9 +47,7 @@ impl AggregationTrait for Sum {
     }
 
     fn consider_value(&mut self, data: Vec<u8>, column: Column) -> () {
-        if column.get_name() == self.input_relation.get_columns().first().unwrap().get_name() {
-            self.running_total = column.get_datatype().sum(&self.running_total, &data).0;
-        }
+        self.running_total = column.get_datatype().sum(&self.running_total, &data).0;
     }
 
     fn output(&self) -> (Vec<u8>) {

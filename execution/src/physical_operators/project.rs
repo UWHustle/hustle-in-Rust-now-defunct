@@ -19,7 +19,20 @@ pub struct Project {
 
 impl Project {
     pub fn new(relation: Relation, output_columns:Vec<Column>, predicate_name: String, comparator: i8, comp_value: Vec<u8>) -> Project {
-        let schema = Schema::new(output_columns);
+        /* Re-order the output columns to match the order of the input columns; otherwise values can
+         * be placed in the wrong places. Since we would ideally want to leave the output column
+         * order unchanged this is a temporary fix. */
+        let mut reordered_output_cols: Vec<Column> = vec!();
+        for in_column in relation.get_columns() {
+            for out_column in output_columns.clone() {
+                if in_column.get_name() == out_column.get_name() {
+                    reordered_output_cols.push(out_column.clone());
+                    break;
+                }
+            }
+        }
+
+        let schema = Schema::new(reordered_output_cols);
         let output_relation = Relation::new(format!("{}{}", relation.get_name(), "_project".to_string()), schema);
         Project {
             relation,
