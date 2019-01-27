@@ -1,12 +1,11 @@
 use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::DataType;
-use logical_entities::types::integer::IntegerType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Avg {
     data_type: DataType,
     sum: Vec<u8>,
-    count: u8
+    count: u8,
 }
 
 impl Avg {
@@ -14,7 +13,7 @@ impl Avg {
         Avg {
             data_type,
             sum: vec!(),
-            count: 0
+            count: 0,
         }
     }
 }
@@ -37,5 +36,10 @@ impl AggregationTrait for Avg {
     // TODO: Not implemented (currently have no way to do division)
     fn output(&self) -> (Vec<u8>) {
         panic!("Average not supported due to lack of a floating-point type");
+    }
+
+    // TODO: No floating-point type
+    fn output_type(&self) -> DataType {
+        panic!("No floating-point type available");
     }
 }

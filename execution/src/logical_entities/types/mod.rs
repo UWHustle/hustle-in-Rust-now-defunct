@@ -51,6 +51,13 @@ impl DataType {
         }
     }
 
+    pub fn type_string(&self) -> String{
+        match self {
+            DataType::Integer => String::from("Int"),
+            DataType::IpAddress => String::from("IP Address"),
+        }
+    }
+
 }
 
 

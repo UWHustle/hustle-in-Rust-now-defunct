@@ -4,20 +4,19 @@ use logical_entities::types::DataType;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sum {
     data_type: DataType,
-    running_total: Vec<u8>
+    running_total: Vec<u8>,
 }
 
 impl Sum {
     pub fn new(data_type: DataType) -> Self {
         Sum {
             data_type,
-            running_total: vec!()
+            running_total: vec!(),
         }
     }
 }
 
 impl AggregationTrait for Sum {
-
     fn get_name(&self) -> &'static str {
         "SUM"
     }
@@ -32,5 +31,9 @@ impl AggregationTrait for Sum {
 
     fn output(&self) -> (Vec<u8>) {
         self.running_total.clone()
+    }
+
+    fn output_type(&self) -> DataType {
+        self.data_type.clone()
     }
 }

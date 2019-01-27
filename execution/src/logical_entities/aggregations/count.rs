@@ -1,4 +1,5 @@
 use logical_entities::aggregations::AggregationTrait;
+use logical_entities::types::DataType;
 use logical_entities::types::DataTypeTrait;
 use logical_entities::types::integer::IntegerType;
 
@@ -31,5 +32,9 @@ impl AggregationTrait for Count {
         let output = self.running_total.to_string();
         let (output_bits, _size) = IntegerType::parse_and_marshall(output);
         output_bits
+    }
+
+    fn output_type(&self) -> DataType {
+        DataType::Integer
     }
 }
