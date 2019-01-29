@@ -15,6 +15,7 @@ add_library(
         SelectNode.h SelectNode.cpp
         ReferenceNode.h ReferenceNode.cpp
         FunctionNode.h FunctionNode.cpp
+        JoinNode.h JoinNode.cpp
         ${BISON_PARSER_OUTPUTS}
         ${FLEX_LEXER_OUTPUTS}
 )
