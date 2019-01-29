@@ -146,11 +146,12 @@ logical::LogicalPtr HustleResolver::resolve_from(shared_ptr<ParseNode> parse_nod
             switch (join_node->join_type) {
                 case JoinNode::INNER:
                     return logical::Filter::Create(logical::MultiwayCartesianJoin::Create({left, right}), predicate);
-//                case JoinNode::RIGHT:
-//                    swap(left, right);
-//                case JoinNode::LEFT:
-//                    return logical::HashJoin::Create(left, right, {}, {}, predicate,
-//                                                     logical::HashJoin::JoinType::kLeftOuterJoin);
+                case JoinNode::RIGHT:
+                    swap(left, right);
+                    // Fall through
+                case JoinNode::LEFT:
+                    return logical::HashJoin::Create(left, right, {}, {}, predicate,
+                                                     logical::HashJoin::JoinType::kLeftOuterJoin);
                 default:
                     throw "Resolver: unsupported join type: " + to_string(join_node->join_type);
             }
