@@ -49,12 +49,7 @@ impl ValueType for UTF8String {
     }
 
     fn greater_than(&self, other: &ValueType) -> bool {
-        match other.type_id() {
-            TypeID::UTF8String => {
-                self.value.gt(&Box::new(cast::<UTF8String>(other).value().to_string()))
-            }
-            _ => false
-        }
+        other.less_than(self)
     }
 }
 

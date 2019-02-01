@@ -79,24 +79,7 @@ impl ValueType for Int2 {
     }
 
     fn greater_than(&self, other: &ValueType) -> bool {
-        match other.type_id() {
-            TypeID::Int2 => {
-                self.value.gt(&(cast::<Int2>(other).value()))
-            }
-            TypeID::Int4 => {
-                (self.value as i32).gt(&(cast::<Int4>(other).value()))
-            }
-            TypeID::Int8 => {
-                (self.value as i64).gt(&(cast::<Int8>(other).value()))
-            }
-            TypeID::Float8 => {
-                (self.value as f64).gt(&(cast::<Float8>(other).value()))
-            }
-            TypeID::IPv4 => {
-                (self.value as i64).gt(&(cast::<IPv4>(other).value() as i64))
-            }
-            _ => false
-        }
+        other.less_than(self)
     }
 }
 
@@ -172,24 +155,7 @@ impl ValueType for Int4 {
     }
 
     fn greater_than(&self, other: &ValueType) -> bool {
-        match other.type_id() {
-            TypeID::Int2 => {
-                self.value.gt(&(cast::<Int2>(other).value() as i32))
-            }
-            TypeID::Int4 => {
-                self.value.gt(&(cast::<Int4>(other).value()))
-            }
-            TypeID::Int8 => {
-                (self.value as i64).gt(&(cast::<Int8>(other).value()))
-            }
-            TypeID::Float8 => {
-                (self.value as f64).gt(&(cast::<Float8>(other).value()))
-            }
-            TypeID::IPv4 => {
-                (self.value as i64).gt(&(cast::<IPv4>(other).value() as i64))
-            }
-            _ => false
-        }
+        other.less_than(self)
     }
 }
 
@@ -265,24 +231,7 @@ impl ValueType for Int8 {
     }
 
     fn greater_than(&self, other: &ValueType) -> bool {
-        match other.type_id() {
-            TypeID::Int2 => {
-                self.value.gt(&(cast::<Int2>(other).value() as i64))
-            }
-            TypeID::Int4 => {
-                self.value.gt(&(cast::<Int4>(other).value() as i64))
-            }
-            TypeID::Int8 => {
-                self.value.gt(&(cast::<Int8>(other).value()))
-            }
-            TypeID::Float8 => {
-                (self.value as f64).gt(&(cast::<Float8>(other).value()))
-            }
-            TypeID::IPv4 => {
-                self.value.gt(&(cast::<IPv4>(other).value() as i64))
-            }
-            _ => false
-        }
+        other.less_than(self)
     }
 }
 
