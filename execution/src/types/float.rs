@@ -35,6 +35,8 @@ impl Float8 {
     }
 }
 
+impl Float for Float8 {}
+
 impl ValueType for Float8 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
