@@ -22,4 +22,4 @@ add_library(
 
 target_link_libraries(parser optimizer)
 
-#add_subdirectory(test)
+add_subdirectory(test)
