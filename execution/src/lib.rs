@@ -1,9 +1,9 @@
-
 pub mod logical_entities;
 pub mod physical_operators;
 pub mod storage_manager;
 pub mod physical_plan;
 pub mod test_helpers;
+pub mod types;
 
 use std::os::raw::c_char;
 
