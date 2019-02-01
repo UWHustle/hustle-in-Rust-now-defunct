@@ -3,9 +3,6 @@ extern crate byteorder;
 use self::byteorder::{ByteOrder, LittleEndian};
 
 use super::*;
-use super::integer::*;
-use super::ip_address::*;
-use super::owned_buffer::OwnedBuffer;
 
 // Define common methods on floating-point types here
 trait Float: ValueType {}
@@ -35,132 +32,72 @@ impl ValueType for Float8 {
 
     fn size(&self) -> usize { 8 }
 
-    fn equals(&self, other: &ValueType) -> bool {
-        match other.type_id() {
-            TypeID::Int2 => {
-                self.value == cast::<Int2>(other).value() as f64
-            }
-            TypeID::Int4 => {
-                self.value == cast::<Int4>(other).value() as f64
-            }
-            TypeID::Int8 => {
-                self.value == cast::<Int8>(other).value() as f64
-            },
-            TypeID::Float8 => {
-                self.value == cast::<Float8>(other).value
-            }
-            TypeID::IPv4 => {
-                self.value == cast::<IPv4>(other).value() as f64
-            },
-            _ => {
-                panic!(incompatible_types(self.type_id(), other.type_id()));
-            },
-        }
-    }
-
-    fn compare(&self, other: &ValueType) -> Ordering {
-            match other.type_id() {
-                TypeID::Int2 => {
-                    self.cmp(cast::<Int2>(other).value() as f64)
-                }
-                TypeID::Int4 => {
-                    self.cmp(cast::<Int4>(other).value() as f64)
-                }
-                TypeID::Int8 => {
-                    self.cmp(cast::<Int8>(other).value() as f64)
-                }
-                TypeID::Float8 => {
-                    self.cmp(cast::<Float8>(other).value)
-                }
-                TypeID::IPv4 => {
-                    self.cmp(cast::<IPv4>(other).value() as f64)
-                }
-                _ => {
-                    panic!(incompatible_types(self.type_id(), other.type_id()))
-                }
-            }
-        }
-
     fn type_id(&self) -> TypeID {
         TypeID::Float8
     }
-}
-
-pub struct Float4 {
-    value: f32
-}
-
-impl Float4 {
-    pub fn new(data: &[u8]) -> Self {
-        Float4 { value: LittleEndian::read_f32(&data) }
-    }
-    pub fn value(&self) -> f32 {
-        self.value
-    }
-}
-
-impl ValueType for Float4 {
-    fn un_marshall(&self) -> OwnedBuffer {
-        let mut data: Vec<u8> = vec![0; 4];
-        LittleEndian::write_f32(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), data)
-    }
-
-    fn size(&self) -> usize {4}
 
     fn equals(&self, other: &ValueType) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                self.value == cast::<Int2>(other).value() as f32
-            },
+                self.value.eq(&(cast::<Int2>(other).value() as f64))
+            }
             TypeID::Int4 => {
-                self.value == cast::<Int4>(other).value() as f32
-            },
+                self.value.eq(&(cast::<Int4>(other).value() as f64))
+            }
             TypeID::Int8 => {
-                self.value == cast::<Int8>(other).value() as f32
-            },
-            TypeID::Float4 => {
-                self.value == cast::<Float4>(other).value
-            },
+                self.value.eq(&(cast::<Int8>(other).value() as f64))
+            }
             TypeID::Float8 => {
-                self.value ==cast::<Float8>(other).value as f32
+                self.value.eq(&(cast::<Float8>(other).value()))
             }
             TypeID::IPv4 => {
-                self.value == cast::<IPv4>(other).value() as f32
-            },
-            _ => {
-                panic!(incompatible_types(self.type_id(), other.type_id()));
+                self.value.eq(&(cast::<IPv4>(other).value() as f64))
             }
+            _ => false
         }
     }
 
-    fn compare(&self, other: &ValueType) -> Ordering {
+    fn less_than(&self, other: &ValueType) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                self.cmp(cast::<Int2>(other).value() as f32)
+                self.value.lt(&(cast::<Int2>(other).value() as f64))
             }
             TypeID::Int4 => {
-                self.cmp(cast::<Int4>(other).value() as f32)
+                self.value.lt(&(cast::<Int4>(other).value() as f64))
             }
             TypeID::Int8 => {
-                self.cmp(cast::<Int8>(other).value() as f32)
-            }
-            TypeID::Float4 => {
-                self.cmp(cast::<Float4>(other).value)
+                self.value.lt(&(cast::<Int8>(other).value() as f64))
             }
             TypeID::Float8 => {
-                self.cmp(cast::<Float8>(other).value as f32)
+                self.value.lt(&(cast::<Float8>(other).value()))
             }
             TypeID::IPv4 => {
-                self.cmp(cast::<IPv4>(other).value() as f64)
+                self.value.lt(&(cast::<IPv4>(other).value() as f64))
             }
-            _ => {
-                panic!(incompatible_types(self.type_id(), other.type_id()))
-            }
+            _ => false
         }
     }
 
-    fn type_id(&self) -> TypeID { TypeID::Float8 }
+    fn greater_than(&self, other: &ValueType) -> bool {
+        match other.type_id() {
+            TypeID::Int2 => {
+                self.value.gt(&(cast::<Int2>(other).value() as f64))
+            }
+            TypeID::Int4 => {
+                self.value.gt(&(cast::<Int4>(other).value() as f64))
+            }
+            TypeID::Int8 => {
+                self.value.gt(&(cast::<Int8>(other).value() as f64))
+            }
+            TypeID::Float8 => {
+                self.value.gt(&(cast::<Float8>(other).value()))
+            }
+            TypeID::IPv4 => {
+                self.value.gt(&(cast::<IPv4>(other).value() as f64))
+            }
+            _ => false
+        }
+    }
 }
 
 #[cfg(test)]

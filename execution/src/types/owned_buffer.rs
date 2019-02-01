@@ -16,9 +16,10 @@ impl OwnedBuffer {
 }
 
 impl BufferType for OwnedBuffer {
-    fn type_id(&self) -> &TypeID {
-        &self.type_id
+    fn type_id(&self) -> TypeID {
+        self.type_id.clone()
     }
+
     fn data(&self) -> &[u8] {
         &self.data
     }
