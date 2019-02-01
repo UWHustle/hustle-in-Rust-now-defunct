@@ -3,7 +3,9 @@
 #include "lexer.h"
 #include "optimizer/optimizer_wrapper.hpp"
 
-ParserDriver::ParserDriver() = default;
+ParserDriver::ParserDriver() {
+    join_type = JoinNode::NONE;
+};
 
 int ParserDriver::parse(std::string s) {
     auto input = s;

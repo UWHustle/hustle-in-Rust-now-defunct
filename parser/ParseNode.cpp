@@ -6,7 +6,7 @@
 using namespace std;
 
 ParseNode::ParseNode() {
-    type = NONE;
+    type = NodeType::NONE;
 }
 
 ParseNode::ParseNode(NodeType type) {

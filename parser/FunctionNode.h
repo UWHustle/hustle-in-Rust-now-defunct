@@ -1,19 +1,18 @@
 #ifndef HUSTLE_FUNCTIONNODE_H
 #define HUSTLE_FUNCTIONNODE_H
 
-#include <memory>
-#include <string>
-#include <vector>
 #include "ParseNode.h"
 
 class FunctionNode: public ParseNode {
 public:
-    FunctionNode(std::string name, std::vector<std::shared_ptr<ParseNode>> arguments);
+    enum FunctionType {NAMED, EQ};
+    FunctionNode(FunctionType function_type, std::vector<std::shared_ptr<ParseNode>> arguments, std::string name = "");
     std::unordered_map<std::string, std::string> get_attributes() override;
     std::unordered_map<std::string, std::vector<std::shared_ptr<ParseNode>>> get_children_lists() override;
     std::string to_sql_string() override;
-    std::string name;
+    FunctionType function_type;
     std::vector<std::shared_ptr<ParseNode> > arguments;
+    std::string name;
 };
 
 #endif //HUSTLE_FUNCTIONNODE_H

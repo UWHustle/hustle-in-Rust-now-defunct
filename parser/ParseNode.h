@@ -2,13 +2,13 @@
 #define HUSTLE_PARSE_NODE_H
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
-enum NodeType {NONE, SELECT, REFERENCE, FUNCTION, OPERATOR};
-
 class ParseNode {
 public:
+    enum NodeType {NONE, SELECT, REFERENCE, FUNCTION, JOIN};
     ParseNode();
     explicit ParseNode(NodeType type);
     void json_stringify();
