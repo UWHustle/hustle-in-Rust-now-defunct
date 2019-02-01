@@ -7,9 +7,8 @@ use execution::logical_entities::aggregations::sum::Sum;
 use execution::logical_entities::column::Column;
 use execution::logical_entities::relation::Relation;
 
-use execution::physical_operators::Operator;
 use execution::physical_operators::aggregate::Aggregate;
-use execution::physical_operators::print::Print;
+use execution::physical_operators::project::Project;
 use execution::physical_operators::select_sum::SelectSum;
 
 const RECORD_COUNT: usize = 10;
@@ -32,16 +31,11 @@ fn test_dag_sum_group_by_aggregate() {
     assert_eq!(hustle_calculation, sqlite3_calculation);
 }
 
-fn hustle_sum_group_by(relation1:Relation) -> Relation {
-    let aggregate_operator = Rc::new(Aggregate::new(Sum::new(relation1.clone(), Column::new("a".to_string(), "Int".to_string()))));
-    let print_operator = Rc::new(Print::new(relation1.clone()));
-    let print_operator_after = Rc::new(Print::new(aggregate_operator.get_target_relation()));
-
-    let print_node_before = Rc::new(Node::new(print_operator, vec!()));
-
-    let sum_node = Rc::new(Node::new(aggregate_operator.clone(), vec!(print_node_before)));
-
-    let print_node = Rc::new(Node::new(print_operator_after, vec!(sum_node)));
-    print_node.execute();
-    aggregate_operator.get_target_relation()
+// TODO: This test as currently implemented has no group by columns
+fn hustle_sum_group_by(relation: Relation) -> Relation {
+    let col = relation.get_columns().get(0).unwrap().clone();
+    let project_op = Project::pure_project(relation, vec!(col.clone()));
+    let project_node = Node::new(Rc::new(project_op), vec!());
+    let aggregate_op = Aggregate::new(project_node.get_output_relation(), col.clone(), vec!(), Sum::new(col.get_datatype()));
+    Node::new(Rc::new(aggregate_op), vec!(Rc::new(project_node))).execute()
 }
