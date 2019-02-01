@@ -4,7 +4,6 @@ use execution::logical_entities::aggregations::sum::Sum;
 use execution::logical_entities::column::Column;
 use execution::logical_entities::relation::Relation;
 use execution::physical_operators::aggregate::Aggregate;
-use execution::physical_operators::Operator;
 use execution::physical_operators::project::Project;
 use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_plan::node::Node;
