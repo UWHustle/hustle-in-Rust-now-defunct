@@ -22,17 +22,6 @@ impl Float8 {
     pub fn value(&self) -> f64 {
         self.value
     }
-
-    // Helper for getting a u8 from a comparison
-    fn cmp(&self, other: f64) -> u8 {
-        if self.value < other {
-            -1
-        } else if self.value > other {
-            1
-        } else {
-            0
-        }
-    }
 }
 
 impl Float for Float8 {}
@@ -68,6 +57,30 @@ impl ValueType for Float8 {
             },
         }
     }
+
+    fn compare(&self, other: &ValueType) -> Ordering {
+            match other.type_id() {
+                TypeID::Int2 => {
+                    self.cmp(cast::<Int2>(other).value() as f64)
+                }
+                TypeID::Int4 => {
+                    self.cmp(cast::<Int4>(other).value() as f64)
+                }
+                TypeID::Int8 => {
+                    self.cmp(cast::<Int8>(other).value() as f64)
+                }
+                TypeID::Float8 => {
+                    self.cmp(cast::<Float8>(other).value)
+                }
+                TypeID::IPv4 => {
+                    self.cmp(cast::<IPv4>(other).value() as f64)
+                }
+                _ => {
+                    panic!(incompatible_types(self.type_id(), other.type_id()))
+                }
+            }
+        }
+
     fn type_id(&self) -> TypeID {
         TypeID::Float8
     }
@@ -83,9 +96,6 @@ impl Float4 {
     }
     pub fn value(&self) -> f32 {
         self.value
-    }
-    fn cmp(&self, other:f32) {
-        
     }
 }
 
@@ -124,19 +134,22 @@ impl ValueType for Float4 {
         }
     }
 
-    fn compare(&self, other: &ValueType) -> u8 {
+    fn compare(&self, other: &ValueType) -> Ordering {
         match other.type_id() {
             TypeID::Int2 => {
-                self.cmp(cast::<Int2>(other).value() as f64)
+                self.cmp(cast::<Int2>(other).value() as f32)
             }
             TypeID::Int4 => {
-                self.cmp(cast::<Int4>(other).value() as f64)
+                self.cmp(cast::<Int4>(other).value() as f32)
             }
             TypeID::Int8 => {
-                self.cmp(cast::<Int8>(other).value() as f64)
+                self.cmp(cast::<Int8>(other).value() as f32)
+            }
+            TypeID::Float4 => {
+                self.cmp(cast::<Float4>(other).value)
             }
             TypeID::Float8 => {
-                self.cmp(cast::<Float8>(other).value)
+                self.cmp(cast::<Float8>(other).value as f32)
             }
             TypeID::IPv4 => {
                 self.cmp(cast::<IPv4>(other).value() as f64)
