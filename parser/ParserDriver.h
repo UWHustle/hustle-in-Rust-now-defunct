@@ -13,7 +13,8 @@ public:
     yy::location location;
     JoinNode::JoinType join_type;
     ParserDriver();
-    int parse(std::string s);
+    void parse_and_optimize(std::string sql);
+    void parse(std::string sql);
 };
 
 #endif //HUSTLE_PARSERDRIVER_H
