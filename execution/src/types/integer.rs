@@ -2,14 +2,12 @@ extern crate byteorder;
 
 use self::byteorder::{ByteOrder, LittleEndian};
 
-use super::cast;
-use super::float::Float8;
-use super::ValueType;
-use super::owned_buffer::OwnedBuffer;
-use super::TypeID;
+use super::*;
+use super::float::*;
+use super::ip_address::*;
 
-// TODO: Define behavior an integer should have
-trait Integer: ValueType {}
+// Define common methods on integer types here
+pub trait Integer: ValueType {}
 
 pub struct Int2 {
     value: i16
@@ -23,6 +21,8 @@ impl Int2 {
         self.value
     }
 }
+
+impl Integer for Int2 {}
 
 impl ValueType for Int2 {
     fn un_marshall(&self) -> OwnedBuffer {
@@ -55,6 +55,8 @@ impl Int4 {
     }
 }
 
+impl Integer for Int4 {}
+
 impl ValueType for Int4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; 4];
@@ -76,6 +78,8 @@ impl ValueType for Int4 {
 pub struct Int8 {
     value: i64
 }
+
+impl Integer for Int8 {}
 
 impl Int8 {
     pub fn new(data: &[u8]) -> Self {

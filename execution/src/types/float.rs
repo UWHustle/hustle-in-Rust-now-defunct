@@ -2,11 +2,10 @@ extern crate byteorder;
 
 use self::byteorder::{ByteOrder, LittleEndian};
 
-use super::cast;
+use super::*;
 use super::integer::*;
-use super::ValueType;
+use super::ip_address::*;
 use super::owned_buffer::OwnedBuffer;
-use super::TypeID;
 
 // Define common methods on floating-point types here
 trait Float: ValueType {}
@@ -32,12 +31,32 @@ impl ValueType for Float8 {
     }
     fn equals(&self, other: &ValueType) -> bool {
         match other.type_id() {
-            TypeID::Int2 => self.value == cast::<Int2>(other).value() as f64,
-            TypeID::Float8 => self.value == cast::<Float8>(other).value,
-            _ => panic!(),
+            TypeID::Int2 => {
+                self.value == cast::<Int2>(other).value() as f64
+            },
+            TypeID::Int4 => {
+                self.value == cast::<Int4>(other).value() as f64
+            },
+            TypeID::Int8 => {
+                self.value == cast::<Int8>(other).value() as f64
+            }
+            TypeID::Float8 => {
+                self.value == cast::<Float8>(other).value
+            },
+            TypeID::IPv4 => {
+                self.value == cast::<IPv4>(other).value() as f64
+            }
+            _ => {
+                panic!(incompatible_types(self.type_id(), other.type_id()));
+            },
         }
     }
     fn type_id(&self) -> TypeID {
         TypeID::Float8
     }
+}
+
+#[cfg(test)]
+mod test {
+    // TODO: Place unit tests here
 }
