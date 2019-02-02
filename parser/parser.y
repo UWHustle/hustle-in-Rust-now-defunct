@@ -341,9 +341,9 @@ columnname:
 ;
 
 nm:
-  id { $$ = $1; }
-| STRING { $$ = $1; }
-| JOIN_KW { $$ = $1; }
+  id { $$ = std::move($1); }
+| STRING { $$ = std::move($1); }
+| JOIN_KW { $$ = std::move($1); }
 ;
 
 typetoken:
@@ -1023,8 +1023,8 @@ filter_opt:
 ;
 
 id:
-  ID
-| INDEXED
+  ID { $$ = std::move($1); }
+| INDEXED { $$ = std::move($1); }
 ;
 
 ids:
