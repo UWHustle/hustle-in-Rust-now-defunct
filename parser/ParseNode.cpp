@@ -1,5 +1,6 @@
 #include "ParseNode.h"
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
