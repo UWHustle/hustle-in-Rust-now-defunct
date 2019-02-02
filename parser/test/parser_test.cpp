@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void test_select() {
+void test_parse_select() {
     ParserDriver parser_driver;
     shared_ptr<ParseNode> expected;
 
@@ -91,6 +91,19 @@ void test_select() {
     assert(*expected == *parser_driver.syntax_tree);
 }
 
+void test_parse_join_type() {
+    assert(JoinNode::parse_join_type("NATURAL") == JoinNode::NATURAL);
+    assert(JoinNode::parse_join_type("LEFT") == JoinNode::LEFT);
+    assert(JoinNode::parse_join_type("LEFTOUTER") == JoinNode::LEFT);
+    assert(JoinNode::parse_join_type("RIGHT") == JoinNode::RIGHT);
+    assert(JoinNode::parse_join_type("RIGHTOUTER") == JoinNode::RIGHT);
+    assert(JoinNode::parse_join_type("OUTER") == JoinNode::OUTER);
+    assert(JoinNode::parse_join_type("FULLOUTER") == JoinNode::OUTER);
+    assert(JoinNode::parse_join_type("INNER") == JoinNode::INNER);
+    assert(JoinNode::parse_join_type("CROSS") == JoinNode::CROSS);
+}
+
 int main() {
-    test_select();
+    test_parse_select();
+    test_parse_join_type();
 }
