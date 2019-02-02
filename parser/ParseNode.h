@@ -11,10 +11,11 @@ public:
     enum NodeType {NONE, SELECT, REFERENCE, FUNCTION, JOIN};
     ParseNode();
     explicit ParseNode(NodeType type);
+    bool operator==(const ParseNode& other);
     void json_stringify();
-    virtual std::unordered_map<std::string, std::string> get_attributes();
-    virtual std::unordered_map<std::string, std::shared_ptr<ParseNode>> get_children();
-    virtual std::unordered_map<std::string, std::vector<std::shared_ptr<ParseNode>>> get_children_lists();
+    virtual std::unordered_map<std::string, std::string> get_attributes() const;
+    virtual std::unordered_map<std::string, std::shared_ptr<ParseNode>> get_children() const;
+    virtual std::unordered_map<std::string, std::vector<std::shared_ptr<ParseNode>>> get_children_lists() const;
     virtual std::string to_sql_string();
     NodeType type;
 protected:

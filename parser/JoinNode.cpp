@@ -12,13 +12,13 @@ JoinNode::JoinNode(JoinType join_type, shared_ptr<ParseNode> left, shared_ptr<Pa
 
 }
 
-unordered_map<string, string> JoinNode::get_attributes() {
+unordered_map<string, string> JoinNode::get_attributes() const {
     auto attributes = ParseNode::get_attributes();
     attributes.insert({"join_type", to_string(join_type)});
     return attributes;
 }
 
-unordered_map<string, shared_ptr<ParseNode>> JoinNode::get_children() {
+unordered_map<string, shared_ptr<ParseNode>> JoinNode::get_children() const {
     return {
             {"left", left},
             {"right", right},
