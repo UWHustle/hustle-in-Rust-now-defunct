@@ -1,5 +1,6 @@
 #include "ParseNode.h"
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -11,6 +12,51 @@ ParseNode::ParseNode() {
 
 ParseNode::ParseNode(NodeType type) {
     this->type = type;
+}
+
+bool ParseNode::operator==(const ParseNode& other) {
+    auto attributes = get_attributes();
+    auto children = get_children();
+    auto children_lists = get_children_lists();
+
+    auto other_children = other.get_children();
+    auto other_attributes = other.get_attributes();
+    auto other_children_lists = other.get_children_lists();
+
+    auto size_equal = attributes.size() == other_attributes.size()
+            && children.size() == other_children.size()
+            && other_children_lists.size() == other_children_lists.size();
+
+    auto attributes_equal = attributes == other_attributes;
+
+    auto children_equal = all_of(children.begin(), children.end(),
+            [&other_children](const pair<string, shared_ptr<ParseNode>> &child) {
+        if (other_children.find(child.first) == other_children.end()) {
+            return false;
+        }
+        auto other_child = other_children[child.first];
+        if (child.second && other_child) {
+            return *child.second == *other_child;
+        }
+        return child.second == other_child;
+    });
+
+    auto children_lists_equal = all_of(children_lists.begin(), children_lists.end(),
+            [&other_children_lists](const pair<string, vector<shared_ptr<ParseNode>>> &children_list) {
+        if (other_children_lists.find(children_list.first) == other_children_lists.end()) {
+            return false;
+        }
+        auto other_children_list = other_children_lists[children_list.first];
+        return equal(children_list.second.begin(), children_list.second.end(), other_children_list.begin(),
+                [](const shared_ptr<ParseNode> &left, const shared_ptr<ParseNode> &right) {
+            if (left && right) {
+                return *left == *right;
+            }
+            return left == right;
+        });
+    });
+
+    return size_equal && attributes_equal && children_equal && children_lists_equal;
 }
 
 void ParseNode::json_stringify() {
@@ -60,17 +106,17 @@ void ParseNode::json_stringify() {
     cout << "}";
 }
 
-unordered_map<string, string> ParseNode::get_attributes() {
+unordered_map<string, string> ParseNode::get_attributes() const {
     return {
             {"type", to_string(type)}
     };
 }
 
-unordered_map<string, shared_ptr<ParseNode>> ParseNode::get_children() {
+unordered_map<string, shared_ptr<ParseNode>> ParseNode::get_children() const {
     return {};
 }
 
-unordered_map<string, vector<shared_ptr<ParseNode>>> ParseNode::get_children_lists() {
+unordered_map<string, vector<shared_ptr<ParseNode>>> ParseNode::get_children_lists() const {
     return {};
 }
 
