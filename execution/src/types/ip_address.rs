@@ -12,9 +12,12 @@ pub struct IPv4 {
 }
 
 impl IPv4 {
-    pub fn new(data: &[u8]) -> Self {
+    pub fn marshall(data: &[u8]) -> Self {
         IPv4 { value: LittleEndian::read_u32(&data) }
     }
+    pub fn new(data:u32)  -> Self {
+                IPv4 {value :data}
+            }
 
     pub fn value(&self) -> u32 {
         self.value
@@ -36,50 +39,28 @@ impl ValueType for IPv4 {
         TypeID::IPv4
     }
 
-    fn equals(&self, other: &ValueType) -> bool {
+    fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                (self.value as i64).eq(&(cast::<Int2>(other).value() as i64))
+                apply_comp(self.value as i64, cast::<Int2>(other).value() as i64, comp)
             }
             TypeID::Int4 => {
-                (self.value as i64).eq(&(cast::<Int4>(other).value() as i64))
+                apply_comp(self.value as i64, cast::<Int4>(other).value() as i64, comp)
             }
             TypeID::Int8 => {
-                (self.value as i64).eq(&(cast::<Int8>(other).value()))
+                apply_comp(self.value as i64, cast::<Int8>(other).value(), comp)
+            }
+            TypeID::Float4 => {
+                apply_comp(self.value as f32, cast::<Float4>(other).value(), comp)
             }
             TypeID::Float8 => {
-                (self.value as f64).eq(&(cast::<Float8>(other).value()))
+                apply_comp(self.value as f64, cast::<Float8>(other).value(), comp)
             }
             TypeID::IPv4 => {
-                self.value.eq(&(cast::<IPv4>(other).value()))
+                apply_comp(self.value, cast::<IPv4>(other).value(), comp)
             }
             _ => false
         }
-    }
-
-    fn less_than(&self, other: &ValueType) -> bool {
-        match other.type_id() {
-            TypeID::Int2 => {
-                (self.value as i64).lt(&(cast::<Int2>(other).value() as i64))
-            }
-            TypeID::Int4 => {
-                (self.value as i64).lt(&(cast::<Int4>(other).value() as i64))
-            }
-            TypeID::Int8 => {
-                (self.value as i64).lt(&(cast::<Int8>(other).value()))
-            }
-            TypeID::Float8 => {
-                (self.value as f64).lt(&(cast::<Float8>(other).value()))
-            }
-            TypeID::IPv4 => {
-                self.value.lt(&(cast::<IPv4>(other).value()))
-            }
-            _ => false
-        }
-    }
-
-    fn greater_than(&self, other: &ValueType) -> bool {
-        other.less_than(self)
     }
 }
 
