@@ -180,9 +180,12 @@ mod test {
     // TODO: Place unit tests here
     use self::Int4;
     use super::*;
+    use types::TypeID;
     use types::integer::Integer;
+    use super::BufferType;
 
     #[test]
+    //testing for int2
     fn compare() {
         let int_value_type_1 = Int2 { value: 17 };
         let int_value_type_2 = Int8 { value: 189696 };
@@ -206,6 +209,31 @@ mod test {
         assert_eq!(gbool, true);
         assert_eq!(lbool, false);
         assert_eq!(eqbool, false);
+    }
+
+    #[test]
+    fn type_id() {
+        let int2_value_type = Int2 {value:34};
+        let typeid =  int2_value_type.type_id();
+        let booltype = match typeid{
+            TypeID::Int2 => true,
+            _ => false,
+        };
+        assert_eq!(booltype, true);
+    }
+
+    #[test]
+    fn unmarshall() {
+        let int_value_type = Int2 { value: 56 };
+        let owned_buffer = int_value_type.un_marshall();
+        let typeid = owned_buffer.type_id();
+        let booltype = match typeid{
+                    TypeID::Int2 => true,
+                    _ => false,
+                };
+        let data = owned_buffer.data();
+        assert_eq!(56, data[0]);
+        assert_eq!(booltype, true);
     }
 
 }
