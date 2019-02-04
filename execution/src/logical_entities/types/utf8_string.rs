@@ -51,4 +51,17 @@ impl ValueType for UTF8String {
 #[cfg(test)]
 mod test {
     // TODO: Place unit tests here
+
+    #[test]
+    fn utf8_string_un_marshall() {
+
+    }
+
+    #[test]
+    fn utf8_string_type_id() {
+
+    }
+
+    #[test]
+    fn utf8_string_
 }

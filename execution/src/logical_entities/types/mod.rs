@@ -88,6 +88,33 @@ pub trait BufferType {
     }
 }
 
+pub trait Numeric: ValueType {
+    fn zero(type_id: TypeID) -> Box<Numeric> {
+        match type_id {
+            TypeID::Int2 => {
+                Box::new(Int2::new(0))
+            }
+            TypeID::Int4 => {
+                Box::new(Int4::new(0))
+            }
+            TypeID::Int8 => {
+                Box::new(Int8::new(0))
+            }
+            TypeID::Float4 => {
+                Box::new(Float4::new(0.0))
+            }
+            TypeID::Float8 => {
+                Box::new(Float8::new(0.0))
+            }
+            _ => panic!("Type {:?} is not numeric", type_id)
+        }
+    }
+
+    fn add(&self, other: &Numeric) -> Box<Numeric>;
+
+    fn divide(&self, other: &Numeric) -> Box<Float>;
+}
+
 // Values are stored as various types - concrete implementations can define a 'value()' method which
 // returns the internal type
 pub trait ValueType: Castable + Any {
