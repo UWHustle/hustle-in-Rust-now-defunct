@@ -12,12 +12,14 @@ pub struct Int2 {
 }
 
 impl Int2 {
+    pub fn new(value: i16) -> Self {
+        Int2 { value }
+    }
+
     pub fn marshall(data: &[u8]) -> Self {
         Int2 { value: LittleEndian::read_i16(&data) }
     }
-     pub fn new(data:i16)  -> Self {
-            Int2 {value :data}
-        }
+
     pub fn value(&self) -> i16 {
         self.value
     }
@@ -41,22 +43,22 @@ impl ValueType for Int2 {
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                apply_comp(self.value, cast::<Int2>(other).value(), comp)
+                comp.apply(self.value, cast::<Int2>(other).value())
             }
             TypeID::Int4 => {
-                apply_comp(self.value as i32, cast::<Int4>(other).value(), comp)
+                comp.apply(self.value as i32, cast::<Int4>(other).value())
             }
             TypeID::Int8 => {
-                apply_comp(self.value as i64, cast::<Int8>(other).value(), comp)
+                comp.apply(self.value as i64, cast::<Int8>(other).value())
             }
             TypeID::Float4 => {
-                apply_comp(self.value as f32, cast::<Float4>(other).value(), comp)
+                comp.apply(self.value as f32, cast::<Float4>(other).value())
             }
             TypeID::Float8 => {
-                apply_comp(self.value as f64, cast::<Float8>(other).value(), comp)
+                comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
             TypeID::IPv4 => {
-                apply_comp(self.value as i64, cast::<IPv4>(other).value() as i64, comp)
+                comp.apply(self.value as i64, cast::<IPv4>(other).value() as i64)
             }
             _ => false
         }
@@ -71,9 +73,11 @@ impl Int4 {
     pub fn marshall(data: &[u8]) -> Self {
         Int4 { value: LittleEndian::read_i32(&data) }
     }
-    pub fn new(data:i32)  -> Self {
-        Int4 {value :data}
+
+    pub fn new(data: i32) -> Self {
+        Int4 { value: data }
     }
+
     pub fn value(&self) -> i32 {
         self.value
     }
@@ -97,22 +101,22 @@ impl ValueType for Int4 {
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                apply_comp(self.value, cast::<Int2>(other).value() as i32, comp)
+                comp.apply(self.value, cast::<Int2>(other).value() as i32)
             }
             TypeID::Int4 => {
-                apply_comp(self.value, cast::<Int4>(other).value(), comp)
+                comp.apply(self.value, cast::<Int4>(other).value())
             }
             TypeID::Int8 => {
-                apply_comp(self.value as i64, cast::<Int8>(other).value(), comp)
+                comp.apply(self.value as i64, cast::<Int8>(other).value())
             }
             TypeID::Float4 => {
-                apply_comp(self.value as f32, cast::<Float4>(other).value(), comp)
+                comp.apply(self.value as f32, cast::<Float4>(other).value())
             }
             TypeID::Float8 => {
-                apply_comp(self.value as f64, cast::<Float8>(other).value(), comp)
+                comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
             TypeID::IPv4 => {
-                apply_comp(self.value as i64, cast::<IPv4>(other).value() as i64, comp)
+                comp.apply(self.value as i64, cast::<IPv4>(other).value() as i64)
             }
             _ => false
         }
@@ -129,9 +133,11 @@ impl Int8 {
     pub fn marshall(data: &[u8]) -> Self {
         Int8 { value: LittleEndian::read_i64(&data) }
     }
-    pub fn new(data:i64)  -> Self {
-        Int8 {value :data}
+
+    pub fn new(data: i64) -> Self {
+        Int8 { value: data }
     }
+
     pub fn value(&self) -> i64 {
         self.value
     }
@@ -153,22 +159,22 @@ impl ValueType for Int8 {
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                apply_comp(self.value, cast::<Int2>(other).value() as i64, comp)
+                comp.apply(self.value, cast::<Int2>(other).value() as i64)
             }
             TypeID::Int4 => {
-                apply_comp(self.value, cast::<Int4>(other).value() as i64, comp)
+                comp.apply(self.value, cast::<Int4>(other).value() as i64)
             }
             TypeID::Int8 => {
-                apply_comp(self.value, cast::<Int8>(other).value(), comp)
+                comp.apply(self.value, cast::<Int8>(other).value())
             }
             TypeID::Float4 => {
-                apply_comp(self.value as f64, cast::<Float4>(other).value() as f64, comp)
+                comp.apply(self.value as f64, cast::<Float4>(other).value() as f64)
             }
             TypeID::Float8 => {
-                apply_comp(self.value as f64, cast::<Float8>(other).value(), comp)
+                comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
             TypeID::IPv4 => {
-                apply_comp(self.value, cast::<IPv4>(other).value() as i64, comp)
+                comp.apply(self.value, cast::<IPv4>(other).value() as i64)
             }
             _ => false
         }
@@ -213,9 +219,9 @@ mod test {
 
     #[test]
     fn int2_type_id() {
-        let int2_value_type = Int2 {value:34};
-        let typeid =  int2_value_type.type_id();
-        let booltype = match typeid{
+        let int2_value_type = Int2 { value: 34 };
+        let typeid = int2_value_type.type_id();
+        let booltype = match typeid {
             TypeID::Int2 => true,
             _ => false,
         };
@@ -227,10 +233,10 @@ mod test {
         let int_value_type = Int2 { value: 56 };
         let owned_buffer = int_value_type.un_marshall();
         let typeid = owned_buffer.type_id();
-        let booltype = match typeid{
-                    TypeID::Int2 => true,
-                    _ => false,
-                };
+        let booltype = match typeid {
+            TypeID::Int2 => true,
+            _ => false,
+        };
         let data = owned_buffer.data();
         assert_eq!(56, data[0]);
         assert_eq!(booltype, true);
@@ -272,9 +278,9 @@ mod test {
 
     #[test]
     fn int4_type_id() {
-        let int4_value_type = Int4 {value:346};
-        let typeid =  int4_value_type.type_id();
-        let booltype = match typeid{
+        let int4_value_type = Int4 { value: 346 };
+        let typeid = int4_value_type.type_id();
+        let booltype = match typeid {
             TypeID::Int4 => true,
             _ => false,
         };
@@ -286,10 +292,10 @@ mod test {
         let int_value_type = Int4 { value: 2611 };
         let owned_buffer = int_value_type.un_marshall();
         let typeid = owned_buffer.type_id();
-        let booltype = match typeid{
-                    TypeID::Int4 => true,
-                    _ => false,
-                };
+        let booltype = match typeid {
+            TypeID::Int4 => true,
+            _ => false,
+        };
         let data = owned_buffer.data();
         assert_eq!(51, data[0]);
         assert_eq!(booltype, true);
@@ -330,9 +336,9 @@ mod test {
 
     #[test]
     fn int8_type_id() {
-        let int8_value_type = Int8 {value:3483646};
-        let typeid =  int8_value_type.type_id();
-        let booltype = match typeid{
+        let int8_value_type = Int8 { value: 3483646 };
+        let typeid = int8_value_type.type_id();
+        let booltype = match typeid {
             TypeID::Int8 => true,
             _ => false,
         };
@@ -344,10 +350,10 @@ mod test {
         let int_value_type = Int8 { value: 26119474 };
         let owned_buffer = int_value_type.un_marshall();
         let typeid = owned_buffer.type_id();
-        let booltype = match typeid{
-                    TypeID::Int8 => true,
-                    _ => false,
-                };
+        let booltype = match typeid {
+            TypeID::Int8 => true,
+            _ => false,
+        };
         let data = owned_buffer.data();
         assert_eq!(50, data[0]);
         assert_eq!(141, data[1]);
@@ -355,5 +361,4 @@ mod test {
         assert_eq!(1, data[3]);
         assert_eq!(booltype, true);
     }
-
 }

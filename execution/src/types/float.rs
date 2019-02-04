@@ -12,9 +12,10 @@ pub struct Float4 {
 }
 
 impl Float4 {
-    pub fn new(data:f32)  -> Self {
-        Float4 {value :data}
+    pub fn new(value: f32) -> Self {
+        Float4 { value }
     }
+
     pub fn marshall(data: &[u8]) -> Self {
         Float4 { value: LittleEndian::read_f32(&data) }
     }
@@ -42,22 +43,22 @@ impl ValueType for Float4 {
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                apply_comp(self.value, cast::<Int2>(other).value() as f32, comp)
+                comp.apply(self.value, cast::<Int2>(other).value() as f32)
             }
             TypeID::Int4 => {
-                apply_comp(self.value, cast::<Int4>(other).value() as f32, comp)
+                comp.apply(self.value, cast::<Int4>(other).value() as f32)
             }
             TypeID::Int8 => {
-                apply_comp(self.value as f64, cast::<Int8>(other).value() as f64, comp)
+                comp.apply(self.value as f64, cast::<Int8>(other).value() as f64)
             }
             TypeID::Float4 => {
-                apply_comp(self.value, cast::<Float4>(other).value(), comp)
+                comp.apply(self.value, cast::<Float4>(other).value())
             }
             TypeID::Float8 => {
-                apply_comp(self.value as f64, cast::<Float8>(other).value(), comp)
+                comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
             TypeID::IPv4 => {
-                apply_comp(self.value, cast::<IPv4>(other).value() as f32, comp)
+                comp.apply(self.value, cast::<IPv4>(other).value() as f32)
             }
             _ => false
         }
@@ -70,13 +71,13 @@ pub struct Float8 {
 }
 
 impl Float8 {
+    pub fn new(value: f64) -> Self {
+        Float8 { value }
+    }
+
     pub fn marshall(data: &[u8]) -> Self {
         Float8 { value: LittleEndian::read_f64(&data) }
     }
-
-     pub fn new(data:f64)  -> Self {
-            Float8 {value :data}
-        }
 
     pub fn value(&self) -> f64 {
         self.value
@@ -101,22 +102,22 @@ impl ValueType for Float8 {
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
             TypeID::Int2 => {
-                apply_comp(self.value, cast::<Int2>(other).value() as f64, comp)
+                comp.apply(self.value, cast::<Int2>(other).value() as f64)
             }
             TypeID::Int4 => {
-                apply_comp(self.value, cast::<Int4>(other).value() as f64, comp)
+                comp.apply(self.value, cast::<Int4>(other).value() as f64)
             }
             TypeID::Int8 => {
-                apply_comp(self.value, cast::<Int8>(other).value() as f64, comp)
+                comp.apply(self.value, cast::<Int8>(other).value() as f64)
             }
             TypeID::Float4 => {
-                apply_comp(self.value, cast::<Float4>(other).value() as f64, comp)
+                comp.apply(self.value, cast::<Float4>(other).value() as f64)
             }
             TypeID::Float8 => {
-                apply_comp(self.value, cast::<Float8>(other).value(), comp)
+                comp.apply(self.value, cast::<Float8>(other).value())
             }
             TypeID::IPv4 => {
-                apply_comp(self.value, cast::<IPv4>(other).value() as f64, comp)
+                comp.apply(self.value, cast::<IPv4>(other).value() as f64)
             }
             _ => false
         }

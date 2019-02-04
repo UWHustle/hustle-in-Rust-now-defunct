@@ -106,17 +106,18 @@ pub enum Comparator {
     Greater,
 }
 
-// Runs the boolean comparison specified by 'comp'
-fn apply_comp<T: PartialOrd>(val1: T, val2: T, comp: Comparator) -> bool {
-    match comp {
-        Comparator::Less => {
-            val1 < val2
-        }
-        Comparator::Equal => {
-            val1 == val2
-        }
-        Comparator::Greater => {
-            val1 > val2
+impl Comparator {
+    fn apply<T: PartialOrd>(&self, val1: T, val2: T) -> bool {
+        match self {
+            Comparator::Less => {
+                val1 < val2
+            }
+            Comparator::Equal => {
+                val1 == val2
+            }
+            Comparator::Greater => {
+                val1 > val2
+            }
         }
     }
 }
