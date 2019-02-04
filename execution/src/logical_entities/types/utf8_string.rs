@@ -58,5 +58,10 @@ mod test {
     }
 
     #[test]
-    fn
+    fn utf8_string_type_id() {
+
+    }
+
+    #[test]
+    fn utf8_string_
 }

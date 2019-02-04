@@ -106,6 +106,7 @@ pub trait Numeric: ValueType {
             TypeID::Float8 => {
                 Box::new(Float8::new(0.0))
             }
+            _ => panic!("Type {:?} is not numeric", type_id)
         }
     }
 
