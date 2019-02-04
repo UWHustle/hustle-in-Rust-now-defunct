@@ -34,8 +34,6 @@ impl ValueType for IPv4 {
         OwnedBuffer::new(self.type_id(), data)
     }
 
-    fn size(&self) -> usize { 4 }
-
     fn type_id(&self) -> TypeID {
         TypeID::IPv4
     }

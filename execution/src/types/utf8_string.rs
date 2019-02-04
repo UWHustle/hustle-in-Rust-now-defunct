@@ -29,6 +29,7 @@ impl ValueType for UTF8String {
         OwnedBuffer::new(self.type_id(), value)
     }
 
+    // Overrides the default implementation
     fn size(&self) -> usize {
         self.value.len()
     }

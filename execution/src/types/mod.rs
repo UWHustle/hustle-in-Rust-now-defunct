@@ -27,9 +27,38 @@ pub enum TypeID {
     IPv4,
 }
 
+impl TypeID {
+    // Returns the size of an object of this type; -1 if the size is variable
+    fn size(&self) -> usize {
+        match self {
+            TypeID::Int2 => 2,
+            TypeID::Int4 => 4,
+            TypeID::Int8 => 8,
+            TypeID::Float4 => 4,
+            TypeID::Float8 => 8,
+            TypeID::UTF8String => -1,
+            TypeID::IPv4 => 4,
+        }
+    }
+
+    // TODO: Generalize using pattern matching
+    fn from_string(string: &str) -> TypeID {
+        let string = string.to_lowercase().as_str();
+        match string {
+            "smallint" => TypeID::Int2,
+            "int" => TypeID::Int4,
+            "bigint" => TypeID::Int8,
+            "real" => TypeID::Float4,
+            "varchar" => TypeID::UTF8String,
+            _ => panic!("Unknown type string {}", string),
+        }
+    }
+}
+
 // Types whose values are stored in a byte buffer somewhere
 pub trait BufferType {
     fn type_id(&self) -> TypeID;
+
     fn data(&self) -> &[u8];
 
     fn marshall(&self) -> Box<ValueType> {
@@ -63,22 +92,31 @@ pub trait BufferType {
 // returns the internal type
 pub trait ValueType: Castable + Any {
     fn un_marshall(&self) -> OwnedBuffer;
-    fn size(&self) -> usize;
+
+    // This should be overriden for types which don't have a constant size (i.e. strings)
+    fn size(&self) -> usize {
+        self.type_id().size()
+    }
     fn type_id(&self) -> TypeID;
+
     fn compare(&self, other: &ValueType, cmp: Comparator) -> bool;
 
     fn equals(&self, other: &ValueType) -> bool {
         self.compare(other, Comparator::Equal)
     }
+
     fn less(&self, other: &ValueType) -> bool {
         self.compare(other, Comparator::Less)
     }
+
     fn less_eq(&self, other: &ValueType) -> bool {
         self.compare(other, Comparator::Less) || self.compare(other, Comparator::Equal)
     }
+
     fn greater(&self, other: &ValueType) -> bool {
         self.compare(other, Comparator::Greater)
     }
+
     fn greater_eq(&self, other: &ValueType) -> bool {
         self.compare(other, Comparator::Greater) || self.compare(other, Comparator::Equal)
     }
