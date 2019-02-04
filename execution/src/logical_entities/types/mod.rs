@@ -1,74 +1,128 @@
-
+pub mod borrowed_buffer;
+pub mod float;
 pub mod integer;
 pub mod ip_address;
+pub mod owned_buffer;
+pub mod utf8_string;
 
-use logical_entities::value::Value;
+// These 'use' statements have the same visibility as other private code in this module (they can be
+// made public using the 'pub' keyword)
+use std::any::Any;
 
-#[derive(Clone, Debug, PartialEq, Hash, Eq)]
-pub enum DataType {
-    Integer,
-    IpAddress,
+use self::float::*;
+use self::integer::*;
+use self::ip_address::*;
+use self::owned_buffer::OwnedBuffer;
+use self::utf8_string::UTF8String;
+
+// All possible concrete types
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeID {
+    Int2,
+    Int4,
+    Int8,
+    Float4,
+    Float8,
+    UTF8String,
+    IPv4,
 }
 
-impl DataType {
-    pub fn parse_to_value(&self, input: String) -> Value {
-        Value::new(self.clone(),self.parse_and_marshall(input).0)
-    }
+// Types whose values are stored in a byte buffer somewhere
+pub trait BufferType {
+    fn type_id(&self) -> TypeID;
+    fn data(&self) -> &[u8];
 
-    pub fn get_next_length(&self, payload: &[u8]) -> usize {
-        match self {
-            DataType::Integer => integer::IntegerType::get_next_length(payload),
-            DataType::IpAddress => ip_address::IpAddressType::get_next_length(payload),
+    fn marshall(&self) -> Box<ValueType> {
+        match self.type_id() {
+            TypeID::Int2 => {
+                Box::new(Int2::marshall(self.data()))
+            }
+            TypeID::Int4 => {
+                Box::new(Int4::marshall(self.data()))
+            }
+            TypeID::Int8 => {
+                Box::new(Int8::marshall(self.data()))
+            }
+            TypeID::Float4 => {
+                Box::new(Float4::marshall(self.data()))
+            }
+            TypeID::Float8 => {
+                Box::new(Float8::marshall(self.data()))
+            }
+            TypeID::UTF8String => {
+                Box::new(UTF8String::marshall(self.data()))
+            }
+            TypeID::IPv4 => {
+                Box::new(IPv4::marshall(self.data()))
+            }
         }
     }
-
-    pub fn parse_and_marshall(&self, input: String) -> (Vec<u8>,usize) {
-        match self {
-            DataType::Integer => integer::IntegerType::parse_and_marshall(input),
-            DataType::IpAddress => ip_address::IpAddressType::parse_and_marshall(input),
-        }
-    }
-
-    pub fn sum(&self, left:&Vec<u8>, right:&Vec<u8>) -> (Vec<u8>,usize) {
-        match self {
-            DataType::Integer => integer::IntegerType::sum(left, right),
-            DataType::IpAddress => ip_address::IpAddressType::sum(left, right),
-        }
-    }
-
-    pub fn compare(&self, left:&Vec<u8>, right:&Vec<u8>) -> i8 {
-        match self {
-            DataType::Integer => integer::IntegerType::compare(left, right),
-            DataType::IpAddress => ip_address::IpAddressType::compare(left, right),
-        }
-    }
-
-
-    pub fn to_string(&self, payload: &Vec<u8>) -> String {
-        match self {
-            DataType::Integer => integer::IntegerType::to_string(payload),
-            DataType::IpAddress => ip_address::IpAddressType::to_string(payload),
-        }
-    }
-
-    pub fn type_string(&self) -> String{
-        match self {
-            DataType::Integer => String::from("Int"),
-            DataType::IpAddress => String::from("IP Address"),
-        }
-    }
-
 }
 
+// Values are stored as various types - concrete implementations can define a 'value()' method which
+// returns the internal type
+pub trait ValueType: Castable + Any {
+    fn un_marshall(&self) -> OwnedBuffer;
+    fn size(&self) -> usize;
+    fn type_id(&self) -> TypeID;
+    fn compare(&self, other: &ValueType, cmp: Comparator) -> bool;
 
-pub trait DataTypeTrait {
-    fn get_next_length(payload: &[u8]) -> usize;
+    fn equals(&self, other: &ValueType) -> bool {
+        self.compare(other, Comparator::Equal)
+    }
+    fn less(&self, other: &ValueType) -> bool {
+        self.compare(other, Comparator::Less)
+    }
+    fn less_eq(&self, other: &ValueType) -> bool {
+        self.compare(other, Comparator::Less) || self.compare(other, Comparator::Equal)
+    }
+    fn greater(&self, other: &ValueType) -> bool {
+        self.compare(other, Comparator::Greater)
+    }
+    fn greater_eq(&self, other: &ValueType) -> bool {
+        self.compare(other, Comparator::Greater) || self.compare(other, Comparator::Equal)
+    }
+}
 
-    fn parse_and_marshall(input: String) -> (Vec<u8>,usize);
+// Used to allow downcasting
+pub trait Castable {
+    fn as_any(&self) -> &Any;
+}
 
-    fn sum(left:&Vec<u8>, right:&Vec<u8>) -> (Vec<u8>,usize);
+impl<T: ValueType> Castable for T {
+    fn as_any(&self) -> &Any {
+        self
+    }
+}
 
-    fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8;
+fn cast<T: ValueType>(value: &ValueType) -> &T {
+    value.as_any().downcast_ref::<T>().expect("Casting failed")
+}
 
-    fn to_string(payload: &Vec<u8>) -> String;
+// Useful in preventing comparison code duplication
+pub enum Comparator {
+    Less,
+    Equal,
+    Greater,
+}
+
+impl Comparator {
+    fn apply<T: PartialOrd>(&self, val1: T, val2: T) -> bool {
+        match self {
+            Comparator::Less => {
+                val1 < val2
+            }
+            Comparator::Equal => {
+                val1 == val2
+            }
+            Comparator::Greater => {
+                val1 > val2
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    // TODO: Place unit tests here
 }
