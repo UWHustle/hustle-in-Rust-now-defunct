@@ -9,7 +9,7 @@ pub struct Column {
 
 impl Column {
     pub fn new(name: String, type_string: String) -> Self {
-        let data_type = TypeID::from_string(type_string);
+        let data_type = TypeID::from_string(&type_string);
         let size: usize = data_type.size();
         Column {
             name,
@@ -26,7 +26,7 @@ impl Column {
         return self.size;
     }
 
-    pub fn get_datatype(&self) -> DataType {
+    pub fn get_datatype(&self) -> TypeID {
         return self.data_type.clone();
     }
 }

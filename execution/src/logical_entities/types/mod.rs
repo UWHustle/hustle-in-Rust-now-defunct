@@ -16,7 +16,7 @@ use self::owned_buffer::OwnedBuffer;
 use self::utf8_string::UTF8String;
 
 // All possible concrete types
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum TypeID {
     Int2,
     Int4,
@@ -29,20 +29,20 @@ pub enum TypeID {
 
 impl TypeID {
     // Returns the size of an object of this type; -1 if the size is variable
-    fn size(&self) -> usize {
+    pub fn size(&self) -> usize {
         match self {
             TypeID::Int2 => 2,
             TypeID::Int4 => 4,
             TypeID::Int8 => 8,
             TypeID::Float4 => 4,
             TypeID::Float8 => 8,
-            TypeID::UTF8String => -1,
+            TypeID::UTF8String => 0,
             TypeID::IPv4 => 4,
         }
     }
 
     // TODO: Generalize using pattern matching
-    fn from_string(string: &str) -> TypeID {
+    pub fn from_string(string: &str) -> TypeID {
         let string = string.to_lowercase().as_str();
         match string {
             "smallint" => TypeID::Int2,
@@ -120,6 +120,8 @@ pub trait ValueType: Castable + Any {
     fn greater_eq(&self, other: &ValueType) -> bool {
         self.compare(other, Comparator::Greater) || self.compare(other, Comparator::Equal)
     }
+
+    fn add(&self, other: &ValueType) -> Box<ValueType>;
 }
 
 // Used to allow downcasting

@@ -1,14 +1,14 @@
 use logical_entities::schema::Schema;
-use logical_entities::value::Value;
+use logical_entities::types::ValueType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
     schema: Schema,
-    values: Vec<Value>,
+    values: Vec<ValueType>,
 }
 
 impl Row {
-    pub fn new(schema: Schema, values: Vec<Value>) -> Self {
+    pub fn new(schema: Schema, values: Vec<ValueType>) -> Self {
         Row {
             schema, values
         }
@@ -23,7 +23,7 @@ impl Row {
     pub fn get_size(&self) -> usize {
         let mut total_size = 0;
         for value in &self.values {
-            total_size += value.get_size();
+            total_size += value.size();
         }
         total_size
     }

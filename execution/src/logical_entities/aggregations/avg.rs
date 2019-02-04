@@ -1,18 +1,16 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::DataType;
+use logical_entities::types::ValueType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Avg {
-    data_type: DataType,
-    sum: Vec<u8>,
-    count: u8,
+    sum: Box<Numeric>,
+    count: u32,
 }
 
 impl Avg {
-    pub fn new(data_type: DataType) -> Self {
+    pub fn new(data_type: TypeID) -> Self {
         Avg {
-            data_type,
-            sum: vec!(),
+            sum: Numeric::zero(data_type),
             count: 0,
         }
     }
@@ -23,23 +21,17 @@ impl AggregationTrait for Avg {
         "AVG"
     }
 
-    fn initialize(&mut self) -> () {
-        self.sum = vec!();
-        self.count = 0;
-    }
-
-    fn consider_value(&mut self, value: Vec<u8>) -> () {
-        self.sum = self.data_type.sum(&self.sum, &value).0;
+    fn consider_value(&mut self, value: ValueType) -> () {
+        self.sum = self.sum.add(value);
         self.count += 1;
     }
 
     // TODO: Not implemented (currently have no way to do division)
-    fn output(&self) -> (Vec<u8>) {
-        panic!("Average not supported due to lack of a floating-point type");
+    fn output(&self) -> (Box<Float>) {
+        sum.divide(count)
     }
 
-    // TODO: No floating-point type
-    fn output_type(&self) -> DataType {
-        panic!("No floating-point type available");
+    fn output_type(&self) -> TypeID {
+        sum.divide(count).type_id()
     }
 }
