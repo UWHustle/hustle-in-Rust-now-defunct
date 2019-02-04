@@ -34,8 +34,6 @@ impl ValueType for Int2 {
         OwnedBuffer::new(self.type_id(), data)
     }
 
-    fn size(&self) -> usize { 2 }
-
     fn type_id(&self) -> TypeID {
         TypeID::Int2
     }
@@ -92,8 +90,6 @@ impl ValueType for Int4 {
         OwnedBuffer::new(self.type_id(), data)
     }
 
-    fn size(&self) -> usize { 4 }
-
     fn type_id(&self) -> TypeID {
         TypeID::Int4
     }
@@ -149,8 +145,6 @@ impl ValueType for Int8 {
         LittleEndian::write_i64(&mut data, self.value);
         OwnedBuffer::new(self.type_id(), data)
     }
-
-    fn size(&self) -> usize { 8 }
 
     fn type_id(&self) -> TypeID {
         TypeID::Int8
