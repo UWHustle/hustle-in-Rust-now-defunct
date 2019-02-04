@@ -68,12 +68,12 @@ pub struct Int4 {
 }
 
 impl Int4 {
-    pub fn marshall(data: &[u8]) -> Self {
-        Int4 { value: LittleEndian::read_i32(&data) }
+    pub fn new(value: i32) -> Self {
+        Int4 { value }
     }
 
-    pub fn new(data: i32) -> Self {
-        Int4 { value: data }
+    pub fn marshall(data: &[u8]) -> Self {
+        Int4 { value: LittleEndian::read_i32(&data) }
     }
 
     pub fn value(&self) -> i32 {
@@ -126,12 +126,12 @@ pub struct Int8 {
 impl Integer for Int8 {}
 
 impl Int8 {
-    pub fn marshall(data: &[u8]) -> Self {
-        Int8 { value: LittleEndian::read_i64(&data) }
+    pub fn new(value: i64) -> Self {
+        Int8 { value }
     }
 
-    pub fn new(data: i64) -> Self {
-        Int8 { value: data }
+    pub fn marshall(data: &[u8]) -> Self {
+        Int8 { value: LittleEndian::read_i64(&data) }
     }
 
     pub fn value(&self) -> i64 {
@@ -225,7 +225,7 @@ mod test {
         assert!(int2.greater(&ipv4));
         assert!(!int2.equals(&ipv4));
 
-        let utf8_string = UTF8String::new("Hello");
+        let utf8_string = UTF8String::new("to life, ");
         assert!(!int2.less(&utf8_string));
         assert!(!int2.greater(&utf8_string));
         assert!(!int2.equals(&utf8_string));
@@ -278,7 +278,7 @@ mod test {
         assert!(int4.greater(&ipv4));
         assert!(!int4.equals(&ipv4));
 
-        let utf8_string = UTF8String::new("");
+        let utf8_string = UTF8String::new("the universe, ");
         assert!(!int4.less(&utf8_string));
         assert!(!int4.greater(&utf8_string));
         assert!(!int4.equals(&utf8_string));
@@ -333,7 +333,7 @@ mod test {
         assert!(int8.greater(&ipv4));
         assert!(!int8.equals(&ipv4));
 
-        let utf8_string = UTF8String::new("This is a string");
+        let utf8_string = UTF8String::new("and everything.");
         assert!(!int8.less(&utf8_string));
         assert!(!int8.greater(&utf8_string));
         assert!(!int8.equals(&utf8_string));
