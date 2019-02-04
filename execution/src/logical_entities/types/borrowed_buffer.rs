@@ -26,8 +26,3 @@ impl<'a> BufferType for BorrowedBuffer<'a> {
         &self.data
     }
 }
-
-#[cfg(test)]
-mod test {
-    // TODO: Place unit tests here
-}
