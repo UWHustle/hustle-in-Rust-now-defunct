@@ -1,21 +1,16 @@
-use logical_entities::types::DataType;
+use logical_entities::types::TypeID;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
     name: String,
     size: usize,
-    data_type: DataType,
+    data_type: TypeID,
 }
 
 impl Column {
     pub fn new(name: String, type_string: String) -> Self {
-        let data_type;
-        if type_string == "Int" || type_string == "Int NULL" {
-            data_type = DataType::Integer;
-        } else {
-            data_type = DataType::IpAddress;
-        }
-        let size: usize = DataType::get_next_length(&data_type, Vec::new().as_slice());
+        let data_type = TypeID::from_string(type_string);
+        let size: usize = data_type.size();
         Column {
             name,
             size,
