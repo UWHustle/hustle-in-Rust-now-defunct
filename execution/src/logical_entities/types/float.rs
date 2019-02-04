@@ -5,7 +5,7 @@ use self::byteorder::{ByteOrder, LittleEndian};
 use super::*;
 
 // Define common methods on floating-point types here
-trait Float: ValueType {}
+pub trait Float: Numeric {}
 
 pub struct Float4 {
     value: f32

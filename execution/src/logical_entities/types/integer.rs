@@ -5,7 +5,7 @@ use self::byteorder::{ByteOrder, LittleEndian};
 use super::*;
 
 // Define common methods on integer types here
-pub trait Integer: ValueType {}
+pub trait Integer: Numeric {}
 
 pub struct Int2 {
     value: i16
