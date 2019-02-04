@@ -65,5 +65,59 @@ impl ValueType for IPv4 {
 
 #[cfg(test)]
 mod test {
-    // TODO: Place unit tests here
+    use super::*;
+
+    #[test]
+    fn ipv4_un_marshall() {
+        let ipv4_value = IPv4::new(88997);
+        let ipv4_buffer = ipv4_value.un_marshall();
+        assert_eq!(TypeID::IPv4, ipv4_buffer.type_id());
+
+        let data = ipv4_buffer.data();
+        assert_eq!(0xa5, data[0]);
+        assert_eq!(0x5b, data[1]);
+        assert_eq!(0x01, data[2]);
+        assert_eq!(0x00, data[3]);
+    }
+
+    #[test]
+    fn ipv4_type_id() {
+        let ipv4 = IPv4::new(88997);
+        assert_eq!(TypeID::IPv4, ipv4.type_id());
+    }
+
+    #[test]
+    fn ipv4_compare() {
+        let ipv4 = IPv4::new(2105834626);
+
+        let int2 = Int2::new(120);
+        assert!(!ipv4.less(&int2));
+        assert!(ipv4.greater(&int2));
+        assert!(!ipv4.equals(&int2));
+
+        let int4 = Int4::new(1344);
+        assert!(!ipv4.less(&int2));
+        assert!(ipv4.greater(&int2));
+        assert!(!ipv4.equals(&int2));
+
+        let int8 = Int4::new(2105834626);
+        assert!(!ipv4.less(&int8));
+        assert!(!ipv4.greater(&int8));
+        assert!(ipv4.equals(&int8));
+
+        let float4 = Float4::new(-1234.5);
+        assert!(!ipv4.less(&float4));
+        assert!(ipv4.greater(&float4));
+        assert!(!ipv4.equals(&float4));
+
+        let float8 = Float8::new(2105834626.0);
+        assert!(!ipv4.less(&float8));
+        assert!(!ipv4.greater(&float8));
+        assert!(ipv4.equals(&float8));
+
+        let utf8_string = UTF8String::new("localhost");
+        assert!(!ipv4.less(&utf8_string));
+        assert!(!ipv4.greater(&utf8_string));
+        assert!(!ipv4.equals(&utf8_string));
+    }
 }
