@@ -16,7 +16,7 @@ use self::owned_buffer::OwnedBuffer;
 use self::utf8_string::UTF8String;
 
 // All possible concrete types
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeID {
     Int2,
     Int4,

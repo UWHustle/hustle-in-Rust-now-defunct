@@ -5,8 +5,9 @@ pub struct UTF8String {
 }
 
 impl UTF8String {
-    pub fn new(value: String) -> Self {
-        UTF8String { value: Box::new(value) }
+    pub fn new(value: &str) -> Self {
+        let string = value.to_string();
+        UTF8String { value: Box::new(string) }
     }
 
     pub fn marshall(data: &[u8]) -> Self {

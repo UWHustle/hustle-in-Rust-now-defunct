@@ -183,182 +183,165 @@ impl ValueType for Int8 {
 
 #[cfg(test)]
 mod test {
-    // TODO: Place unit tests here
-    use self::Int4;
     use super::*;
-    use types::TypeID;
-    use types::integer::Integer;
-    use super::BufferType;
 
     #[test]
-    //testing for int2
-    fn int2_compare() {
-        let int_value_type_1 = Int2 { value: 17 };
-        let int_value_type_2 = Int8 { value: 189696 };
-        let float_value_type = Float8::new(2456.8374);
-        let ipv4_value_type = IPv4::new(0);
-        let igbool = int_value_type_1.compare(&int_value_type_2, Comparator::Greater);
-        let ilbool = int_value_type_1.compare(&int_value_type_2, Comparator::Less);
-        let ieqbool = int_value_type_1.compare(&int_value_type_2, Comparator::Equal);
-        assert_eq!(igbool, false);
-        assert_eq!(ilbool, true);
-        assert_eq!(ieqbool, false);
-        let fgbool = int_value_type_1.compare(&float_value_type, Comparator::Greater);
-        let flbool = int_value_type_1.compare(&float_value_type, Comparator::Less);
-        let feqbool = int_value_type_1.compare(&float_value_type, Comparator::Equal);
-        assert_eq!(fgbool, false);
-        assert_eq!(flbool, true);
-        assert_eq!(feqbool, false);
-        let gbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Greater);
-        let lbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Less);
-        let eqbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Equal);
-        assert_eq!(gbool, true);
-        assert_eq!(lbool, false);
-        assert_eq!(eqbool, false);
+    fn int2_un_marshall() {
+        let int2_value = Int2::new(56);
+        let int2_buffer = int2_value.un_marshall();
+        assert_eq!(TypeID::Int2, int2_buffer.type_id());
+
+        let data = int2_buffer.data();
+        assert_eq!(0x38, data[0]);
+        assert_eq!(0x00, data[1]);
     }
 
     #[test]
     fn int2_type_id() {
-        let int2_value_type = Int2 { value: 34 };
-        let typeid = int2_value_type.type_id();
-        let booltype = match typeid {
-            TypeID::Int2 => true,
-            _ => false,
-        };
-        assert_eq!(booltype, true);
+        let int2 = Int2::new(56);
+        assert_eq!(TypeID::Int2, int2.type_id());
     }
 
     #[test]
-    fn int2_unmarshall() {
-        let int_value_type = Int2 { value: 56 };
-        let owned_buffer = int_value_type.un_marshall();
-        let typeid = owned_buffer.type_id();
-        let booltype = match typeid {
-            TypeID::Int2 => true,
-            _ => false,
-        };
-        let data = owned_buffer.data();
-        assert_eq!(56, data[0]);
-        assert_eq!(booltype, true);
+    fn int2_compare() {
+        let int2 = Int2::new(17);
+
+        let int4 = Int4::new(-1340);
+        assert!(!int2.less(&int4));
+        assert!(int2.greater(&int4));
+        assert!(!int2.equals(&int4));
+
+        let int8 = Int8::new(189696);
+        assert!(int2.less(&int8));
+        assert!(!int2.greater(&int8));
+        assert!(!int2.equals(&int8));
+
+        let float4 = Float4::new(17.0);
+        assert!(!int2.less(&float4));
+        assert!(!int2.greater(&float4));
+        assert!(int2.equals(&float4));
+
+        let float8 = Float8::new(2456.8374);
+        assert!(int2.less(&float8));
+        assert!(!int2.greater(&float8));
+        assert!(!int2.equals(&float8));
+
+        let ipv4 = IPv4::new(0);
+        assert!(!int2.less(&ipv4));
+        assert!(int2.greater(&ipv4));
+        assert!(!int2.equals(&ipv4));
+
+        let utf8_string = UTF8String::new("Hello");
+        assert!(!int2.less(&utf8_string));
+        assert!(!int2.greater(&utf8_string));
+        assert!(!int2.equals(&utf8_string));
     }
 
+    #[test]
+    fn int4_un_marshall() {
+        let int4_value = Int4::new(2611);
+        let int4_buffer = int4_value.un_marshall();
+        assert_eq!(TypeID::Int4, int4_buffer.type_id());
 
-    //testing for int4
-    fn int4_compare() {
-        let int_value_type_1 = Int4 { value: 1748 };
-        let int_value_type_2 = Int8 { value: 18679696 };
-        let int_value_type_3 = Int2 { value: 39 };
-        let float_value_type = Float8::new(24256.8374);
-        let ipv4_value_type = IPv4::new(123);
-        let igbool = int_value_type_1.compare(&int_value_type_2, Comparator::Greater);
-        let ilbool = int_value_type_1.compare(&int_value_type_2, Comparator::Less);
-        let ieqbool = int_value_type_1.compare(&int_value_type_2, Comparator::Equal);
-        assert_eq!(igbool, false);
-        assert_eq!(ilbool, true);
-        assert_eq!(ieqbool, false);
-        let fgbool = int_value_type_1.compare(&float_value_type, Comparator::Greater);
-        let flbool = int_value_type_1.compare(&float_value_type, Comparator::Less);
-        let feqbool = int_value_type_1.compare(&float_value_type, Comparator::Equal);
-        assert_eq!(fgbool, false);
-        assert_eq!(flbool, true);
-        assert_eq!(feqbool, false);
-        let gbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Greater);
-        let lbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Less);
-        let eqbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Equal);
-        assert_eq!(gbool, true);
-        assert_eq!(lbool, false);
-        assert_eq!(eqbool, false);
-        let i3gbool = int_value_type_1.compare(&int_value_type_3, Comparator::Greater);
-        let i3lbool = int_value_type_1.compare(&int_value_type_3, Comparator::Less);
-        let i3eqbool = int_value_type_1.compare(&int_value_type_3, Comparator::Equal);
-        assert_eq!(i3gbool, false);
-        assert_eq!(i3lbool, true);
-        assert_eq!(i3eqbool, false);
+        let data = int4_buffer.data();
+        assert_eq!(0x33, data[0]);
+        assert_eq!(0x0a, data[1]);
+        assert_eq!(0x00, data[2]);
     }
 
     #[test]
     fn int4_type_id() {
-        let int4_value_type = Int4 { value: 346 };
-        let typeid = int4_value_type.type_id();
-        let booltype = match typeid {
-            TypeID::Int4 => true,
-            _ => false,
-        };
-        assert_eq!(booltype, true);
+        let int4 = Int4::new(2611);
+        assert_eq!(TypeID::Int4, int4.type_id());
     }
 
     #[test]
-    fn int4_unmarshall() {
-        let int_value_type = Int4 { value: 2611 };
-        let owned_buffer = int_value_type.un_marshall();
-        let typeid = owned_buffer.type_id();
-        let booltype = match typeid {
-            TypeID::Int4 => true,
-            _ => false,
-        };
-        let data = owned_buffer.data();
-        assert_eq!(51, data[0]);
-        assert_eq!(booltype, true);
+    fn int4_compare() {
+        let int4 = Int4::new(1748);
+
+        let int2 = Int2::new(17);
+        assert!(!int4.less(&int2));
+        assert!(int4.greater(&int2));
+        assert!(!int4.equals(&int2));
+
+        let int8 = Int8::new(1748);
+        assert!(!int4.less(&int8));
+        assert!(!int4.greater(&int8));
+        assert!(int4.equals(&int8));
+
+        let float4 = Float4::new(-1234.56);
+        assert!(!int4.less(&float4));
+        assert!(int4.greater(&float4));
+        assert!(!int4.equals(&float4));
+
+        let float8 = Float8::new(24256.8374);
+        assert!(int4.less(&float8));
+        assert!(!int4.greater(&float8));
+        assert!(!int4.equals(&float8));
+
+        let ipv4 = IPv4::new(123);
+        assert!(!int4.less(&ipv4));
+        assert!(int4.greater(&ipv4));
+        assert!(!int4.equals(&ipv4));
+
+        let utf8_string = UTF8String::new("");
+        assert!(!int4.less(&utf8_string));
+        assert!(!int4.greater(&utf8_string));
+        assert!(!int4.equals(&utf8_string));
     }
 
-    //testing for int8
-    fn int8_compare() {
-        let int_value_type_1 = Int8 { value: 13784940 };
-        let int_value_type_2 = Int4 { value: 18678 };
-        let int_value_type_3 = Int2 { value: 100 };
-        let float_value_type = Float8::new(7483.7364);
-        let ipv4_value_type = IPv4::new(937);
-        let igbool = int_value_type_1.compare(&int_value_type_2, Comparator::Greater);
-        let ilbool = int_value_type_1.compare(&int_value_type_2, Comparator::Less);
-        let ieqbool = int_value_type_1.compare(&int_value_type_2, Comparator::Equal);
-        assert_eq!(igbool, true);
-        assert_eq!(ilbool, false);
-        assert_eq!(ieqbool, false);
-        let fgbool = int_value_type_1.compare(&float_value_type, Comparator::Greater);
-        let flbool = int_value_type_1.compare(&float_value_type, Comparator::Less);
-        let feqbool = int_value_type_1.compare(&float_value_type, Comparator::Equal);
-        assert_eq!(fgbool, true);
-        assert_eq!(flbool, false);
-        assert_eq!(feqbool, false);
-        let gbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Greater);
-        let lbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Less);
-        let eqbool = int_value_type_1.compare(&ipv4_value_type, Comparator::Equal);
-        assert_eq!(gbool, true);
-        assert_eq!(lbool, false);
-        assert_eq!(eqbool, false);
-        let i3gbool = int_value_type_1.compare(&int_value_type_3, Comparator::Greater);
-        let i3lbool = int_value_type_1.compare(&int_value_type_3, Comparator::Less);
-        let i3eqbool = int_value_type_1.compare(&int_value_type_3, Comparator::Equal);
-        assert_eq!(i3gbool, true);
-        assert_eq!(i3lbool, false);
-        assert_eq!(i3eqbool, false);
+    #[test]
+    fn int8_un_marshall() {
+        let int8_value = Int8::new(26119474);
+        let int8_buffer = int8_value.un_marshall();
+        assert_eq!(TypeID::Int8, int8_buffer.type_id());
+
+        let data = int8_buffer.data();
+        assert_eq!(0x32, data[0]);
+        assert_eq!(0x8d, data[1]);
+        assert_eq!(0x8e, data[2]);
+        assert_eq!(0x01, data[3]);
+        assert_eq!(0x00, data[4]);
     }
 
     #[test]
     fn int8_type_id() {
-        let int8_value_type = Int8 { value: 3483646 };
-        let typeid = int8_value_type.type_id();
-        let booltype = match typeid {
-            TypeID::Int8 => true,
-            _ => false,
-        };
-        assert_eq!(booltype, true);
+        let int8 = Int8::new(3483646);
+        assert_eq!(TypeID::Int8, int8.type_id());
     }
 
     #[test]
-    fn int8_unmarshall() {
-        let int_value_type = Int8 { value: 26119474 };
-        let owned_buffer = int_value_type.un_marshall();
-        let typeid = owned_buffer.type_id();
-        let booltype = match typeid {
-            TypeID::Int8 => true,
-            _ => false,
-        };
-        let data = owned_buffer.data();
-        assert_eq!(50, data[0]);
-        assert_eq!(141, data[1]);
-        assert_eq!(142, data[2]);
-        assert_eq!(1, data[3]);
-        assert_eq!(booltype, true);
+    fn int8_compare() {
+        let int8 = Int8::new(13784940);
+
+        let int2 = Int2::new(100);
+        assert!(!int8.less(&int2));
+        assert!(int8.greater(&int2));
+        assert!(!int8.equals(&int2));
+
+        let int4 = Int4::new(18678);
+        assert!(!int8.less(&int4));
+        assert!(int8.greater(&int4));
+        assert!(!int8.equals(&int4));
+
+        let float4 = Float4::new(7483.73);
+        assert!(!int8.less(&float4));
+        assert!(int8.greater(&float4));
+        assert!(!int8.equals(&float4));
+
+        let float8 = Float8::new(13784940.0);
+        assert!(!int8.less(&float8));
+        assert!(!int8.greater(&float8));
+        assert!(int8.equals(&float8));
+
+        let ipv4 = IPv4::new(937);
+        assert!(!int8.less(&ipv4));
+        assert!(int8.greater(&ipv4));
+        assert!(!int8.equals(&ipv4));
+
+        let utf8_string = UTF8String::new("This is a string");
+        assert!(!int8.less(&utf8_string));
+        assert!(!int8.greater(&utf8_string));
+        assert!(!int8.equals(&utf8_string));
     }
 }
