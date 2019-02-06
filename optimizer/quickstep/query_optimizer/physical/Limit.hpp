@@ -47,6 +47,8 @@ typedef std::shared_ptr<const Limit> LimitPtr;
 
 /**
  * @brief Limit operator.
+ *
+ * Returns the first limit records of the input relation.
  */
 class Limit : public Physical {
  public:
@@ -76,6 +78,12 @@ class Limit : public Physical {
       const expressions::UnorderedNamedExpressionSet &referenced_expressions,
       PhysicalPtr *output) const override {
     return false;
+  }
+
+  PhysicalPtr copyWithNewChildren(
+      const std::vector<PhysicalPtr> &new_children) const override {
+    DCHECK_EQ(children().size(), new_children.size());
+    return Create(new_children[0], limit_);
   }
 
   /**

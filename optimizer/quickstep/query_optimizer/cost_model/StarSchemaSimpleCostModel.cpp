@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include <optimizer/quickstep/query_optimizer/physical/Limit.hpp>
 
 #include "catalog/CatalogRelation.hpp"
 #include "catalog/CatalogRelationStatistics.hpp"
@@ -106,10 +107,12 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinality(
           std::static_pointer_cast<const P::Aggregate>(physical_plan));
     case P::PhysicalType::kCrossReferenceCoalesceAggregate:
       return estimateCardinalityForCrossReferenceCoalesceAggregate(
-          std::static_pointer_cast<const P::CrossReferenceCoalesceAggregate>(physical_plan));
+          std::static_pointer_cast<const P::CrossReferenceCoalesceAggregate>(
+              physical_plan));
     case P::PhysicalType::kSharedSubplanReference: {
       const P::SharedSubplanReferencePtr shared_subplan_reference =
-          std::static_pointer_cast<const P::SharedSubplanReference>(physical_plan);
+          std::static_pointer_cast<const P::SharedSubplanReference>(
+              physical_plan);
       return estimateCardinality(
           shared_subplans_[shared_subplan_reference->subplan_id()]);
     }
@@ -122,8 +125,12 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinality(
     case P::PhysicalType::kUnionAll:
       return estimateCardinalityForUnionAll(
           std::static_pointer_cast<const P::UnionAll>(physical_plan));
-    default:
-      throw UnsupportedPhysicalPlan(physical_plan);
+    case P::PhysicalType::kLimit: {
+      P::LimitPtr
+          limit = std::static_pointer_cast<const P::Limit>(physical_plan);
+      return limit->limit();
+    }
+    default:throw UnsupportedPhysicalPlan(physical_plan);
   }
 }
 
@@ -145,7 +152,8 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinalityForTableReference(
 std::size_t StarSchemaSimpleCostModel::estimateCardinalityForSelection(
     const P::SelectionPtr &physical_plan) {
   double selectivity =
-      estimateSelectivityForPredicate(physical_plan->filter_predicate(), physical_plan);
+      estimateSelectivityForPredicate(physical_plan->filter_predicate(),
+                                      physical_plan);
   return static_cast<std::size_t>(
       estimateCardinality(physical_plan->input()) * selectivity);
 }
@@ -154,7 +162,8 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinalityForSort(
     const physical::SortPtr &physical_plan) {
   std::size_t cardinality = estimateCardinality(
       std::static_pointer_cast<const P::Sort>(physical_plan)->input());
-  return std::min(cardinality, static_cast<std::size_t>(physical_plan->limit()));
+  return std::min(cardinality,
+                  static_cast<std::size_t>(physical_plan->limit()));
 }
 
 std::size_t StarSchemaSimpleCostModel::estimateCardinalityForTableGenerator(
@@ -170,7 +179,8 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinalityForFilterJoin(
   std::size_t left_cardinality = estimateCardinality(physical_plan->left());
   double right_selectivity = estimateSelectivity(physical_plan->right());
   return static_cast<std::size_t>(
-      left_cardinality * build_side_filter_selectivity * right_selectivity + 0.5);
+      left_cardinality * build_side_filter_selectivity * right_selectivity
+          + 0.5);
 }
 
 std::size_t StarSchemaSimpleCostModel::estimateCardinalityForHashJoin(
@@ -179,9 +189,15 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinalityForHashJoin(
   std::size_t right_cardinality = estimateCardinality(physical_plan->right());
   double left_selectivity = estimateSelectivity(physical_plan->left());
   double right_selectivity = estimateSelectivity(physical_plan->right());
-  double build_selectivity = estimateSelectivityForPredicate(physical_plan->build_predicate(), physical_plan);
-  return std::max(static_cast<std::size_t>(left_cardinality * right_selectivity * build_selectivity + 0.5),
-                  static_cast<std::size_t>(right_cardinality * left_selectivity * build_selectivity + 0.5));
+  double build_selectivity =
+      estimateSelectivityForPredicate(physical_plan->build_predicate(),
+                                      physical_plan);
+  return std::max(static_cast<std::size_t>(
+                      left_cardinality * right_selectivity * build_selectivity
+                          + 0.5),
+                  static_cast<std::size_t>(
+                      right_cardinality * left_selectivity * build_selectivity
+                          + 0.5));
 }
 
 std::size_t StarSchemaSimpleCostModel::estimateCardinalityForNestedLoopsJoin(
@@ -193,7 +209,8 @@ std::size_t StarSchemaSimpleCostModel::estimateCardinalityForNestedLoopsJoin(
 std::size_t StarSchemaSimpleCostModel::estimateCardinalityForAggregate(
     const P::AggregatePtr &physical_plan) {
   double filter_selectivity =
-      estimateSelectivityForPredicate(physical_plan->filter_predicate(), physical_plan);
+      estimateSelectivityForPredicate(physical_plan->filter_predicate(),
+                                      physical_plan);
   return static_cast<std::size_t>(
       estimateNumGroupsForAggregate(physical_plan) * filter_selectivity);
 }
@@ -223,7 +240,8 @@ std::size_t StarSchemaSimpleCostModel::estimateNumGroupsForAggregate(
     return 1uL;
   }
 
-  std::size_t estimated_child_cardinality = estimateCardinality(aggregate->input());
+  std::size_t
+      estimated_child_cardinality = estimateCardinality(aggregate->input());
   std::size_t estimated_num_groups = 1;
   std::size_t max_attr_num_distinct_values = 0;
   for (const auto &expr : aggregate->grouping_expressions()) {
@@ -245,18 +263,19 @@ std::size_t StarSchemaSimpleCostModel::estimateNumGroupsForAggregate(
   return estimated_num_groups;
 }
 
-
 std::size_t StarSchemaSimpleCostModel::estimateNumDistinctValues(
     const expressions::ExprId attribute_id,
     const physical::PhysicalPtr &physical_plan) {
   DCHECK(E::ContainsExprId(physical_plan->getOutputAttributes(), attribute_id));
 
   P::TableReferencePtr table_reference;
-  if (P::SomeTableReference::MatchesWithConditionalCast(physical_plan, &table_reference)) {
+  if (P::SomeTableReference::MatchesWithConditionalCast(physical_plan,
+      &table_reference)) {
     return getNumDistinctValues(attribute_id, table_reference);
   }
 
-  double filter_selectivity = estimateSelectivityForFilterPredicate(physical_plan);
+  double
+      filter_selectivity = estimateSelectivityForFilterPredicate(physical_plan);
   switch (physical_plan->getPhysicalType()) {
     case P::PhysicalType::kSelection:  // Fall through
     case P::PhysicalType::kAggregate: {
@@ -279,7 +298,8 @@ std::size_t StarSchemaSimpleCostModel::estimateNumDistinctValues(
     case P::PhysicalType::kFilterJoin: {
       const P::FilterJoinPtr &filter_join =
           std::static_pointer_cast<const P::FilterJoin>(physical_plan);
-      if (E::ContainsExprId(filter_join->left()->getOutputAttributes(), attribute_id)) {
+      if (E::ContainsExprId(filter_join->left()->getOutputAttributes(),
+                            attribute_id)) {
         std::size_t left_child_num_distinct_values =
             estimateNumDistinctValues(attribute_id, filter_join->left());
         double right_child_selectivity =
@@ -292,29 +312,34 @@ std::size_t StarSchemaSimpleCostModel::estimateNumDistinctValues(
     case P::PhysicalType::kHashJoin: {
       const P::HashJoinPtr &hash_join =
           std::static_pointer_cast<const P::HashJoin>(physical_plan);
-      if (E::ContainsExprId(hash_join->left()->getOutputAttributes(), attribute_id)) {
+      if (E::ContainsExprId(hash_join->left()->getOutputAttributes(),
+                            attribute_id)) {
         std::size_t left_child_num_distinct_values =
             estimateNumDistinctValues(attribute_id, hash_join->left());
         double right_child_selectivity =
             estimateSelectivity(hash_join->right());
         double build_selectivity =
-            estimateSelectivityForPredicate(hash_join->build_predicate(), hash_join);
+            estimateSelectivityForPredicate(hash_join->build_predicate(),
+                                            hash_join);
         return static_cast<std::size_t>(
-            left_child_num_distinct_values * right_child_selectivity * filter_selectivity * build_selectivity + 0.5);
+            left_child_num_distinct_values * right_child_selectivity
+                * filter_selectivity * build_selectivity + 0.5);
       }
-      if (E::ContainsExprId(hash_join->right()->getOutputAttributes(), attribute_id)) {
+      if (E::ContainsExprId(hash_join->right()->getOutputAttributes(),
+                            attribute_id)) {
         std::size_t right_child_num_distinct_values =
             estimateNumDistinctValues(attribute_id, hash_join->right());
         double left_child_selectivity =
             estimateSelectivity(hash_join->left());
         double build_selectivity =
-            estimateSelectivityForPredicate(hash_join->build_predicate(), hash_join);
+            estimateSelectivityForPredicate(hash_join->build_predicate(),
+                                            hash_join);
         return static_cast<std::size_t>(
-            right_child_num_distinct_values * left_child_selectivity * filter_selectivity * build_selectivity + 0.5);
+            right_child_num_distinct_values * left_child_selectivity
+                * filter_selectivity * build_selectivity + 0.5);
       }
     }
-    default:
-      break;
+    default:break;
   }
 
   return 16uL;
@@ -330,15 +355,18 @@ double StarSchemaSimpleCostModel::estimateSelectivity(
           estimateSelectivityForFilterPredicate(aggregate);
     }
     case P::PhysicalType::kCrossReferenceCoalesceAggregate: {
-      const P::CrossReferenceCoalesceAggregatePtr &aggregate_on_left_outer_join =
-          std::static_pointer_cast<const P::CrossReferenceCoalesceAggregate>(physical_plan);
+      const P::CrossReferenceCoalesceAggregatePtr
+          &aggregate_on_left_outer_join =
+          std::static_pointer_cast<const P::CrossReferenceCoalesceAggregate>(
+              physical_plan);
       return estimateSelectivity(aggregate_on_left_outer_join->left_child());
     }
     case P::PhysicalType::kSelection: {
       const P::SelectionPtr &selection =
           std::static_pointer_cast<const P::Selection>(physical_plan);
       double filter_selectivity =
-          estimateSelectivityForPredicate(selection->filter_predicate(), selection);
+          estimateSelectivityForPredicate(selection->filter_predicate(),
+                                          selection);
       double child_selectivity = estimateSelectivity(selection->input());
       return filter_selectivity * child_selectivity;
     }
@@ -350,24 +378,29 @@ double StarSchemaSimpleCostModel::estimateSelectivity(
       double build_side_filter_selectivity =
           estimateSelectivityForPredicate(filter_join->build_side_filter_predicate(),
                                           filter_join->right());
-      return left_selectivity * right_selectivity * build_side_filter_selectivity;
+      return left_selectivity * right_selectivity
+          * build_side_filter_selectivity;
     }
     case P::PhysicalType::kHashJoin: {
       const P::HashJoinPtr &hash_join =
           std::static_pointer_cast<const P::HashJoin>(physical_plan);
       double filter_selectivity =
-          estimateSelectivityForPredicate(hash_join->residual_predicate(), hash_join);
+          estimateSelectivityForPredicate(hash_join->residual_predicate(),
+                                          hash_join);
       double build_selectivity =
-          estimateSelectivityForPredicate(hash_join->build_predicate(), hash_join);
+          estimateSelectivityForPredicate(hash_join->build_predicate(),
+                                          hash_join);
       double child_selectivity =
-          estimateSelectivity(hash_join->left()) * estimateSelectivity(hash_join->right());
+          estimateSelectivity(hash_join->left())
+              * estimateSelectivity(hash_join->right());
       return filter_selectivity * child_selectivity * build_selectivity;
     }
     case P::PhysicalType::kNestedLoopsJoin: {
       const P::NestedLoopsJoinPtr &nested_loop_join =
           std::static_pointer_cast<const P::NestedLoopsJoin>(physical_plan);
       double filter_selectivity =
-          estimateSelectivityForPredicate(nested_loop_join->join_predicate(), nested_loop_join);
+          estimateSelectivityForPredicate(nested_loop_join->join_predicate(),
+                                          nested_loop_join);
       double child_selectivity = std::min(
           estimateSelectivity(nested_loop_join->left()),
           estimateSelectivity(nested_loop_join->right()));
@@ -375,12 +408,12 @@ double StarSchemaSimpleCostModel::estimateSelectivity(
     }
     case P::PhysicalType::kSharedSubplanReference: {
       const P::SharedSubplanReferencePtr shared_subplan_reference =
-          std::static_pointer_cast<const P::SharedSubplanReference>(physical_plan);
+          std::static_pointer_cast<const P::SharedSubplanReference>(
+              physical_plan);
       return estimateSelectivity(
           shared_subplans_[shared_subplan_reference->subplan_id()]);
     }
-    default:
-      break;
+    default:break;
   }
 
   if (physical_plan->getNumChildren() == 1) {
@@ -412,8 +445,7 @@ double StarSchemaSimpleCostModel::estimateSelectivityForFilterPredicate(
       filter_predicate =
           std::static_pointer_cast<const P::NestedLoopsJoin>(physical_plan)->join_predicate();
       break;
-    default:
-      break;
+    default:break;
   }
 
   if (filter_predicate == nullptr) {
@@ -422,7 +454,6 @@ double StarSchemaSimpleCostModel::estimateSelectivityForFilterPredicate(
     return estimateSelectivityForPredicate(filter_predicate, target_plan);
   }
 }
-
 
 double StarSchemaSimpleCostModel::estimateSelectivityForPredicate(
     const expressions::PredicatePtr &filter_predicate,
@@ -438,19 +469,28 @@ double StarSchemaSimpleCostModel::estimateSelectivityForPredicate(
       //   Case 1.2 - Otherwise: 0.1
       // Case 2 - Otherwise: 0.5
       const E::ComparisonExpressionPtr &comparison_expression =
-          std::static_pointer_cast<const E::ComparisonExpression>(filter_predicate);
+          std::static_pointer_cast<const E::ComparisonExpression>(
+              filter_predicate);
       E::AttributeReferencePtr attr;
-      if ((E::SomeAttributeReference::MatchesWithConditionalCast(comparison_expression->left(), &attr) &&
-           E::SomeScalarLiteral::Matches(comparison_expression->right())) ||
-          (E::SomeAttributeReference::MatchesWithConditionalCast(comparison_expression->right(), &attr) &&
-           E::SomeScalarLiteral::Matches(comparison_expression->left()))) {
+      if ((E::SomeAttributeReference::MatchesWithConditionalCast(
+          comparison_expression->left(),
+          &attr) &&
+          E::SomeScalarLiteral::Matches(comparison_expression->right())) ||
+          (E::SomeAttributeReference::MatchesWithConditionalCast(
+              comparison_expression->right(),
+              &attr) &&
+              E::SomeScalarLiteral::Matches(comparison_expression->left()))) {
         for (const auto &child : physical_plan->children()) {
           if (E::ContainsExprId(child->getOutputAttributes(), attr->id())) {
-            const std::size_t child_num_distinct_values = estimateNumDistinctValues(attr->id(), child);
+            const std::size_t child_num_distinct_values =
+                estimateNumDistinctValues(attr->id(), child);
             if (comparison_expression->isEqualityComparisonPredicate()) {
-              return 1.0 / std::max(child_num_distinct_values, static_cast<std::size_t>(1u));
+              return 1.0 / std::max(child_num_distinct_values,
+                                    static_cast<std::size_t>(1u));
             } else {
-              return 1.0 / std::max(std::min(child_num_distinct_values / 100.0, 10.0), 2.0);
+              return 1.0
+                  / std::max(std::min(child_num_distinct_values / 100.0, 10.0),
+                             2.0);
             }
           }
         }
@@ -463,7 +503,9 @@ double StarSchemaSimpleCostModel::estimateSelectivityForPredicate(
           std::static_pointer_cast<const E::LogicalAnd>(filter_predicate);
       double selectivity = 1.0;
       for (const auto &predicate : logical_and->operands()) {
-        selectivity = std::min(selectivity, estimateSelectivityForPredicate(predicate, physical_plan));
+        selectivity = std::min(selectivity,
+                               estimateSelectivityForPredicate(predicate,
+                                                               physical_plan));
       }
       return selectivity;
     }
@@ -472,12 +514,12 @@ double StarSchemaSimpleCostModel::estimateSelectivityForPredicate(
           std::static_pointer_cast<const E::LogicalOr>(filter_predicate);
       double selectivity = 0;
       for (const auto &predicate : logical_or->operands()) {
-        selectivity += estimateSelectivityForPredicate(predicate, physical_plan);
+        selectivity +=
+            estimateSelectivityForPredicate(predicate, physical_plan);
       }
       return std::min(selectivity, 1.0);
     }
-    default:
-      break;
+    default:break;
   }
   return 1.0;
 }
@@ -504,11 +546,14 @@ bool StarSchemaSimpleCostModel::impliesUniqueAttributes(
     case P::PhysicalType::kAggregate: {
       const P::AggregatePtr &aggregate =
           std::static_pointer_cast<const P::Aggregate>(physical_plan);
-      return E::SubsetOfExpressions(aggregate->grouping_expressions(), attributes);
+      return E::SubsetOfExpressions(aggregate->grouping_expressions(),
+                                    attributes);
     }
     case P::PhysicalType::kCrossReferenceCoalesceAggregate: {
-      const P::CrossReferenceCoalesceAggregatePtr &aggregate_on_left_outer_join =
-          std::static_pointer_cast<const P::CrossReferenceCoalesceAggregate>(physical_plan);
+      const P::CrossReferenceCoalesceAggregatePtr
+          &aggregate_on_left_outer_join =
+          std::static_pointer_cast<const P::CrossReferenceCoalesceAggregate>(
+              physical_plan);
       return E::SubsetOfExpressions(
           aggregate_on_left_outer_join->left_join_attributes(), attributes);
     }
@@ -516,10 +561,12 @@ bool StarSchemaSimpleCostModel::impliesUniqueAttributes(
       const P::HashJoinPtr &hash_join =
           std::static_pointer_cast<const P::HashJoin>(physical_plan);
       bool unique_from_left =
-          impliesUniqueAttributes(hash_join->right(), hash_join->right_join_attributes())
+          impliesUniqueAttributes(hash_join->right(),
+                                  hash_join->right_join_attributes())
               && impliesUniqueAttributes(hash_join->left(), attributes);
       bool unique_from_right =
-          impliesUniqueAttributes(hash_join->left(), hash_join->left_join_attributes())
+          impliesUniqueAttributes(hash_join->left(),
+                                  hash_join->left_join_attributes())
               && impliesUniqueAttributes(hash_join->right(), attributes);
       return unique_from_left || unique_from_right;
     }
@@ -548,8 +595,7 @@ bool StarSchemaSimpleCostModel::impliesUniqueAttributes(
       DCHECK_EQ(physical_plan->getNumChildren(), 1u);
       return impliesUniqueAttributes(physical_plan->children()[0], attributes);
     }
-    default:
-      break;
+    default:break;
   }
   return false;
 }
@@ -560,7 +606,8 @@ TypedValue StarSchemaSimpleCostModel::findCatalogRelationStat(
     const StatType stat_type,
     bool *is_exact_stat) {
   P::TableReferencePtr table_reference;
-  if (P::SomeTableReference::MatchesWithConditionalCast(physical_plan, &table_reference)) {
+  if (P::SomeTableReference::MatchesWithConditionalCast(physical_plan,
+      &table_reference)) {
     const attribute_id rel_attr_id =
         findCatalogRelationAttributeId(table_reference, attr_id);
     if (rel_attr_id != kInvalidAttributeID) {
@@ -584,8 +631,7 @@ TypedValue StarSchemaSimpleCostModel::findCatalogRelationStat(
           }
           break;
         }
-        default:
-          break;
+        default:break;
       }
       return NullType::InstanceNullable().makeNullValue();
     }
@@ -631,16 +677,17 @@ bool StarSchemaSimpleCostModel::canUseCollisionFreeAggregation(
   // So it must be a CatalogAttribute (but not an expression).
   E::AttributeReferencePtr group_by_key_attr;
   const E::ExpressionPtr agg_expr = aggregate->grouping_expressions().front();
-  if (!E::SomeAttributeReference::MatchesWithConditionalCast(agg_expr, &group_by_key_attr)) {
+  if (!E::SomeAttributeReference::MatchesWithConditionalCast(agg_expr,
+                                                             &group_by_key_attr)) {
     return false;
   }
 
   bool min_value_stat_is_exact;
   bool max_value_stat_is_exact;
   const TypedValue min_value = findMinValueStat(
-          aggregate, group_by_key_attr, &min_value_stat_is_exact);
+      aggregate, group_by_key_attr, &min_value_stat_is_exact);
   const TypedValue max_value = findMaxValueStat(
-          aggregate, group_by_key_attr, &max_value_stat_is_exact);
+      aggregate, group_by_key_attr, &max_value_stat_is_exact);
   if (min_value.isNull() || max_value.isNull() ||
       (!min_value_stat_is_exact) || (!max_value_stat_is_exact)) {
     return false;
@@ -659,8 +706,7 @@ bool StarSchemaSimpleCostModel::canUseCollisionFreeAggregation(
       max_cpp_value = max_value.getLiteral<std::int64_t>();
       break;
     }
-    default:
-      return false;
+    default:return false;
   }
 
   // TODO(jianqiao):
@@ -757,8 +803,7 @@ bool StarSchemaSimpleCostModel::canUseTwoPhaseCompactKeyAggregation(
 
     // Restricted to COUNT/SUM with INT/LONG/FLOAT/DOUBLE arguments.
     switch (agg_expr->getAggregate().getAggregationID()) {
-      case AggregationID::kCount:
-        break;
+      case AggregationID::kCount:break;
       case AggregationID::kSum: {
         DCHECK_EQ(1u, arguments.size());
         if (!QUICKSTEP_EQUALS_ANY_CONSTANT(arguments.front()->getValueType().getTypeID(),
@@ -767,8 +812,7 @@ bool StarSchemaSimpleCostModel::canUseTwoPhaseCompactKeyAggregation(
         }
         break;
       }
-      default:
-        return false;
+      default:return false;
     }
   }
 

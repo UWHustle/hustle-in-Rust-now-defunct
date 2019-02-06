@@ -11,6 +11,7 @@ use physical_operators::aggregate::Aggregate;
 use physical_operators::join::Join;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
+use physical_operators::limit::Limit;
 use physical_operators::table_reference::TableReference;
 
 use std::rc::Rc;
@@ -36,6 +37,7 @@ fn parse_node(json: &Value) -> Node {
         "Selection" => parse_selection(json),
         "Aggregate" => parse_aggregate(json),
         "HashJoin" => parse_hash_join(json),
+        "Limit" => parse_limit(json),
         _ => panic!("Optimizer tree node type {} not supported", str_name),
     }
 }
@@ -116,6 +118,19 @@ fn parse_column(json: &Value) -> Column {
     Column::new(name, typename)
 }
 
+fn parse_limit(json: &Value) -> Node {
+    let input = parse_node(&json["input"]);
+    let limit = get_int(&json["limit"]);
+
+    let limit_operator = Limit::new(input.get_output_relation(), limit);
+
+    Node::new(Rc::new(limit_operator), vec!(Rc::new(input)))
+}
+
 fn get_string(json: &Value) -> String {
     json.as_str().unwrap().to_string()
+}
+
+fn get_int(json: &Value) -> u32 {
+    json.as_str().unwrap().to_string().parse::<u32>().unwrap()
 }

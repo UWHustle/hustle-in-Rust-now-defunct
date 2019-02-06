@@ -40,8 +40,7 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
       const quickstep::ParseStatement
           &parse_statement = *result.parsed_statement;
       // Convert the query to the logical plan using quickstep's optimizer
-        quickstep::optimizer::logical::LogicalPtr lplan =
-          logical_generator.generatePlan(
+      lplan = logical_generator.generatePlan(
               *test_database_loader_.catalog_database(), parse_statement);
     }
 

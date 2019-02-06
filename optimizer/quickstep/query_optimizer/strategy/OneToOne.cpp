@@ -21,6 +21,8 @@
 
 #include <memory>
 #include <vector>
+#include <optimizer/quickstep/query_optimizer/logical/Limit.hpp>
+#include <optimizer/quickstep/query_optimizer/physical/Limit.hpp>
 
 #include "query_optimizer/LogicalToPhysicalMapper.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
@@ -259,6 +261,13 @@ bool OneToOne::generatePlan(const L::LogicalPtr &logical_input,
           physical_mapper_->createOrGetPhysicalFromLogical(window_aggregate->input()),
           window_aggregate->window_aggregate_expression());
       return true;
+    }
+    case L::LogicalType::kLimit: {
+      const L::LimitPtr limit =
+          std::static_pointer_cast<const L::Limit>(logical_input);
+      *physical_output = P::Limit::Create(
+          physical_mapper_->createOrGetPhysicalFromLogical(limit->input()),
+          limit->limit());
     }
     default:
       return false;
