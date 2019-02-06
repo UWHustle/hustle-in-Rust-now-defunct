@@ -44,7 +44,7 @@ impl Operator for TestRelation {
                 } else {
                     value = _y.to_string();
                 }
-                let (c,size) = column.get_datatype().parse_and_marshall(random_value);
+                let (c,size) = column.get_datatype().parse_and_marshall(value);
                 data[n..n + size].clone_from_slice(&c);
                 n = n + size;
             }
