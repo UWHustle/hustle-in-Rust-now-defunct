@@ -43,7 +43,8 @@ class Limit;
 typedef std::shared_ptr<const Limit> LimitPtr;
 
 /**
- * @brief Limit operator that reduces the size of the output.
+ * @brief Limit operator that reduces the size of the output. It produces
+ * the first limit records of its input.
  */
 class Limit : public Logical {
  public:

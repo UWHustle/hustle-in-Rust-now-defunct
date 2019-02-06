@@ -11,8 +11,6 @@ use storage_manager::StorageManager;
 
 use physical_operators::Operator;
 
-pub const CHUNK_SIZE:usize = 1024*1024;
-
 #[derive(Debug)]
 pub struct Limit {
     relation: Relation,

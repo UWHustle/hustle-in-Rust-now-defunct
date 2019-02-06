@@ -21,8 +21,6 @@
 
 #include <memory>
 #include <vector>
-#include <optimizer/quickstep/query_optimizer/logical/Limit.hpp>
-#include <optimizer/quickstep/query_optimizer/physical/Limit.hpp>
 
 #include "query_optimizer/LogicalToPhysicalMapper.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
@@ -36,6 +34,7 @@
 #include "query_optimizer/logical/DropTable.hpp"
 #include "query_optimizer/logical/InsertSelection.hpp"
 #include "query_optimizer/logical/InsertTuple.hpp"
+#include "query_optimizer/logical/Limit.hpp"
 #include "query_optimizer/logical/LogicalType.hpp"
 #include "query_optimizer/logical/Sample.hpp"
 #include "query_optimizer/logical/SetOperation.hpp"
@@ -55,6 +54,7 @@
 #include "query_optimizer/physical/DropTable.hpp"
 #include "query_optimizer/physical/InsertSelection.hpp"
 #include "query_optimizer/physical/InsertTuple.hpp"
+#include "query_optimizer/physical/Limit.hpp"
 #include "query_optimizer/physical/Sample.hpp"
 #include "query_optimizer/physical/SharedSubplanReference.hpp"
 #include "query_optimizer/physical/Sort.hpp"

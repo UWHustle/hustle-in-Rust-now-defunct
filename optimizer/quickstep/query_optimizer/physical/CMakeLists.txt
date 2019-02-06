@@ -337,6 +337,14 @@ target_link_libraries(quickstep_queryoptimizer_physical_WindowAggregate
                       quickstep_queryoptimizer_physical_PhysicalType
                       quickstep_utility_Cast
                       quickstep_utility_Macros)
+target_link_libraries(quickstep_queryoptimizer_physical_Limit
+                      glog
+                      quickstep_queryoptimizer_OptimizerTree
+                      quickstep_queryoptimizer_expressions_AttributeReference
+                      quickstep_queryoptimizer_expressions_ExpressionUtil
+                      quickstep_queryoptimizer_expressions_NamedExpression
+                      quickstep_queryoptimizer_physical_Physical
+                      quickstep_queryoptimizer_physical_PhysicalType)
 
 # Module all-in-one library:
 add_library(quickstep_queryoptimizer_physical ../../empty_src.cpp OptimizerPhysicalModule.hpp)

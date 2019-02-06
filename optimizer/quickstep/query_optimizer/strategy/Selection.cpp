@@ -58,7 +58,6 @@ bool Selection::generatePlan(const L::LogicalPtr &logical_input,
                              P::PhysicalPtr *physical_output) {
   L::FilterPtr logical_filter;
   L::ProjectPtr logical_project;
-  L::LimitPtr logical_limit;
 
   if (L::SomeProject::MatchesWithConditionalCast(logical_input, &logical_project)) {
     E::PredicatePtr filter_predicate;
@@ -77,8 +76,6 @@ bool Selection::generatePlan(const L::LogicalPtr &logical_input,
         CastSharedPtrVector<E::NamedExpression>(logical_filter->getOutputAttributes()),
         physical_output);
     return true;
-  } else if (L::SomeLimit::MatchesWithConditionalCast(logical_input, &logical_limit)) {
-
   }
 
   return false;

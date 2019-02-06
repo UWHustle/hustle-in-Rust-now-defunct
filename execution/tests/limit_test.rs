@@ -29,7 +29,6 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 }
 
 fn hustle_limit(relation: Relation, limit: u32) -> Relation {
-
     let limit_op = Limit::new(relation, limit);
     let node = Node::new(Rc::new(limit_op), vec!());
     node.execute()

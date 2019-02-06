@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <optimizer/quickstep/query_optimizer/physical/Limit.hpp>
 
 #include "catalog/CatalogRelation.hpp"
 #include "catalog/CatalogRelationStatistics.hpp"
@@ -55,6 +54,7 @@
 #include "query_optimizer/physical/Sort.hpp"
 #include "query_optimizer/physical/TableGenerator.hpp"
 #include "query_optimizer/physical/TableReference.hpp"
+#include "query_optimizer/physical/Limit.hpp"
 #include "query_optimizer/physical/TopLevelPlan.hpp"
 #include "query_optimizer/physical/UnionAll.hpp"
 #include "types/Type.hpp"
