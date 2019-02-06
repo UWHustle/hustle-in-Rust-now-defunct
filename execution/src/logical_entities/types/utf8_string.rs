@@ -50,16 +50,53 @@ impl ValueType for UTF8String {
 
 #[cfg(test)]
 mod test {
-    // TODO: Place unit tests here
+    use super::*;
 
     #[test]
     fn utf8_string_un_marshall() {
+        let utf8_string_value = UTF8String::new("Hello!");
+        let utf8_string_buffer = utf8_string_value.un_marshall();
+        assert_eq!(TypeID::UTF8String, utf8_string_buffer.type_id());
 
+        let data = utf8_string_buffer.data();
+        assert_eq!('H', data[0]);
+        assert_eq!('e', data[1]);
+        assert_eq!('l', data[2]);
+        assert_eq!('l', data[3]);
+        assert_eq!('l', data[4]);
+        assert_eq!('o', data[5]);
+        assert_eq!('!', data[6]);
+    }
+
+    #[test]
+    fn utf8_string_size() {
+        let uf8_string = UTF8String::new("Do no evil");
+        assert_eq!(10, utf8_string.size());
     }
 
     #[test]
     fn utf8_string_type_id() {
-
+        let utf8_string = UTF8String::new("Chocolate donuts");
+        assert_eq!(TypeID::UTF8String, utf8_string.type_id());
     }
 
+    #[test]
+    fn utf8_string_compare() {
+        let alphabet = UTF8String::new("alphabet");
+
+        let aardvark = UTF8String::new("aardvark");
+        assert!(!alphabet.less(&aardvark));
+        assert!(alphabet.greater(&aardvark));
+        assert!(!alphabet.equals(aardvark));
+
+        let elephant = UTF8String::new("elephant");
+        assert!(alphabet.less(&elephant));
+        assert!(!alphabet.greater(&elephant));
+        assert!(!alphabet.equals(&elephant));
+
+        let int4 = Int4::new(1234);
+        assert!(!alphabet.less(&int4));
+        assert!(!alphabet.greater(&int4));
+        assert!(!alphabet.equals(&int4));
+    }
 }

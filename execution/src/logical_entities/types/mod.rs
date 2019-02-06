@@ -188,8 +188,3 @@ impl Comparator {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    // TODO: Place unit tests here
-}

@@ -24,8 +24,3 @@ impl BufferType for OwnedBuffer {
         &self.data
     }
 }
-
-#[cfg(test)]
-mod test {
-    // TODO: Place unit tests here
-}
