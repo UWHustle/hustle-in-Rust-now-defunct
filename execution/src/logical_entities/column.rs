@@ -3,17 +3,14 @@ use logical_entities::types::TypeID;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
     name: String,
-    size: usize,
     data_type: TypeID,
 }
 
 impl Column {
     pub fn new(name: String, type_string: String) -> Self {
         let data_type = TypeID::from_string(&type_string);
-        let size: usize = data_type.size();
         Column {
             name,
-            size,
             data_type,
         }
     }
