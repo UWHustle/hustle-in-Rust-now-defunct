@@ -7,6 +7,7 @@ use super::*;
 // Define common methods on integer types here
 pub trait Integer: Numeric {}
 
+#[derive(Clone)]
 pub struct Int2 {
     nullable: bool,
     is_null: bool,
@@ -40,6 +41,16 @@ impl Int2 {
 }
 
 impl Integer for Int2 {}
+
+impl Numeric for Int2 {
+    fn add(&self, other: &Numeric) -> Box<Numeric> {
+        Box::new(Int2::new(self.value() + value_as::<i16>(other)))
+    }
+
+    fn divide(&self, other: &Numeric) -> Box<Float> {
+        Box::new(Float4::new(self.value() / value_as::<f32>(other)))
+    }
+}
 
 impl ValueType for Int2 {
     fn un_marshall(&self) -> OwnedBuffer {
@@ -89,6 +100,7 @@ impl ValueType for Int2 {
     }
 }
 
+#[derive(Clone)]
 pub struct Int4 {
     nullable: bool,
     is_null: bool,
@@ -122,6 +134,16 @@ impl Int4 {
 }
 
 impl Integer for Int4 {}
+
+impl Numeric for Int4 {
+    fn add(&self, other: &Numeric) -> Box<Numeric> {
+        Box::new(Int4::new(self.value() + value_as::<i32>(other)))
+    }
+
+    fn divide(&self, other: &Numeric) -> Box<Float> {
+        Box::new(Float4::new(self.value() / value_as::<f32>(other)))
+    }
+}
 
 impl ValueType for Int4 {
     fn un_marshall(&self) -> OwnedBuffer {
@@ -171,6 +193,7 @@ impl ValueType for Int4 {
     }
 }
 
+#[derive(Clone)]
 pub struct Int8 {
     nullable: bool,
     is_null: bool,
@@ -178,6 +201,16 @@ pub struct Int8 {
 }
 
 impl Integer for Int8 {}
+
+impl Numeric for Int8 {
+    fn add(&self, other: &Numeric) -> Box<Numeric> {
+        Box::new(Int8::new(self.value() + value_as::<i64>(other)))
+    }
+
+    fn divide(&self, other: &Numeric) -> Box<Float> {
+        Box::new(Float8::new(self.value() / value_as::<f64>(other)))
+    }
+}
 
 impl Int8 {
     // Note that this assumes the type is nullable

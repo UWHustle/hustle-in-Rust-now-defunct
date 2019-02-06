@@ -20,7 +20,7 @@ impl Column {
     }
 
     pub fn get_size(&self) -> usize {
-        return self.size;
+        return self.data_type.size();
     }
 
     pub fn get_datatype(&self) -> TypeID {

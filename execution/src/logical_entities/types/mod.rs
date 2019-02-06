@@ -77,6 +77,27 @@ impl TypeID {
         }
     }
 
+    fn create_zero(&self) -> Box<Numeric> {
+        match self {
+            TypeID::Int2() => {
+                Box::new(Int2::new(0))
+            }
+            TypeID::Int4() => {
+                Box::new(Int4::new(0))
+            }
+            TypeID::Int8() => {
+                Box::new(Int8::new(0))
+            }
+            TypeID::Float4() => {
+                Box::new(Float4::new(0.0))
+            }
+            TypeID::Float8() => {
+                Box::new(Float8::new(0.0))
+            }
+            _ => panic!("Type {:?} is not numeric", self)
+        }
+    }
+
     pub fn from_string(string: &str) -> TypeID {
         let string = string.to_lowercase().as_str();
         match string {
@@ -108,22 +129,22 @@ pub trait BufferType {
             TypeID::Int2(nullable) => {
                 Box::new(Int2::marshall(nullable, self))
             }
-            TypeID::Int4() => {
+            TypeID::Int4(nullable) => {
                 Box::new(Int4::marshall(nullable, self))
             }
-            TypeID::Int8() => {
+            TypeID::Int8(nullable) => {
                 Box::new(Int8::marshall(nullable, self))
             }
-            TypeID::Float4() => {
+            TypeID::Float4(nullable) => {
                 Box::new(Float4::marshall(nullable, self))
             }
-            TypeID::Float8() => {
+            TypeID::Float8(nullable) => {
                 Box::new(Float8::marshall(nullable, self))
             }
-            TypeID::UTF8String() => {
+            TypeID::UTF8String(nullable) => {
                 Box::new(UTF8String::marshall(nullable, self))
             }
-            TypeID::IPv4() => {
+            TypeID::IPv4(nullable) => {
                 Box::new(IPv4::marshall(nullable, self))
             }
         }
@@ -132,7 +153,7 @@ pub trait BufferType {
 
 // Values are stored as various types - concrete implementations can define a 'value()' method which
 // returns the internal type
-pub trait ValueType: Castable + Any {
+pub trait ValueType: Castable + Any + Clone {
     fn un_marshall(&self) -> OwnedBuffer;
 
     // This should be overriden for types which don't have a constant size (i.e. strings)
@@ -169,30 +190,30 @@ pub trait ValueType: Castable + Any {
 }
 
 pub trait Numeric: ValueType {
-    fn zero(type_id: TypeID) -> Box<Numeric> {
-        match type_id {
-            TypeID::Int2() => {
-                Box::new(Int2::new(0))
-            }
-            TypeID::Int4() => {
-                Box::new(Int4::new(0))
-            }
-            TypeID::Int8() => {
-                Box::new(Int8::new(0))
-            }
-            TypeID::Float4() => {
-                Box::new(Float4::new(0.0))
-            }
-            TypeID::Float8() => {
-                Box::new(Float8::new(0.0))
-            }
-            _ => panic!("Type {:?} is not numeric", type_id)
-        }
-    }
-
     fn add(&self, other: &Numeric) -> Box<Numeric>;
 
     fn divide(&self, other: &Numeric) -> Box<Float>;
+}
+
+// Used to convert between numeric types
+fn value_as<T>(value: &Numeric) -> T {
+    match value.type_id() {
+        TypeID::Int2() => {
+            cast::<Int2>(value).value() as T
+        }
+        TypeID::Int4() => {
+            cast::<Int4>(value).value() as T
+        }
+        TypeID::Int8() => {
+            cast::<Int8>(value).value() as T
+        }
+        TypeID::Float4() => {
+            cast::<Float4>(value).value() as T
+        }
+        TypeID::Float8() => {
+            cast::<Float8>(value).value() as T
+        }
+    }
 }
 
 // Used to allow downcasting

@@ -1,11 +1,12 @@
+use logical_entities::types::BufferType;
+use logical_entities::types::borrowed_buffer::BorrowedBuffer;
 use logical_entities::relation::Relation;
-use logical_entities::value::Value;
 
 use storage_manager::StorageManager;
 
 use physical_operators::Operator;
 
-pub const CHUNK_SIZE:usize = 1024*1024;
+pub const CHUNK_SIZE: usize = 1024 * 1024;
 
 #[derive(Debug)]
 pub struct Print {
@@ -13,7 +14,7 @@ pub struct Print {
 }
 
 impl Print {
-    pub fn new(relation: Relation ) -> Print {
+    pub fn new(relation: Relation) -> Print {
         Print {
             relation,
         }
@@ -25,23 +26,25 @@ impl Operator for Print {
         Relation::null()
     }
 
-    fn execute(&self) -> Relation{
+    fn execute(&self) -> Relation {
         let columns = self.relation.get_columns();
         let data = StorageManager::get_full_data(&self.relation.clone());
 
         let width = 5;
         for column in self.relation.get_schema().get_columns() {
-            print!("|{value:>width$}",value=column.get_name(), width=width);
+            print!("|{value:>width$}", value = column.get_name(), width = width);
         }
         println!("|");
 
         let mut i = 0;
         while i < data.len() {
             for column in columns {
-
-                let value_length = column.get_datatype().get_next_length(&data[i..]);
-                let value_string = Value::format(column.get_datatype(), data[i..i+value_length].to_vec());
-                print!("|{value:>width$}",value=value_string, width=width);
+                // TODO: Doesn't work with variable-length records
+                let type_id = column.get_datatype();
+                let value_length = type_id.size();
+                let buffer: BorrowedBuffer = BorrowedBuffer::new(type_id, *type_id.nullable(), &data[i..i + value_length]);
+                let value_string = buffer.marshall().to_string();
+                print!("|{value:>width$}", value = value_string, width = width);
                 i += value_length;
             }
             println!("|");

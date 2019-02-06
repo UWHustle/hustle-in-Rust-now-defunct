@@ -29,13 +29,13 @@ impl AggregationTrait for Avg {
             self.count = 0;
         }
 
-    fn consider_value(&mut self, value: ValueType) -> () {
+    fn consider_value(&mut self, value: &ValueType) -> () {
         self.sum = self.sum.add(value);
         self.count += 1;
     }
 
     // TODO: Not implemented (currently have no way to do division)
-    fn output(&self) -> (Box<Float>) {
+    fn output(&self) -> Box<ValueType> {
         self.sum.divide(self.count)
     }
 

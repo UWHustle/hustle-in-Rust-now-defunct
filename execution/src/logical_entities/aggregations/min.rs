@@ -4,15 +4,13 @@ use logical_entities::types::ValueType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Min {
-    data_type: TypeID,
-    current_min: Box<ValueType>,
+    current_min: Box<ValueType>
 }
 
 impl Min {
     pub fn new(data_type: TypeID) -> Self {
         Min {
-            data_type,
-            current_min: TypeID::create_null(),
+            current_min: data_type.create_null(),
         }
     }
 }
@@ -23,10 +21,10 @@ impl AggregationTrait for Min {
     }
 
     fn initialize(&mut self) -> () {
-        self.current_min = TypeID::create_null();
+        self.current_min = self.output_type().create_null();
     }
 
-    fn consider_value(&mut self, value: Vec<u8>) -> () {
+    fn consider_value(&mut self, value: &ValueType) -> () {
         if self.current_min.is_null() || self.current_min.greater(&value) {
             self.current_min = value;
         }

@@ -24,15 +24,15 @@ impl AggregationTrait for Count {
     }
 
     #[allow(unused_variables)]
-    fn consider_value(&mut self, value: ValueType) -> () {
+    fn consider_value(&mut self, value: &ValueType) -> () {
         self.running_total += 1;
     }
 
     fn output(&self) -> (Box<ValueType>) {
-        Int4::new(self.running_total)
+        Int8::new(self.running_total as i64)
     }
 
     fn output_type(&self) -> TypeID {
-        TypeID::Int4
+        TypeID::Int4(false)
     }
 }

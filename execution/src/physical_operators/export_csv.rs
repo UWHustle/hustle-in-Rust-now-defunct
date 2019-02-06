@@ -1,8 +1,9 @@
 extern crate csv;
 extern crate rand;
 
+use logical_entities::types::BufferType;
+use logical_entities::types::borrowed_buffer::BorrowedBuffer;
 use logical_entities::relation::Relation;
-use logical_entities::value::Value;
 
 use physical_operators::Operator;
 
@@ -44,8 +45,10 @@ impl Operator for ExportCsv {
             let mut r = Vec::new();
 
             for column in columns {
-                let value_length = column.get_datatype().get_next_length(&data[i..]);
-                r.push(Value::format(column.get_datatype(),data[i..i+value_length].to_vec()));
+                let type_id = column.get_datatype();
+                let value_length = type_id.size();
+                let buffer: BorrowedBuffer = BorrowedBuffer::new(type_id, *type_id.nullable(), &data[i..i + value_length]);
+                r.push(buffer.marshall().to_string());
                 i += value_length;
             }
             wtr.write_record(&r).unwrap();

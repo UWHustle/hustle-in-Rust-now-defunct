@@ -1,6 +1,6 @@
 use test_helpers::sqlite3::import_csv_to_sqlite3;
 
-
+use logical_entities::types::ValueType;
 use logical_entities::relation::Relation;
 use logical_entities::column::Column;
 use logical_entities::schema::Schema;
@@ -10,8 +10,6 @@ use physical_operators::import_csv::ImportCsv;
 use physical_operators::insert::Insert;
 use physical_operators::random_relation::RandomRelation;
 use physical_operators::export_csv::ExportCsv;
-
-use logical_entities::value::Value;
 
 use physical_operators::Operator;
 
@@ -84,7 +82,7 @@ pub fn import_csv_to_hustle(csv_file: String, relation:Relation){
     import_operator.execute();
 }
 
-pub fn insert_into_hustle(count: u8, value: Value, relation: Relation){
+pub fn insert_into_hustle(count: u8, value: &ValueType, relation: Relation){
     let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(value.clone(),value.clone())));
     for _ in 0..count {
         insert_operator.execute();

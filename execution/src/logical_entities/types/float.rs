@@ -7,6 +7,7 @@ use super::*;
 // Define common methods on floating-point types here
 pub trait Float: Numeric {}
 
+#[derive(Clone)]
 pub struct Float4 {
     nullable: bool,
     is_null: bool,
@@ -40,6 +41,16 @@ impl Float4 {
 }
 
 impl Float for Float4 {}
+
+impl Numeric for Float4 {
+    fn add(&self, other: &Numeric) -> Box<Numeric> {
+        Box::new(Float4::new(self.value() + value_as::<f32>(other)))
+    }
+
+    fn divide(&self, other: &Numeric) -> Box<Float> {
+        Box::new(Float4::new(self.value() / value_as::<f32>(other)))
+    }
+}
 
 impl ValueType for Float4 {
     fn un_marshall(&self) -> OwnedBuffer {
@@ -89,6 +100,7 @@ impl ValueType for Float4 {
     }
 }
 
+#[derive(Clone)]
 pub struct Float8 {
     nullable: bool,
     is_null: bool,
@@ -122,6 +134,16 @@ impl Float8 {
 }
 
 impl Float for Float8 {}
+
+impl Numeric for Float8 {
+    fn add(&self, other: &Numeric) -> Box<Numeric> {
+        Box::new(Float8::new(self.value() + value_as::<f64>(other)))
+    }
+
+    fn divide(&self, other: &Numeric) -> Box<Float> {
+        Box::new(Float8::new(self.value() / value_as::<f64>(other)))
+    }
+}
 
 impl ValueType for Float8 {
     fn un_marshall(&self) -> OwnedBuffer {

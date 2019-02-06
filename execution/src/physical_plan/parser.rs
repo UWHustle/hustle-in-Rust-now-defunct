@@ -1,3 +1,4 @@
+use logical_entities::types::integer::*;
 use logical_entities::aggregations::count::Count;
 use logical_entities::aggregations::max::Max;
 use logical_entities::aggregations::min::Min;
@@ -5,7 +6,6 @@ use logical_entities::aggregations::sum::Sum;
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
-use logical_entities::types::DataType;
 use physical_operators::aggregate::Aggregate;
 use physical_operators::join::Join;
 use physical_operators::print::Print;
@@ -94,7 +94,9 @@ fn parse_selection(json: &Value) -> Node {
         Value::Null => Project::pure_project(input.get_output_relation(), output_cols),
         _ => {
             let comp_value_str = get_string(&filter_predicate["literal"]["value"]);
-            let comp_value = DataType::Integer.parse_and_marshall(comp_value_str);
+
+            // TODO: This is temporary - we want to determine the type from the schema
+            let comp_value = Int4::new(comp_value_str.parse::<i32>().unwrap());
 
             let comparator_str = filter_predicate["json_name"].as_str().unwrap();
             let comparator = match comparator_str {

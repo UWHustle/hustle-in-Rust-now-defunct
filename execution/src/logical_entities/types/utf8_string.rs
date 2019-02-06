@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Clone)]
 pub struct UTF8String {
     nullable: bool,
     is_null: bool,
@@ -96,7 +97,7 @@ mod test {
 
     #[test]
     fn utf8_string_size() {
-        let uf8_string = UTF8String::new("Do no evil");
+        let utf8_string = UTF8String::new("Do no evil");
         assert_eq!(10, utf8_string.size());
     }
 

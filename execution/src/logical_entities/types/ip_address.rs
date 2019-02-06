@@ -7,6 +7,7 @@ use super::*;
 // Define common methods on ip-address types here
 trait IPAddress: ValueType {}
 
+#[derive(Clone)]
 pub struct IPv4 {
     nullable: bool,
     is_null: bool,

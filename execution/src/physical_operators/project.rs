@@ -1,3 +1,4 @@
+use logical_entities::types::ValueType;
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
@@ -16,7 +17,7 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: String, comparator: i8, comp_value: Vec<u8>) -> Self {
+    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: String, comparator: i8, comp_value: &ValueType) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
