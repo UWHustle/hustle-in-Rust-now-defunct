@@ -7,3 +7,4 @@ hustle.data
 cmake-build-debug
 /build
 Cargo.lock
+**/.DS_Store
