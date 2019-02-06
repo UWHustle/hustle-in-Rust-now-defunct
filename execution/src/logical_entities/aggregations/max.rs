@@ -11,7 +11,7 @@ impl Max {
     pub fn new(data_type: TypeID) -> Self {
         Max {
             data_type,
-            current_max: ,
+            current_max : TypeID::create_null(),
         }
     }
 }
@@ -22,16 +22,16 @@ impl AggregationTrait for Max {
     }
 
     fn initialize(&mut self) -> () {
-        self.current_max = vec!();
+        self.current_max = TypeID::create_null();
     }
 
     fn consider_value(&mut self, value: Vec<u8>) -> () {
-        if self.current_max.is_empty() || self.data_type.compare(&self.current_max, &value) < 0 {
+        if self.current_max.is_null() || self.current_max.greater(&value) == FALSE {
             self.current_max = value;
         }
     }
 
-    fn output(&self) -> (Vec<u8>) {
+    fn output(&self) -> (Box<ValueType>) {
         self.current_max.clone()
     }
 
