@@ -21,6 +21,11 @@ impl AggregationTrait for Avg {
         "AVG"
     }
 
+    fn initialize(&mut self) -> () {
+            self.sum = Numeric::zero(sum.type_id());
+            self.count = 0;
+        }
+
     fn consider_value(&mut self, value: ValueType) -> () {
         self.sum = self.sum.add(value);
         self.count += 1;

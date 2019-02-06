@@ -1,17 +1,17 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::DataType;
+use logical_entities::types::TypeID;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Max {
-    data_type: DataType,
-    current_max: Vec<u8>,
+    data_type: TypeID,
+    current_max: Box<ValueType>,
 }
 
 impl Max {
-    pub fn new(data_type: DataType) -> Self {
+    pub fn new(data_type: TypeID) -> Self {
         Max {
             data_type,
-            current_max: vec!(),
+            current_max: ,
         }
     }
 }

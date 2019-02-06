@@ -1,11 +1,10 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::DataType;
-use logical_entities::types::DataTypeTrait;
-use logical_entities::types::integer::IntegerType;
+use logical_entities::types::ValueType;
+use logical_entities::types::TypeID;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Count {
-    running_total: u8
+    running_total: u32
 }
 
 impl Count {
@@ -24,17 +23,15 @@ impl AggregationTrait for Count {
     }
 
     #[allow(unused_variables)]
-    fn consider_value(&mut self, value: Vec<u8>) -> () {
+    fn consider_value(&mut self, value: ValueType) -> () {
         self.running_total += 1;
     }
 
-    fn output(&self) -> (Vec<u8>) {
-        let output = self.running_total.to_string();
-        let (output_bits, _size) = IntegerType::parse_and_marshall(output);
-        output_bits
+    fn output(&self) -> (Box<ValueType>) {
+        Int4::new(self.running_total)
     }
 
     fn output_type(&self) -> DataType {
-        DataType::Integer
+        TypeID::Int4
     }
 }
