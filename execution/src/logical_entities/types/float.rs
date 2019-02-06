@@ -40,22 +40,22 @@ impl ValueType for Float4 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value() as f32)
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value, cast::<Int4>(other).value() as f32)
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value as f64, cast::<Int8>(other).value() as f64)
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value, cast::<Float4>(other).value())
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value, cast::<IPv4>(other).value() as f32)
             }
             _ => false
@@ -96,22 +96,22 @@ impl ValueType for Float8 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value() as f64)
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value, cast::<Int4>(other).value() as f64)
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value, cast::<Int8>(other).value() as f64)
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value, cast::<Float4>(other).value() as f64)
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value, cast::<IPv4>(other).value() as f64)
             }
             _ => false

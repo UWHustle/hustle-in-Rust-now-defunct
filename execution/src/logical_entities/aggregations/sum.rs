@@ -1,5 +1,8 @@
 use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::TypeID;
+use logical_entities::types::Numeric;
+use logical_entities::types::integer::*;
+use logical_entities::types::float::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sum {
@@ -8,28 +11,26 @@ pub struct Sum {
 }
 
 impl Sum {
-    pub fn new(data_type: DataType) -> Self {
+    pub fn new(&self) -> Self {
         Sum {
-            data_type,
-            running_total: match data_type  {
-                TypeID::Int2 => {
+            self.data_type,
+            running_total: match self.data_type  {
+                TypeID::Int2() => {
                     Int8::zero()
                 }
-                TypeID::Int4 => {
+                TypeID::Int4() => {
                     Int8::zero()
                 }
-                TypeID::Int2 => {
+                TypeID::Int8() => {
                     Int8::zero()
                 }
-                TypeID::Int8 => {
-                    Int8::zero()
-                }
-                TypeID::Float4 => {
+                TypeID::Float4() => {
                     Float8::zero()
                 }
-                TypeID::Float8 => {
+                TypeID::Float8() => {
                     Float8::zero()
                 }
+            }
         }
     }
 }
@@ -40,23 +41,20 @@ impl AggregationTrait for Sum {
     }
 
     fn initialize(&mut self) -> () {
-        self.running_total: match data_type  {
-            TypeID::Int2 => {
+        self.running_total = match self.data_type  {
+            TypeID::Int2() => {
                 Int8::zero()
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 Int8::zero()
             }
-            TypeID::Int2 => {
+            TypeID::Int8() => {
                 Int8::zero()
             }
-            TypeID::Int8 => {
-                Int8::zero()
-            }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 Float8::zero()
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 Float8::zero()
             }
     }

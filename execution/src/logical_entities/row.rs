@@ -4,11 +4,11 @@ use logical_entities::types::ValueType;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
     schema: Schema,
-    values: Vec<ValueType>,
+    values: Vec<Box<ValueType>>,
 }
 
 impl Row {
-    pub fn new(schema: Schema, values: Vec<ValueType>) -> Self {
+    pub fn new(schema: Schema, values: Vec<Box<ValueType>>) -> Self {
         Row {
             schema, values
         }
@@ -17,7 +17,7 @@ impl Row {
     pub fn get_schema(&self) -> &Schema {
         return &self.schema;
     }
-    pub fn get_values(&self) -> &Vec<Value> {
+    pub fn get_values(&self) -> &Vec<Box<ValueType>> {
         return &self.values;
     }
     pub fn get_size(&self) -> usize {

@@ -40,22 +40,22 @@ impl ValueType for Int2 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value())
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value as i32, cast::<Int4>(other).value())
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value as i64, cast::<Int8>(other).value())
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value as f32, cast::<Float4>(other).value())
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value as i64, cast::<IPv4>(other).value() as i64)
             }
             _ => false
@@ -96,22 +96,22 @@ impl ValueType for Int4 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value() as i32)
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value, cast::<Int4>(other).value())
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value as i64, cast::<Int8>(other).value())
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value as f32, cast::<Float4>(other).value())
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value as i64, cast::<IPv4>(other).value() as i64)
             }
             _ => false
@@ -152,22 +152,22 @@ impl ValueType for Int8 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value() as i64)
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value, cast::<Int4>(other).value() as i64)
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value, cast::<Int8>(other).value())
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value as f64, cast::<Float4>(other).value() as f64)
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value, cast::<IPv4>(other).value() as i64)
             }
             _ => false

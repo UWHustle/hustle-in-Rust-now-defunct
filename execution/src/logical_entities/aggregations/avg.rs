@@ -1,5 +1,8 @@
 use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::ValueType;
+use logical_entities::types::Numeric;
+use logical_entities::types::TypeID;
+use logical_entities::types::float::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Avg {
@@ -22,7 +25,7 @@ impl AggregationTrait for Avg {
     }
 
     fn initialize(&mut self) -> () {
-            self.sum = Numeric::zero(sum.type_id());
+            self.sum = Numeric::zero(self.sum.type_id());
             self.count = 0;
         }
 
@@ -33,10 +36,10 @@ impl AggregationTrait for Avg {
 
     // TODO: Not implemented (currently have no way to do division)
     fn output(&self) -> (Box<Float>) {
-        sum.divide(count)
+        self.sum.divide(self.count)
     }
 
     fn output_type(&self) -> TypeID {
-        sum.divide(count).type_id()
+        self.sum.divide(self.count).type_id()
     }
 }

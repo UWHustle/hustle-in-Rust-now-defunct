@@ -1,6 +1,7 @@
 use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::ValueType;
 use logical_entities::types::TypeID;
+use logical_entities::types::integer::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Count {
@@ -31,7 +32,7 @@ impl AggregationTrait for Count {
         Int4::new(self.running_total)
     }
 
-    fn output_type(&self) -> DataType {
+    fn output_type(&self) -> TypeID {
         TypeID::Int4
     }
 }

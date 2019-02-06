@@ -1,5 +1,6 @@
 use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::TypeID;
+use logical_entities::types::ValueType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Min {
@@ -26,7 +27,7 @@ impl AggregationTrait for Min {
     }
 
     fn consider_value(&mut self, value: Vec<u8>) -> () {
-        if self.current_min.is_null() || self.current_min.greater(&value) > 0 {
+        if self.current_min.is_null() || self.current_min.greater(&value) {
             self.current_min = value;
         }
     }

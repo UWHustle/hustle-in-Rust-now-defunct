@@ -40,7 +40,7 @@ impl ValueType for UTF8String {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::UTF8String => {
+            TypeID::UTF8String() => {
                 comp.apply(&self.value, &Box::new(cast::<UTF8String>(other).value().to_string()))
             }
             _ => false
