@@ -87,39 +87,47 @@ class TreeStringSerializable {
 
     stream << '{';
     indent++;
-    newLine(stream, indent);
+    NewLine(stream, indent);
     stream << R"("json_name": ")" << getName() << '\"';
 
     for (size_t i = 0; i < attribute_names.size(); i++) {
       stream << ',';
-      newLine(stream, indent);
+      NewLine(stream, indent);
       stream << '\"' << attribute_names.at(i) << "\": "
              << '\"' << attribute_values.at(i) << '\"';
     }
 
     for (size_t i = 0; i < child_names.size(); i++) {
       stream << ',';
-      newLine(stream, indent);
-      stream << '\"' << child_names.at(i) << "\": ";
+      NewLine(stream, indent);
+      std::string name = child_names.at(i);
+      if (name.empty()) {
+        name = PlaceholderName(child_values.at(i)->getName());
+      }
+      stream << '\"' << name << "\": ";
       child_values.at(i)->jsonTraverse(stream, indent);
     }
 
     for (size_t i = 0; i < list_names.size(); i++) {
       stream << ',';
-      newLine(stream, indent);
-      stream << '\"' << list_names.at(i) << "\": [";
+      NewLine(stream, indent);
+      std::string name = list_names.at(i);
+      if (name.empty()) {
+        name = "array";
+      }
+      stream << '\"' << name << "\": [";
 
       for (size_t j = 0; j < list_values.at(i).size(); j++) {
-        newLine(stream, indent + 1);
+        NewLine(stream, indent + 1);
         list_values.at(i).at(j)->jsonTraverse(stream, indent + 1);
         if (j < list_values.at(i).size() - 1) {
           stream << ',';
         }
       }
-      newLine(stream, indent);
+      NewLine(stream, indent);
       stream << ']';
     }
-    newLine(stream, indent - 1);
+    NewLine(stream, indent - 1);
     stream << '}';
   }
 
@@ -422,11 +430,27 @@ class TreeStringSerializable {
 
   const static int INDENT_SIZE = 2;
 
-  static void newLine(std::ostream &stream, int indent) {
+  static void NewLine(std::ostream &stream, int indent) {
     stream << std::endl;
     for (int i = 0; i < indent * INDENT_SIZE; i++) {
       stream << ' ';
     }
+  }
+
+  static std::string PlaceholderName(std::string json_name) {
+    std::stringstream stream = std::stringstream();
+    for (int i = 0; i< json_name.size(); i++) {
+        char c = json_name[i];
+        if (isupper(c)) {
+            if (i > 0) {
+                stream << '_';
+            }
+            stream << (char) tolower(c);
+        } else {
+            stream << c;
+        }
+    }
+    return stream.str();
   }
 };
 

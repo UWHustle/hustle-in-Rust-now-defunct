@@ -200,3 +200,58 @@ TopLevelPlan
 |   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
 +-output_attributes=
   +-AttributeReference[id=0,name=a,relation=t,type=Int NULL]
+
+
+SELECT k FROM s WHERE k LIKE 'afd';
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=S,alias=s]
+| | +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+| | +-AttributeReference[id=1,name=x,relation=s,type=Int]
+| +-filter_predicate=Like
+| | +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+| | +-Literal[value=afd,type=VarChar(3)]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
++-output_attributes=
+  +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+
+SELECT k FROM s WHERE k LIKE 'afd' and x > 5;
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=S,alias=s]
+| | +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+| | +-AttributeReference[id=1,name=x,relation=s,type=Int]
+| +-filter_predicate=And
+| | +-Like
+| | | +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+| | | +-Literal[value=afd,type=VarChar(3)]
+| | +-Greater
+| |   +-AttributeReference[id=1,name=x,relation=s,type=Int]
+| |   +-Literal[value=5,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
++-output_attributes=
+  +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+  
+SELECT k FROM s WHERE (k LIKE 'afd' and x > 5) or x = 3 ;  
+  TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=TableReference[relation=S,alias=s]
+| | +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+| | +-AttributeReference[id=1,name=x,relation=s,type=Int]
+| +-filter_predicate=Or
+| | +-And
+| | | +-Like
+| | | | +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
+| | | | +-Literal[value=afd,type=VarChar(3)]
+| | | +-Greater
+| | |   +-AttributeReference[id=1,name=x,relation=s,type=Int]
+| | |   +-Literal[value=5,type=Int]
+| | +-Equal
+| |   +-AttributeReference[id=1,name=x,relation=s,type=Int]
+| |   +-Literal[value=3,type=Int]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]
++-output_attributes=
+  +-AttributeReference[id=0,name=k,relation=s,type=VarChar(20)]

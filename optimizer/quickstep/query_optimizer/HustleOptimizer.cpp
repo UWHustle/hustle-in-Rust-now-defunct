@@ -58,6 +58,3 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
 
   return pplan->jsonString();
 }
-
-// SELECT x FROM a LIMIT 1;
-// SELECT x FROM a ORDER BY x LIMIT 1;

@@ -5,7 +5,7 @@ use logical_entities::types::DataTypeTrait;
 pub struct IntegerType;
 
 impl IntegerType {
-    fn marshall<'a>(payload: &'a u64) -> (Vec<u8>,usize) {
+    pub fn marshall<'a>(payload: &'a u64) -> (Vec<u8>,usize) {
         let array_representation;
         unsafe {
             array_representation = mem::transmute::<u64, [u8; 8]>(*payload);
@@ -50,6 +50,17 @@ impl DataTypeTrait for IntegerType {
         let left_u64 = IntegerType::unmarshall(left);
         let right_u64 = IntegerType::unmarshall(right);
         IntegerType::marshall(&(left_u64+right_u64))
+    }
+
+    fn compare(left:&Vec<u8>, right:&Vec<u8>) -> i8 {
+        let left_u64 = IntegerType::unmarshall(left) as i64;
+        let right_u64 = IntegerType::unmarshall(right) as i64;
+        let diff:i64 = left_u64 - right_u64 ;
+        if diff<0{
+            return -1;}
+        else if diff==0{
+            return 0;}
+        else {return 1};
     }
 
     fn to_string(payload: &Vec<u8>) -> String {

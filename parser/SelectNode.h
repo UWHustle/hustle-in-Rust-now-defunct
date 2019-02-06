@@ -10,11 +10,13 @@
 
 class SelectNode: public ParseNode {
 public:
-    SelectNode(std::vector<std::shared_ptr<ParseNode>> target, std::vector<std::shared_ptr<ParseNode>> from,
-            std::vector<std::shared_ptr<ParseNode>> group_by);
-    std::unordered_map<std::string, std::vector<std::shared_ptr<ParseNode>>> get_children_lists() override;
+    SelectNode(std::vector<std::shared_ptr<ParseNode>> target, std::shared_ptr<ParseNode> from,
+            std::shared_ptr<ParseNode> where, std::vector<std::shared_ptr<ParseNode>> group_by);
+    std::unordered_map<std::string, std::shared_ptr<ParseNode>> get_children() const override;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<ParseNode>>> get_children_lists() const override;
     std::vector<std::shared_ptr<ParseNode>> target;
-    std::vector<std::shared_ptr<ParseNode>> from;
+    std::shared_ptr<ParseNode> from;
+    std::shared_ptr<ParseNode> where;
     std::vector<std::shared_ptr<ParseNode>> group_by;
 };
 

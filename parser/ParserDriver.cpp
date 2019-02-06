@@ -1,19 +1,26 @@
 #include "ParserDriver.h"
+
+#include <utility>
 #include "parser.h"
 #include "lexer.h"
 #include "optimizer/optimizer_wrapper.hpp"
 
-ParserDriver::ParserDriver() = default;
+using namespace std;
 
-int ParserDriver::parse(std::string s) {
-    auto input = s;
-    location.initialize (&s);
-    YY_BUFFER_STATE state = yy_scan_string(s.c_str());
+ParserDriver::ParserDriver() {
+    join_type = JoinNode::NONE;
+};
+
+void ParserDriver::parse_and_optimize(string sql) {
+    parse(move(sql));
+    optimizer(syntax_tree);
+}
+
+void ParserDriver::parse(string sql) {
+    location.initialize(&sql);
+    YY_BUFFER_STATE state = yy_scan_string(sql.c_str());
     yy::parser parser(*this);
     parser.set_debug_level(false);
-    int res = parser.parse();
+    parser.parse();
     yy_delete_buffer(state);
-//    this->syntax_tree->json_stringify();
-    optimizer(syntax_tree);
-    return res;
 }

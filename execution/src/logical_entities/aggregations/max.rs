@@ -2,35 +2,37 @@ use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::DataType;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Sum {
+pub struct Max {
     data_type: DataType,
-    running_total: Vec<u8>,
+    current_max: Vec<u8>,
 }
 
-impl Sum {
+impl Max {
     pub fn new(data_type: DataType) -> Self {
-        Sum {
+        Max {
             data_type,
-            running_total: vec!(),
+            current_max: vec!(),
         }
     }
 }
 
-impl AggregationTrait for Sum {
+impl AggregationTrait for Max {
     fn get_name(&self) -> &'static str {
-        "SUM"
+        "MAX"
     }
 
     fn initialize(&mut self) -> () {
-        self.running_total = vec!();
+        self.current_max = vec!();
     }
 
     fn consider_value(&mut self, value: Vec<u8>) -> () {
-        self.running_total = self.data_type.sum(&self.running_total, &value).0;
+        if self.current_max.is_empty() || self.data_type.compare(&self.current_max, &value) < 0 {
+            self.current_max = value;
+        }
     }
 
     fn output(&self) -> (Vec<u8>) {
-        self.running_total.clone()
+        self.current_max.clone()
     }
 
     fn output_type(&self) -> DataType {

@@ -1,15 +1,15 @@
+use logical_entities::types::DataType;
+
+pub mod avg;
 pub mod count;
+pub mod max;
+pub mod min;
 pub mod sum;
 
-use logical_entities::schema::Schema;
-use logical_entities::column::Column;
-use logical_entities::relation::Relation;
-
 pub trait AggregationTrait {
-    fn output_schema(&self) -> Schema;
-    fn input_relation(&self) -> Relation;
-    fn group_by_columns(&self) -> Vec<Column>;
+    fn get_name(&self) -> &'static str;
     fn initialize(&mut self) -> ();
-    fn consider_value(&mut self, Vec<u8>, Column) -> ();
+    fn consider_value(&mut self, value: Vec<u8>) -> ();
     fn output(&self) -> (Vec<u8>);
+    fn output_type(&self) -> DataType;
 }

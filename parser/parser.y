@@ -21,6 +21,7 @@ class ParserDriver;
 #include "SelectNode.h"
 #include "FunctionNode.h"
 #include "ReferenceNode.h"
+#include "JoinNode.h"
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T typedef void* yyscan_t;
 #endif
@@ -122,6 +123,7 @@ class ParserDriver;
 %token LT
 %token MATCH
 %token MINUS
+%token NATURAL
 %token NE
 %token NO
 %token NOT
@@ -209,14 +211,17 @@ class ParserDriver;
   select
   selectnowith
   oneselect
+  where_opt
+  from
+  stl_prefix
+  seltablist
+  on_opt
 %type <std::vector<std::shared_ptr<ParseNode> > >
   exprlist
-  from
   groupby_opt
   nexprlist
   sclp
   selcollist
-  seltablist
 
 %%
 input:
@@ -336,9 +341,9 @@ columnname:
 ;
 
 nm:
-  id { $$ = $1; }
-| STRING { $$ = $1; }
-| JOIN_KW { $$ = $1; }
+  id { $$ = std::move($1); }
+| STRING { $$ = std::move($1); }
+| JOIN_KW { $$ = std::move($1); }
 ;
 
 typetoken:
@@ -489,7 +494,7 @@ multiselect_op:
 
 oneselect:
   SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt {
-    $$ = std::shared_ptr<SelectNode>(new SelectNode(std::move($3), std::move($4), std::move($6)));
+    $$ = std::shared_ptr<SelectNode>(new SelectNode(std::move($3), std::move($4), std::move($5), std::move($6)));
   }
 | SELECT distinct selcollist from where_opt groupby_opt having_opt window_clause orderby_opt limit_opt { error(drv.location, "window queries not yet supported"); }
 | values { error(drv.location, "VALUES not yet supported"); }
@@ -536,13 +541,20 @@ from:
 ;
 
 stl_prefix:
-  seltablist joinop
-| /* empty */
+  seltablist joinop {
+    $$ = std::move($1);
+  }
+| /* empty */ {}
 ;
 
 seltablist:
   stl_prefix nm dbnm as indexed_opt on_opt using_opt {
-    $$.push_back(std::shared_ptr<ReferenceNode>(new ReferenceNode($2)));
+    auto reference_node = std::shared_ptr<ReferenceNode>(new ReferenceNode(std::string(), $2));
+    if ($1) {
+      $$ = std::shared_ptr<JoinNode>(new JoinNode(drv.join_type, std::move($1), reference_node, $6));
+    } else {
+      $$ = reference_node;
+    }
   }
 | stl_prefix nm dbnm LP exprlist RP as on_opt using_opt { error(drv.location, "parentheses in FROM clause not yet supported"); }
 | stl_prefix LP select RP as on_opt using_opt { error(drv.location, "nested select not yet supported"); }
@@ -567,16 +579,28 @@ xfullname:
 ;
 
 joinop:
-  COMMA
-| JOIN
-| JOIN_KW JOIN
-| JOIN_KW nm JOIN
-| JOIN_KW nm nm JOIN
+  COMMA {
+    drv.join_type = JoinNode::CROSS;
+  }
+| JOIN {
+    drv.join_type = JoinNode::INNER;
+  }
+| JOIN_KW JOIN {
+    drv.join_type = JoinNode::parse_join_type($1);
+  }
+| JOIN_KW nm JOIN {
+    drv.join_type = JoinNode::parse_join_type($1 + $2);
+  }
+| JOIN_KW nm nm JOIN {
+    drv.join_type = JoinNode::parse_join_type($1 + $2 + $3);
+  }
 ;
 
 on_opt:
-  ON expr
-| /* empty */ %prec OR
+  ON expr {
+    $$ = std::move($2);
+  }
+| /* empty */ %prec OR {}
 ;
 
 indexed_opt:
@@ -626,8 +650,10 @@ limit_opt:
 ;
 
 where_opt:
-  /* empty */
-| WHERE expr
+  /* empty */ {}
+| WHERE expr {
+    $$ = std::move($2);
+  }
 ;
 
 setlist:
@@ -666,13 +692,15 @@ expr:
     $$ = std::shared_ptr<ReferenceNode>(new ReferenceNode($1));
   }
 | JOIN_KW { error(drv.location, "join keyword in expression not yet supported"); }
-| nm DOT nm { error(drv.location, "nm.nm in expression not yet supported"); }
+| nm DOT nm {
+    $$ = std::shared_ptr<ReferenceNode>(new ReferenceNode($3, $1));
+  }
 | nm DOT nm DOT nm { error(drv.location, "nm.nm.nm in expression not yet supported"); }
 | VARIABLE { error(drv.location, "VARIABLE not yet supported"); }
 | expr COLLATE ids { error(drv.location, "COLLATE not yet supported"); }
 | CAST LP expr AS typetoken RP { error(drv.location, "CAST not yet supported"); }
 | id LP distinct exprlist RP {
-    $$ = std::shared_ptr<FunctionNode>(new FunctionNode($1, std::move($4)));
+    $$ = std::shared_ptr<FunctionNode>(new FunctionNode(FunctionNode::NAMED, std::move($4), $1));
   }
 | id LP STAR RP { error(drv.location, "(*) in expression not yet supported"); }
 | id LP distinct exprlist RP over_clause { error(drv.location, "OVER not yet supported"); }
@@ -684,7 +712,9 @@ expr:
 | expr GT expr { error(drv.location, "> in expression not yet supported"); }
 | expr GE expr { error(drv.location, ">= in expression not yet supported"); }
 | expr LE expr { error(drv.location, "<= in expression not yet supported"); }
-| expr EQ expr { error(drv.location, "= in expression not yet supported"); }
+| expr EQ expr {
+    $$ = std::shared_ptr<FunctionNode>(new FunctionNode(FunctionNode::EQ, {$1, $3}));
+  }
 | expr NE expr { error(drv.location, "<> in expression not yet supported"); }
 | expr BITAND expr { error(drv.location, "& in expression not yet supported"); }
 | expr BITOR expr { error(drv.location, "| in expression not yet supported"); }
@@ -993,8 +1023,8 @@ filter_opt:
 ;
 
 id:
-  ID
-| INDEXED
+  ID { $$ = std::move($1); }
+| INDEXED { $$ = std::move($1); }
 ;
 
 ids:

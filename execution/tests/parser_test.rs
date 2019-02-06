@@ -7,8 +7,8 @@ use execution::physical_plan::parser;
 const RECORD_COUNT: usize = 32;
 
 
-#[test]
-fn test_dag_double_join() {
+//#[test]
+fn test_parser() {
 
     generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
 

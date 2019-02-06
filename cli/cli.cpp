@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
         if (fgets(buffer, BUFFER_SIZE, stdin)) {
             ParserDriver parser_driver;
             try {
-                parser_driver.parse(buffer);
+                parser_driver.parse_and_optimize(buffer);
             } catch (const string &msg) {
                 cerr << msg << endl;
                 cerr << "Falling back on Quickstep parser/resolver..." << endl;

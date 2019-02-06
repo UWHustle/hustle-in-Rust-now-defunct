@@ -56,7 +56,6 @@ DROP            		{ return yy::parser::make_DROP(loc); }
 EACH            		{ return yy::parser::make_EACH(loc); }
 ELSE            		{ return yy::parser::make_ELSE(loc); }
 END             		{ return yy::parser::make_END(loc); }
-EQ              		{ return yy::parser::make_EQ(loc); }
 ESCAPE          		{ return yy::parser::make_ESCAPE(loc); }
 EXCEPT          		{ return yy::parser::make_EXCEPT(loc); }
 EXCLUSIVE       		{ return yy::parser::make_EXCLUSIVE(loc); }
@@ -91,6 +90,7 @@ LEFT					{ return yy::parser::make_JOIN_KW(yytext, loc); }
 LIKE            		{ return yy::parser::make_LIKE_KW(loc); }
 LIMIT           		{ return yy::parser::make_LIMIT(loc); }
 MATCH           		{ return yy::parser::make_MATCH(loc); }
+NATURAL                 { return yy::parser::make_NATURAL(loc); }
 NO              		{ return yy::parser::make_NO(loc); }
 NOT             		{ return yy::parser::make_NOT(loc); }
 NOTHING         		{ return yy::parser::make_NOTHING(loc); }
@@ -154,6 +154,7 @@ WITHOUT         		{ return yy::parser::make_WITHOUT(loc); }
 ","                   	{ return yy::parser::make_COMMA(loc); }
 "||"                  	{ return yy::parser::make_CONCAT(loc); }
 "."						{ return yy::parser::make_DOT(loc); }
+"="                     { return yy::parser::make_EQ(loc); }
 [0-9]*\.[0-9]+			{ return yy::parser::make_FLOAT(loc); }
 ">="					{ return yy::parser::make_GE(loc); }
 ">"						{ return yy::parser::make_GT(loc); }
