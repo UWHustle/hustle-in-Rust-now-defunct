@@ -1,17 +1,36 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::DataType;
+use logical_entities::types::TypeID;
+use logical_entities::types::Numeric;
+use logical_entities::types::integer::*;
+use logical_entities::types::float::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sum {
-    data_type: DataType,
-    running_total: Vec<u8>,
+    data_type: TypeID,
+    running_total: Box<Numeric>,
 }
 
 impl Sum {
-    pub fn new(data_type: DataType) -> Self {
+    pub fn new(&self) -> Self {
         Sum {
-            data_type,
-            running_total: vec!(),
+            self.data_type,
+            running_total: match self.data_type  {
+                TypeID::Int2() => {
+                    Int8::zero()
+                }
+                TypeID::Int4() => {
+                    Int8::zero()
+                }
+                TypeID::Int8() => {
+                    Int8::zero()
+                }
+                TypeID::Float4() => {
+                    Float8::zero()
+                }
+                TypeID::Float8() => {
+                    Float8::zero()
+                }
+            }
         }
     }
 }
@@ -22,18 +41,34 @@ impl AggregationTrait for Sum {
     }
 
     fn initialize(&mut self) -> () {
-        self.running_total = vec!();
+        self.running_total = match self.data_type  {
+            TypeID::Int2() => {
+                Int8::zero()
+            }
+            TypeID::Int4() => {
+                Int8::zero()
+            }
+            TypeID::Int8() => {
+                Int8::zero()
+            }
+            TypeID::Float4() => {
+                Float8::zero()
+            }
+            TypeID::Float8() => {
+                Float8::zero()
+            }
+    }
     }
 
-    fn consider_value(&mut self, value: Vec<u8>) -> () {
-        self.running_total = self.data_type.sum(&self.running_total, &value).0;
+    fn consider_value(&mut self, value: Box<Numeric>) -> () {
+        self.running_total = self.running_total.add(&value);
     }
 
-    fn output(&self) -> (Vec<u8>) {
+    fn output(&self) -> Box<Numeric> {
         self.running_total.clone()
     }
 
-    fn output_type(&self) -> DataType {
+    fn output_type(&self) -> TypeID {
         self.data_type.clone()
     }
 }

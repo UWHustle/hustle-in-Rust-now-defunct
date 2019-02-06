@@ -1,4 +1,5 @@
 use logical_entities::types::ValueType;
+use logical_entities::types::TypeID;
 
 pub mod avg;
 pub mod count;
