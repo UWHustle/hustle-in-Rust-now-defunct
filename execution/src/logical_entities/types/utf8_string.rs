@@ -1,23 +1,37 @@
 use super::*;
 
 pub struct UTF8String {
-    value: Box<String>
+    nullable: bool,
+    is_null: bool,
+    value: Box<String>,
 }
 
 impl UTF8String {
+    // Note that this assumes the type is nullable
     pub fn new(value: &str) -> Self {
         let string = value.to_string();
-        UTF8String { value: Box::new(string) }
+        UTF8String {
+            nullable: true,
+            is_null: false,
+            value: Box::new(string),
+        }
     }
 
-    pub fn marshall(data: &[u8]) -> Self {
+    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
         let mut vec_data: Vec<u8> = vec!();
-        vec_data.clone_from_slice(data);
+        vec_data.clone_from_slice(buffer.data());
         let value = String::from_utf8(vec_data).expect("Invalid UTF8 string");
-        UTF8String { value: Box::new(value) }
+        UTF8String {
+            nullable,
+            is_null: buffer.is_null(),
+            value: Box::new(value),
+        }
     }
 
     pub fn value(&self) -> &str {
+        if self.is_null {
+            panic!("Attempting to return string slice of null UTF8String");
+        }
         &self.value
     }
 }
@@ -26,7 +40,7 @@ impl ValueType for UTF8String {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut value: Vec<u8> = vec!();
         value.clone_from_slice(self.value.as_bytes());
-        OwnedBuffer::new(self.type_id(), value)
+        OwnedBuffer::new(self.type_id(), self.is_null(), value)
     }
 
     // Overrides the default implementation
@@ -35,15 +49,27 @@ impl ValueType for UTF8String {
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::UTF8String
+        TypeID::UTF8String(self.nullable)
     }
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::UTF8String => {
+            TypeID::UTF8String() => {
                 comp.apply(&self.value, &Box::new(cast::<UTF8String>(other).value().to_string()))
             }
             _ => false
+        }
+    }
+
+    fn is_null(&self) -> bool {
+        self.is_null
+    }
+
+    fn to_string(&self) -> &str {
+        if self.is_null {
+            ""
+        } else {
+            self.value()
         }
     }
 }

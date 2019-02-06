@@ -8,19 +8,33 @@ use super::*;
 pub trait Integer: Numeric {}
 
 pub struct Int2 {
-    value: i16
+    nullable: bool,
+    is_null: bool,
+    value: i16,
 }
 
 impl Int2 {
+    // Note that this assumes the type is nullable
     pub fn new(value: i16) -> Self {
-        Int2 { value }
+        Int2 {
+            nullable: true,
+            is_null: false,
+            value,
+        }
     }
 
-    pub fn marshall(data: &[u8]) -> Self {
-        Int2 { value: LittleEndian::read_i16(&data) }
+    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+        Int2 {
+            nullable,
+            is_null: buffer.is_null(),
+            value: LittleEndian::read_i16(buffer.data()),
+        }
     }
 
     pub fn value(&self) -> i16 {
+        if self.is_null {
+            panic!("Attempting to retrieve i16 value of null Int2");
+        }
         self.value
     }
 }
@@ -31,52 +45,78 @@ impl ValueType for Int2 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_i16(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), data)
+        OwnedBuffer::new(self.type_id(), self.is_null(), data)
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::Int2
+        TypeID::Int2(self.nullable)
     }
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value())
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value as i32, cast::<Int4>(other).value())
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value as i64, cast::<Int8>(other).value())
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value as f32, cast::<Float4>(other).value())
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value as i64, cast::<IPv4>(other).value() as i64)
             }
             _ => false
         }
     }
+
+    fn is_null(&self) -> bool {
+        self.is_null
+    }
+
+    fn to_string(&self) -> &str {
+        if self.is_null {
+            ""
+        } else {
+            self.value.to_string()
+        }
+    }
 }
 
 pub struct Int4 {
-    value: i32
+    nullable: bool,
+    is_null: bool,
+    value: i32,
 }
 
 impl Int4 {
+    // Note that this assumes the type is nullable
     pub fn new(value: i32) -> Self {
-        Int4 { value }
+        Int4 {
+            nullable: true,
+            is_null: false,
+            value,
+        }
     }
 
-    pub fn marshall(data: &[u8]) -> Self {
-        Int4 { value: LittleEndian::read_i32(&data) }
+    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+        Int4 {
+            nullable,
+            is_null: buffer.is_null(),
+            value: LittleEndian::read_i32(buffer.data()),
+        }
     }
 
     pub fn value(&self) -> i32 {
+        if self.is_null {
+            panic!("Attempting to return i32 value of null Int4");
+        }
         self.value
     }
 }
@@ -87,54 +127,80 @@ impl ValueType for Int4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_i32(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), data)
+        OwnedBuffer::new(self.type_id(), self.is_null(), data)
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::Int4
+        TypeID::Int4(self.nullable)
     }
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value() as i32)
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value, cast::<Int4>(other).value())
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value as i64, cast::<Int8>(other).value())
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value as f32, cast::<Float4>(other).value())
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value as i64, cast::<IPv4>(other).value() as i64)
             }
             _ => false
         }
     }
+
+    fn is_null(&self) -> bool {
+        self.is_null
+    }
+
+    fn to_string(&self) -> &str {
+        if self.is_null {
+            ""
+        } else {
+            self.value.to_string()
+        }
+    }
 }
 
 pub struct Int8 {
-    value: i64
+    nullable: bool,
+    is_null: bool,
+    value: i64,
 }
 
 impl Integer for Int8 {}
 
 impl Int8 {
+    // Note that this assumes the type is nullable
     pub fn new(value: i64) -> Self {
-        Int8 { value }
+        Int8 {
+            nullable: true,
+            is_null: false,
+            value,
+        }
     }
 
-    pub fn marshall(data: &[u8]) -> Self {
-        Int8 { value: LittleEndian::read_i64(&data) }
+    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+        Int8 {
+            nullable,
+            is_null: buffer.is_null(),
+            value: LittleEndian::read_i64(buffer.data()),
+        }
     }
 
     pub fn value(&self) -> i64 {
+        if self.is_null {
+            panic!("Attempting to return i64 value of null Int8");
+        }
         self.value
     }
 }
@@ -143,34 +209,46 @@ impl ValueType for Int8 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_i64(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), data)
+        OwnedBuffer::new(self.type_id(), self.is_null(), data)
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::Int8
+        TypeID::Int8(self.nullable)
     }
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2 => {
+            TypeID::Int2() => {
                 comp.apply(self.value, cast::<Int2>(other).value() as i64)
             }
-            TypeID::Int4 => {
+            TypeID::Int4() => {
                 comp.apply(self.value, cast::<Int4>(other).value() as i64)
             }
-            TypeID::Int8 => {
+            TypeID::Int8() => {
                 comp.apply(self.value, cast::<Int8>(other).value())
             }
-            TypeID::Float4 => {
+            TypeID::Float4() => {
                 comp.apply(self.value as f64, cast::<Float4>(other).value() as f64)
             }
-            TypeID::Float8 => {
+            TypeID::Float8() => {
                 comp.apply(self.value as f64, cast::<Float8>(other).value())
             }
-            TypeID::IPv4 => {
+            TypeID::IPv4() => {
                 comp.apply(self.value, cast::<IPv4>(other).value() as i64)
             }
             _ => false
+        }
+    }
+
+    fn is_null(&self) -> bool {
+        self.is_null
+    }
+
+    fn to_string(&self) -> &str {
+        if self.is_null {
+            ""
+        } else {
+            self.value.to_string()
         }
     }
 }

@@ -5,13 +5,15 @@ use super::BufferType;
 // The lifetime specifier ensures the data's lifetime exceeds this struct's
 struct BorrowedBuffer<'a> {
     type_id: TypeID,
+    is_null: bool,
     data: &'a [u8],
 }
 
 impl<'a> BorrowedBuffer<'a> {
-    fn new(type_id: TypeID, data: &'a [u8]) -> Self {
+    fn new(type_id: TypeID, is_null: bool, data: &'a [u8]) -> Self {
         BorrowedBuffer {
             type_id,
+            is_null,
             data,
         }
     }
@@ -24,5 +26,9 @@ impl<'a> BufferType for BorrowedBuffer<'a> {
 
     fn data(&self) -> &[u8] {
         &self.data
+    }
+
+    fn is_null(&self) -> bool {
+        self.is_null
     }
 }

@@ -32,13 +32,13 @@ impl TypeID {
     // Returns the size of an object of this type; -1 if the size is variable
     pub fn size(&self) -> usize {
         match self {
-            TypeID::Int2(nullable) => 2,
-            TypeID::Int4(nullable) => 4,
-            TypeID::Int8(nullable) => 8,
-            TypeID::Float4(nullable) => 4,
-            TypeID::Float8(nullable) => 8,
-            TypeID::UTF8String(nullable) => 0,
-            TypeID::IPv4(nullable) => 4,
+            TypeID::Int2() => 2,
+            TypeID::Int4() => 4,
+            TypeID::Int8() => 8,
+            TypeID::Float4() => 4,
+            TypeID::Float8() => 8,
+            TypeID::UTF8String() => 0,
+            TypeID::IPv4() => 4,
         }
     }
 
@@ -54,9 +54,6 @@ impl TypeID {
     }
 
     pub fn create_null(&self) -> Box<ValueType> {
-        if !self.nullable() {
-            panic!("Trying to create NULL with non-nullable variant of {:?}");
-        }
         match self {
             TypeID::Int2() => {
                 Box::new(Int2::create_null())
@@ -104,28 +101,30 @@ pub trait BufferType {
 
     fn data(&self) -> &[u8];
 
+    fn is_null(&self) -> bool;
+
     fn marshall(&self) -> Box<ValueType> {
         match self.type_id() {
-            TypeID::Int2() => {
-                Box::new(Int2::marshall(self.data()))
+            TypeID::Int2(nullable) => {
+                Box::new(Int2::marshall(nullable, self))
             }
             TypeID::Int4() => {
-                Box::new(Int4::marshall(self.data()))
+                Box::new(Int4::marshall(nullable, self))
             }
             TypeID::Int8() => {
-                Box::new(Int8::marshall(self.data()))
+                Box::new(Int8::marshall(nullable, self))
             }
             TypeID::Float4() => {
-                Box::new(Float4::marshall(self.data()))
+                Box::new(Float4::marshall(nullable, self))
             }
             TypeID::Float8() => {
-                Box::new(Float8::marshall(self.data()))
+                Box::new(Float8::marshall(nullable, self))
             }
             TypeID::UTF8String() => {
-                Box::new(UTF8String::marshall(self.data()))
+                Box::new(UTF8String::marshall(nullable, self))
             }
             TypeID::IPv4() => {
-                Box::new(IPv4::marshall(self.data()))
+                Box::new(IPv4::marshall(nullable, self))
             }
         }
     }
