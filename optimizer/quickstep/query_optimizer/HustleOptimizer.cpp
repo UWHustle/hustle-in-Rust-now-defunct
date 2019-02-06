@@ -44,13 +44,13 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
           *test_database_loader_.catalog_database(), parse_statement);
     }
 
-    std::cout<< "Logical Plan: " << lplan->jsonString() << std::endl;
-    std::cout << " --------------------- " << std::endl;
+//    std::cout<< "Logical Plan: " << lplan->jsonString() << std::endl;
+//    std::cout << " --------------------- " << std::endl;
     pplan =
         physical_generator.generatePlan(
             lplan, test_database_loader_.catalog_database());
 
-    std::cout<< "Physical Plan: " << pplan->jsonString() << std::endl;
+//    std::cout<< "Physical Plan: " << pplan->jsonString() << std::endl;
   } catch (const quickstep::SqlError &sql_error) {
     printf("%s", sql_error.formatMessage(sql).c_str());
     return "";
