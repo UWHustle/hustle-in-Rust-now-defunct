@@ -46,24 +46,17 @@ impl Operator for Limit {
 
         let mut i = 0;
         let mut records = 0;
-        print!("40 {}", input_data.len());
         while i < input_data.len() && records < self.limit {
-            print!("41 ");
             for column in &columns {
                 let value_length = column.get_datatype().get_next_length(&input_data[i..]);
                 output_data[i..i + value_length].clone_from_slice(&input_data[i..i + value_length]);
                 i += value_length;
-                print!("43 ");
-//                print!("43 |{}| ", input_data[i..i + value_length]);
             }
             records += 1;
-            print!("\n");
         }
-        print!("| -{}- -{}- \n", i, records);
 
-        StorageManager::flush(&output_data);
+        StorageManager::trim_relation(&self.output_relation, i);
         self.get_target_relation()
     }
 }
 
-// SELECT x FROM a LIMIT 1;

@@ -35,6 +35,7 @@ fn parse_node(json: &Value) -> Node {
         "Selection" => parse_selection(json),
         "Aggregate" => parse_aggregate(json),
         "HashJoin" => parse_hash_join(json),
+        "Limit" => parse_limit(json),
         _ => panic!("Optimizer tree node type {} not supported", json_name),
     }
 }
