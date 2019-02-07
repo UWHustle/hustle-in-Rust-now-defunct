@@ -24,11 +24,23 @@ impl IPv4 {
         }
     }
 
-    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+    pub fn create_null() -> Self {
+        IPv4 {
+            nullable: true,
+            is_null: true,
+            value: 0,
+        }
+    }
+
+    pub fn parse(string: &str) -> Self {
+        Self::new(string.parse::<u32>().expect("Parsing failed"))
+    }
+
+    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
         IPv4 {
             nullable,
-            is_null: buffer.is_null(),
-            value: LittleEndian::read_u32(buffer.data()),
+            is_null,
+            value: LittleEndian::read_u32(data),
         }
     }
 
@@ -55,23 +67,23 @@ impl ValueType for IPv4 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2() => {
-                comp.apply(self.value as i64, cast::<Int2>(other).value() as i64)
+            TypeID::Int2(nullable) => {
+                comp.apply(self.value as i64, value_cast::<Int2>(other).value() as i64)
             }
-            TypeID::Int4() => {
-                comp.apply(self.value as i64, cast::<Int4>(other).value() as i64)
+            TypeID::Int4(nullable) => {
+                comp.apply(self.value as i64, value_cast::<Int4>(other).value() as i64)
             }
-            TypeID::Int8() => {
-                comp.apply(self.value as i64, cast::<Int8>(other).value())
+            TypeID::Int8(nullable) => {
+                comp.apply(self.value as i64, value_cast::<Int8>(other).value())
             }
-            TypeID::Float4() => {
-                comp.apply(self.value as f32, cast::<Float4>(other).value())
+            TypeID::Float4(nullable) => {
+                comp.apply(self.value as f32, value_cast::<Float4>(other).value())
             }
-            TypeID::Float8() => {
-                comp.apply(self.value as f64, cast::<Float8>(other).value())
+            TypeID::Float8(nullable) => {
+                comp.apply(self.value as f64, value_cast::<Float8>(other).value())
             }
-            TypeID::IPv4() => {
-                comp.apply(self.value, cast::<IPv4>(other).value())
+            TypeID::IPv4(nullable) => {
+                comp.apply(self.value, value_cast::<IPv4>(other).value())
             }
             _ => false
         }
@@ -81,11 +93,11 @@ impl ValueType for IPv4 {
         self.is_null
     }
 
-    fn to_string(&self) -> &str {
+    fn to_str(&self) -> &str {
         if self.is_null {
             ""
         } else {
-            self.value.to_string()
+            &self.value.to_string()
         }
     }
 }
@@ -98,7 +110,7 @@ mod test {
     fn ipv4_un_marshall() {
         let ipv4_value = IPv4::new(88997);
         let ipv4_buffer = ipv4_value.un_marshall();
-        assert_eq!(TypeID::IPv4, ipv4_buffer.type_id());
+        assert_eq!(TypeID::IPv4(true), ipv4_buffer.type_id());
 
         let data = ipv4_buffer.data();
         assert_eq!(0xa5, data[0]);
@@ -110,7 +122,7 @@ mod test {
     #[test]
     fn ipv4_type_id() {
         let ipv4 = IPv4::new(88997);
-        assert_eq!(TypeID::IPv4, ipv4.type_id());
+        assert_eq!(TypeID::IPv4(true), ipv4.type_id());
     }
 
     #[test]

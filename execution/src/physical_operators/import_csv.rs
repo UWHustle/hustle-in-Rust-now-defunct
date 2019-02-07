@@ -1,5 +1,6 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
+use logical_entities::types::*;
 
 use storage_manager::StorageManager;
 
@@ -41,8 +42,9 @@ impl Operator for ImportCsv{
 
                 let a = record.get(i).unwrap().to_string();
 
-                let (c,size) = column.get_datatype().parse_and_marshall(a);
-                data[n..n + size].clone_from_slice(&c); // 0  8
+                let c = column.get_datatype().parse(&a);
+                let size = c.size();
+                data[n..n + size].clone_from_slice(c.un_marshall().data()); // 0  8
                 n = n + size;
             }
         }

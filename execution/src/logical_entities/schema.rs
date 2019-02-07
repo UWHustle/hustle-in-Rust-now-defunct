@@ -21,14 +21,16 @@ impl Schema {
 
 #[cfg(test)]
 mod tests {
+    use logical_entities::types::*;
+
     #[test]
     fn schema_create() {
         use logical_entities::schema::Schema;
         use logical_entities::column::Column;
 
         let schema = Schema::new(vec!(
-            Column::new("a".to_string(), "Int".to_string()),
-            Column::new("b".to_string(), "Int".to_string()))
+            Column::new("a".to_string(), TypeID::Int4(true)),
+            Column::new("b".to_string(), TypeID::Int4(true)))
         );
 
         assert_eq!(schema.get_columns().first().unwrap().get_name(), &"a".to_string());

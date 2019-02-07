@@ -1,7 +1,7 @@
 use logical_entities::schema::Schema;
 use logical_entities::types::ValueType;
 
-#[derive(Clone, Debug, PartialEq)]
+//#[derive(Debug, PartialEq)]
 pub struct Row {
     schema: Schema,
     values: Vec<Box<ValueType>>,

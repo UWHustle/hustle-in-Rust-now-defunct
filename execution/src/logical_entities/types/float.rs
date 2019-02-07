@@ -24,11 +24,23 @@ impl Float4 {
         }
     }
 
-    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+    pub fn create_null() -> Self {
+        Float4 {
+            nullable: true,
+            is_null: true,
+            value: 0.0,
+        }
+    }
+
+    pub fn parse(string: &str) -> Self {
+        Self::new(string.parse::<f32>().expect("Parsing failed"))
+    }
+
+    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
         Float4 {
             nullable,
-            is_null: buffer.is_null(),
-            value: LittleEndian::read_f32(buffer.data()),
+            is_null,
+            value: LittleEndian::read_f32(data),
         }
     }
 
@@ -43,12 +55,26 @@ impl Float4 {
 impl Float for Float4 {}
 
 impl Numeric for Float4 {
-    fn add(&self, other: &Numeric) -> Box<Numeric> {
-        Box::new(Float4::new(self.value() + value_as::<f32>(other)))
-    }
-
-    fn divide(&self, other: &Numeric) -> Box<Float> {
-        Box::new(Float4::new(self.value() / value_as::<f32>(other)))
+    fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
+        let result: f32 = match other.type_id() {
+            TypeID::Int2(nullable) => {
+                oper.apply(self.value, numeric_cast::<Int2>(other).value() as f32)
+            }
+            TypeID::Int4(nullable) => {
+                oper.apply(self.value, numeric_cast::<Int4>(other).value() as f32)
+            }
+            TypeID::Int8(nullable) => {
+                oper.apply(self.value, numeric_cast::<Int8>(other).value() as f32)
+            }
+            TypeID::Float4(nullable) => {
+                oper.apply(self.value, numeric_cast::<Float4>(other).value())
+            }
+            TypeID::Float8(nullable) => {
+                oper.apply(self.value, numeric_cast::<Float8>(other).value() as f32)
+            }
+            _ => panic!("Type {:?} is not numeric", other.type_id())
+        };
+        Box::new(Float4::new(result))
     }
 }
 
@@ -65,23 +91,23 @@ impl ValueType for Float4 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2() => {
-                comp.apply(self.value, cast::<Int2>(other).value() as f32)
+            TypeID::Int2(nullable) => {
+                comp.apply(self.value, value_cast::<Int2>(other).value() as f32)
             }
-            TypeID::Int4() => {
-                comp.apply(self.value, cast::<Int4>(other).value() as f32)
+            TypeID::Int4(nullable) => {
+                comp.apply(self.value, value_cast::<Int4>(other).value() as f32)
             }
-            TypeID::Int8() => {
-                comp.apply(self.value as f64, cast::<Int8>(other).value() as f64)
+            TypeID::Int8(nullable) => {
+                comp.apply(self.value as f64, value_cast::<Int8>(other).value() as f64)
             }
-            TypeID::Float4() => {
-                comp.apply(self.value, cast::<Float4>(other).value())
+            TypeID::Float4(nullable) => {
+                comp.apply(self.value, value_cast::<Float4>(other).value())
             }
-            TypeID::Float8() => {
-                comp.apply(self.value as f64, cast::<Float8>(other).value())
+            TypeID::Float8(nullable) => {
+                comp.apply(self.value as f64, value_cast::<Float8>(other).value())
             }
-            TypeID::IPv4() => {
-                comp.apply(self.value, cast::<IPv4>(other).value() as f32)
+            TypeID::IPv4(nullable) => {
+                comp.apply(self.value, value_cast::<IPv4>(other).value() as f32)
             }
             _ => false
         }
@@ -91,11 +117,11 @@ impl ValueType for Float4 {
         self.is_null
     }
 
-    fn to_string(&self) -> &str {
+    fn to_str(&self) -> &str {
         if self.is_null {
             ""
         } else {
-            self.value.to_string()
+            &self.value.to_string()
         }
     }
 }
@@ -117,11 +143,23 @@ impl Float8 {
         }
     }
 
-    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+    pub fn create_null() -> Self {
+        Float8 {
+            nullable: true,
+            is_null: true,
+            value: 0.0,
+        }
+    }
+
+    pub fn parse(string: &str) -> Self {
+        Self::new(string.parse::<f64>().expect("Parsing failed"))
+    }
+
+    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
         Float8 {
             nullable,
-            is_null: buffer.is_null(),
-            value: LittleEndian::read_f64(buffer.data()),
+            is_null,
+            value: LittleEndian::read_f64(data),
         }
     }
 
@@ -136,12 +174,26 @@ impl Float8 {
 impl Float for Float8 {}
 
 impl Numeric for Float8 {
-    fn add(&self, other: &Numeric) -> Box<Numeric> {
-        Box::new(Float8::new(self.value() + value_as::<f64>(other)))
-    }
-
-    fn divide(&self, other: &Numeric) -> Box<Float> {
-        Box::new(Float8::new(self.value() / value_as::<f64>(other)))
+    fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
+        let result: f64 = match other.type_id() {
+            TypeID::Int2(nullable) => {
+                oper.apply(self.value, numeric_cast::<Int2>(other).value() as f64)
+            }
+            TypeID::Int4(nullable) => {
+                oper.apply(self.value, numeric_cast::<Int4>(other).value() as f64)
+            }
+            TypeID::Int8(nullable) => {
+                oper.apply(self.value, numeric_cast::<Int8>(other).value() as f64)
+            }
+            TypeID::Float4(nullable) => {
+                oper.apply(self.value, numeric_cast::<Float4>(other).value() as f64)
+            }
+            TypeID::Float8(nullable) => {
+                oper.apply(self.value, numeric_cast::<Float8>(other).value())
+            }
+            _ => panic!("Type {:?} is not numeric", other.type_id())
+        };
+        Box::new(Float8::new(result))
     }
 }
 
@@ -158,23 +210,23 @@ impl ValueType for Float8 {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::Int2() => {
-                comp.apply(self.value, cast::<Int2>(other).value() as f64)
+            TypeID::Int2(nullable) => {
+                comp.apply(self.value, value_cast::<Int2>(other).value() as f64)
             }
-            TypeID::Int4() => {
-                comp.apply(self.value, cast::<Int4>(other).value() as f64)
+            TypeID::Int4(nullable) => {
+                comp.apply(self.value, value_cast::<Int4>(other).value() as f64)
             }
-            TypeID::Int8() => {
-                comp.apply(self.value, cast::<Int8>(other).value() as f64)
+            TypeID::Int8(nullable) => {
+                comp.apply(self.value, value_cast::<Int8>(other).value() as f64)
             }
-            TypeID::Float4() => {
-                comp.apply(self.value, cast::<Float4>(other).value() as f64)
+            TypeID::Float4(nullable) => {
+                comp.apply(self.value, value_cast::<Float4>(other).value() as f64)
             }
-            TypeID::Float8() => {
-                comp.apply(self.value, cast::<Float8>(other).value())
+            TypeID::Float8(nullable) => {
+                comp.apply(self.value, value_cast::<Float8>(other).value())
             }
-            TypeID::IPv4() => {
-                comp.apply(self.value, cast::<IPv4>(other).value() as f64)
+            TypeID::IPv4(nullable) => {
+                comp.apply(self.value, value_cast::<IPv4>(other).value() as f64)
             }
             _ => false
         }
@@ -184,11 +236,11 @@ impl ValueType for Float8 {
         self.is_null
     }
 
-    fn to_string(&self) -> &str {
+    fn to_str(&self) -> &str {
         if self.is_null {
             ""
         } else {
-            self.value.to_string()
+            &self.value.to_string()
         }
     }
 }
@@ -201,7 +253,7 @@ mod test {
     fn float4_un_marshall() {
         let float4_value = Float4::new(13.7);
         let float4_buffer = float4_value.un_marshall();
-        assert_eq!(TypeID::Float4, float4_buffer.type_id());
+        assert_eq!(TypeID::Float4(true), float4_buffer.type_id());
 
         let data = float4_buffer.data();
         assert_eq!(0x41, data[0]);
@@ -213,7 +265,7 @@ mod test {
     #[test]
     fn float4_type_id() {
         let float4 = Float4::new(13.7);
-        assert_eq!(TypeID::Float4, float4.type_id());
+        assert_eq!(TypeID::Float4(true), float4.type_id());
     }
 
     #[test]
@@ -255,7 +307,7 @@ mod test {
     fn float8_un_marshall() {
         let float8_value = Float8::new(12228.444);
         let float8_buffer = float8_value.un_marshall();
-        assert_eq!(TypeID::Float8, float8_buffer.type_id());
+        assert_eq!(TypeID::Float8(true), float8_buffer.type_id());
 
         let data = float8_buffer.data();
         assert_eq!(0x40, data[0]);
@@ -271,7 +323,7 @@ mod test {
     #[test]
     fn float8_type_id() {
         let float8 = Float8::new(12228.444);
-        assert_eq!(TypeID::Float8, float8.type_id());
+        assert_eq!(TypeID::Float8(true), float8.type_id());
     }
 
     #[test]

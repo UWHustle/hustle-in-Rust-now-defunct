@@ -7,11 +7,10 @@ pub struct Column {
 }
 
 impl Column {
-    pub fn new(name: String, type_string: String) -> Self {
-        let data_type = TypeID::from_string(&type_string);
+    pub fn new(name: String, type_id: TypeID) -> Self {
         Column {
             name,
-            data_type,
+            data_type: type_id,
         }
     }
 
@@ -30,10 +29,12 @@ impl Column {
 
 #[cfg(test)]
 mod tests {
+    use logical_entities::types::*;
+
     #[test]
     fn column_create() {
         use logical_entities::column::Column;
-        let column = Column::new("test".to_string(), "Int".to_string());
+        let column = Column::new("test".to_string(), TypeID::Int4(true));
         assert_eq!(column.get_name(), &"test".to_string());
         assert_eq!(column.get_size(), 8);
     }

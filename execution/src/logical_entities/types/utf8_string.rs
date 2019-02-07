@@ -18,13 +18,21 @@ impl UTF8String {
         }
     }
 
-    pub fn marshall(nullable: bool, buffer: &BufferType) -> Self {
+    pub fn create_null() -> Self {
+        UTF8String {
+            nullable: true,
+            is_null: true,
+            value: Box::new("".to_string()),
+        }
+    }
+
+    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
         let mut vec_data: Vec<u8> = vec!();
-        vec_data.clone_from_slice(buffer.data());
+        vec_data.clone_from_slice(data);
         let value = String::from_utf8(vec_data).expect("Invalid UTF8 string");
         UTF8String {
             nullable,
-            is_null: buffer.is_null(),
+            is_null,
             value: Box::new(value),
         }
     }
@@ -55,8 +63,8 @@ impl ValueType for UTF8String {
 
     fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
         match other.type_id() {
-            TypeID::UTF8String() => {
-                comp.apply(&self.value, &Box::new(cast::<UTF8String>(other).value().to_string()))
+            TypeID::UTF8String(nullable) => {
+                comp.apply(&self.value, &Box::new(value_cast::<UTF8String>(other).value().to_string()))
             }
             _ => false
         }
@@ -66,7 +74,7 @@ impl ValueType for UTF8String {
         self.is_null
     }
 
-    fn to_string(&self) -> &str {
+    fn to_str(&self) -> &str {
         if self.is_null {
             ""
         } else {
@@ -83,7 +91,7 @@ mod test {
     fn utf8_string_un_marshall() {
         let utf8_string_value = UTF8String::new("Hello!");
         let utf8_string_buffer = utf8_string_value.un_marshall();
-        assert_eq!(TypeID::UTF8String, utf8_string_buffer.type_id());
+        assert_eq!(TypeID::UTF8String(true), utf8_string_buffer.type_id());
 
         let data = utf8_string_buffer.data();
         assert_eq!('H', data[0]);
@@ -104,7 +112,7 @@ mod test {
     #[test]
     fn utf8_string_type_id() {
         let utf8_string = UTF8String::new("Chocolate donuts");
-        assert_eq!(TypeID::UTF8String, utf8_string.type_id());
+        assert_eq!(TypeID::UTF8String(true), utf8_string.type_id());
     }
 
     #[test]

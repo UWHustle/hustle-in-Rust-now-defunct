@@ -2,9 +2,9 @@ use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::ValueType;
 use logical_entities::types::Numeric;
 use logical_entities::types::TypeID;
-use logical_entities::types::float::*;
+use logical_entities::types::integer::*;
+use logical_entities::types::force_numeric;
 
-#[derive(Clone, Debug, PartialEq)]
 pub struct Avg {
     sum: Box<Numeric>,
     count: u32,
@@ -13,7 +13,7 @@ pub struct Avg {
 impl Avg {
     pub fn new(data_type: TypeID) -> Self {
         Avg {
-            sum: Numeric::zero(data_type),
+            sum: data_type.create_zero(),
             count: 0,
         }
     }
@@ -25,21 +25,23 @@ impl AggregationTrait for Avg {
     }
 
     fn initialize(&mut self) -> () {
-            self.sum = Numeric::zero(self.sum.type_id());
-            self.count = 0;
-        }
+        self.sum = self.sum.type_id().create_zero();
+        self.count = 0;
+    }
 
     fn consider_value(&mut self, value: &ValueType) -> () {
-        self.sum = self.sum.add(value);
+        // TODO: Need a way to convert this to numeric type
+        self.sum = self.sum.add(force_numeric(value));
         self.count += 1;
     }
 
     // TODO: Not implemented (currently have no way to do division)
     fn output(&self) -> Box<ValueType> {
-        self.sum.divide(self.count)
+        let denom = Int4::new(self.count as i32);
+        self.sum.divide(&denom).as_value_type().box_clone()
     }
 
     fn output_type(&self) -> TypeID {
-        self.sum.divide(self.count).type_id()
+        self.output().type_id()
     }
 }

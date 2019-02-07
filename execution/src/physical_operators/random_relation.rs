@@ -1,6 +1,7 @@
 extern crate rand;
 extern crate csv;
 
+use logical_entities::types::*;
 use logical_entities::relation::Relation;
 
 use storage_manager::StorageManager;
@@ -37,9 +38,9 @@ impl Operator for RandomRelation{
         for _y in 0..self.row_count {
             for column in columns.iter() {
                 let random_value = rand::random::<u8>().to_string();
-
-                let (c,size) = column.get_datatype().parse_and_marshall(random_value);
-                data[n..n + size].clone_from_slice(&c);
+                let value = column.get_datatype().parse(&random_value);
+                let size = value.size();
+                data[n..n + size].clone_from_slice(&value.un_marshall().data());
                 n = n + size;
             }
         }

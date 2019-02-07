@@ -4,20 +4,23 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
+use logical_entities::types::*;
+use logical_entities::types::integer::*;
+use logical_entities::types::borrowed_buffer::*;
 
 use std::collections::HashMap;
 
-#[derive(Debug)]
 pub struct Project {
     relation: Relation,
     output_relation: Relation,
     predicate_name: String,
-    comparator: i8,
-    comp_value: Vec<u8>,
+    compare: bool,
+    comparator: Comparator,
+    comp_value: Box<ValueType>,
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: String, comparator: i8, comp_value: &ValueType) -> Self {
+    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: String, compare: bool, comparator: Comparator, comp_value: &ValueType) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
@@ -25,13 +28,14 @@ impl Project {
             relation,
             output_relation,
             predicate_name,
+            compare,
             comparator,
-            comp_value,
+            comp_value: comp_value.box_clone(),
         }
     }
 
     pub fn pure_project(relation: Relation, output_cols: Vec<Column>) -> Self {
-        Self::new(relation, output_cols, String::new(), 2, vec!())
+        Self::new(relation, output_cols, String::new(), false, Comparator::Less, &Int2::create_null())
     }
 }
 
@@ -55,12 +59,12 @@ impl Operator for Project {
 
             // Check whether the current row satisfies the predicate
             let mut filter = true;
-            if self.comparator >= -1 && self.comparator <= 1 {
+            if self.compare {
                 for column in &input_cols {
-                    let value_len = column.get_datatype().get_next_length(&input_data[k..]);
+                    let value_len = column.get_datatype().size(); // TODO: Won't work for variable-length data
                     if column.get_name().to_string() == self.predicate_name {
-                        let value = &input_data[k..k + value_len].to_vec();
-                        if !(column.get_datatype().compare(value, &self.comp_value) == self.comparator) {
+                        let value = BorrowedBuffer::new(column.get_datatype(), false, &input_data[k..k + value_len]);
+                        if !value.marshall().compare(&*self.comp_value, self.comparator) {
                             filter = false;
                         }
                     }
@@ -75,7 +79,7 @@ impl Operator for Project {
                 let mut col_map = HashMap::new();
                 k = i;
                 for column in &input_cols {
-                    let value_len = column.get_datatype().get_next_length(&input_data[k..]);
+                    let value_len = column.get_datatype().size(); // TODO: Won't work for variable-length data
                     col_map.insert(column, &input_data[k..k + value_len]);
                     k += value_len;
                 }
@@ -83,7 +87,7 @@ impl Operator for Project {
                 // Output values in the order of the output columns
                 for column in &output_cols {
                     let slice = col_map[column];
-                    let value_length = column.get_datatype().get_next_length(slice);
+                    let value_length = column.get_datatype().size(); // TODO: Won't work for variable-length data
                     output_data[j..j + value_length].clone_from_slice(slice);
                     j += value_length;
                 }
