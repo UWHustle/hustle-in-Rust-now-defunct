@@ -108,6 +108,7 @@
 #include "query_optimizer/logical/SetOperation.hpp"
 #include "query_optimizer/logical/SharedSubplanReference.hpp"
 #include "query_optimizer/logical/Sort.hpp"
+#include "query_optimizer/logical/Limit.hpp"
 #include "query_optimizer/logical/TableGenerator.hpp"
 #include "query_optimizer/logical/TableReference.hpp"
 #include "query_optimizer/logical/TopLevelPlan.hpp"
@@ -1506,8 +1507,10 @@ L::LogicalPtr Resolver::resolveSelect(
                           -1 /* limit */);
     }
   } else if (select_query.limit() != nullptr) {
-    THROW_SQL_ERROR_AT(select_query.limit())
-        << "LIMIT is not supported without ORDER BY";
+    logical_plan = L::Limit::Create(logical_plan,
+        select_query.limit()->limit_expression()->long_value());
+//    THROW_SQL_ERROR_AT(select_query.limit())
+//        << "LIMIT is not supported without ORDER BY";
   }
 
   logical_plan = L::Project::Create(logical_plan, select_list_expressions);
