@@ -1711,9 +1711,22 @@ TopLevelPlan
 
 select 1 from test limit 1
 --
-ERROR: LIMIT is not supported without ORDER BY (1 : 20)
-select 1 from test limit 1
-                   ^
+TopLevelPlan
++-plan=Project
+| +-input=Limit[limit=1]
+| | +-input=TableReference[relation_name=Test,relation_alias=test]
+| |   +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
+| |   +-AttributeReference[id=1,name=long_col,relation=test,type=Long]
+| |   +-AttributeReference[id=2,name=float_col,relation=test,type=Float]
+| |   +-AttributeReference[id=3,name=double_col,relation=test,type=Double NULL]
+| |   +-AttributeReference[id=4,name=char_col,relation=test,type=Char(20)]
+| |   +-AttributeReference[id=5,name=vchar_col,relation=test,
+| |     type=VarChar(20) NULL]
+| +-project_list=
+|   +-Alias[id=6,name=,alias=1,relation=,type=Int]
+|     +-Literal[value=1,type=Int]
++-output_attributes=
+  +-AttributeReference[id=6,name=,alias=1,relation=,type=Int]
 ==
 
 # WITH queries.

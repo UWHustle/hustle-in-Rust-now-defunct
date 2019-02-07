@@ -3431,3 +3431,39 @@ TopLevelPlan
 |   +-[]
 +-output_attributes=
   +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
+==
+
+SELECT int_col FROM test LIMIT 1;
+--
+[Optimized Logical Plan]
+TopLevelPlan
++-plan=Project
+| +-input=Limit[limit=1]
+| | +-input=TableReference[relation_name=Test,relation_alias=test]
+| |   +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
+| |   +-AttributeReference[id=1,name=long_col,relation=test,type=Long]
+| |   +-AttributeReference[id=2,name=float_col,relation=test,type=Float]
+| |   +-AttributeReference[id=3,name=double_col,relation=test,type=Double NULL]
+| |   +-AttributeReference[id=4,name=char_col,relation=test,type=Char(20)]
+| |   +-AttributeReference[id=5,name=vchar_col,relation=test,
+| |     type=VarChar(20) NULL]
+| +-project_list=
+|   +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
+[Physical Plan]
+TopLevelPlan
++-plan=Selection[has_repartition=false]
+| +-input=Limit[limit=1]
+| | +-input=TableReference[relation=Test,alias=test]
+| |   +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
+| |   +-AttributeReference[id=1,name=long_col,relation=test,type=Long]
+| |   +-AttributeReference[id=2,name=float_col,relation=test,type=Float]
+| |   +-AttributeReference[id=3,name=double_col,relation=test,type=Double NULL]
+| |   +-AttributeReference[id=4,name=char_col,relation=test,type=Char(20)]
+| |   +-AttributeReference[id=5,name=vchar_col,relation=test,
+| |     type=VarChar(20) NULL]
+| +-project_expressions=
+|   +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]
++-output_attributes=
+  +-AttributeReference[id=0,name=int_col,relation=test,type=Int NULL]

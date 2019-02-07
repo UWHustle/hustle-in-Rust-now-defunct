@@ -23,6 +23,7 @@
 #include <memory>
 #include <unordered_set>
 #include <vector>
+#include <optimizer/quickstep/query_optimizer/logical/Limit.hpp>
 
 #include "query_optimizer/LogicalToPhysicalMapper.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
