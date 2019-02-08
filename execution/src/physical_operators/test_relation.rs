@@ -8,21 +8,23 @@ use storage_manager::StorageManager;
 use physical_operators::Operator;
 
 #[derive(Debug)]
-pub struct RandomRelation {
+pub struct TestRelation {
     relation: Relation,
-    row_count: usize
+    row_count: usize,
+    random: bool
 }
 
-impl RandomRelation {
-    pub fn new(relation: Relation, row_count: usize) -> Self {
-        RandomRelation {
+impl TestRelation {
+    pub fn new(relation: Relation, row_count: usize, random:bool) -> Self {
+        TestRelation {
             relation,
-            row_count
+            row_count,
+            random
         }
     }
 }
 
-impl Operator for RandomRelation{
+impl Operator for TestRelation {
     fn get_target_relation(&self) -> Relation {
         self.relation.clone()
     }
@@ -36,9 +38,13 @@ impl Operator for RandomRelation{
 
         for _y in 0..self.row_count {
             for column in columns.iter() {
-                let random_value = rand::random::<u8>().to_string();
-
-                let (c,size) = column.get_datatype().parse_and_marshall(random_value);
+                let mut value;
+                if self.random {
+                    value = rand::random::<u8>().to_string();
+                } else {
+                    value = _y.to_string();
+                }
+                let (c,size) = column.get_datatype().parse_and_marshall(value);
                 data[n..n + size].clone_from_slice(&c);
                 n = n + size;
             }

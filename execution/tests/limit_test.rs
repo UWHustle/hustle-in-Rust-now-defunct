@@ -15,7 +15,7 @@ const RECORD_COUNT: usize = 10;
 
 #[test]
 fn test_limit() {
-    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
+    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, true);
     let limit = (RECORD_COUNT - 2) as u32;
     let limit_relation = hustle_limit(relation.clone(), limit);
     let hustle_calculation = sum_column_hustle(limit_relation.clone(), "a".to_string());

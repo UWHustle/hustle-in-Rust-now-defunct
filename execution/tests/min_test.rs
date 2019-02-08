@@ -4,7 +4,6 @@ use execution::logical_entities::aggregations::min::Min;
 use execution::logical_entities::column::Column;
 use execution::logical_entities::relation::Relation;
 use execution::physical_operators::aggregate::Aggregate;
-use execution::physical_operators::Operator;
 use execution::physical_operators::project::Project;
 use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_plan::node::Node;
@@ -17,7 +16,7 @@ const RECORD_COUNT: usize = 10;
 
 #[test]
 fn test_min_aggregate() {
-    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
+    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, true);
     let agg_col = Column::new(String::from("a"), String::from("Int"));
     let agg_relation = hustle_min(relation.clone(), agg_col);
     let hustle_calculation = sum_column_hustle(agg_relation.clone(), "MIN(a)".to_string());

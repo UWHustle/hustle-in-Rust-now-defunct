@@ -29,7 +29,7 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 
 #[test]
 fn test_project_predicate() {
-    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
+    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, false);
 
     let predicated_relation = hustle_where(relation.clone());
     let hustle_calculation = sum_column_hustle(predicated_relation.clone(), "a".to_string());

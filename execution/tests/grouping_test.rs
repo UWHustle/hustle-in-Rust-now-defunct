@@ -23,7 +23,7 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 
 #[test]
 fn test_dag_sum_group_by_aggregate() {
-    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
+    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, true);
 
     let aggregated_relation = hustle_sum_group_by(relation.clone());
     let hustle_calculation = sum_column_hustle(aggregated_relation.clone(), "SUM(a)".to_string());

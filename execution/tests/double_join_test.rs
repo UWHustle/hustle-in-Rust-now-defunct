@@ -18,7 +18,7 @@ use std::rc::Rc;
 
 
 fn test_dag_double_join() {
- let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
+ let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, true);
 
  let join_relation = hustle_double_join(relation.clone(), relation.clone(), relation.clone());
  let hustle_calculation = sum_column_hustle(join_relation.clone(), "b".to_string());

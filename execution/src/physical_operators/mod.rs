@@ -4,7 +4,7 @@ pub mod insert;
 pub mod join;
 pub mod print;
 pub mod export_csv;
-pub mod random_relation;
+pub mod test_relation;
 pub mod project;
 pub mod aggregate;
 pub mod table_reference;
