@@ -5,3 +5,8 @@ authors = ["gaffneyk <kpgaffney@wisc.edu>"]
 
 [dependencies]
 memmap = "0.7.0"
+
+[lib]
+name = "storage"
+path = "src/lib.rs"
+crate-type = ["rlib", "dylib", "staticlib"]
