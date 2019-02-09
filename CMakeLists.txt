@@ -31,6 +31,7 @@ file(COPY ${CMAKE_SOURCE_DIR}/test-data DESTINATION ${CMAKE_BINARY_DIR})
 
 enable_testing()
 
+add_subdirectory(storage)
 add_subdirectory(execution)
 add_subdirectory(optimizer)
 add_subdirectory(parser)
