@@ -32,7 +32,7 @@ impl Operator for Insert {
 
         let mut n = 0;
         for (i, column) in self.row.get_schema().get_columns().iter().enumerate() {
-            let a = format!("{}",self.row.get_values()[i].to_str());
+            let a = format!("{}",self.row.get_values()[i].value().to_str());
 
             let value = column.get_datatype().parse(&a);
             let size = value.size();

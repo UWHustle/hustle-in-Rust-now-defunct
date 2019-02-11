@@ -10,7 +10,7 @@ use logical_entities::types::borrowed_buffer::BorrowedBuffer;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct Aggregate<T: AggregationTrait> {
     input_relation: Relation,
     output_relation: Relation,

@@ -6,7 +6,7 @@ use logical_entities::schema::Schema;
 use storage_manager::StorageManager;
 use physical_operators::Operator;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct Join {
     relation_left: Relation,
     relation_right: Relation,

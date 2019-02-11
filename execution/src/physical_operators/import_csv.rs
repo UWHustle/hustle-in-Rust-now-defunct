@@ -4,7 +4,7 @@ use logical_entities::types::*;
 
 use storage_manager::StorageManager;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct ImportCsv {
     file_name: String,
     relation: Relation

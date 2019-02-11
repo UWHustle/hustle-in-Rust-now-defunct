@@ -10,7 +10,7 @@ use storage_manager::StorageManager;
 pub const CHUNK_SIZE: usize = 1024 * 1024 * 1024 * 1024 * 1024;
 
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct SelectSum {
     relation: Relation,
     column: Column,

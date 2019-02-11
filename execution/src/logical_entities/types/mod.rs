@@ -216,7 +216,7 @@ pub trait ValueType: Castable + Any + BoxClone {
     fn to_str(&self) -> &str;
 }
 
-pub trait Numeric: ValueType + ValueTypeUpCast {
+pub trait Numeric: ValueType + ValueTypeUpCast + BoxNumericClone {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric>;
 
     fn add(&self, other: &Numeric) -> Box<Numeric> {
@@ -225,6 +225,54 @@ pub trait Numeric: ValueType + ValueTypeUpCast {
 
     fn divide(&self, other: &Numeric) -> Box<Numeric> {
         self.arithmetic(other, Arithmetic::Divide)
+    }
+}
+
+pub struct BoxedValue {
+    value: Box<ValueType>
+}
+
+impl BoxedValue {
+    pub fn new(value: Box<ValueType>) -> Self {
+        Self { value }
+    }
+    pub fn value(&self) -> &ValueType {
+        &*self.value
+    }
+}
+
+impl Clone for BoxedValue {
+    fn clone(&self) -> BoxedValue {
+        BoxedValue { value: self.value.box_clone() }
+    }
+}
+
+pub struct BoxedNumeric {
+    value: Box<Numeric>
+}
+
+impl BoxedNumeric {
+    pub fn new(value: Box<Numeric>) -> Self {
+        Self { value }
+    }
+    pub fn value(&self) -> &Numeric { // TODO: Use operator overloading
+        &*self.value
+    }
+}
+
+impl Clone for BoxedNumeric {
+    fn clone(&self) -> BoxedNumeric {
+        BoxedNumeric { value: self.value.box_numeric_clone() }
+    }
+}
+
+pub trait BoxNumericClone {
+    fn box_numeric_clone(&self) -> Box<Numeric>;
+}
+
+impl<T: Numeric + Clone> BoxNumericClone for T {
+    fn box_numeric_clone(&self) -> Box<Numeric> {
+        Box::new(self.clone())
     }
 }
 

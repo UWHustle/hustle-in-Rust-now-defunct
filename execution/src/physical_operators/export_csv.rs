@@ -9,7 +9,7 @@ use physical_operators::Operator;
 
 use storage_manager::StorageManager;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct ExportCsv {
     file_name: String,
     relation: Relation

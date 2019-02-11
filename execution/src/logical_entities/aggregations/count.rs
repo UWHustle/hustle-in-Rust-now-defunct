@@ -28,8 +28,8 @@ impl AggregationTrait for Count {
         self.running_total += 1;
     }
 
-    fn output(&self) -> (Box<ValueType>) {
-        Box::new(Int8::new(self.running_total as i64))
+    fn output(&self) -> &ValueType {
+        &Int8::new(self.running_total as i64)
     }
 
     fn output_type(&self) -> TypeID {

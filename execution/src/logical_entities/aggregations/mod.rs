@@ -11,6 +11,6 @@ pub trait AggregationTrait {
     fn get_name(&self) -> &'static str;
     fn initialize(&mut self) -> ();
     fn consider_value(&mut self, value: &ValueType) -> ();
-    fn output(&self) -> (Box<ValueType>);
+    fn output(&self) -> &ValueType;
     fn output_type(&self) -> TypeID;
 }

@@ -27,8 +27,8 @@ impl AggregationTrait for Max {
         }
     }
 
-    fn output(&self) -> Box<ValueType> {
-        self.current_max.box_clone()
+    fn output(&self) -> &ValueType {
+        &*self.current_max
     }
 
     fn output_type(&self) -> TypeID {

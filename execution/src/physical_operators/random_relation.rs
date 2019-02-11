@@ -8,7 +8,7 @@ use storage_manager::StorageManager;
 
 use physical_operators::Operator;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct RandomRelation {
     relation: Relation,
     row_count: usize
