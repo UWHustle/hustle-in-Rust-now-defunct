@@ -19,17 +19,18 @@ use self::owned_buffer::*;
 use self::type_id::*;
 use self::utf8_string::*;
 
-// Types whose values are stored in a byte buffer somewhere
+/* ============================================================================================== */
+
+/// Types whose values are stored in a byte buffer somewhere
 pub trait Buffer {
     fn type_id(&self) -> TypeID;
-    fn data(&self) -> &[u8];
     fn is_null(&self) -> bool;
+    fn data(&self) -> &[u8];
 
     fn marshall(&self) -> Box<Value> {
         let nullable = self.type_id().nullable;
         let is_null = self.is_null();
         let data = self.data();
-
         match self.type_id().variant {
             Variant::Int2 => {
                 Box::new(Int2::marshall(nullable, is_null, data))
@@ -56,13 +57,15 @@ pub trait Buffer {
     }
 }
 
-// Values are stored as various types - concrete implementations can define a 'value()' method which
-// returns the internal type
-pub trait Value: Any + AsAny + AsValue + Debug + BoxCloneValue {
-    fn un_marshall(&self) -> OwnedBuffer;
+/* ============================================================================================== */
+
+/// Values are stored as various types - concrete implementations can define a 'value()' method
+/// which returns the internal type
+pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
     fn type_id(&self) -> TypeID;
     fn is_null(&self) -> bool;
     fn to_string(&self) -> String;
+    fn un_marshall(&self) -> OwnedBuffer;
     fn compare(&self, other: &Value, cmp: Comparator) -> bool;
 
     // Should be overriden for types which don't have a constant size (i.e. strings)
@@ -91,18 +94,7 @@ pub trait Value: Any + AsAny + AsValue + Debug + BoxCloneValue {
     }
 }
 
-pub trait Numeric: Value + AsNumeric + BoxCloneNumeric {
-    fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric>;
-
-    fn add(&self, other: &Numeric) -> Box<Numeric> {
-        self.arithmetic(other, Arithmetic::Add)
-    }
-
-    fn divide(&self, other: &Numeric) -> Box<Numeric> {
-        self.arithmetic(other, Arithmetic::Divide)
-    }
-}
-
+/// Allows for upcasting to `Any`
 pub trait AsAny {
     fn as_any(&self) -> &Any;
 }
@@ -113,6 +105,7 @@ impl<T: Any> AsAny for T {
     }
 }
 
+/// Allows for upcasting to `Value`
 pub trait AsValue {
     fn as_value(&self) -> &Value;
 }
@@ -123,16 +116,7 @@ impl<T: Value> AsValue for T {
     }
 }
 
-pub trait AsNumeric {
-    fn as_numeric(&self) -> &Numeric;
-}
-
-impl<T: Numeric> AsNumeric for T {
-    fn as_numeric(&self) -> &Numeric {
-        self
-    }
-}
-
+/// Allows `Value` objects to be cloned to the heap
 pub trait BoxCloneValue {
     fn box_clone_value(&self) -> Box<Value>;
 }
@@ -143,6 +127,53 @@ impl<T: Value + Clone> BoxCloneValue for T {
     }
 }
 
+/// Ensures that `Box<Value>` is cloneable even though `Value` isn't
+impl Clone for Box<Value> {
+    fn clone(&self) -> Self {
+        self.box_clone_value()
+    }
+}
+
+/// Allows for downcasting of `Value` trait objects
+pub fn cast_value<T: Value>(value: &Value) -> &T {
+    value.as_any().downcast_ref::<T>().expect("Casting failed")
+}
+
+/* ============================================================================================== */
+
+/// Values on which arithmetic operations can be performed
+pub trait Numeric: Value + AsNumeric + BoxCloneNumeric {
+    fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric>;
+
+    fn add(&self, other: &Numeric) -> Box<Numeric> {
+        self.arithmetic(other, Arithmetic::Add)
+    }
+
+    fn subtract(&self, other: &Numeric) -> Box<Numeric> {
+        self.arithmetic(other, Arithmetic::Subtract)
+    }
+
+    fn multiply(&self, other: &Numeric) -> Box<Numeric> {
+        self.arithmetic(other, Arithmetic::Multiply)
+    }
+
+    fn divide(&self, other: &Numeric) -> Box<Numeric> {
+        self.arithmetic(other, Arithmetic::Divide)
+    }
+}
+
+/// Allows for upcasting to `Numeric`
+pub trait AsNumeric {
+    fn as_numeric(&self) -> &Numeric;
+}
+
+impl<T: Numeric> AsNumeric for T {
+    fn as_numeric(&self) -> &Numeric {
+        self
+    }
+}
+
+/// Allows `Numeric` objects to be cloned to the heap
 pub trait BoxCloneNumeric {
     fn box_clone_numeric(&self) -> Box<Numeric>;
 }
@@ -153,26 +184,21 @@ impl<T: Numeric + Clone> BoxCloneNumeric for T {
     }
 }
 
-impl Clone for Box<Value> {
-    fn clone(&self) -> Self {
-        self.box_clone_value()
-    }
-}
-
+/// Ensures that `Box<Numeric>` is cloneable even though `Numeric` isn't
 impl Clone for Box<Numeric> {
     fn clone(&self) -> Self {
         self.box_clone_numeric()
     }
 }
 
-pub fn cast_value<T: Value>(value: &Value) -> &T {
-    value.as_any().downcast_ref::<T>().expect("Casting failed")
-}
-
+/// Allows for downcasting of `Numeric` trait objects
 pub fn cast_numeric<T: Numeric>(value: &Numeric) -> &T {
     value.as_any().downcast_ref::<T>().expect("Casting failed")
 }
 
+/// Forces a `Value` to be interpreted as a `Numeric`
+///
+/// Panics if the input value is not of a numeric type
 pub fn force_numeric(value: &Value) -> &Numeric {
     match value.type_id().variant {
         Variant::Int2 => {
