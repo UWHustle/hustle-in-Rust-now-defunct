@@ -7,7 +7,7 @@ use super::*;
 // Define common methods on ip-address types here
 trait IPAddress: ValueType {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct IPv4 {
     nullable: bool,
     is_null: bool,
@@ -93,11 +93,11 @@ impl ValueType for IPv4 {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            &self.value.to_string()
+            self.value.to_string()
         }
     }
 }

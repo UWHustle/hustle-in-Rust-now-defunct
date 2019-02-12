@@ -47,21 +47,21 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
         let mut output_data = StorageManager::create_relation(&self.output_relation, self.input_relation.get_total_size());
 
         //A HashMap mapping group by values to aggregations for that grouping
-        let mut group_by: HashMap<Vec<(&str, Column)>, T> = HashMap::new();
+        let mut group_by: HashMap<Vec<(String, Column)>, T> = HashMap::new();
 
         let mut i = 0; // Current position in the input buffer
         let mut j = 0; // Current position in the output buffer
 
         // Loop over all the data
         while i < input_data.len() {
-            let mut group_by_values: Vec<(&str, Column)> = vec!();
-            let mut agg_values: Vec<(&str, Column)> = vec!();
+            let mut group_by_values: Vec<(String, Column)> = vec!();
+            let mut agg_values: Vec<(String, Column)> = vec!();
 
             // Split data by the columns relevant to the aggregation vs columns to group by
             for column in &input_cols {
                 let value_len = column.get_datatype().size(); // TODO: Doesn't work for variable-length data
                 let buffer = BorrowedBuffer::new(column.get_datatype(), false, &input_data[i..i + value_len]);
-                let value = (buffer.marshall().to_str(), column.clone());
+                let value = (buffer.marshall().to_string(), column.clone());
                 if (&self.group_by_cols).into_iter().any(|c| c.get_name() == column.get_name()) {
                     group_by_values.push(value);
                 } else {
@@ -74,13 +74,13 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
             if group_by.contains_key(&group_by_values) {
                 let agg_instance = group_by.get_mut(&group_by_values).unwrap();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(value.0));
+                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
                 }
             } else {
                 let mut agg_instance = self.aggregation.clone();
                 agg_instance.initialize();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(value.0));
+                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
                 }
                 group_by.entry(group_by_values).or_insert(agg_instance);
             }

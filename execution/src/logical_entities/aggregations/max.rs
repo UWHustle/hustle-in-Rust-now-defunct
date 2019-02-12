@@ -2,6 +2,7 @@ use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::TypeID;
 use logical_entities::types::ValueType;
 
+#[derive(Clone, Debug)]
 pub struct Max {
     current_max: Box<ValueType>,
 }
@@ -27,8 +28,8 @@ impl AggregationTrait for Max {
         }
     }
 
-    fn output(&self) -> &ValueType {
-        &*self.current_max
+    fn output(&self) -> Box<ValueType> {
+        self.current_max.box_clone()
     }
 
     fn output_type(&self) -> TypeID {

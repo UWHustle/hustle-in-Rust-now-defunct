@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UTF8String {
     nullable: bool,
     is_null: bool,
@@ -74,11 +74,11 @@ impl ValueType for UTF8String {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            self.value()
+            self.value().to_string()
         }
     }
 }
@@ -94,13 +94,13 @@ mod test {
         assert_eq!(TypeID::UTF8String(true), utf8_string_buffer.type_id());
 
         let data = utf8_string_buffer.data();
-        assert_eq!('H', data[0]);
-        assert_eq!('e', data[1]);
-        assert_eq!('l', data[2]);
-        assert_eq!('l', data[3]);
-        assert_eq!('l', data[4]);
-        assert_eq!('o', data[5]);
-        assert_eq!('!', data[6]);
+        assert_eq!('H' as u8, data[0]);
+        assert_eq!('e' as u8, data[1]);
+        assert_eq!('l' as u8, data[2]);
+        assert_eq!('l' as u8, data[3]);
+        assert_eq!('l' as u8, data[4]);
+        assert_eq!('o' as u8, data[5]);
+        assert_eq!('!' as u8, data[6]);
     }
 
     #[test]
@@ -122,7 +122,7 @@ mod test {
         let aardvark = UTF8String::new("aardvark");
         assert!(!alphabet.less(&aardvark));
         assert!(alphabet.greater(&aardvark));
-        assert!(!alphabet.equals(aardvark));
+        assert!(!alphabet.equals(&aardvark));
 
         let elephant = UTF8String::new("elephant");
         assert!(alphabet.less(&elephant));

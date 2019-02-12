@@ -12,6 +12,8 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
+use logical_entities::types::Comparator;
+use logical_entities::types::*;
 
 extern crate serde_json;
 
@@ -100,13 +102,13 @@ fn parse_selection(json: &Value) -> Node {
 
             let comparator_str = filter_predicate["json_name"].as_str().unwrap();
             let comparator = match comparator_str {
-                "Equal" => 0,
-                "Greater" => 1,
-                "Less" => -1,
+                "Equal" => Comparator::Equal,
+                "Greater" => Comparator::Greater,
+                "Less" => Comparator::Less,
                 _ => panic!("Unknown comparison type {}", comparator_str)
             };
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
-            Project::new(input.get_output_relation(), output_cols, filter_col.get_name().clone(), comparator, comp_value.0)
+            Project::new(input.get_output_relation(), output_cols, filter_col.get_name(), true, comparator, &comp_value)
         }
     };
     Node::new(Rc::new(project_op), vec!(Rc::new(input)))
@@ -138,7 +140,7 @@ fn parse_column(json: &Value) -> Column {
     if type_string == "Long NULL" || type_string == "Long" {
         type_string = "Int".to_string();
     }
-    Column::new(name, type_string)
+    Column::new(name, TypeID::from_string(type_string))
 }
 
 fn get_string(json: &Value) -> String {

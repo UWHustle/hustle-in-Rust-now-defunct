@@ -7,7 +7,7 @@ use super::*;
 // Define common methods on floating-point types here
 pub trait Float: Numeric {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Float4 {
     nullable: bool,
     is_null: bool,
@@ -117,16 +117,16 @@ impl ValueType for Float4 {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            &self.value.to_string()
+            self.value.to_string()
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Float8 {
     nullable: bool,
     is_null: bool,
@@ -236,11 +236,11 @@ impl ValueType for Float8 {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            &self.value.to_string()
+            self.value.to_string()
         }
     }
 }

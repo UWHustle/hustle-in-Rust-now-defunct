@@ -20,14 +20,14 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: String, compare: bool, comparator: Comparator, comp_value: &ValueType) -> Self {
+    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: &String, compare: bool, comparator: Comparator, comp_value: &ValueType) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
         Project {
             relation,
             output_relation,
-            predicate_name,
+            predicate_name: predicate_name.clone(),
             compare,
             comparator,
             comp_value: comp_value.box_clone(),
@@ -35,7 +35,7 @@ impl Project {
     }
 
     pub fn pure_project(relation: Relation, output_cols: Vec<Column>) -> Self {
-        Self::new(relation, output_cols, String::new(), false, Comparator::Less, &Int2::create_null())
+        Self::new(relation, output_cols, &String::new(), false, Comparator::Less, &Int2::create_null())
     }
 }
 
@@ -64,7 +64,7 @@ impl Operator for Project {
                     let value_len = column.get_datatype().size(); // TODO: Won't work for variable-length data
                     if column.get_name().to_string() == self.predicate_name {
                         let value = BorrowedBuffer::new(column.get_datatype(), false, &input_data[k..k + value_len]);
-                        if !value.marshall().compare(&*self.comp_value, self.comparator) {
+                        if !value.marshall().compare(&*self.comp_value, self.comparator.clone()) {
                             filter = false;
                         }
                     }

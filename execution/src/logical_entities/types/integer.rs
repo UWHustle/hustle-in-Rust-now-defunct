@@ -7,7 +7,7 @@ use super::*;
 // Define common methods on integer types here
 pub trait Integer: Numeric {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Int2 {
     nullable: bool,
     is_null: bool,
@@ -118,16 +118,16 @@ impl ValueType for Int2 {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            &self.value.to_string()
+            self.value.to_string()
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Int4 {
     nullable: bool,
     is_null: bool,
@@ -237,16 +237,16 @@ impl ValueType for Int4 {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            &self.value.to_string()
+            self.value.to_string()
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Int8 {
     nullable: bool,
     is_null: bool,
@@ -356,11 +356,11 @@ impl ValueType for Int8 {
         self.is_null
     }
 
-    fn to_str(&self) -> &str {
+    fn to_string(&self) -> String {
         if self.is_null {
-            ""
+            String::from("")
         } else {
-            &self.value.to_string()
+            self.value.to_string()
         }
     }
 }

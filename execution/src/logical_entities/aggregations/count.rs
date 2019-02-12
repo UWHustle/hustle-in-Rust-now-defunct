@@ -2,6 +2,7 @@ use logical_entities::aggregations::AggregationTrait;
 use logical_entities::types::ValueType;
 use logical_entities::types::TypeID;
 use logical_entities::types::integer::*;
+use logical_entities::types::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Count {
@@ -28,8 +29,8 @@ impl AggregationTrait for Count {
         self.running_total += 1;
     }
 
-    fn output(&self) -> &ValueType {
-        &Int8::new(self.running_total as i64)
+    fn output(&self) -> Box<ValueType> {
+        Int8::new(self.running_total as i64).box_clone()
     }
 
     fn output_type(&self) -> TypeID {

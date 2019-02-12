@@ -36,9 +36,9 @@ impl AggregationTrait for Avg {
     }
 
     // TODO: Not implemented (currently have no way to do division)
-    fn output(&self) -> &ValueType {
+    fn output(&self) -> Box<ValueType> {
         let denom = Int4::new(self.count as i32);
-        self.sum.divide(&denom).as_value_type()
+        self.sum.divide(&denom).box_clone()
     }
 
     fn output_type(&self) -> TypeID {

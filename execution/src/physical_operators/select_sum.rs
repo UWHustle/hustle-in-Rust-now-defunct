@@ -43,6 +43,6 @@ impl SelectSum {
                 }
             }
         }
-        sum.to_str().to_string()
+        sum.to_string().to_string()
     }
 }

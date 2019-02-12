@@ -9,6 +9,7 @@ pub mod utf8_string;
 // made public using the 'pub' keyword)
 use std::ops::*;
 use std::any::Any;
+use std::fmt::Debug;
 
 use self::float::*;
 use self::integer::*;
@@ -51,6 +52,7 @@ impl TypeID {
             TypeID::Float4(nullable) => nullable,
             TypeID::Float8(nullable) => nullable,
             TypeID::UTF8String(nullable) => nullable,
+            TypeID::IPv4(nullable) => nullable,
         }
     }
 
@@ -125,9 +127,9 @@ impl TypeID {
         }
     }
 
-    pub fn from_string(string: &str) -> TypeID {
-        let string = string.to_lowercase().as_str();
-        match string {
+    pub fn from_string(string: String) -> TypeID {
+        let string = string.to_lowercase();
+        let id = match string.as_str() {
             "smallint" => TypeID::Int2(false),
             "smallint null" => TypeID::Int2(true),
             "int" => TypeID::Int4(false),
@@ -139,7 +141,8 @@ impl TypeID {
             "varchar" => TypeID::UTF8String(false),
             "varchar null" => TypeID::UTF8String(true),
             _ => panic!("Unknown type string {}", string),
-        }
+        };
+        id
     }
 }
 
@@ -180,7 +183,7 @@ pub trait BufferType {
 
 // Values are stored as various types - concrete implementations can define a 'value()' method which
 // returns the internal type
-pub trait ValueType: Castable + Any + BoxClone {
+pub trait ValueType: Castable + Any + BoxClone + Debug {
     fn un_marshall(&self) -> OwnedBuffer;
 
     // This should be overriden for types which don't have a constant size (i.e. strings)
@@ -213,7 +216,7 @@ pub trait ValueType: Castable + Any + BoxClone {
 
     fn is_null(&self) -> bool;
 
-    fn to_str(&self) -> &str;
+    fn to_string(&self) -> String;
 }
 
 pub trait Numeric: ValueType + ValueTypeUpCast + BoxNumericClone {
@@ -257,6 +260,18 @@ impl BoxedNumeric {
     }
     pub fn value(&self) -> &Numeric { // TODO: Use operator overloading
         &*self.value
+    }
+}
+
+impl Clone for Box<ValueType> {
+    fn clone(&self) -> Box<ValueType> {
+        self.box_clone()
+    }
+}
+
+impl Clone for Box<Numeric> {
+    fn clone(&self) -> Box<Numeric> {
+        self.box_numeric_clone()
     }
 }
 
@@ -325,6 +340,7 @@ pub fn force_numeric(value: &ValueType) -> &Numeric {
         TypeID::Float8(nullable) => {
             cross_cast::<Float8>(value)
         }
+        _ => panic!("{:?} is not a numeric type", value.type_id())
     }
 }
 
@@ -341,6 +357,7 @@ fn numeric_cast<T: Numeric>(value: &Numeric) -> &T {
 }
 
 // Useful in preventing comparison code duplication
+#[derive(Clone)]
 pub enum Comparator {
     Less,
     Equal,
