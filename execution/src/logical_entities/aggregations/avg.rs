@@ -1,9 +1,10 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::ValueType;
-use logical_entities::types::Numeric;
-use logical_entities::types::TypeID;
-use logical_entities::types::integer::*;
-use logical_entities::types::force_numeric;
+use type_system::ValueType;
+use type_system::Numeric;
+use type_system::type_id::*;
+use type_system::integer::*;
+use type_system::force_numeric;
+use type_system::type_id::*;
 
 pub struct Avg {
     sum: Box<Numeric>,

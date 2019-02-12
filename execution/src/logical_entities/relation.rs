@@ -60,7 +60,7 @@ impl Relation {
 
 #[cfg(test)]
 mod tests {
-    use logical_entities::types::*;
+    use type_system::type_id::*;
 
     #[test]
     fn relation_create() {

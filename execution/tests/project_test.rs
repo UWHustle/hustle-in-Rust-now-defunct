@@ -13,7 +13,8 @@ use execution::physical_operators::project::Project;
 use execution::physical_operators::print::Print;
 
 use execution::physical_operators::Operator;
-use execution::logical_entities::types::*;
+use execution::type_system::*;
+use execution::type_system::type_id::*;
 
 const RECORD_COUNT: usize = 10;
 

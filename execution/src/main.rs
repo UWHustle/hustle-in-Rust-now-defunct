@@ -2,6 +2,7 @@ pub mod logical_entities;
 pub mod physical_operators;
 pub mod storage_manager;
 pub mod physical_plan;
+pub mod type_system;
 pub mod test_helpers;
 
 use physical_plan::parser::parse;

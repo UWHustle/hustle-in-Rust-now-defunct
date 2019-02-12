@@ -1,6 +1,6 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::TypeID;
-use logical_entities::types::*;
+use type_system::type_id::*;
+use type_system::*;
 
 #[derive(Clone, Debug)]
 pub struct Min {

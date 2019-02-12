@@ -10,8 +10,8 @@ use execution::logical_entities::column::Column;
 
 use execution::physical_operators::join::Join;
 use execution::physical_operators::select_sum::SelectSum;
-use execution::logical_entities::types::*;
-
+use execution::type_system::*;
+use execution::type_system::type_id::*;
 
 use execution::physical_operators::Operator;
 

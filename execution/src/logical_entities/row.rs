@@ -1,5 +1,5 @@
 use logical_entities::schema::Schema;
-use logical_entities::types::ValueType;
+use type_system::ValueType;
 
 //#[derive(Debug, PartialEq)]
 pub struct Row {

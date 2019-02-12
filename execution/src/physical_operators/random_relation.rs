@@ -1,7 +1,7 @@
 extern crate rand;
 extern crate csv;
 
-use logical_entities::types::*;
+use type_system::*;
 use logical_entities::relation::Relation;
 
 use storage_manager::StorageManager;

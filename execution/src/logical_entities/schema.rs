@@ -21,7 +21,7 @@ impl Schema {
 
 #[cfg(test)]
 mod tests {
-    use logical_entities::types::*;
+    use type_system::type_id::*;
 
     #[test]
     fn schema_create() {

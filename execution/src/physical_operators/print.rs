@@ -1,5 +1,5 @@
-use logical_entities::types::BufferType;
-use logical_entities::types::borrowed_buffer::BorrowedBuffer;
+use type_system::BufferType;
+use type_system::borrowed_buffer::BorrowedBuffer;
 use logical_entities::relation::Relation;
 
 use storage_manager::StorageManager;

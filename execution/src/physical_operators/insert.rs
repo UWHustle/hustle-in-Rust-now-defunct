@@ -1,6 +1,6 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
-use logical_entities::types::*;
+use type_system::*;
 
 use physical_operators::Operator;
 

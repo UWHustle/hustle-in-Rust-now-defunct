@@ -1,4 +1,5 @@
-use logical_entities::types::TypeID;
+use type_system::*;
+use type_system::type_id::TypeID;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
@@ -29,7 +30,7 @@ impl Column {
 
 #[cfg(test)]
 mod tests {
-    use logical_entities::types::*;
+    use type_system::type_id::*;
 
     #[test]
     fn column_create() {
