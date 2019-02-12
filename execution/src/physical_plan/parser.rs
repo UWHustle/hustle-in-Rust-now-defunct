@@ -12,7 +12,7 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
-use type_system::Comparator;
+use type_system::operators::*;
 use type_system::*;
 use type_system::type_id::*;
 

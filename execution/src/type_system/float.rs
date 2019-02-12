@@ -3,6 +3,7 @@ extern crate byteorder;
 use self::byteorder::{ByteOrder, LittleEndian};
 
 use super::*;
+use super::type_id::*;
 
 // Define common methods on floating-point types here
 pub trait Float: Numeric {}
@@ -56,21 +57,21 @@ impl Float for Float4 {}
 
 impl Numeric for Float4 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let result: f32 = match other.type_id() {
-            TypeID::Int2(nullable) => {
-                oper.apply(self.value, numeric_cast::<Int2>(other).value() as f32)
+        let result: f32 = match other.type_id().variant {
+            Variant::Int2 => {
+                oper.apply(self.value, cast_numeric::<Int2>(other).value() as f32)
             }
-            TypeID::Int4(nullable) => {
-                oper.apply(self.value, numeric_cast::<Int4>(other).value() as f32)
+            Variant::Int4 => {
+                oper.apply(self.value, cast_numeric::<Int4>(other).value() as f32)
             }
-            TypeID::Int8(nullable) => {
-                oper.apply(self.value, numeric_cast::<Int8>(other).value() as f32)
+            Variant::Int8 => {
+                oper.apply(self.value, cast_numeric::<Int8>(other).value() as f32)
             }
-            TypeID::Float4(nullable) => {
-                oper.apply(self.value, numeric_cast::<Float4>(other).value())
+            Variant::Float4 => {
+                oper.apply(self.value, cast_numeric::<Float4>(other).value())
             }
-            TypeID::Float8(nullable) => {
-                oper.apply(self.value, numeric_cast::<Float8>(other).value() as f32)
+            Variant::Float8 => {
+                oper.apply(self.value, cast_numeric::<Float8>(other).value() as f32)
             }
             _ => panic!("Type {:?} is not numeric", other.type_id())
         };
@@ -78,7 +79,7 @@ impl Numeric for Float4 {
     }
 }
 
-impl ValueType for Float4 {
+impl Value for Float4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_f32(&mut data, self.value);
@@ -86,28 +87,28 @@ impl ValueType for Float4 {
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::Float4(self.nullable)
+        TypeID::new(Variant::Float4, self.nullable)
     }
 
-    fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
-        match other.type_id() {
-            TypeID::Int2(nullable) => {
-                comp.apply(self.value, value_cast::<Int2>(other).value() as f32)
+    fn compare(&self, other: &Value, comp: Comparator) -> bool {
+        match other.type_id().variant {
+            Variant::Int2 => {
+                comp.apply(self.value, cast_value::<Int2>(other).value() as f32)
             }
-            TypeID::Int4(nullable) => {
-                comp.apply(self.value, value_cast::<Int4>(other).value() as f32)
+            Variant::Int4 => {
+                comp.apply(self.value, cast_value::<Int4>(other).value() as f32)
             }
-            TypeID::Int8(nullable) => {
-                comp.apply(self.value as f64, value_cast::<Int8>(other).value() as f64)
+            Variant::Int8 => {
+                comp.apply(self.value as f64, cast_value::<Int8>(other).value() as f64)
             }
-            TypeID::Float4(nullable) => {
-                comp.apply(self.value, value_cast::<Float4>(other).value())
+            Variant::Float4 => {
+                comp.apply(self.value, cast_value::<Float4>(other).value())
             }
-            TypeID::Float8(nullable) => {
-                comp.apply(self.value as f64, value_cast::<Float8>(other).value())
+            Variant::Float8 => {
+                comp.apply(self.value as f64, cast_value::<Float8>(other).value())
             }
-            TypeID::IPv4(nullable) => {
-                comp.apply(self.value, value_cast::<IPv4>(other).value() as f32)
+            Variant::IPv4 => {
+                comp.apply(self.value, cast_value::<IPv4>(other).value() as f32)
             }
             _ => false
         }
@@ -175,21 +176,21 @@ impl Float for Float8 {}
 
 impl Numeric for Float8 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let result: f64 = match other.type_id() {
-            TypeID::Int2(nullable) => {
-                oper.apply(self.value, numeric_cast::<Int2>(other).value() as f64)
+        let result: f64 = match other.type_id().variant {
+            Variant::Int2 => {
+                oper.apply(self.value, cast_numeric::<Int2>(other).value() as f64)
             }
-            TypeID::Int4(nullable) => {
-                oper.apply(self.value, numeric_cast::<Int4>(other).value() as f64)
+            Variant::Int4 => {
+                oper.apply(self.value, cast_numeric::<Int4>(other).value() as f64)
             }
-            TypeID::Int8(nullable) => {
-                oper.apply(self.value, numeric_cast::<Int8>(other).value() as f64)
+            Variant::Int8 => {
+                oper.apply(self.value, cast_numeric::<Int8>(other).value() as f64)
             }
-            TypeID::Float4(nullable) => {
-                oper.apply(self.value, numeric_cast::<Float4>(other).value() as f64)
+            Variant::Float4 => {
+                oper.apply(self.value, cast_numeric::<Float4>(other).value() as f64)
             }
-            TypeID::Float8(nullable) => {
-                oper.apply(self.value, numeric_cast::<Float8>(other).value())
+            Variant::Float8 => {
+                oper.apply(self.value, cast_numeric::<Float8>(other).value())
             }
             _ => panic!("Type {:?} is not numeric", other.type_id())
         };
@@ -197,7 +198,7 @@ impl Numeric for Float8 {
     }
 }
 
-impl ValueType for Float8 {
+impl Value for Float8 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_f64(&mut data, self.value);
@@ -205,28 +206,28 @@ impl ValueType for Float8 {
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::Float8(self.nullable)
+        TypeID::new(Variant::Float8, self.nullable)
     }
 
-    fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
-        match other.type_id() {
-            TypeID::Int2(nullable) => {
-                comp.apply(self.value, value_cast::<Int2>(other).value() as f64)
+    fn compare(&self, other: &Value, comp: Comparator) -> bool {
+        match other.type_id().variant {
+            Variant::Int2 => {
+                comp.apply(self.value, cast_value::<Int2>(other).value() as f64)
             }
-            TypeID::Int4(nullable) => {
-                comp.apply(self.value, value_cast::<Int4>(other).value() as f64)
+            Variant::Int4 => {
+                comp.apply(self.value, cast_value::<Int4>(other).value() as f64)
             }
-            TypeID::Int8(nullable) => {
-                comp.apply(self.value, value_cast::<Int8>(other).value() as f64)
+            Variant::Int8 => {
+                comp.apply(self.value, cast_value::<Int8>(other).value() as f64)
             }
-            TypeID::Float4(nullable) => {
-                comp.apply(self.value, value_cast::<Float4>(other).value() as f64)
+            Variant::Float4 => {
+                comp.apply(self.value, cast_value::<Float4>(other).value() as f64)
             }
-            TypeID::Float8(nullable) => {
-                comp.apply(self.value, value_cast::<Float8>(other).value())
+            Variant::Float8 => {
+                comp.apply(self.value, cast_value::<Float8>(other).value())
             }
-            TypeID::IPv4(nullable) => {
-                comp.apply(self.value, value_cast::<IPv4>(other).value() as f64)
+            Variant::IPv4 => {
+                comp.apply(self.value, cast_value::<IPv4>(other).value() as f64)
             }
             _ => false
         }
@@ -248,12 +249,13 @@ impl ValueType for Float8 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use super::type_id::*;
 
     #[test]
     fn float4_un_marshall() {
         let float4_value = Float4::new(13.7);
         let float4_buffer = float4_value.un_marshall();
-        assert_eq!(TypeID::Float4(true), float4_buffer.type_id());
+        assert_eq!(TypeID::new(Variant::Float4, true), float4_buffer.type_id());
 
         let data = float4_buffer.data();
         assert_eq!(0x41, data[0]);
@@ -265,7 +267,7 @@ mod test {
     #[test]
     fn float4_type_id() {
         let float4 = Float4::new(13.7);
-        assert_eq!(TypeID::Float4(true), float4.type_id());
+        assert_eq!(TypeID::new(Variant::Float4, true), float4.type_id());
     }
 
     #[test]
@@ -307,7 +309,7 @@ mod test {
     fn float8_un_marshall() {
         let float8_value = Float8::new(12228.444);
         let float8_buffer = float8_value.un_marshall();
-        assert_eq!(TypeID::Float8(true), float8_buffer.type_id());
+        assert_eq!(TypeID::new(Variant::Float8, true), float8_buffer.type_id());
 
         let data = float8_buffer.data();
         assert_eq!(0x40, data[0]);
@@ -323,7 +325,7 @@ mod test {
     #[test]
     fn float8_type_id() {
         let float8 = Float8::new(12228.444);
-        assert_eq!(TypeID::Float8(true), float8.type_id());
+        assert_eq!(TypeID::new(Variant::Float8, true), float8.type_id());
     }
 
     #[test]

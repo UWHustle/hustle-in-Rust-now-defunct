@@ -1,5 +1,5 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::ValueType;
+use type_system::*;
 use type_system::Numeric;
 use type_system::type_id::*;
 use type_system::integer::*;
@@ -30,16 +30,16 @@ impl AggregationTrait for Avg {
         self.count = 0;
     }
 
-    fn consider_value(&mut self, value: &ValueType) -> () {
+    fn consider_value(&mut self, value: &Value) -> () {
         // TODO: Need a way to convert this to numeric type
         self.sum = self.sum.add(force_numeric(value));
         self.count += 1;
     }
 
     // TODO: Not implemented (currently have no way to do division)
-    fn output(&self) -> Box<ValueType> {
+    fn output(&self) -> Box<Value> {
         let denom = Int4::new(self.count as i32);
-        self.sum.divide(&denom).box_clone()
+        self.sum.divide(&denom).box_clone_value()
     }
 
     fn output_type(&self) -> TypeID {

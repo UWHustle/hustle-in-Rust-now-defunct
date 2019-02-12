@@ -1,4 +1,4 @@
-use type_system::ValueType;
+use type_system::*;
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
@@ -6,6 +6,7 @@ use physical_operators::Operator;
 use storage_manager::StorageManager;
 use type_system::*;
 use type_system::integer::*;
+use type_system::operators::*;
 use type_system::borrowed_buffer::*;
 
 use std::collections::HashMap;
@@ -16,11 +17,11 @@ pub struct Project {
     predicate_name: String,
     compare: bool,
     comparator: Comparator,
-    comp_value: Box<ValueType>,
+    comp_value: Box<Value>,
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: &String, compare: bool, comparator: Comparator, comp_value: &ValueType) -> Self {
+    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: &String, compare: bool, comparator: Comparator, comp_value: &Value) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
@@ -30,7 +31,7 @@ impl Project {
             predicate_name: predicate_name.clone(),
             compare,
             comparator,
-            comp_value: comp_value.box_clone(),
+            comp_value: comp_value.box_clone_value(),
         }
     }
 

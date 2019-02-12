@@ -1,5 +1,4 @@
-use super::TypeID;
-use super::BufferType;
+use super::*;
 
 // Value is stored in a buffer with another owner - we just have a reference
 // The lifetime specifier ensures the data's lifetime exceeds this struct's
@@ -19,7 +18,7 @@ impl<'a> BorrowedBuffer<'a> {
     }
 }
 
-impl<'a> BufferType for BorrowedBuffer<'a> {
+impl<'a> Buffer for BorrowedBuffer<'a> {
     fn type_id(&self) -> TypeID {
         self.type_id.clone()
     }

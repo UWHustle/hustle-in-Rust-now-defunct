@@ -1,4 +1,4 @@
-use type_system::BufferType;
+use type_system::*;
 use type_system::borrowed_buffer::BorrowedBuffer;
 use logical_entities::relation::Relation;
 
@@ -42,7 +42,7 @@ impl Operator for Print {
                 // TODO: Doesn't work with variable-length records
                 let type_id = column.get_datatype();
                 let value_length = type_id.size();
-                let buffer: BorrowedBuffer = BorrowedBuffer::new(type_id.clone(), *type_id.nullable(), &data[i..i + value_length]);
+                let buffer: BorrowedBuffer = BorrowedBuffer::new(type_id.clone(), type_id.nullable, &data[i..i + value_length]);
                 let value_string = buffer.marshall().to_string();
                 print!("|{value:>width$}", value = value_string, width = width);
                 i += value_length;

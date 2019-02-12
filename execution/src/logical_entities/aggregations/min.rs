@@ -4,7 +4,7 @@ use type_system::*;
 
 #[derive(Clone, Debug)]
 pub struct Min {
-    current_min: Box<ValueType>
+    current_min: Box<Value>
 }
 
 impl Min {
@@ -24,14 +24,14 @@ impl AggregationTrait for Min {
         self.current_min = self.output_type().create_null();
     }
 
-    fn consider_value(&mut self, value: &ValueType) -> () {
+    fn consider_value(&mut self, value: &Value) -> () {
         if self.current_min.is_null() || self.current_min.greater(value) {
-            self.current_min = value.box_clone();
+            self.current_min = value.box_clone_value();
         }
     }
 
-    fn output(&self) -> Box<ValueType> {
-        self.current_min.box_clone()
+    fn output(&self) -> Box<Value> {
+        self.current_min.box_clone_value()
     }
 
     fn output_type(&self) -> TypeID {

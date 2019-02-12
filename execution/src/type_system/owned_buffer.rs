@@ -1,5 +1,4 @@
-use super::BufferType;
-use super::TypeID;
+use super::*;
 
 pub struct OwnedBuffer {
     type_id: TypeID,
@@ -17,7 +16,7 @@ impl OwnedBuffer {
     }
 }
 
-impl BufferType for OwnedBuffer {
+impl Buffer for OwnedBuffer {
     fn type_id(&self) -> TypeID {
         self.type_id.clone()
     }

@@ -45,7 +45,7 @@ impl UTF8String {
     }
 }
 
-impl ValueType for UTF8String {
+impl Value for UTF8String {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut value: Vec<u8> = vec!();
         value.clone_from_slice(self.value.as_bytes());
@@ -58,13 +58,13 @@ impl ValueType for UTF8String {
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::UTF8String(self.nullable)
+        TypeID::new(Variant::UTF8String, self.nullable)
     }
 
-    fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
-        match other.type_id() {
-            TypeID::UTF8String(nullable) => {
-                comp.apply(&self.value, &Box::new(value_cast::<UTF8String>(other).value().to_string()))
+    fn compare(&self, other: &Value, comp: Comparator) -> bool {
+        match other.type_id().variant {
+            Variant::UTF8String => {
+                comp.apply(&self.value, &Box::new(cast_value::<UTF8String>(other).value().to_string()))
             }
             _ => false
         }
@@ -91,7 +91,7 @@ mod test {
     fn utf8_string_un_marshall() {
         let utf8_string_value = UTF8String::new("Hello!");
         let utf8_string_buffer = utf8_string_value.un_marshall();
-        assert_eq!(TypeID::UTF8String(true), utf8_string_buffer.type_id());
+        assert_eq!(TypeID::new(Variant::UTF8String, true), utf8_string_buffer.type_id());
 
         let data = utf8_string_buffer.data();
         assert_eq!('H' as u8, data[0]);
@@ -112,7 +112,7 @@ mod test {
     #[test]
     fn utf8_string_type_id() {
         let utf8_string = UTF8String::new("Chocolate donuts");
-        assert_eq!(TypeID::UTF8String(true), utf8_string.type_id());
+        assert_eq!(TypeID::new(Variant::UTF8String, true), utf8_string.type_id());
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use type_system::*;
-use type_system::type_id::TypeID;
+use type_system::type_id::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
@@ -24,7 +24,7 @@ impl Column {
     }
 
     pub fn get_datatype(&self) -> TypeID {
-        return self.data_type.clone();
+        self.data_type.clone()
     }
 }
 
@@ -35,7 +35,7 @@ mod tests {
     #[test]
     fn column_create() {
         use logical_entities::column::Column;
-        let column = Column::new("test".to_string(), TypeID::Int4(true));
+        let column = Column::new("test".to_string(), TypeID::new(Variant::Int4, true));
         assert_eq!(column.get_name(), &"test".to_string());
         assert_eq!(column.get_size(), 8);
     }

@@ -44,7 +44,7 @@ fn test_flow() {
 }
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, TypeID::Int4(true)));
+    let select_operator = SelectSum::new(relation.clone(),Column::new(column_name, TypeID::new(Variant::Int4, true)));
     select_operator.execute().parse::<u128>().unwrap()
 }
 

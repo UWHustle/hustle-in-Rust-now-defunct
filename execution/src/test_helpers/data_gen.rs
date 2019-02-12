@@ -1,6 +1,6 @@
 use test_helpers::sqlite3::import_csv_to_sqlite3;
 
-use type_system::ValueType;
+use type_system::*;
 use logical_entities::relation::Relation;
 use logical_entities::column::Column;
 use logical_entities::schema::Schema;
@@ -18,8 +18,8 @@ use physical_operators::Operator;
 
 pub fn generate_relation_into_hustle_and_sqlite3(record_count: usize) -> Relation {
     let relation = Relation::new("T".to_string(),
-                                 Schema::new(vec!(Column::new("a".to_string(), TypeID::Int4(true)),
-                                                  Column::new("b".to_string(), TypeID::Int4(true))
+                                 Schema::new(vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("b".to_string(), TypeID::new(Variant::Int4, true))
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
@@ -34,10 +34,10 @@ pub fn generate_relation_into_hustle_and_sqlite3(record_count: usize) -> Relatio
 
 pub fn generate_relation_a_into_hustle_and_sqlite3(record_count: usize) -> Relation {
     let relation = Relation::new("A".to_string(),
-                                 Schema::new(vec!(Column::new("w".to_string(), TypeID::Int4(true)),
-                                                  Column::new("x".to_string(), TypeID::Int4(true)),
-                                                  Column::new("y".to_string(), TypeID::Int4(true)),
-                                                  Column::new("z".to_string(), TypeID::Int4(true))
+                                 Schema::new(vec!(Column::new("w".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("x".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("y".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("z".to_string(), TypeID::new(Variant::Int4, true))
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
@@ -52,8 +52,8 @@ pub fn generate_relation_a_into_hustle_and_sqlite3(record_count: usize) -> Relat
 
 pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relation {
     let relation = Relation::new("B".to_string(),
-                                 Schema::new(vec!(Column::new("w".to_string(), TypeID::Int4(true)),
-                                                  Column::new("x".to_string(), TypeID::Int4(true))
+                                 Schema::new(vec!(Column::new("w".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("x".to_string(), TypeID::new(Variant::Int4, true))
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
@@ -84,8 +84,8 @@ pub fn import_csv_to_hustle(csv_file: String, relation: Relation) {
     import_operator.execute();
 }
 
-pub fn insert_into_hustle(count: u8, value: &ValueType, relation: Relation) {
-    let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(), vec!(value.box_clone(), value.box_clone())));
+pub fn insert_into_hustle(count: u8, value: &Value, relation: Relation) {
+    let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(), vec!(value.box_clone_value(), value.box_clone_value())));
     for _ in 0..count {
         insert_operator.execute();
     }

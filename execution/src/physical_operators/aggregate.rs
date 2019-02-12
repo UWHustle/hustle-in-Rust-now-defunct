@@ -97,7 +97,7 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
             }
 
             // Copy aggregated values
-            let output: &ValueType = &*agg_instance.output();
+            let output: &Value = &*agg_instance.output();
             output_data[j..j + output.un_marshall().data().len()].clone_from_slice(&output.un_marshall().data());
             j += output.un_marshall().data().len();
         }

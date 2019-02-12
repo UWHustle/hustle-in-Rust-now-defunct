@@ -1,10 +1,10 @@
 use logical_entities::aggregations::AggregationTrait;
 use type_system::type_id::*;
-use type_system::ValueType;
+use type_system::*;
 
 #[derive(Clone, Debug)]
 pub struct Max {
-    current_max: Box<ValueType>,
+    current_max: Box<Value>,
 }
 
 impl Max {
@@ -22,14 +22,14 @@ impl AggregationTrait for Max {
         self.current_max = self.output_type().create_null();
     }
 
-    fn consider_value(&mut self, value: &ValueType) -> () {
+    fn consider_value(&mut self, value: &Value) -> () {
         if self.current_max.is_null() || !self.current_max.greater(value) {
-            self.current_max = value.box_clone();
+            self.current_max = value.box_clone_value();
         }
     }
 
-    fn output(&self) -> Box<ValueType> {
-        self.current_max.box_clone()
+    fn output(&self) -> Box<Value> {
+        self.current_max.box_clone_value()
     }
 
     fn output_type(&self) -> TypeID {

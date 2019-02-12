@@ -1,5 +1,6 @@
-use type_system::ValueType;
-use type_system::type_id::TypeID;
+use type_system::*;
+use type_system::type_id::*;
+use type_system::type_id::Variant;
 
 pub mod avg;
 pub mod count;
@@ -10,7 +11,7 @@ pub mod sum;
 pub trait AggregationTrait {
     fn get_name(&self) -> &'static str;
     fn initialize(&mut self) -> ();
-    fn consider_value(&mut self, value: &ValueType) -> ();
-    fn output(&self) -> Box<ValueType>;
+    fn consider_value(&mut self, value: &Value) -> ();
+    fn output(&self) -> Box<Value>;
     fn output_type(&self) -> TypeID;
 }

@@ -5,7 +5,7 @@ use self::byteorder::{ByteOrder, LittleEndian};
 use super::*;
 
 // Define common methods on ip-address types here
-trait IPAddress: ValueType {}
+trait IPAddress: Value {}
 
 #[derive(Clone, Debug)]
 pub struct IPv4 {
@@ -54,7 +54,7 @@ impl IPv4 {
 
 impl IPAddress for IPv4 {}
 
-impl ValueType for IPv4 {
+impl Value for IPv4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_u32(&mut data, self.value);
@@ -62,28 +62,28 @@ impl ValueType for IPv4 {
     }
 
     fn type_id(&self) -> TypeID {
-        TypeID::IPv4(self.nullable)
+        TypeID::new(Variant::IPv4, self.nullable)
     }
 
-    fn compare(&self, other: &ValueType, comp: Comparator) -> bool {
-        match other.type_id() {
-            TypeID::Int2(nullable) => {
-                comp.apply(self.value as i64, value_cast::<Int2>(other).value() as i64)
+    fn compare(&self, other: &Value, comp: Comparator) -> bool {
+        match other.type_id().variant {
+            Variant::Int2 => {
+                comp.apply(self.value as i64, cast_value::<Int2>(other).value() as i64)
             }
-            TypeID::Int4(nullable) => {
-                comp.apply(self.value as i64, value_cast::<Int4>(other).value() as i64)
+            Variant::Int4 => {
+                comp.apply(self.value as i64, cast_value::<Int4>(other).value() as i64)
             }
-            TypeID::Int8(nullable) => {
-                comp.apply(self.value as i64, value_cast::<Int8>(other).value())
+            Variant::Int8 => {
+                comp.apply(self.value as i64, cast_value::<Int8>(other).value())
             }
-            TypeID::Float4(nullable) => {
-                comp.apply(self.value as f32, value_cast::<Float4>(other).value())
+            Variant::Float4 => {
+                comp.apply(self.value as f32, cast_value::<Float4>(other).value())
             }
-            TypeID::Float8(nullable) => {
-                comp.apply(self.value as f64, value_cast::<Float8>(other).value())
+            Variant::Float8 => {
+                comp.apply(self.value as f64, cast_value::<Float8>(other).value())
             }
-            TypeID::IPv4(nullable) => {
-                comp.apply(self.value, value_cast::<IPv4>(other).value())
+            Variant::IPv4 => {
+                comp.apply(self.value, cast_value::<IPv4>(other).value())
             }
             _ => false
         }
@@ -110,7 +110,7 @@ mod test {
     fn ipv4_un_marshall() {
         let ipv4_value = IPv4::new(88997);
         let ipv4_buffer = ipv4_value.un_marshall();
-        assert_eq!(TypeID::IPv4(true), ipv4_buffer.type_id());
+        assert_eq!(TypeID::new(Variant::IPv4, true), ipv4_buffer.type_id());
 
         let data = ipv4_buffer.data();
         assert_eq!(0xa5, data[0]);
@@ -122,7 +122,7 @@ mod test {
     #[test]
     fn ipv4_type_id() {
         let ipv4 = IPv4::new(88997);
-        assert_eq!(TypeID::IPv4(true), ipv4.type_id());
+        assert_eq!(TypeID::new(Variant::IPv4, true), ipv4.type_id());
     }
 
     #[test]

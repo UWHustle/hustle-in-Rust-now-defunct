@@ -1,5 +1,4 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::ValueType;
 use type_system::type_id::*;
 use type_system::integer::*;
 use type_system::*;
@@ -26,15 +25,15 @@ impl AggregationTrait for Count {
     }
 
     #[allow(unused_variables)]
-    fn consider_value(&mut self, value: &ValueType) -> () {
+    fn consider_value(&mut self, value: &Value) -> () {
         self.running_total += 1;
     }
 
-    fn output(&self) -> Box<ValueType> {
-        Int8::new(self.running_total as i64).box_clone()
+    fn output(&self) -> Box<Value> {
+        Int8::new(self.running_total as i64).box_clone_value()
     }
 
     fn output_type(&self) -> TypeID {
-        TypeID::Int4(false)
+        TypeID::new(Variant::Int4, false)
     }
 }

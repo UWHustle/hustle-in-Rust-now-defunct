@@ -29,8 +29,8 @@ mod tests {
         use logical_entities::column::Column;
 
         let schema = Schema::new(vec!(
-            Column::new("a".to_string(), TypeID::Int4(true)),
-            Column::new("b".to_string(), TypeID::Int4(true)))
+            Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
+            Column::new("b".to_string(), TypeID::new(Variant::Int4, true)))
         );
 
         assert_eq!(schema.get_columns().first().unwrap().get_name(), &"a".to_string());

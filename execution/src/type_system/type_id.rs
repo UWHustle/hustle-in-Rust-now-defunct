@@ -1,130 +1,136 @@
 use super::*;
 
-// All possible concrete types
-// The boolean indicates whether the type is nullable (true if it is; false if it isn't)
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub enum TypeID {
-    Int2(bool),
-    Int4(bool),
-    Int8(bool),
-    Float4(bool),
-    Float8(bool),
-    UTF8String(bool),
-    IPv4(bool),
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum Variant {
+    Int2,
+    Int4,
+    Int8,
+    Float4,
+    Float8,
+    UTF8String,
+    IPv4,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TypeID {
+    pub variant: Variant,
+    pub nullable: bool,
 }
 
 impl TypeID {
-    // Returns the size of an object of this type; -1 if the size is variable
+
+    pub fn new(variant: Variant, nullable: bool) -> Self {
+        TypeID { variant, nullable }
+    }
+
+    pub fn from_string(string: String) -> TypeID {
+        let lower = string.to_lowercase();
+        let tokens: Vec<&str> = lower
+            .split(' ')
+            .collect();
+        let variant_str = *tokens.get(0)
+            .expect("Error: type string is empty");
+
+        let variant = match variant_str {
+            "smallint" => Variant::Int2,
+            "int" => Variant::Int4,
+            "bigint" => Variant::Int8,
+            "real" => Variant::Float4,
+            "varchar" => Variant::UTF8String,
+            _ => panic!("Unknown type variant {}", variant_str)
+        };
+
+        let nullable = string.contains("null");
+        Self::new(variant, nullable)
+    }
+
     pub fn size(&self) -> usize {
-        match self {
-            TypeID::Int2(nullable) => 2,
-            TypeID::Int4(nullable) => 4,
-            TypeID::Int8(nullable) => 8,
-            TypeID::Float4(nullable) => 4,
-            TypeID::Float8(nullable) => 8,
-            TypeID::UTF8String(nullable) => 0,
-            TypeID::IPv4(nullable) => 4,
+        match self.variant {
+            Variant::Int2 => 2,
+            Variant::Int4 => 4,
+            Variant::Int8 => 8,
+            Variant::Float4 => 4,
+            Variant::Float8 => 8,
+            Variant::UTF8String => 0,
+            Variant::IPv4 => 4,
         }
     }
 
-    pub fn nullable(&self) -> &bool {
-        match self {
-            TypeID::Int2(nullable) => nullable,
-            TypeID::Int4(nullable) => nullable,
-            TypeID::Int8(nullable) => nullable,
-            TypeID::Float4(nullable) => nullable,
-            TypeID::Float8(nullable) => nullable,
-            TypeID::UTF8String(nullable) => nullable,
-            TypeID::IPv4(nullable) => nullable,
-        }
-    }
-
-    pub fn create_null(&self) -> Box<ValueType> {
-        match self {
-            TypeID::Int2(nullable) => {
-                Box::new(Int2::create_null())
-            }
-            TypeID::Int4(nullable) => {
-                Box::new(Int4::create_null())
-            }
-            TypeID::Int8(nullable) => {
-                Box::new(Int8::create_null())
-            }
-            TypeID::Float4(nullable) => {
-                Box::new(Float4::create_null())
-            }
-            TypeID::Float8(nullable) => {
-                Box::new(Float8::create_null())
-            }
-            TypeID::UTF8String(nullable) => {
-                Box::new(UTF8String::create_null())
-            }
-            _ => panic!("Type {:?} cannot be NULL", self)
-        }
-    }
-
-    pub fn parse(&self, string: &str) -> Box<ValueType> {
-        match self {
-            TypeID::Int2(nullable) => {
+    pub fn parse(&self, string: &str) -> Box<Value> {
+        match self.variant {
+            Variant::Int2 => {
                 Box::new(Int2::parse(string))
             }
-            TypeID::Int4(nullable) => {
+            Variant::Int4 => {
                 Box::new(Int4::parse(string))
             }
-            TypeID::Int8(nullable) => {
+            Variant::Int8 => {
                 Box::new(Int8::parse(string))
             }
-            TypeID::Float4(nullable) => {
+            Variant::Float4 => {
                 Box::new(Float4::parse(string))
             }
-            TypeID::Float8(nullable) => {
+            Variant::Float8 => {
                 Box::new(Float8::parse(string))
             }
-            TypeID::IPv4(nullable) => {
+            Variant::IPv4 => {
                 Box::new(IPv4::parse(string))
             }
-            TypeID::UTF8String(nullable) => {
+            Variant::UTF8String => {
                 Box::new(UTF8String::new(string))
             }
         }
     }
 
-    pub fn create_zero(&self) -> Box<Numeric> {
-        match self {
-            TypeID::Int2(nullable) => {
-                Box::new(Int2::new(0))
+    pub fn create_null(&self) -> Box<Value> {
+        if !self.nullable {
+            panic!("Non-nullable version of {:?}", self.variant);
+        }
+        match self.variant {
+            Variant::Int2 => {
+                Box::new(Int2::create_null())
             }
-            TypeID::Int4(nullable) => {
-                Box::new(Int4::new(0))
+            Variant::Int4 => {
+                Box::new(Int4::create_null())
             }
-            TypeID::Int8(nullable) => {
-                Box::new(Int8::new(0))
+            Variant::Int8 => {
+                Box::new(Int8::create_null())
             }
-            TypeID::Float4(nullable) => {
-                Box::new(Float4::new(0.0))
+            Variant::Float4 => {
+                Box::new(Float4::create_null())
             }
-            TypeID::Float8(nullable) => {
-                Box::new(Float8::new(0.0))
+            Variant::Float8 => {
+                Box::new(Float8::create_null())
             }
-            _ => panic!("Type {:?} is not numeric", self)
+            Variant::UTF8String => {
+                Box::new(UTF8String::create_null())
+            }
+            _ => {
+                panic!("Type {:?} cannot be null", self.variant);
+            }
         }
     }
 
-    pub fn from_string(string: String) -> TypeID {
-        let string = string.to_lowercase();
-        let id = match string.as_str() {
-            "smallint" => TypeID::Int2(false),
-            "smallint null" => TypeID::Int2(true),
-            "int" => TypeID::Int4(false),
-            "int null" => TypeID::Int4(true),
-            "bigint" => TypeID::Int8(false),
-            "bigint null" => TypeID::Int8(true),
-            "real" => TypeID::Float4(false),
-            "real null" => TypeID::Float4(true),
-            "varchar" => TypeID::UTF8String(false),
-            "varchar null" => TypeID::UTF8String(true),
-            _ => panic!("Unknown type string {}", string),
-        };
-        id
+    pub fn create_zero(&self) -> Box<Numeric> {
+        match self.variant {
+            Variant::Int2 => {
+                Box::new(Int2::new(0))
+            }
+            Variant::Int4 => {
+                Box::new(Int4::new(0))
+            }
+            Variant::Int8 => {
+                Box::new(Int8::new(0))
+            }
+            Variant::Float4 => {
+                Box::new(Float4::new(0.0))
+            }
+            Variant::Float8 => {
+                Box::new(Float8::new(0.0))
+            }
+            _ => {
+                panic!("Type {:?} is not numeric", self.variant);
+            }
+        }
     }
 }

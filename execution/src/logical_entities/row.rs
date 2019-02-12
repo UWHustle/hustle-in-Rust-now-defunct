@@ -1,14 +1,14 @@
 use logical_entities::schema::Schema;
-use type_system::ValueType;
+use type_system::*;
 
 //#[derive(Debug, PartialEq)]
 pub struct Row {
     schema: Schema,
-    values: Vec<Box<ValueType>>,
+    values: Vec<Box<Value>>,
 }
 
 impl Row {
-    pub fn new(schema: Schema, values: Vec<Box<ValueType>>) -> Self {
+    pub fn new(schema: Schema, values: Vec<Box<Value>>) -> Self {
         Row {
             schema, values
         }
@@ -17,7 +17,7 @@ impl Row {
     pub fn get_schema(&self) -> &Schema {
         return &self.schema;
     }
-    pub fn get_values(&self) -> &Vec<Box<ValueType>> {
+    pub fn get_values(&self) -> &Vec<Box<Value>> {
         return &self.values;
     }
     pub fn get_size(&self) -> usize {

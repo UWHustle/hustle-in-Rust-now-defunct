@@ -70,8 +70,8 @@ mod tests {
 
         let relation = Relation::new("Test".to_string(),
                                    Schema::new(vec!(
-                                                Column::new("a".to_string(), TypeID::Int4(true)),
-                                                Column::new("b".to_string(), TypeID::Int4(true)))
+                                       Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
+                                       Column::new("b".to_string(), TypeID::new(Variant::Int4, true)))
                                    ));
 
         assert_eq!(relation.get_name(),&"Test".to_string());
@@ -80,8 +80,8 @@ mod tests {
         assert_eq!(relation.get_columns().last().unwrap().get_name(),&"b".to_string());
 
         assert_eq!(relation.get_schema(),&Schema::new(vec!(
-            Column::new("a".to_string(), TypeID::Int4(true)),
-            Column::new("b".to_string(), TypeID::Int4(true)))));
+            Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
+            Column::new("b".to_string(), TypeID::new(Variant::Int4, true)))));
 
         assert_eq!(relation.get_filename(),"test-data/Test.hsl".to_string());
 

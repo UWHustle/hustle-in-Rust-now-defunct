@@ -1,7 +1,7 @@
 use logical_entities::aggregations::AggregationTrait;
 use type_system::type_id::*;
 use type_system::Numeric;
-use type_system::ValueType;
+use type_system::*;
 use type_system::force_numeric;
 
 #[derive(Clone, Debug)]
@@ -24,15 +24,15 @@ impl AggregationTrait for Sum {
         self.running_total = self.output_type().create_zero();
     }
 
-    fn consider_value(&mut self, value: &ValueType) -> () {
+    fn consider_value(&mut self, value: &Value) -> () {
         self.running_total = self.running_total.add(force_numeric(value));
     }
 
-    fn output(&self) -> Box<ValueType> {
-        self.running_total.box_clone()
+    fn output(&self) -> Box<Value> {
+        self.running_total.box_clone_value()
     }
 
     fn output_type(&self) -> TypeID {
-        self.running_total.type_id().clone()
+        self.running_total.type_id()
     }
 }
