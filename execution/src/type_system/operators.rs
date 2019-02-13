@@ -4,22 +4,30 @@ use std::ops::{Add, Sub, Mul, Div};
 /// LessEq and GreaterEq can be defined via a combination of Less/Greater and Equal
 #[derive(Clone)]
 pub enum Comparator {
-    Less,
     Equal,
+    Less,
+    LessEq,
     Greater,
+    GreaterEq,
 }
 
 impl Comparator {
     pub fn apply<T: PartialOrd>(&self, val_1: T, val_2: T) -> bool {
         match self {
-            Comparator::Less => {
-                val_1 < val_2
-            }
             Comparator::Equal => {
                 val_1 == val_2
             }
+            Comparator::Less => {
+                val_1 < val_2
+            }
+            Comparator::LessEq => {
+                val_1 <= val_2
+            }
             Comparator::Greater => {
                 val_1 > val_2
+            }
+            Comparator::GreaterEq => {
+                val_1 >= val_2
             }
         }
     }
