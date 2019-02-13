@@ -63,7 +63,7 @@ impl Value for UTF8String {
     }
 
     fn un_marshall(&self) -> OwnedBuffer {
-        let mut value: Vec<u8> = vec!();
+        let mut value: Vec<u8> = vec![0; self.size()];
         value.clone_from_slice(self.value.as_bytes());
         OwnedBuffer::new(self.type_id(), self.is_null(), value)
     }
@@ -102,9 +102,8 @@ mod test {
         assert_eq!('e' as u8, data[1]);
         assert_eq!('l' as u8, data[2]);
         assert_eq!('l' as u8, data[3]);
-        assert_eq!('l' as u8, data[4]);
-        assert_eq!('o' as u8, data[5]);
-        assert_eq!('!' as u8, data[6]);
+        assert_eq!('o' as u8, data[4]);
+        assert_eq!('!' as u8, data[5]);
     }
 
     #[test]
@@ -132,10 +131,13 @@ mod test {
         assert!(alphabet.less(&elephant));
         assert!(!alphabet.greater(&elephant));
         assert!(!alphabet.equals(&elephant));
+    }
 
+    #[test]
+    #[should_panic]
+    fn invalid_utf8_string_compare() {
+        let alphabet = UTF8String::new("alphabet");
         let int4 = Int4::new(1234);
-        assert!(!alphabet.less(&int4));
-        assert!(!alphabet.greater(&int4));
-        assert!(!alphabet.equals(&int4));
+        int4.equals(&alphabet);
     }
 }

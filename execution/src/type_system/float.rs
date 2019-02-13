@@ -272,21 +272,8 @@ mod test {
     }
 
     #[test]
-    fn float4_un_marshall() {
-        let float4_value = Float4::new(13.7);
-        let float4_buffer = float4_value.un_marshall();
-        assert_eq!(TypeID::new(Variant::Float4, true), float4_buffer.type_id());
-
-        let data = float4_buffer.data();
-        assert_eq!(0x41, data[0]);
-        assert_eq!(0x5b, data[1]);
-        assert_eq!(0x33, data[2]);
-        assert_eq!(0x33, data[3]);
-    }
-
-    #[test]
     fn float4_compare() {
-        let float4 = Float4::new(1843.314);
+        let float4 = Float4::new(1843.5);
 
         let int2 = Int2::new(1843);
         assert!(!float4.less(&int2));
@@ -303,7 +290,7 @@ mod test {
         assert!(float4.greater(&int8));
         assert!(!float4.equals(&int8));
 
-        let float8 = Float8::new(1843.314);
+        let float8 = Float8::new(1843.5);
         assert!(!float4.less(&float8));
         assert!(!float4.greater(&float8));
         assert!(float4.equals(&float8));
@@ -312,11 +299,27 @@ mod test {
         assert!(!float4.less(&ipv4));
         assert!(float4.greater(&ipv4));
         assert!(!float4.equals(&ipv4));
+    }
 
+    #[test]
+    fn float4_un_marshall() {
+        let float4_value = Float4::new(13.7);
+        let float4_buffer = float4_value.un_marshall();
+        assert_eq!(TypeID::new(Variant::Float4, true), float4_buffer.type_id());
+
+        let data = float4_buffer.data();
+        assert_eq!(0x33, data[0]);
+        assert_eq!(0x33, data[1]);
+        assert_eq!(0x5b, data[2]);
+        assert_eq!(0x41, data[3]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_float4_compare() {
+        let float4 = Float4::new(1843.5);
         let utf8_string = UTF8String::new("Forty two: ");
-        assert!(!float4.less(&utf8_string));
-        assert!(!float4.greater(&utf8_string));
-        assert!(!float4.equals(&utf8_string));
+        float4.equals(&utf8_string);
     }
 
     #[test]
@@ -332,14 +335,14 @@ mod test {
         assert_eq!(TypeID::new(Variant::Float8, true), float8_buffer.type_id());
 
         let data = float8_buffer.data();
-        assert_eq!(0x40, data[0]);
-        assert_eq!(0xc7, data[1]);
-        assert_eq!(0xe2, data[2]);
-        assert_eq!(0x38, data[3]);
-        assert_eq!(0xd4, data[4]);
-        assert_eq!(0xfd, data[5]);
-        assert_eq!(0xf3, data[6]);
-        assert_eq!(0xb6, data[7]);
+        assert_eq!(0xb6, data[0]);
+        assert_eq!(0xf3, data[1]);
+        assert_eq!(0xfd, data[2]);
+        assert_eq!(0xd4, data[3]);
+        assert_eq!(0x38, data[4]);
+        assert_eq!(0xe2, data[5]);
+        assert_eq!(0xc7, data[6]);
+        assert_eq!(0x40, data[7]);
     }
 
     #[test]
@@ -370,10 +373,13 @@ mod test {
         assert!(!float8.less(&ipv4));
         assert!(float8.greater(&ipv4));
         assert!(!float8.equals(&ipv4));
+    }
 
+    #[test]
+    #[should_panic]
+    fn invalid_float8_compare() {
+        let float8 = Float8::new(987654321.0);
         let utf8_string = UTF8String::new("the answer ");
-        assert!(!float8.less(&utf8_string));
-        assert!(!float8.greater(&utf8_string));
-        assert!(!float8.equals(&utf8_string));
+        float8.equals(&utf8_string);
     }
 }

@@ -436,10 +436,13 @@ mod test {
         assert!(!int2.less(&ipv4));
         assert!(int2.greater(&ipv4));
         assert!(!int2.equals(&ipv4));
+    }
 
+    #[test]
+    #[should_panic]
+    fn invalid_int2_compare() {
+        let int2 = Int2::new(17);
         let utf8_string = UTF8String::new("to life, ");
-        assert!(!int2.less(&utf8_string));
-        assert!(!int2.greater(&utf8_string));
         assert!(!int2.equals(&utf8_string));
     }
 
@@ -489,11 +492,14 @@ mod test {
         assert!(!int4.less(&ipv4));
         assert!(int4.greater(&ipv4));
         assert!(!int4.equals(&ipv4));
+    }
 
+    #[test]
+    #[should_panic]
+    fn invalid_int4_compare() {
+        let int4 = Int4::new(1748);
         let utf8_string = UTF8String::new("the universe, ");
-        assert!(!int4.less(&utf8_string));
-        assert!(!int4.greater(&utf8_string));
-        assert!(!int4.equals(&utf8_string));
+        int4.equals(&utf8_string);
     }
 
     #[test]
@@ -544,10 +550,13 @@ mod test {
         assert!(!int8.less(&ipv4));
         assert!(int8.greater(&ipv4));
         assert!(!int8.equals(&ipv4));
+    }
 
+    #[test]
+    #[should_panic]
+    fn invalid_int8_compare() {
+        let int8 = Int8::new(13784940);
         let utf8_string = UTF8String::new("and everything.");
-        assert!(!int8.less(&utf8_string));
-        assert!(!int8.greater(&utf8_string));
-        assert!(!int8.equals(&utf8_string));
+        int8.equals(&utf8_string);
     }
 }

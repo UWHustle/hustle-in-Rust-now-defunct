@@ -159,10 +159,13 @@ mod test {
         assert!(!ipv4.less(&float8));
         assert!(!ipv4.greater(&float8));
         assert!(ipv4.equals(&float8));
+    }
 
+    #[test]
+    #[should_panic]
+    fn invalid_ipv4_compare() {
+        let ipv4 = IPv4::new(2105834626);
         let utf8_string = UTF8String::new("localhost");
-        assert!(!ipv4.less(&utf8_string));
-        assert!(!ipv4.greater(&utf8_string));
-        assert!(!ipv4.equals(&utf8_string));
+        ipv4.equals(&utf8_string);
     }
 }
