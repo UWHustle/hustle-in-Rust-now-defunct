@@ -43,7 +43,7 @@ impl TypeID {
             _ => panic!("Unknown type variant {}", variant_str)
         };
 
-        let nullable = string.contains("null");
+        let nullable = lower.contains("null");
         Self::new(variant, nullable)
     }
 

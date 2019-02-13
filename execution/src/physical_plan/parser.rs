@@ -83,7 +83,9 @@ fn parse_aggregate(json: &Value) -> Node {
             let max_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Max::new(agg_col.get_datatype()));
             Node::new(Rc::new(max_op), vec!(Rc::new(project_node)))
         }
-        _ => panic!("Aggregate function {} not supported", agg_name),
+        _ => {
+            panic!("Aggregate function {} not supported", agg_name);
+        }
     }
 }
 
@@ -103,8 +105,8 @@ fn parse_selection(json: &Value) -> Node {
             let comparator_str = filter_predicate["json_name"].as_str().unwrap();
             let comparator = match comparator_str {
                 "Equal" => Comparator::Equal,
-                "Greater" => Comparator::Greater,
                 "Less" => Comparator::Less,
+                "Greater" => Comparator::Greater,
                 _ => panic!("Unknown comparison type {}", comparator_str)
             };
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
@@ -137,9 +139,7 @@ fn parse_column(json: &Value) -> Column {
 
     // Currently Long types are incorrectly interpreted as IP addresses so just use Int
     let mut type_string = get_string(&json["type"]);
-    if type_string == "Long NULL" || type_string == "Long" {
-        type_string = "Int".to_string();
-    }
+    type_string = type_string.replace("Long", "Int");
     Column::new(name, TypeID::from_string(type_string))
 }
 
