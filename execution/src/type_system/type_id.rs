@@ -1,5 +1,6 @@
 use super::*;
 
+/// An enumeration of all possible concrete types
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Variant {
     Int2,
@@ -11,6 +12,9 @@ pub enum Variant {
     IPv4,
 }
 
+/* ============================================================================================== */
+
+/// A complete description of a type
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TypeID {
     pub variant: Variant,
@@ -18,7 +22,6 @@ pub struct TypeID {
 }
 
 impl TypeID {
-
     pub fn new(variant: Variant, nullable: bool) -> Self {
         TypeID { variant, nullable }
     }

@@ -1,4 +1,3 @@
-use type_system::integer::*;
 use logical_entities::aggregations::count::Count;
 use logical_entities::aggregations::max::Max;
 use logical_entities::aggregations::min::Min;
@@ -12,8 +11,8 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
+use type_system::integer::*;
 use type_system::operators::*;
-use type_system::*;
 use type_system::type_id::*;
 
 extern crate serde_json;

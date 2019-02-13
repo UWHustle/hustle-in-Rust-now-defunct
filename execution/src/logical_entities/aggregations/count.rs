@@ -1,7 +1,6 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::type_id::*;
-use type_system::integer::*;
 use type_system::*;
+use type_system::integer::*;
 use type_system::type_id::*;
 
 #[derive(Clone, Debug, PartialEq)]

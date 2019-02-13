@@ -1,5 +1,6 @@
 use super::*;
 
+/// Value is stored in a `Vec<u8>` owned by this struct
 pub struct OwnedBuffer {
     type_id: TypeID,
     is_null: bool,
@@ -21,11 +22,11 @@ impl Buffer for OwnedBuffer {
         self.type_id.clone()
     }
 
-    fn data(&self) -> &[u8] {
-        &self.data
-    }
-
     fn is_null(&self) -> bool {
         self.is_null
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.data
     }
 }

@@ -1,4 +1,3 @@
-use type_system::*;
 use type_system::type_id::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

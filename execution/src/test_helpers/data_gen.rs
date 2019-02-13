@@ -10,7 +10,6 @@ use physical_operators::import_csv::ImportCsv;
 use physical_operators::insert::Insert;
 use physical_operators::random_relation::RandomRelation;
 use physical_operators::export_csv::ExportCsv;
-use type_system::*;
 use type_system::type_id::*;
 
 use physical_operators::Operator;

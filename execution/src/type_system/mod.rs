@@ -7,7 +7,6 @@ pub mod owned_buffer;
 pub mod type_id;
 pub mod utf8_string;
 
-use std::ops::*;
 use std::any::Any;
 use std::fmt::Debug;
 
@@ -27,6 +26,7 @@ pub trait Buffer {
     fn is_null(&self) -> bool;
     fn data(&self) -> &[u8];
 
+    /// Converts the bytes in the buffer to a `Value` which is stored on the heap
     fn marshall(&self) -> Box<Value> {
         let nullable = self.type_id().nullable;
         let is_null = self.is_null();
@@ -65,10 +65,15 @@ pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
     fn type_id(&self) -> TypeID;
     fn is_null(&self) -> bool;
     fn to_string(&self) -> String;
+
+    /// Converts the value to an `OwnedBuffer` (essentially a vector of bytes)
     fn un_marshall(&self) -> OwnedBuffer;
+
+    /// Applies the specified comparator to compare `self` with `other`
     fn compare(&self, other: &Value, cmp: Comparator) -> bool;
 
-    // Should be overriden for types which don't have a constant size (i.e. strings)
+    /// By default returns self.type_id().size()
+    /// Should be overriden for types which don't have a constant size (i.e. strings)
     fn size(&self) -> usize {
         self.type_id().size()
     }
@@ -137,6 +142,16 @@ impl Clone for Box<Value> {
 /// Allows for downcasting of `Value` trait objects
 pub fn cast_value<T: Value>(value: &Value) -> &T {
     value.as_any().downcast_ref::<T>().expect("Casting failed")
+}
+
+/// Helper for "incomparable types" message
+fn incomparable(type_1: TypeID, type_2: TypeID) -> String {
+    format!("Unable to compare type {:?} to type {:?}", type_1.variant, type_2.variant)
+}
+
+/// Helper for "null value" message
+fn null_value(type_id: TypeID) -> String {
+    format!("Attempting to retrieve value of null {:?}", type_id.variant)
 }
 
 /* ============================================================================================== */
@@ -218,4 +233,9 @@ pub fn force_numeric(value: &Value) -> &Numeric {
         }
         _ => panic!("{:?} is not a numeric type", value.type_id())
     }
+}
+
+/// Helper for "not numeric" message
+fn not_numeric(type_id: TypeID) -> String {
+    format!("Type {:?} is not numeric", type_id.variant)
 }

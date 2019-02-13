@@ -4,9 +4,12 @@ use self::byteorder::{ByteOrder, LittleEndian};
 
 use super::*;
 
-// Define common methods on ip-address types here
+/// Contains methods common to IP address types
 trait IPAddress: Value {}
 
+/* ============================================================================================== */
+
+/// An IPv4 address type
 #[derive(Clone, Debug)]
 pub struct IPv4 {
     nullable: bool,
@@ -15,9 +18,8 @@ pub struct IPv4 {
 }
 
 impl IPv4 {
-    // Note that this assumes the type is nullable
     pub fn new(value: u32) -> Self {
-        IPv4 {
+        Self {
             nullable: true,
             is_null: false,
             value,
@@ -25,7 +27,7 @@ impl IPv4 {
     }
 
     pub fn create_null() -> Self {
-        IPv4 {
+        Self {
             nullable: true,
             is_null: true,
             value: 0,
@@ -37,7 +39,7 @@ impl IPv4 {
     }
 
     pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
-        IPv4 {
+        Self {
             nullable,
             is_null,
             value: LittleEndian::read_u32(data),
@@ -46,7 +48,7 @@ impl IPv4 {
 
     pub fn value(&self) -> u32 {
         if self.is_null {
-            panic!("Attempting to retrieve u32 value of null IPv4");
+            panic!(null_value(self.type_id()));
         }
         self.value
     }
@@ -55,14 +57,26 @@ impl IPv4 {
 impl IPAddress for IPv4 {}
 
 impl Value for IPv4 {
+    fn type_id(&self) -> TypeID {
+        TypeID::new(Variant::IPv4, self.nullable)
+    }
+
+    fn is_null(&self) -> bool {
+        self.is_null
+    }
+
+    fn to_string(&self) -> String {
+        if self.is_null {
+            String::from("")
+        } else {
+            self.value.to_string()
+        }
+    }
+
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_u32(&mut data, self.value);
         OwnedBuffer::new(self.type_id(), self.is_null(), data)
-    }
-
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::IPv4, self.nullable)
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -85,26 +99,24 @@ impl Value for IPv4 {
             Variant::IPv4 => {
                 comp.apply(self.value, cast_value::<IPv4>(other).value())
             }
-            _ => false
-        }
-    }
-
-    fn is_null(&self) -> bool {
-        self.is_null
-    }
-
-    fn to_string(&self) -> String {
-        if self.is_null {
-            String::from("")
-        } else {
-            self.value.to_string()
+            _ => {
+                panic!(incomparable(self.type_id(), other.type_id()));
+            }
         }
     }
 }
 
+/* ============================================================================================== */
+
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn ipv4_type_id() {
+        let ipv4 = IPv4::new(88997);
+        assert_eq!(TypeID::new(Variant::IPv4, true), ipv4.type_id());
+    }
 
     #[test]
     fn ipv4_un_marshall() {
@@ -120,12 +132,6 @@ mod test {
     }
 
     #[test]
-    fn ipv4_type_id() {
-        let ipv4 = IPv4::new(88997);
-        assert_eq!(TypeID::new(Variant::IPv4, true), ipv4.type_id());
-    }
-
-    #[test]
     fn ipv4_compare() {
         let ipv4 = IPv4::new(2105834626);
 
@@ -135,9 +141,9 @@ mod test {
         assert!(!ipv4.equals(&int2));
 
         let int4 = Int4::new(1344);
-        assert!(!ipv4.less(&int2));
-        assert!(ipv4.greater(&int2));
-        assert!(!ipv4.equals(&int2));
+        assert!(!ipv4.less(&int4));
+        assert!(ipv4.greater(&int4));
+        assert!(!ipv4.equals(&int4));
 
         let int8 = Int4::new(2105834626);
         assert!(!ipv4.less(&int8));

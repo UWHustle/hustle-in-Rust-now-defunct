@@ -1,7 +1,6 @@
 use super::*;
 
-// Value is stored in a buffer with another owner - we just have a reference
-// The lifetime specifier ensures the data's lifetime exceeds this struct's
+/// Value is stored in a buffer with another owner - we just have a reference
 pub struct BorrowedBuffer<'a> {
     type_id: TypeID,
     is_null: bool,
@@ -23,11 +22,11 @@ impl<'a> Buffer for BorrowedBuffer<'a> {
         self.type_id.clone()
     }
 
-    fn data(&self) -> &[u8] {
-        &self.data
-    }
-
     fn is_null(&self) -> bool {
         self.is_null
+    }
+
+    fn data(&self) -> &[u8] {
+        &self.data
     }
 }

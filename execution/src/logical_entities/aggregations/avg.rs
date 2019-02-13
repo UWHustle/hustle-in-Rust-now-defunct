@@ -1,10 +1,7 @@
 use logical_entities::aggregations::AggregationTrait;
 use type_system::*;
-use type_system::Numeric;
 use type_system::type_id::*;
 use type_system::integer::*;
-use type_system::force_numeric;
-use type_system::type_id::*;
 
 pub struct Avg {
     sum: Box<Numeric>,

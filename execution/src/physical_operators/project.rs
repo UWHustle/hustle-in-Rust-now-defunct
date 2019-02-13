@@ -1,13 +1,12 @@
-use type_system::*;
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
 use type_system::*;
+use type_system::borrowed_buffer::*;
 use type_system::integer::*;
 use type_system::operators::*;
-use type_system::borrowed_buffer::*;
 
 use std::collections::HashMap;
 

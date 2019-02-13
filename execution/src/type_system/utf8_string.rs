@@ -1,5 +1,6 @@
 use super::*;
 
+/// A variable-length UTF8-encoded string
 #[derive(Clone, Debug)]
 pub struct UTF8String {
     nullable: bool,
@@ -8,10 +9,9 @@ pub struct UTF8String {
 }
 
 impl UTF8String {
-    // Note that this assumes the type is nullable
     pub fn new(value: &str) -> Self {
         let string = value.to_string();
-        UTF8String {
+        Self {
             nullable: true,
             is_null: false,
             value: Box::new(string),
@@ -19,7 +19,7 @@ impl UTF8String {
     }
 
     pub fn create_null() -> Self {
-        UTF8String {
+        Self {
             nullable: true,
             is_null: true,
             value: Box::new("".to_string()),
@@ -30,7 +30,7 @@ impl UTF8String {
         let mut vec_data: Vec<u8> = vec!();
         vec_data.clone_from_slice(data);
         let value = String::from_utf8(vec_data).expect("Invalid UTF8 string");
-        UTF8String {
+        Self {
             nullable,
             is_null,
             value: Box::new(value),
@@ -46,28 +46,8 @@ impl UTF8String {
 }
 
 impl Value for UTF8String {
-    fn un_marshall(&self) -> OwnedBuffer {
-        let mut value: Vec<u8> = vec!();
-        value.clone_from_slice(self.value.as_bytes());
-        OwnedBuffer::new(self.type_id(), self.is_null(), value)
-    }
-
-    // Overrides the default implementation
-    fn size(&self) -> usize {
-        self.value.len()
-    }
-
     fn type_id(&self) -> TypeID {
         TypeID::new(Variant::UTF8String, self.nullable)
-    }
-
-    fn compare(&self, other: &Value, comp: Comparator) -> bool {
-        match other.type_id().variant {
-            Variant::UTF8String => {
-                comp.apply(&self.value, &Box::new(cast_value::<UTF8String>(other).value().to_string()))
-            }
-            _ => false
-        }
     }
 
     fn is_null(&self) -> bool {
@@ -81,7 +61,31 @@ impl Value for UTF8String {
             self.value().to_string()
         }
     }
+
+    fn un_marshall(&self) -> OwnedBuffer {
+        let mut value: Vec<u8> = vec!();
+        value.clone_from_slice(self.value.as_bytes());
+        OwnedBuffer::new(self.type_id(), self.is_null(), value)
+    }
+
+    fn compare(&self, other: &Value, comp: Comparator) -> bool {
+        match other.type_id().variant {
+            Variant::UTF8String => {
+                comp.apply(&self.value, &Box::new(cast_value::<UTF8String>(other).value().to_string()))
+            }
+            _ => {
+                panic!(incomparable(self.type_id(), other.type_id()));
+            }
+        }
+    }
+
+    /// Returns the size of the string (overrides the default implementation)
+    fn size(&self) -> usize {
+        self.value.len()
+    }
 }
+
+/* ============================================================================================== */
 
 #[cfg(test)]
 mod test {

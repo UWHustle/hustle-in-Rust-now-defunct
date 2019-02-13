@@ -1,6 +1,5 @@
 use type_system::*;
 use type_system::type_id::*;
-use type_system::type_id::Variant;
 
 pub mod avg;
 pub mod count;

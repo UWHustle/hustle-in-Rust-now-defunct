@@ -3,11 +3,13 @@ extern crate byteorder;
 use self::byteorder::{ByteOrder, LittleEndian};
 
 use super::*;
-use super::type_id::*;
 
-// Define common methods on floating-point types here
+/// Contains methods common to floating-point types
 pub trait Float: Numeric {}
 
+/* ============================================================================================== */
+
+/// A 32-bit floating point type
 #[derive(Clone, Debug)]
 pub struct Float4 {
     nullable: bool,
@@ -16,9 +18,8 @@ pub struct Float4 {
 }
 
 impl Float4 {
-    // Note that this assumes the type is nullable
     pub fn new(value: f32) -> Self {
-        Float4 {
+        Self {
             nullable: true,
             is_null: false,
             value,
@@ -26,7 +27,7 @@ impl Float4 {
     }
 
     pub fn create_null() -> Self {
-        Float4 {
+        Self {
             nullable: true,
             is_null: true,
             value: 0.0,
@@ -38,7 +39,7 @@ impl Float4 {
     }
 
     pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
-        Float4 {
+        Self {
             nullable,
             is_null,
             value: LittleEndian::read_f32(data),
@@ -47,7 +48,7 @@ impl Float4 {
 
     pub fn value(&self) -> f32 {
         if self.is_null {
-            panic!("Attempting to retrieve f32 value of null Float4");
+            panic!(null_value(self.type_id()));
         }
         self.value
     }
@@ -57,37 +58,52 @@ impl Float for Float4 {}
 
 impl Numeric for Float4 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let result: f32 = match other.type_id().variant {
+        let other_cast = match other.type_id().variant {
             Variant::Int2 => {
-                oper.apply(self.value, cast_numeric::<Int2>(other).value() as f32)
+                 cast_numeric::<Int2>(other).value() as f32
             }
             Variant::Int4 => {
-                oper.apply(self.value, cast_numeric::<Int4>(other).value() as f32)
+                cast_numeric::<Int4>(other).value() as f32
             }
             Variant::Int8 => {
-                oper.apply(self.value, cast_numeric::<Int8>(other).value() as f32)
+                cast_numeric::<Int8>(other).value() as f32
             }
             Variant::Float4 => {
-                oper.apply(self.value, cast_numeric::<Float4>(other).value())
+                cast_numeric::<Float4>(other).value()
             }
             Variant::Float8 => {
-                oper.apply(self.value, cast_numeric::<Float8>(other).value() as f32)
+                cast_numeric::<Float8>(other).value() as f32
             }
-            _ => panic!("Type {:?} is not numeric", other.type_id())
+            _ => {
+                panic!(not_numeric(other.type_id()))
+            }
         };
-        Box::new(Float4::new(result))
+        let result = oper.apply(self.value, other_cast);
+        Box::new(Self::new(result))
     }
 }
 
 impl Value for Float4 {
+    fn type_id(&self) -> TypeID {
+        TypeID::new(Variant::Float4, self.nullable)
+    }
+
+    fn is_null(&self) -> bool {
+        self.is_null
+    }
+
+    fn to_string(&self) -> String {
+        if self.is_null {
+            String::from("")
+        } else {
+            self.value.to_string()
+        }
+    }
+
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_f32(&mut data, self.value);
         OwnedBuffer::new(self.type_id(), self.is_null(), data)
-    }
-
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::Float4, self.nullable)
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -110,8 +126,92 @@ impl Value for Float4 {
             Variant::IPv4 => {
                 comp.apply(self.value, cast_value::<IPv4>(other).value() as f32)
             }
-            _ => false
+            _ => {
+                panic!(incomparable(self.type_id(), other.type_id()));
+            }
         }
+    }
+}
+
+/* ============================================================================================== */
+
+/// A 64-bit floating point type
+#[derive(Clone, Debug)]
+pub struct Float8 {
+    nullable: bool,
+    is_null: bool,
+    value: f64,
+}
+
+impl Float8 {
+    pub fn new(value: f64) -> Self {
+        Self {
+            nullable: true,
+            is_null: false,
+            value,
+        }
+    }
+
+    pub fn create_null() -> Self {
+        Self {
+            nullable: true,
+            is_null: true,
+            value: 0.0,
+        }
+    }
+
+    pub fn parse(string: &str) -> Self {
+        Self::new(string.parse::<f64>().expect("Parsing failed"))
+    }
+
+    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
+        Self {
+            nullable,
+            is_null,
+            value: LittleEndian::read_f64(data),
+        }
+    }
+
+    pub fn value(&self) -> f64 {
+        if self.is_null {
+            panic!(null_value(self.type_id()));
+        }
+        self.value
+    }
+}
+
+impl Float for Float8 {}
+
+impl Numeric for Float8 {
+    fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
+        let other_cast = match other.type_id().variant {
+            Variant::Int2 => {
+                cast_numeric::<Int2>(other).value() as f64
+            }
+            Variant::Int4 => {
+                cast_numeric::<Int4>(other).value() as f64
+            }
+            Variant::Int8 => {
+                cast_numeric::<Int8>(other).value() as f64
+            }
+            Variant::Float4 => {
+                cast_numeric::<Float4>(other).value() as f64
+            }
+            Variant::Float8 => {
+                cast_numeric::<Float8>(other).value()
+            }
+            _ => {
+                panic!(not_numeric(other.type_id()))
+            }
+        };
+        let result = oper.apply(self.value, other_cast);
+        Box::new(Self::new(result))
+    }
+}
+
+impl Value for Float8 {
+    fn type_id(&self) -> TypeID {
+        TypeID::new(Variant::Float8, self.nullable)
     }
 
     fn is_null(&self) -> bool {
@@ -125,88 +225,11 @@ impl Value for Float4 {
             self.value.to_string()
         }
     }
-}
 
-#[derive(Clone, Debug)]
-pub struct Float8 {
-    nullable: bool,
-    is_null: bool,
-    value: f64,
-}
-
-impl Float8 {
-    // Note that this assumes the type is nullable
-    pub fn new(value: f64) -> Self {
-        Float8 {
-            nullable: true,
-            is_null: false,
-            value,
-        }
-    }
-
-    pub fn create_null() -> Self {
-        Float8 {
-            nullable: true,
-            is_null: true,
-            value: 0.0,
-        }
-    }
-
-    pub fn parse(string: &str) -> Self {
-        Self::new(string.parse::<f64>().expect("Parsing failed"))
-    }
-
-    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
-        Float8 {
-            nullable,
-            is_null,
-            value: LittleEndian::read_f64(data),
-        }
-    }
-
-    pub fn value(&self) -> f64 {
-        if self.is_null {
-            panic!("Attempting to return f64 value of null Float8");
-        }
-        self.value
-    }
-}
-
-impl Float for Float8 {}
-
-impl Numeric for Float8 {
-    fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let result: f64 = match other.type_id().variant {
-            Variant::Int2 => {
-                oper.apply(self.value, cast_numeric::<Int2>(other).value() as f64)
-            }
-            Variant::Int4 => {
-                oper.apply(self.value, cast_numeric::<Int4>(other).value() as f64)
-            }
-            Variant::Int8 => {
-                oper.apply(self.value, cast_numeric::<Int8>(other).value() as f64)
-            }
-            Variant::Float4 => {
-                oper.apply(self.value, cast_numeric::<Float4>(other).value() as f64)
-            }
-            Variant::Float8 => {
-                oper.apply(self.value, cast_numeric::<Float8>(other).value())
-            }
-            _ => panic!("Type {:?} is not numeric", other.type_id())
-        };
-        Box::new(Float8::new(result))
-    }
-}
-
-impl Value for Float8 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_f64(&mut data, self.value);
         OwnedBuffer::new(self.type_id(), self.is_null(), data)
-    }
-
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::Float8, self.nullable)
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -229,27 +252,24 @@ impl Value for Float8 {
             Variant::IPv4 => {
                 comp.apply(self.value, cast_value::<IPv4>(other).value() as f64)
             }
-            _ => false
-        }
-    }
-
-    fn is_null(&self) -> bool {
-        self.is_null
-    }
-
-    fn to_string(&self) -> String {
-        if self.is_null {
-            String::from("")
-        } else {
-            self.value.to_string()
+            _ => {
+                panic!(incomparable(self.type_id(), other.type_id()));
+            }
         }
     }
 }
 
+/* ============================================================================================== */
+
 #[cfg(test)]
 mod test {
     use super::*;
-    use super::type_id::*;
+
+    #[test]
+    fn float4_type_id() {
+        let float4 = Float4::new(13.7);
+        assert_eq!(TypeID::new(Variant::Float4, true), float4.type_id());
+    }
 
     #[test]
     fn float4_un_marshall() {
@@ -262,12 +282,6 @@ mod test {
         assert_eq!(0x5b, data[1]);
         assert_eq!(0x33, data[2]);
         assert_eq!(0x33, data[3]);
-    }
-
-    #[test]
-    fn float4_type_id() {
-        let float4 = Float4::new(13.7);
-        assert_eq!(TypeID::new(Variant::Float4, true), float4.type_id());
     }
 
     #[test]
@@ -306,6 +320,12 @@ mod test {
     }
 
     #[test]
+    fn float8_type_id() {
+        let float8 = Float8::new(12228.444);
+        assert_eq!(TypeID::new(Variant::Float8, true), float8.type_id());
+    }
+
+    #[test]
     fn float8_un_marshall() {
         let float8_value = Float8::new(12228.444);
         let float8_buffer = float8_value.un_marshall();
@@ -320,12 +340,6 @@ mod test {
         assert_eq!(0xfd, data[5]);
         assert_eq!(0xf3, data[6]);
         assert_eq!(0xb6, data[7]);
-    }
-
-    #[test]
-    fn float8_type_id() {
-        let float8 = Float8::new(12228.444);
-        assert_eq!(TypeID::new(Variant::Float8, true), float8.type_id());
     }
 
     #[test]
