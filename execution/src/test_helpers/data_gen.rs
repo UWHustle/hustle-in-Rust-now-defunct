@@ -15,7 +15,7 @@ use type_system::type_id::*;
 use physical_operators::Operator;
 
 
-pub fn generate_relation_into_hustle_and_sqlite3(record_count: usize) -> Relation {
+pub fn generate_relation_t_into_hustle_and_sqlite(record_count: usize) -> Relation {
     let relation = Relation::new("T".to_string(),
                                  Schema::new(vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
                                                   Column::new("b".to_string(), TypeID::new(Variant::Int4, true))

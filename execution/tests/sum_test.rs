@@ -7,7 +7,7 @@ use execution::physical_operators::aggregate::Aggregate;
 use execution::physical_operators::project::Project;
 use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_plan::node::Node;
-use execution::test_helpers::data_gen::generate_relation_into_hustle_and_sqlite3;
+use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::type_id::*;
 
@@ -17,7 +17,7 @@ const RECORD_COUNT: usize = 10;
 
 #[test]
 fn test_sum_aggregate() {
-    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT);
+    let relation = generate_relation_t_into_hustle_and_sqlite(RECORD_COUNT);
     let agg_col = Column::new(String::from("a"), TypeID::new(Variant::Int4, true));
     let agg_relation = hustle_sum(relation.clone(), agg_col);
     let hustle_calculation = sum_column_hustle(agg_relation.clone(), "SUM(a)".to_string());
