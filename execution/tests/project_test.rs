@@ -35,7 +35,7 @@ fn test_project_predicate() {
 fn hustle_where(relation1: Relation) -> Relation {
     let project_operator = Project::pure_project(relation1.clone(), vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true))));
     let print_operator = Rc::new(Print::new(project_operator.get_target_relation().clone()));
-    let project_operator_after = Rc::new(Project::new(relation1.clone(), vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true))), &"a".to_string(), true, Comparator::Less, &Int4::new(50)));
+    let project_operator_after = Rc::new(Project::new(relation1.clone(), vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true))), &"a".to_string(), true, Comparator::Less, &Int4::from(50)));
     let print_operator_after = Rc::new(Print::new(project_operator_after.get_target_relation().clone()));
 
     let project_node_before = Rc::new(Node::new(Rc::new(project_operator), vec!()));

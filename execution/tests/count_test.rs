@@ -33,6 +33,6 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 fn hustle_count(relation: Relation, agg_col: Column) -> Relation {
     let project_op = Project::pure_project(relation, vec!(agg_col.clone()));
     let project_node = Node::new(Rc::new(project_op), vec!());
-    let agg_op = Aggregate::new(project_node.get_output_relation(), agg_col, vec!(), Count::new());
+    let agg_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), vec!(), Count::new(agg_col.get_datatype()));
     Node::new(Rc::new(agg_op), vec!(Rc::new(project_node))).execute()
 }

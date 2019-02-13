@@ -61,9 +61,9 @@ impl Operator for Project {
             let mut filter = true;
             if self.compare {
                 for column in &input_cols {
-                    let value_len = column.get_datatype().size(); // TODO: Won't work for variable-length data
+                    let value_len = column.get_datatype().next_size(&input_data[k..]);
                     if column.get_name().to_string() == self.predicate_name {
-                        let value = BorrowedBuffer::new(column.get_datatype(), false, &input_data[k..k + value_len]);
+                        let value = BorrowedBuffer::new(&input_data[k..k + value_len], column.get_datatype(), false);
                         if !value.marshall().compare(&*self.comp_value, self.comparator.clone()) {
                             filter = false;
                         }
@@ -79,7 +79,7 @@ impl Operator for Project {
                 let mut col_map = HashMap::new();
                 k = i;
                 for column in &input_cols {
-                    let value_len = column.get_datatype().size(); // TODO: Won't work for variable-length data
+                    let value_len = column.get_datatype().next_size(&input_data[k..]);
                     col_map.insert(column, &input_data[k..k + value_len]);
                     k += value_len;
                 }
@@ -87,9 +87,8 @@ impl Operator for Project {
                 // Output values in the order of the output columns
                 for column in &output_cols {
                     let slice = col_map[column];
-                    let value_length = column.get_datatype().size(); // TODO: Won't work for variable-length data
-                    output_data[j..j + value_length].clone_from_slice(slice);
-                    j += value_length;
+                    output_data[j..j + slice.len()].clone_from_slice(slice);
+                    j += slice.len();
                 }
             }
             i = k;

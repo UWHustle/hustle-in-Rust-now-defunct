@@ -3,14 +3,14 @@ use type_system::*;
 use type_system::integer::*;
 use type_system::type_id::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Count {
-    running_total: u32
+    count: Box<Numeric>
 }
 
 impl Count {
-    pub fn new() -> Self {
-        Count { running_total: 0 }
+    pub fn new(data_type: TypeID) -> Self {
+        Count { count: data_type.create_zero() }
     }
 }
 
@@ -20,19 +20,19 @@ impl AggregationTrait for Count {
     }
 
     fn initialize(&mut self) -> () {
-        self.running_total = 0;
+        self.count = self.count.type_id().create_zero();
     }
 
     #[allow(unused_variables)]
     fn consider_value(&mut self, value: &Value) -> () {
-        self.running_total += 1;
+        self.count = self.count.add(&Int2::from(1));
     }
 
     fn output(&self) -> Box<Value> {
-        Int8::new(self.running_total as i64).box_clone_value()
+        self.count.box_clone_value()
     }
 
     fn output_type(&self) -> TypeID {
-        TypeID::new(Variant::Int4, false)
+        self.count.type_id()
     }
 }

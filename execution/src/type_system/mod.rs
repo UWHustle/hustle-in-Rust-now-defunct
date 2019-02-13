@@ -22,9 +22,9 @@ use self::utf8_string::*;
 
 /// Types whose values are stored in a byte buffer somewhere
 pub trait Buffer {
+    fn data(&self) -> &[u8];
     fn type_id(&self) -> TypeID;
     fn is_null(&self) -> bool;
-    fn data(&self) -> &[u8];
 
     /// Converts the bytes in the buffer to a `Value` which is stored on the heap
     fn marshall(&self) -> Box<Value> {
@@ -33,25 +33,25 @@ pub trait Buffer {
         let data = self.data();
         match self.type_id().variant {
             Variant::Int2 => {
-                Box::new(Int2::marshall(nullable, is_null, data))
+                Box::new(Int2::marshall(data, nullable, is_null))
             }
             Variant::Int4 => {
-                Box::new(Int4::marshall(nullable, is_null, data))
+                Box::new(Int4::marshall(data, nullable, is_null))
             }
             Variant::Int8 => {
-                Box::new(Int8::marshall(nullable, is_null, data))
+                Box::new(Int8::marshall(data, nullable, is_null))
             }
             Variant::Float4 => {
-                Box::new(Float4::marshall(nullable, is_null, data))
+                Box::new(Float4::marshall(data, nullable, is_null))
             }
             Variant::Float8 => {
-                Box::new(Float8::marshall(nullable, is_null, data))
+                Box::new(Float8::marshall(data, nullable, is_null))
             }
             Variant::UTF8String => {
-                Box::new(UTF8String::marshall(nullable, is_null, data))
+                Box::new(UTF8String::marshall(data, nullable, is_null))
             }
             Variant::IPv4 => {
-                Box::new(IPv4::marshall(nullable, is_null, data))
+                Box::new(IPv4::marshall(data, nullable, is_null))
             }
         }
     }

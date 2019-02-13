@@ -35,13 +35,12 @@ impl SelectSum {
         let mut i = 0;
         while i < total_size {
             for column in columns {
-                // TODO: Won't work for non-constant size objects
-                let next_length = column.get_datatype().size();
+                let next_len = column.get_datatype().next_size(&data[i..]);
                 if column.get_name() == self.column.get_name() {
-                    let buffer = BorrowedBuffer::new(column.get_datatype(), false, &data[i..i + next_length]);
+                    let buffer = BorrowedBuffer::new(&data[i..i + next_len], column.get_datatype(), false);
                     sum = sum.add(force_numeric(&*buffer.marshall()));
                 }
-                i += next_length;
+                i += next_len;
             }
         }
         sum.to_string().to_string()

@@ -59,8 +59,8 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
 
             // Split data by the columns relevant to the aggregation vs columns to group by
             for column in &input_cols {
-                let value_len = column.get_datatype().size(); // TODO: Doesn't work for variable-length data
-                let buffer = BorrowedBuffer::new(column.get_datatype(), false, &input_data[i..i + value_len]);
+                let value_len = column.get_datatype().next_size(&input_data[i..]);
+                let buffer = BorrowedBuffer::new(&input_data[i..i + value_len], column.get_datatype(), false);
                 let value = (buffer.marshall().to_string(), column.clone());
                 if (&self.group_by_cols).into_iter().any(|c| c.get_name() == column.get_name()) {
                     group_by_values.push(value);

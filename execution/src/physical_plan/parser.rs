@@ -1,3 +1,4 @@
+use logical_entities::aggregations::avg::Avg;
 use logical_entities::aggregations::count::Count;
 use logical_entities::aggregations::max::Max;
 use logical_entities::aggregations::min::Min;
@@ -11,7 +12,6 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
-use type_system::integer::*;
 use type_system::operators::*;
 use type_system::type_id::*;
 
@@ -65,23 +65,28 @@ fn parse_aggregate(json: &Value) -> Node {
     let project_op = Project::pure_project(input.get_output_relation(), project_cols);
     let project_node = Node::new(Rc::new(project_op), vec!(Rc::new(input)));
 
+    let agg_type = TypeID::from_string(get_string(&json["aggregate_expressions"].as_array().unwrap().get(0).unwrap()["type"]));
     let agg_name = agg_json["function"].as_str().unwrap();
     match agg_name {
-        "SUM" => {
-            let sum_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Sum::new(agg_col.get_datatype()));
-            Node::new(Rc::new(sum_op), vec!(Rc::new(project_node)))
+        "AVG" => {
+            let avg_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Avg::new(agg_type));
+            Node::new(Rc::new(avg_op), vec!(Rc::new(project_node)))
         }
         "COUNT" => {
-            let count_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Count::new());
+            let count_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Count::new(agg_type));
             Node::new(Rc::new(count_op), vec!(Rc::new(project_node)))
         }
+        "MAX" => {
+            let max_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Max::new(agg_type));
+            Node::new(Rc::new(max_op), vec!(Rc::new(project_node)))
+        }
         "MIN" => {
-            let min_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Min::new(agg_col.get_datatype()));
+            let min_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Min::new(agg_type));
             Node::new(Rc::new(min_op), vec!(Rc::new(project_node)))
         }
-        "MAX" => {
-            let max_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Max::new(agg_col.get_datatype()));
-            Node::new(Rc::new(max_op), vec!(Rc::new(project_node)))
+        "SUM" => {
+            let sum_op = Aggregate::new(project_node.get_output_relation(), agg_col.clone(), group_by_cols, Sum::new(agg_type));
+            Node::new(Rc::new(sum_op), vec!(Rc::new(project_node)))
         }
         _ => {
             panic!("Aggregate function {} not supported", agg_name);
@@ -98,19 +103,20 @@ fn parse_selection(json: &Value) -> Node {
         Value::Null => Project::pure_project(input.get_output_relation(), output_cols),
         _ => {
             let comp_value_str = get_string(&filter_predicate["literal"]["value"]);
-
-            // TODO: This is temporary - we want to determine the type from the schema
-            let comp_value = Int4::new(comp_value_str.parse::<i32>().unwrap());
+            let comp_value_type = TypeID::from_string(get_string(&filter_predicate["literal"]["type"]));
+            let comp_value = comp_value_type.parse(&comp_value_str);
 
             let comparator_str = filter_predicate["json_name"].as_str().unwrap();
             let comparator = match comparator_str {
                 "Equal" => Comparator::Equal,
                 "Less" => Comparator::Less,
+                "LessOrEqual" => Comparator::LessEq,
                 "Greater" => Comparator::Greater,
+                "GreaterOrEqual" => Comparator::GreaterEq,
                 _ => panic!("Unknown comparison type {}", comparator_str)
             };
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
-            Project::new(input.get_output_relation(), output_cols, filter_col.get_name(), true, comparator, &comp_value)
+            Project::new(input.get_output_relation(), output_cols, filter_col.get_name(), true, comparator, &*comp_value)
         }
     };
     Node::new(Rc::new(project_op), vec!(Rc::new(input)))
@@ -136,11 +142,7 @@ fn parse_column(json: &Value) -> Column {
     if name == "" {
         name = get_string(&json["alias"]);
     }
-
-    // Currently Long types are incorrectly interpreted as IP addresses so just use Int
-    let mut type_string = get_string(&json["type"]);
-    type_string = type_string.replace("Long", "Int");
-    Column::new(name, TypeID::from_string(type_string))
+    Column::new(name, TypeID::from_string(get_string(&json["type"])))
 }
 
 fn get_string(json: &Value) -> String {

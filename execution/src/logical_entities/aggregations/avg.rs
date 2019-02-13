@@ -3,9 +3,10 @@ use type_system::*;
 use type_system::type_id::*;
 use type_system::integer::*;
 
+#[derive(Clone, Debug)]
 pub struct Avg {
     sum: Box<Numeric>,
-    count: u32,
+    count: i32,
 }
 
 impl Avg {
@@ -28,14 +29,12 @@ impl AggregationTrait for Avg {
     }
 
     fn consider_value(&mut self, value: &Value) -> () {
-        // TODO: Need a way to convert this to numeric type
         self.sum = self.sum.add(force_numeric(value));
         self.count += 1;
     }
 
-    // TODO: Not implemented (currently have no way to do division)
     fn output(&self) -> Box<Value> {
-        let denom = Int4::new(self.count as i32);
+        let denom = Int4::from(self.count);
         self.sum.divide(&denom).box_clone_value()
     }
 

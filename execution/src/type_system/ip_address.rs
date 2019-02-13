@@ -12,37 +12,41 @@ trait IPAddress: Value {}
 /// An IPv4 address type
 #[derive(Clone, Debug)]
 pub struct IPv4 {
+    value: u32,
     nullable: bool,
     is_null: bool,
-    value: u32,
 }
 
 impl IPv4 {
-    pub fn new(value: u32) -> Self {
+    pub fn new(value: u32, nullable: bool) -> Self {
         Self {
-            nullable: true,
-            is_null: false,
             value,
+            nullable,
+            is_null: false,
         }
+    }
+
+    pub fn from(value: u32) -> Self {
+        Self::new(value, true)
     }
 
     pub fn create_null() -> Self {
         Self {
+            value: 0,
             nullable: true,
             is_null: true,
-            value: 0,
         }
     }
 
     pub fn parse(string: &str) -> Self {
-        Self::new(string.parse::<u32>().expect("Parsing failed"))
+        Self::from(string.parse::<u32>().expect("Parsing failed"))
     }
 
-    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
+    pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
         Self {
+            value: LittleEndian::read_u32(data),
             nullable,
             is_null,
-            value: LittleEndian::read_u32(data),
         }
     }
 
@@ -67,7 +71,7 @@ impl Value for IPv4 {
 
     fn to_string(&self) -> String {
         if self.is_null {
-            String::from("")
+            String::new()
         } else {
             self.value.to_string()
         }
@@ -76,7 +80,7 @@ impl Value for IPv4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_u32(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), self.is_null(), data)
+        OwnedBuffer::new(data, self.type_id(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -114,13 +118,13 @@ mod test {
 
     #[test]
     fn ipv4_type_id() {
-        let ipv4 = IPv4::new(88997);
+        let ipv4 = IPv4::from(88997);
         assert_eq!(TypeID::new(Variant::IPv4, true), ipv4.type_id());
     }
 
     #[test]
     fn ipv4_un_marshall() {
-        let ipv4_value = IPv4::new(88997);
+        let ipv4_value = IPv4::from(88997);
         let ipv4_buffer = ipv4_value.un_marshall();
         assert_eq!(TypeID::new(Variant::IPv4, true), ipv4_buffer.type_id());
 
@@ -133,29 +137,29 @@ mod test {
 
     #[test]
     fn ipv4_compare() {
-        let ipv4 = IPv4::new(2105834626);
+        let ipv4 = IPv4::from(2105834626);
 
-        let int2 = Int2::new(120);
+        let int2 = Int2::from(120);
         assert!(!ipv4.less(&int2));
         assert!(ipv4.greater(&int2));
         assert!(!ipv4.equals(&int2));
 
-        let int4 = Int4::new(1344);
+        let int4 = Int4::from(1344);
         assert!(!ipv4.less(&int4));
         assert!(ipv4.greater(&int4));
         assert!(!ipv4.equals(&int4));
 
-        let int8 = Int4::new(2105834626);
+        let int8 = Int4::from(2105834626);
         assert!(!ipv4.less(&int8));
         assert!(!ipv4.greater(&int8));
         assert!(ipv4.equals(&int8));
 
-        let float4 = Float4::new(-1234.5);
+        let float4 = Float4::from(-1234.5);
         assert!(!ipv4.less(&float4));
         assert!(ipv4.greater(&float4));
         assert!(!ipv4.equals(&float4));
 
-        let float8 = Float8::new(2105834626.0);
+        let float8 = Float8::from(2105834626.0);
         assert!(!ipv4.less(&float8));
         assert!(!ipv4.greater(&float8));
         assert!(ipv4.equals(&float8));
@@ -164,8 +168,8 @@ mod test {
     #[test]
     #[should_panic]
     fn invalid_ipv4_compare() {
-        let ipv4 = IPv4::new(2105834626);
-        let utf8_string = UTF8String::new("localhost");
+        let ipv4 = IPv4::from(2105834626);
+        let utf8_string = UTF8String::from("localhost");
         ipv4.equals(&utf8_string);
     }
 }

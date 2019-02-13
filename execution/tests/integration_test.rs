@@ -28,7 +28,7 @@ fn test_flow() {
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b) as Out FROM t as t1 JOIN t as t2;", "Out");
     assert_eq!(hustle_calculation, sqlite3_calculation);
 
-    let insert_value = Int4::new(3);
+    let insert_value = Int4::from(3);
     insert_into_hustle(10, &insert_value, relation.clone());
     let hustle_calculation = sum_column_hustle(relation.clone(), "b".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;", "SUM(b)");

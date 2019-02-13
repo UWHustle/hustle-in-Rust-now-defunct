@@ -9,9 +9,7 @@ pub struct Min {
 
 impl Min {
     pub fn new(data_type: TypeID) -> Self {
-        Min {
-            current_min: data_type.create_null(),
-        }
+        Min { current_min: data_type.create_null(), }
     }
 }
 

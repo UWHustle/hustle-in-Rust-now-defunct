@@ -1,40 +1,52 @@
+extern crate byteorder;
+
+use self::byteorder::{ByteOrder, LittleEndian};
+
 use super::*;
 
 /// A variable-length UTF8-encoded string
 #[derive(Clone, Debug)]
 pub struct UTF8String {
+    value: Box<String>,
     nullable: bool,
     is_null: bool,
-    value: Box<String>,
 }
 
 impl UTF8String {
-    pub fn new(value: &str) -> Self {
+    pub fn new(value: &str, nullable: bool) -> Self {
         let string = value.to_string();
         Self {
-            nullable: true,
-            is_null: false,
             value: Box::new(string),
+            nullable,
+            is_null: false,
         }
+    }
+
+    pub fn from(value: &str) -> Self {
+        Self::new(value, true)
     }
 
     pub fn create_null() -> Self {
         Self {
+            value: Box::new(String::new()),
             nullable: true,
             is_null: true,
-            value: Box::new("".to_string()),
         }
     }
 
-    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
+    pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
         let mut vec_data: Vec<u8> = vec!();
         vec_data.clone_from_slice(data);
         let value = String::from_utf8(vec_data).expect("Invalid UTF8 string");
         Self {
+            value: Box::new(value),
             nullable,
             is_null,
-            value: Box::new(value),
         }
+    }
+
+    pub fn next_size(data: &[u8]) -> usize {
+        LittleEndian::read_u64(&data[..8]) as usize
     }
 
     pub fn value(&self) -> &str {
@@ -56,7 +68,7 @@ impl Value for UTF8String {
 
     fn to_string(&self) -> String {
         if self.is_null {
-            String::from("")
+            String::new()
         } else {
             self.value().to_string()
         }
@@ -65,7 +77,7 @@ impl Value for UTF8String {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut value: Vec<u8> = vec![0; self.size()];
         value.clone_from_slice(self.value.as_bytes());
-        OwnedBuffer::new(self.type_id(), self.is_null(), value)
+        OwnedBuffer::new(value, self.type_id(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -93,7 +105,7 @@ mod test {
 
     #[test]
     fn utf8_string_un_marshall() {
-        let utf8_string_value = UTF8String::new("Hello!");
+        let utf8_string_value = UTF8String::from("Hello!");
         let utf8_string_buffer = utf8_string_value.un_marshall();
         assert_eq!(TypeID::new(Variant::UTF8String, true), utf8_string_buffer.type_id());
 
@@ -108,26 +120,26 @@ mod test {
 
     #[test]
     fn utf8_string_size() {
-        let utf8_string = UTF8String::new("Do no evil");
+        let utf8_string = UTF8String::from("Do no evil");
         assert_eq!(10, utf8_string.size());
     }
 
     #[test]
     fn utf8_string_type_id() {
-        let utf8_string = UTF8String::new("Chocolate donuts");
+        let utf8_string = UTF8String::from("Chocolate donuts");
         assert_eq!(TypeID::new(Variant::UTF8String, true), utf8_string.type_id());
     }
 
     #[test]
     fn utf8_string_compare() {
-        let alphabet = UTF8String::new("alphabet");
+        let alphabet = UTF8String::from("alphabet");
 
-        let aardvark = UTF8String::new("aardvark");
+        let aardvark = UTF8String::from("aardvark");
         assert!(!alphabet.less(&aardvark));
         assert!(alphabet.greater(&aardvark));
         assert!(!alphabet.equals(&aardvark));
 
-        let elephant = UTF8String::new("elephant");
+        let elephant = UTF8String::from("elephant");
         assert!(alphabet.less(&elephant));
         assert!(!alphabet.greater(&elephant));
         assert!(!alphabet.equals(&elephant));
@@ -136,8 +148,8 @@ mod test {
     #[test]
     #[should_panic]
     fn invalid_utf8_string_compare() {
-        let alphabet = UTF8String::new("alphabet");
-        let int4 = Int4::new(1234);
+        let alphabet = UTF8String::from("alphabet");
+        let int4 = Int4::from(1234);
         int4.equals(&alphabet);
     }
 }

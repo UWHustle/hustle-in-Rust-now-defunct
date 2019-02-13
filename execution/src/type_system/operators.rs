@@ -44,20 +44,20 @@ pub enum Arithmetic {
 }
 
 impl Arithmetic {
-    pub fn apply<T>(&self, val1: T, val2: T) -> T
+    pub fn apply<T>(&self, val_1: T, val_2: T) -> T
         where T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Div<Output=T> {
         match self {
             Arithmetic::Add => {
-                val1 + val2
+                val_1 + val_2
             }
             Arithmetic::Subtract => {
-                val1 - val2
+                val_1 - val_2
             }
             Arithmetic::Multiply => {
-                val1 * val2
+                val_1 * val_2
             }
             Arithmetic::Divide => {
-                val1 / val2
+                val_1 / val_2
             }
         }
     }

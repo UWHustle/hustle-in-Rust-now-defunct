@@ -12,37 +12,41 @@ pub trait Float: Numeric {}
 /// A 32-bit floating point type
 #[derive(Clone, Debug)]
 pub struct Float4 {
+    value: f32,
     nullable: bool,
     is_null: bool,
-    value: f32,
 }
 
 impl Float4 {
-    pub fn new(value: f32) -> Self {
+    pub fn new(value: f32, nullable: bool) -> Self {
         Self {
-            nullable: true,
-            is_null: false,
             value,
+            nullable,
+            is_null: false,
         }
+    }
+
+    pub fn from(value: f32) -> Self {
+        Self::new(value, true)
     }
 
     pub fn create_null() -> Self {
         Self {
+            value: 0.0,
             nullable: true,
             is_null: true,
-            value: 0.0,
         }
     }
 
     pub fn parse(string: &str) -> Self {
-        Self::new(string.parse::<f32>().expect("Parsing failed"))
+        Self::from(string.parse::<f32>().expect("Parsing failed"))
     }
 
-    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
+    pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
         Self {
+            value: LittleEndian::read_f32(data),
             nullable,
             is_null,
-            value: LittleEndian::read_f32(data),
         }
     }
 
@@ -60,7 +64,7 @@ impl Numeric for Float4 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
         let other_cast = match other.type_id().variant {
             Variant::Int2 => {
-                 cast_numeric::<Int2>(other).value() as f32
+                cast_numeric::<Int2>(other).value() as f32
             }
             Variant::Int4 => {
                 cast_numeric::<Int4>(other).value() as f32
@@ -79,7 +83,7 @@ impl Numeric for Float4 {
             }
         };
         let result = oper.apply(self.value, other_cast);
-        Box::new(Self::new(result))
+        Box::new(Self::new(result, self.nullable))
     }
 }
 
@@ -94,7 +98,7 @@ impl Value for Float4 {
 
     fn to_string(&self) -> String {
         if self.is_null {
-            String::from("")
+            String::new()
         } else {
             self.value.to_string()
         }
@@ -103,7 +107,7 @@ impl Value for Float4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_f32(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), self.is_null(), data)
+        OwnedBuffer::new(data, self.type_id(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -138,37 +142,41 @@ impl Value for Float4 {
 /// A 64-bit floating point type
 #[derive(Clone, Debug)]
 pub struct Float8 {
+    value: f64,
     nullable: bool,
     is_null: bool,
-    value: f64,
 }
 
 impl Float8 {
-    pub fn new(value: f64) -> Self {
+    pub fn new(value: f64, nullable: bool) -> Self {
         Self {
-            nullable: true,
-            is_null: false,
             value,
+            nullable,
+            is_null: false,
         }
+    }
+
+    pub fn from(value: f64) -> Self {
+        Self::new(value, true)
     }
 
     pub fn create_null() -> Self {
         Self {
+            value: 0.0,
             nullable: true,
             is_null: true,
-            value: 0.0,
         }
     }
 
     pub fn parse(string: &str) -> Self {
-        Self::new(string.parse::<f64>().expect("Parsing failed"))
+        Self::from(string.parse::<f64>().expect("Parsing failed"))
     }
 
-    pub fn marshall(nullable: bool, is_null: bool, data: &[u8]) -> Self {
+    pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
         Self {
+            value: LittleEndian::read_f64(data),
             nullable,
             is_null,
-            value: LittleEndian::read_f64(data),
         }
     }
 
@@ -205,7 +213,7 @@ impl Numeric for Float8 {
             }
         };
         let result = oper.apply(self.value, other_cast);
-        Box::new(Self::new(result))
+        Box::new(Self::new(result, self.nullable))
     }
 }
 
@@ -220,7 +228,7 @@ impl Value for Float8 {
 
     fn to_string(&self) -> String {
         if self.is_null {
-            String::from("")
+            String::new()
         } else {
             self.value.to_string()
         }
@@ -229,7 +237,7 @@ impl Value for Float8 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_f64(&mut data, self.value);
-        OwnedBuffer::new(self.type_id(), self.is_null(), data)
+        OwnedBuffer::new(data, self.type_id(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
@@ -267,35 +275,35 @@ mod test {
 
     #[test]
     fn float4_type_id() {
-        let float4 = Float4::new(13.7);
+        let float4 = Float4::from(13.7);
         assert_eq!(TypeID::new(Variant::Float4, true), float4.type_id());
     }
 
     #[test]
     fn float4_compare() {
-        let float4 = Float4::new(1843.5);
+        let float4 = Float4::from(1843.5);
 
-        let int2 = Int2::new(1843);
+        let int2 = Int2::from(1843);
         assert!(!float4.less(&int2));
         assert!(float4.greater(&int2));
         assert!(!float4.equals(&int2));
 
-        let int4 = Int4::new(1844);
+        let int4 = Int4::from(1844);
         assert!(float4.less(&int4));
         assert!(!float4.greater(&int4));
         assert!(!float4.equals(&int4));
 
-        let int8 = Int8::new(-123456789);
+        let int8 = Int8::from(-123456789);
         assert!(!float4.less(&int8));
         assert!(float4.greater(&int8));
         assert!(!float4.equals(&int8));
 
-        let float8 = Float8::new(1843.5);
+        let float8 = Float8::from(1843.5);
         assert!(!float4.less(&float8));
         assert!(!float4.greater(&float8));
         assert!(float4.equals(&float8));
 
-        let ipv4 = IPv4::new(1000);
+        let ipv4 = IPv4::from(1000);
         assert!(!float4.less(&ipv4));
         assert!(float4.greater(&ipv4));
         assert!(!float4.equals(&ipv4));
@@ -303,7 +311,7 @@ mod test {
 
     #[test]
     fn float4_un_marshall() {
-        let float4_value = Float4::new(13.7);
+        let float4_value = Float4::from(13.7);
         let float4_buffer = float4_value.un_marshall();
         assert_eq!(TypeID::new(Variant::Float4, true), float4_buffer.type_id());
 
@@ -317,20 +325,20 @@ mod test {
     #[test]
     #[should_panic]
     fn invalid_float4_compare() {
-        let float4 = Float4::new(1843.5);
-        let utf8_string = UTF8String::new("Forty two: ");
+        let float4 = Float4::from(1843.5);
+        let utf8_string = UTF8String::from("Forty two: ");
         float4.equals(&utf8_string);
     }
 
     #[test]
     fn float8_type_id() {
-        let float8 = Float8::new(12228.444);
+        let float8 = Float8::from(12228.444);
         assert_eq!(TypeID::new(Variant::Float8, true), float8.type_id());
     }
 
     #[test]
     fn float8_un_marshall() {
-        let float8_value = Float8::new(12228.444);
+        let float8_value = Float8::from(12228.444);
         let float8_buffer = float8_value.un_marshall();
         assert_eq!(TypeID::new(Variant::Float8, true), float8_buffer.type_id());
 
@@ -347,29 +355,29 @@ mod test {
 
     #[test]
     fn float8_compare() {
-        let float8 = Float8::new(987654321.0);
+        let float8 = Float8::from(987654321.0);
 
-        let int2 = Int2::new(-10);
+        let int2 = Int2::from(-10);
         assert!(!float8.less(&int2));
         assert!(float8.greater(&int2));
         assert!(!float8.equals(&int2));
 
-        let int4 = Int4::new(180000);
+        let int4 = Int4::from(180000);
         assert!(!float8.less(&int4));
         assert!(float8.greater(&int4));
         assert!(!float8.equals(&int4));
 
-        let int8 = Int4::new(987654321);
+        let int8 = Int4::from(987654321);
         assert!(!float8.less(&int8));
         assert!(!float8.greater(&int8));
         assert!(float8.equals(&int8));
 
-        let float4 = Float4::new(10987654321.0);
+        let float4 = Float4::from(10987654321.0);
         assert!(float8.less(&float4));
         assert!(!float8.greater(&float4));
         assert!(!float8.equals(&float4));
 
-        let ipv4 = IPv4::new(999);
+        let ipv4 = IPv4::from(999);
         assert!(!float8.less(&ipv4));
         assert!(float8.greater(&ipv4));
         assert!(!float8.equals(&ipv4));
@@ -378,8 +386,8 @@ mod test {
     #[test]
     #[should_panic]
     fn invalid_float8_compare() {
-        let float8 = Float8::new(987654321.0);
-        let utf8_string = UTF8String::new("the answer ");
+        let float8 = Float8::from(987654321.0);
+        let utf8_string = UTF8String::from("the answer ");
         float8.equals(&utf8_string);
     }
 }

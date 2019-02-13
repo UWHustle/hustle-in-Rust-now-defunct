@@ -47,7 +47,7 @@ impl Operator for ExportCsv {
             for column in columns {
                 let type_id = column.get_datatype();
                 let value_length = type_id.size();
-                let buffer: BorrowedBuffer = BorrowedBuffer::new(type_id.clone(), false, &data[i..i + value_length]);
+                let buffer: BorrowedBuffer = BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
                 r.push(buffer.marshall().to_string());
                 i += value_length;
             }

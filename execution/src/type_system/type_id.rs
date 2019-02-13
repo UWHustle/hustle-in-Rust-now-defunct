@@ -37,8 +37,9 @@ impl TypeID {
         let variant = match variant_str {
             "smallint" => Variant::Int2,
             "int" => Variant::Int4,
-            "bigint" => Variant::Int8,
+            "bigint" | "long" => Variant::Int8,
             "real" => Variant::Float4,
+            "double" => Variant::Float8,
             "varchar" => Variant::UTF8String,
             _ => panic!("Unknown type variant {}", variant_str)
         };
@@ -56,6 +57,21 @@ impl TypeID {
             Variant::Float8 => 8,
             Variant::UTF8String => 0,
             Variant::IPv4 => 4,
+        }
+    }
+
+    pub fn next_size(&self, data: &[u8]) -> usize {
+        if self.size() > 0 {
+            self.size()
+        } else {
+            match self.variant {
+                Variant::UTF8String => {
+                    UTF8String::next_size(data)
+                }
+                _ => {
+                    panic!("Variable size with no next_size() implementation");
+                }
+            }
         }
     }
 
@@ -80,7 +96,7 @@ impl TypeID {
                 Box::new(IPv4::parse(string))
             }
             Variant::UTF8String => {
-                Box::new(UTF8String::new(string))
+                Box::new(UTF8String::from(string))
             }
         }
     }
@@ -117,19 +133,19 @@ impl TypeID {
     pub fn create_zero(&self) -> Box<Numeric> {
         match self.variant {
             Variant::Int2 => {
-                Box::new(Int2::new(0))
+                Box::new(Int2::new(0, self.nullable))
             }
             Variant::Int4 => {
-                Box::new(Int4::new(0))
+                Box::new(Int4::new(0, self.nullable))
             }
             Variant::Int8 => {
-                Box::new(Int8::new(0))
+                Box::new(Int8::new(0, self.nullable))
             }
             Variant::Float4 => {
-                Box::new(Float4::new(0.0))
+                Box::new(Float4::new(0.0, self.nullable))
             }
             Variant::Float8 => {
-                Box::new(Float8::new(0.0))
+                Box::new(Float8::new(0.0, self.nullable))
             }
             _ => {
                 panic!("Type {:?} is not numeric", self.variant);
