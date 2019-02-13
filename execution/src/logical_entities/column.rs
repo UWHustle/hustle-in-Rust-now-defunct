@@ -29,13 +29,14 @@ impl Column {
 
 #[cfg(test)]
 mod tests {
+    use logical_entities::column::Column;
     use type_system::type_id::*;
 
     #[test]
     fn column_create() {
-        use logical_entities::column::Column;
-        let column = Column::new("test".to_string(), TypeID::new(Variant::Int4, true));
+        let type_id = TypeID::new(Variant::Int4, true);
+        let column = Column::new("test".to_string(), type_id.clone());
         assert_eq!(column.get_name(), &"test".to_string());
-        assert_eq!(column.get_size(), 8);
+        assert_eq!(column.get_size(), type_id.size());
     }
 }
