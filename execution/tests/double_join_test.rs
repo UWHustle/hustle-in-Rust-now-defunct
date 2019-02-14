@@ -7,7 +7,7 @@ use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_operators::Operator;
 use execution::physical_plan::node::Node;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
-use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite;
+use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
 use execution::type_system::type_id::*;
 
 use std::rc::Rc;
@@ -16,7 +16,7 @@ const RECORD_COUNT: usize = 32;
 
 #[test]
 fn test_dag_double_join() {
-    let relation = generate_relation_t_into_hustle_and_sqlite(RECORD_COUNT, true);
+    let relation = generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, true);
     let join_relation = hustle_double_join(relation.clone(), relation.clone(), relation.clone());
     let hustle_calculation = sum_column_hustle(join_relation.clone(), "b".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t1.b)+SUM(t2.b)+SUM(t3.b) AS Out FROM t as t1 JOIN t as t2 JOIN t as t3;", "Out");

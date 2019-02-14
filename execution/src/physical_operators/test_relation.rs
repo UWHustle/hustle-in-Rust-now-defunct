@@ -8,8 +8,7 @@ use storage_manager::StorageManager;
 
 use physical_operators::Operator;
 
-//#[derive(Debug)]
-pub struct RandomRelation {
+pub struct TestRelation {
     relation: Relation,
     row_count: usize,
     random: bool
@@ -46,7 +45,7 @@ impl Operator for TestRelation {
                     value = _y.to_string();
                 }
                 let parsed = column.get_datatype().parse(&value);
-                let size = value.size();
+                let size = parsed.size();
                 data[n..n + size].clone_from_slice(&parsed.un_marshall().data());
                 n = n + size;
             }

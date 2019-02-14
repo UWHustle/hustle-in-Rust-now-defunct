@@ -1,7 +1,7 @@
 extern crate execution;
 
 use execution::test_helpers::sqlite3::run_query_sqlite3;
-use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite;
+use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
 use execution::logical_entities::relation::Relation;
 use execution::logical_entities::column::Column;
 use execution::physical_operators::select_sum::SelectSum;
@@ -24,7 +24,7 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 
 #[test]
 fn test_project_predicate() {
-    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, false);
+    let relation = generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, false);
 
     let predicated_relation = hustle_where(relation.clone());
     let hustle_calculation = sum_column_hustle(predicated_relation.clone(), "a".to_string());
