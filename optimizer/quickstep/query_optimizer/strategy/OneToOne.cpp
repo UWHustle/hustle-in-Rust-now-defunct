@@ -34,6 +34,7 @@
 #include "query_optimizer/logical/DropTable.hpp"
 #include "query_optimizer/logical/InsertSelection.hpp"
 #include "query_optimizer/logical/InsertTuple.hpp"
+#include "query_optimizer/logical/Limit.hpp"
 #include "query_optimizer/logical/LogicalType.hpp"
 #include "query_optimizer/logical/Sample.hpp"
 #include "query_optimizer/logical/SetOperation.hpp"
@@ -53,6 +54,7 @@
 #include "query_optimizer/physical/DropTable.hpp"
 #include "query_optimizer/physical/InsertSelection.hpp"
 #include "query_optimizer/physical/InsertTuple.hpp"
+#include "query_optimizer/physical/Limit.hpp"
 #include "query_optimizer/physical/Sample.hpp"
 #include "query_optimizer/physical/SharedSubplanReference.hpp"
 #include "query_optimizer/physical/Sort.hpp"
@@ -259,6 +261,13 @@ bool OneToOne::generatePlan(const L::LogicalPtr &logical_input,
           physical_mapper_->createOrGetPhysicalFromLogical(window_aggregate->input()),
           window_aggregate->window_aggregate_expression());
       return true;
+    }
+    case L::LogicalType::kLimit: {
+      const L::LimitPtr limit =
+          std::static_pointer_cast<const L::Limit>(logical_input);
+      *physical_output = P::Limit::Create(
+          physical_mapper_->createOrGetPhysicalFromLogical(limit->input()),
+          limit->limit());
     }
     default:
       return false;

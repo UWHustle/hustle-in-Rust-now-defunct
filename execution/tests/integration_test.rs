@@ -17,7 +17,7 @@ const RECORD_COUNT: usize = 1024;
 
 #[test]
 fn test_flow() {
-    let relation = generate_relation_t_into_hustle_and_sqlite(RECORD_COUNT);
+    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, true);
 
     let hustle_calculation = sum_column_hustle(relation.clone(), "b".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(b) FROM T;", "SUM(b)");

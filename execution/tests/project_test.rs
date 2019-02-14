@@ -24,12 +24,12 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 
 #[test]
 fn test_project_predicate() {
-    let relation = generate_relation_t_into_hustle_and_sqlite(RECORD_COUNT);
+    let relation = generate_relation_into_hustle_and_sqlite3(RECORD_COUNT, false);
 
     let predicated_relation = hustle_where(relation.clone());
     let hustle_calculation = sum_column_hustle(predicated_relation.clone(), "a".to_string());
     let sqlite3_calculation = run_query_sqlite3("SELECT SUM(t.a) FROM t WHERE t.a<50;", "SUM(t.a)");
-    assert_eq!(hustle_calculation, sqlite3_calculation); // Add one to fail and see
+    assert_eq!(hustle_calculation, sqlite3_calculation);
 }
 
 fn hustle_where(relation1: Relation) -> Relation {

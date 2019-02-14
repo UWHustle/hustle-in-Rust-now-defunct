@@ -35,7 +35,7 @@ namespace optimizer {
  */
 
 /**
- * @brief Bais class for tests on logical rules.
+ * @brief Basis class for tests on logical rules.
  */
 class LogicalRuleTest : public OptimizerTest {
  protected:

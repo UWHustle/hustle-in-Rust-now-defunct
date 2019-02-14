@@ -8,14 +8,14 @@ use logical_entities::row::Row;
 
 use physical_operators::import_csv::ImportCsv;
 use physical_operators::insert::Insert;
-use physical_operators::random_relation::RandomRelation;
+use physical_operators::test_relation::TestRelation;
 use physical_operators::export_csv::ExportCsv;
 use type_system::type_id::*;
 
 use physical_operators::Operator;
 
 
-pub fn generate_relation_t_into_hustle_and_sqlite(record_count: usize) -> Relation {
+pub fn generate_relation_t_into_hustle_and_sqlite3(record_count:usize, random:bool)->Relation{
     let relation = Relation::new("T".to_string(),
                                  Schema::new(vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
                                                   Column::new("b".to_string(), TypeID::new(Variant::Int4, true))
@@ -23,7 +23,7 @@ pub fn generate_relation_t_into_hustle_and_sqlite(record_count: usize) -> Relati
 
     let csv_file = "test-data/data.csv".to_string();
 
-    generate_data(relation.clone(), record_count);
+    generate_data(relation.clone(), record_count, random);
     export_csv(csv_file.clone(), relation.clone());
 
     import_csv_to_sqlite3();
@@ -41,11 +41,9 @@ pub fn generate_relation_a_into_hustle_and_sqlite3(record_count: usize) -> Relat
 
     let csv_file = "test-data/data.csv".to_string();
 
-    generate_data(relation.clone(), record_count);
+    generate_data(relation.clone(), record_count, false);
     export_csv(csv_file.clone(), relation.clone());
-
     import_csv_to_sqlite3();
-    import_csv_to_hustle(csv_file.clone(), relation.clone());
     relation
 }
 
@@ -57,7 +55,7 @@ pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relat
 
     let csv_file = "test-data/data.csv".to_string();
 
-    generate_data(relation.clone(), record_count);
+    generate_data(relation.clone(), record_count, false);
     export_csv(csv_file.clone(), relation.clone());
 
     import_csv_to_sqlite3();
@@ -65,9 +63,9 @@ pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relat
     relation
 }
 
-pub fn generate_data(relation: Relation, record_count: usize) {
-    let random_relation_generator = RandomRelation::new(relation.clone(), record_count);
-    random_relation_generator.execute();
+pub fn generate_data(relation: Relation, record_count: usize, random:bool){
+    let test_relation_generator = TestRelation::new(relation.clone(), record_count, random);
+    test_relation_generator.execute();
 }
 
 pub fn export_csv(csv_file: String, relation: Relation) {

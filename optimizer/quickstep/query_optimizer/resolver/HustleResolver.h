@@ -7,12 +7,10 @@
 #include <vector>
 #include "parser/ParseNode.h"
 #include "parser/SelectNode.h"
-#include "parser/ReferenceNode.h"
-#include "parser/FunctionNode.h"
-#include "parser/OperatorNode.h"
 #include "catalog/CatalogDatabase.hpp"
 #include "query_optimizer/OptimizerContext.hpp"
 #include "query_optimizer/expressions/Alias.hpp"
+#include "query_optimizer/expressions/Predicate.hpp"
 #include "query_optimizer/logical/Logical.hpp"
 #include "query_optimizer/logical/TableReference.hpp"
 
@@ -34,10 +32,14 @@ private:
     quickstep::optimizer::logical::LogicalPtr logical_plan_;
 
     quickstep::optimizer::logical::LogicalPtr resolve_select(std::shared_ptr<SelectNode> select_node);
-    quickstep::optimizer::logical::TableReferencePtr resolve_reference(std::shared_ptr<ReferenceNode> reference_node);
+
+    quickstep::optimizer::logical::LogicalPtr resolve_from(std::shared_ptr<ParseNode> parse_node,
+            std::vector<quickstep::optimizer::expressions::AttributeReferencePtr> *attribute_references);
     quickstep::optimizer::expressions::ScalarPtr resolve_expression(std::shared_ptr<ParseNode> parse_node,
-            std::vector<quickstep::optimizer::expressions::AttributeReferencePtr> attribute_references,
+            std::vector<quickstep::optimizer::expressions::AttributeReferencePtr> *attribute_references,
             std::vector<quickstep::optimizer::expressions::AliasPtr> *aggregate_expressions);
+    quickstep::optimizer::expressions::PredicatePtr resolve_predicate(std::shared_ptr<ParseNode> parse_node,
+            std::vector<quickstep::optimizer::expressions::AttributeReferencePtr> *attribute_references);
 };
 
 

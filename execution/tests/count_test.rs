@@ -17,7 +17,7 @@ const RECORD_COUNT: usize = 10;
 
 #[test]
 fn test_count_aggregate() {
-    let relation = generate_relation_t_into_hustle_and_sqlite(RECORD_COUNT);
+    let relation = generate_relation_t_into_hustle_and_sqlite(RECORD_COUNT, true);
     let agg_col = Column::new(String::from("a"), TypeID::new(Variant::Int4, true));
     let agg_relation = hustle_count(relation.clone(), agg_col);
     let hustle_calculation = sum_column_hustle(agg_relation.clone(), "COUNT(a)".to_string());

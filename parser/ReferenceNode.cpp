@@ -7,7 +7,7 @@ ReferenceNode::ReferenceNode(const string attribute, const string relation) : Pa
     this->relation = relation;
 }
 
-unordered_map<string, string> ReferenceNode::get_attributes() {
+unordered_map<string, string> ReferenceNode::get_attributes() const {
     auto attributes = ParseNode::get_attributes();
     attributes.insert({
         {"attribute", attribute},

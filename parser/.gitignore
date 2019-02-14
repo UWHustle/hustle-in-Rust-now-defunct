@@ -5,3 +5,5 @@ parser.h
 location.hh
 position.hh
 stack.hh
+lexer.c
+parser.c

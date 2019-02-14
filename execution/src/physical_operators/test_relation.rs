@@ -11,19 +11,21 @@ use physical_operators::Operator;
 //#[derive(Debug)]
 pub struct RandomRelation {
     relation: Relation,
-    row_count: usize
+    row_count: usize,
+    random: bool
 }
 
-impl RandomRelation {
-    pub fn new(relation: Relation, row_count: usize) -> Self {
-        RandomRelation {
+impl TestRelation {
+    pub fn new(relation: Relation, row_count: usize, random:bool) -> Self {
+        TestRelation {
             relation,
-            row_count
+            row_count,
+            random
         }
     }
 }
 
-impl Operator for RandomRelation{
+impl Operator for TestRelation {
     fn get_target_relation(&self) -> Relation {
         self.relation.clone()
     }
@@ -37,10 +39,15 @@ impl Operator for RandomRelation{
 
         for _y in 0..self.row_count {
             for column in columns.iter() {
-                let random_value = rand::random::<u8>().to_string();
-                let value = column.get_datatype().parse(&random_value);
+                let mut value;
+                if self.random {
+                    value = rand::random::<u8>().to_string();
+                } else {
+                    value = _y.to_string();
+                }
+                let parsed = column.get_datatype().parse(&value);
                 let size = value.size();
-                data[n..n + size].clone_from_slice(&value.un_marshall().data());
+                data[n..n + size].clone_from_slice(&parsed.un_marshall().data());
                 n = n + size;
             }
         }

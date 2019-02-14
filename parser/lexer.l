@@ -90,6 +90,7 @@ LEFT					{ return yy::parser::make_JOIN_KW(yytext, loc); }
 LIKE            		{ return yy::parser::make_LIKE_KW(loc); }
 LIMIT           		{ return yy::parser::make_LIMIT(loc); }
 MATCH           		{ return yy::parser::make_MATCH(loc); }
+NATURAL                 { return yy::parser::make_NATURAL(loc); }
 NO              		{ return yy::parser::make_NO(loc); }
 NOT             		{ return yy::parser::make_NOT(loc); }
 NOTHING         		{ return yy::parser::make_NOTHING(loc); }

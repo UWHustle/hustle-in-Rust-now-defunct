@@ -55,7 +55,8 @@ CatalogRelation *TestDatabaseLoader::createTestRelation(bool allow_vchar) {
   int attr_id = -1;
   catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
                                                       "int_col" /* name */,
-                                                      TypeFactory::GetType(kInt, true /* nullable */),
+                                                      TypeFactory::GetType(kInt,
+                                                                           true /* nullable */),
                                                       ++attr_id));
   catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
                                                       "long_col" /* name */,
@@ -63,11 +64,14 @@ CatalogRelation *TestDatabaseLoader::createTestRelation(bool allow_vchar) {
                                                       ++attr_id));
   catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
                                                       "float_col" /* name */,
-                                                      TypeFactory::GetType(kFloat),
+                                                      TypeFactory::GetType(
+                                                          kFloat),
                                                       ++attr_id));
   catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
                                                       "double_col" /* name */,
-                                                      TypeFactory::GetType(kDouble, true /* nullable */),
+                                                      TypeFactory::GetType(
+                                                          kDouble,
+                                                          true /* nullable */),
                                                       ++attr_id));
   catalog_relation->addAttribute(new CatalogAttribute(
       catalog_relation.get(),
@@ -87,7 +91,6 @@ CatalogRelation *TestDatabaseLoader::createTestRelation(bool allow_vchar) {
   return test_relation_;
 }
 
-
 CatalogRelation *TestDatabaseLoader::createHustleTestRelation(bool allow_vchar) {
   std::unique_ptr<CatalogRelation> catalog_relation;
   catalog_relation.reset(new CatalogRelation(&catalog_database_,
@@ -97,7 +100,8 @@ CatalogRelation *TestDatabaseLoader::createHustleTestRelation(bool allow_vchar) 
   int attr_id = -1;
   catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
                                                       "a" /* name */,
-                                                      TypeFactory::GetType(kInt, true /* nullable */),
+                                                      TypeFactory::GetType(kInt,
+                                                                           true /* nullable */),
                                                       ++attr_id));
   catalog_relation->addAttribute(new CatalogAttribute(catalog_relation.get(),
                                                       "b" /* name */,
@@ -110,12 +114,12 @@ CatalogRelation *TestDatabaseLoader::createHustleTestRelation(bool allow_vchar) 
 }
 
 void TestDatabaseLoader::createJoinRelations() {
-  std::vector<std::string> rel_names = { "a", "b", "c", "d" };
+  std::vector<std::string> rel_names = {"a", "b", "c", "d"};
   std::vector<std::vector<std::pair<std::string, TypeID>>> rel_columns = {
-      { { "w", kInt }, { "x", kInt }, { "y", kInt }, { "z", kInt } },
-      { { "w", kInt }, { "x", kInt } },
-      { { "x", kInt }, { "y", kInt } },
-      { { "y", kInt }, { "z", kInt } }
+      {{"w", kInt}, {"x", kInt}, {"y", kInt}, {"z", kInt}},
+      {{"w", kInt}, {"x", kInt}},
+      {{"x", kInt}, {"y", kInt}},
+      {{"y", kInt}, {"z", kInt}}
   };
 
   for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
@@ -125,7 +129,8 @@ void TestDatabaseLoader::createJoinRelations() {
                             -1 /* id */,
                             true /* temporary */));
 
-    const std::vector<std::pair<std::string, TypeID>> &columns = rel_columns[rel_idx];
+    const std::vector<std::pair<std::string, TypeID>>
+        &columns = rel_columns[rel_idx];
     int attr_id = -1;
     for (std::size_t col_idx = 0; col_idx < columns.size(); ++col_idx) {
       relation->addAttribute(new CatalogAttribute(
@@ -139,32 +144,55 @@ void TestDatabaseLoader::createJoinRelations() {
 }
 
 void TestDatabaseLoader::createHustleJoinRelations() {
-    std::vector<std::string> rel_names = { "A", "B", "C", "D" };
-    std::vector<std::vector<std::pair<std::string, TypeID>>> rel_columns = {
-            { { "w", kInt }, { "x", kInt }, { "y", kInt }, { "z", kInt } },
-            { { "w", kInt }, { "x", kInt } },
-            { { "x", kInt }, { "y", kInt } },
-            { { "y", kInt }, { "z", kInt } }
-    };
+  std::vector<std::string> rel_names = {"A", "B", "C", "D"};
+  std::vector<std::vector<std::pair<std::string, TypeID>>> rel_columns = {
+      {{"w", kInt}, {"x", kInt}, {"y", kInt}, {"z", kInt}},
+      {{"w", kInt}, {"x", kInt}},
+      {{"x", kInt}, {"y", kInt}},
+      {{"y", kInt}, {"z", kInt}}
 
-    for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
-        std::unique_ptr<CatalogRelation> relation(
-                new CatalogRelation(&catalog_database_,
-                                    rel_names[rel_idx],
-                                    -1 /* id */,
-                                    true /* temporary */));
+  };
 
-        const std::vector<std::pair<std::string, TypeID>> &columns = rel_columns[rel_idx];
-        int attr_id = -1;
-        for (std::size_t col_idx = 0; col_idx < columns.size(); ++col_idx) {
-            relation->addAttribute(new CatalogAttribute(
-                    relation.get(),
-                    columns[col_idx].first,
-                    TypeFactory::GetType(columns[col_idx].second),
-                    ++attr_id));
-        }
-        catalog_database_.addRelation(relation.release());
+  for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
+    std::unique_ptr<CatalogRelation> relation(
+        new CatalogRelation(&catalog_database_,
+                            rel_names[rel_idx],
+                            -1 /* id */,
+                            true /* temporary */));
+
+    const std::vector<std::pair<std::string, TypeID>>
+        &columns = rel_columns[rel_idx];
+    int attr_id = -1;
+    for (std::size_t col_idx = 0; col_idx < columns.size(); ++col_idx) {
+      relation->addAttribute(new CatalogAttribute(
+          relation.get(),
+          columns[col_idx].first,
+          TypeFactory::GetType(columns[col_idx].second),
+          ++attr_id));
     }
+    catalog_database_.addRelation(relation.release());
+  }
+
+
+  // table with a string attribute
+  std::unique_ptr<CatalogRelation> relation(
+      new CatalogRelation(&catalog_database_,
+                          "S",
+                          -1 /* id */,
+                          true /* temporary */));
+
+  relation->addAttribute(new CatalogAttribute(
+      relation.get(),
+      "k",
+      TypeFactory::GetType(kVarChar, 20, false),
+      0));
+  relation->addAttribute(new CatalogAttribute(
+      relation.get(),
+      "x",
+      TypeFactory::GetType(kInt),
+      1));
+  catalog_database_.addRelation(relation.release());
+
 }
 
 void TestDatabaseLoader::loadTestRelation() {
@@ -262,7 +290,8 @@ void TestDatabaseLoader::processCatalogRelationNewBlockMessages() {
     const TaggedMessage &tagged_message = msg.tagged_message;
     if (tagged_message.message_type() == kCatalogRelationNewBlockMessage) {
       serialization::CatalogRelationNewBlockMessage proto;
-      CHECK(proto.ParseFromArray(tagged_message.message(), tagged_message.message_bytes()));
+      CHECK(proto.ParseFromArray(tagged_message.message(),
+                                 tagged_message.message_bytes()));
 
       test_relation_->addBlock(proto.block_id());
     }
@@ -271,7 +300,8 @@ void TestDatabaseLoader::processCatalogRelationNewBlockMessages() {
 
 void TestDatabaseLoader::clear() {
   for (const CatalogRelation &relation : catalog_database_) {
-    const std::vector<block_id> relation_block_ids = relation.getBlocksSnapshot();
+    const std::vector<block_id>
+        relation_block_ids = relation.getBlocksSnapshot();
     for (const block_id relation_block_id : relation_block_ids) {
       storage_manager_.deleteBlockOrBlobFile(relation_block_id);
     }
