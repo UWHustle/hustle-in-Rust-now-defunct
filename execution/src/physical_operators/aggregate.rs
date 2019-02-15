@@ -44,7 +44,8 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
     fn execute(&self) -> Relation {
         let input_cols = self.input_relation.get_columns().to_vec();
         let input_data = StorageManager::get_full_data(&self.input_relation.clone());
-        let mut output_data = StorageManager::create_relation(&self.output_relation, self.input_relation.get_total_size());
+        let output_size = self.output_relation.get_row_size() * self.input_relation.get_n_rows();
+        let mut output_data = StorageManager::create_relation(&self.output_relation, output_size);
 
         //A HashMap mapping group by values to aggregations for that grouping
         let mut group_by: HashMap<Vec<(String, Column)>, T> = HashMap::new();

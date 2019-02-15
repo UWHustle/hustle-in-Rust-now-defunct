@@ -58,6 +58,10 @@ impl Relation {
             }
         }
     }
+
+    pub fn get_n_rows(&self) -> usize {
+        self.get_total_size() / self.get_row_size()
+    }
 }
 
 #[cfg(test)]
