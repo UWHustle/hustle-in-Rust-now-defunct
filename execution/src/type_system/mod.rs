@@ -55,6 +55,10 @@ pub trait Buffer {
             }
         }
     }
+
+    // TODO: For common operators like compare we may want to add a Buffer.compare function
+    // The marshall could occur inside the compare function, avoiding the overhead of returning a
+    // boxed Value and then calling Value.compare
 }
 
 /* ============================================================================================== */
