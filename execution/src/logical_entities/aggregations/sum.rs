@@ -1,18 +1,17 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::DataType;
+use type_system::type_id::*;
+use type_system::Numeric;
+use type_system::*;
+use type_system::force_numeric;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Sum {
-    data_type: DataType,
-    running_total: Vec<u8>,
+    running_total: Box<Numeric>,
 }
 
 impl Sum {
-    pub fn new(data_type: DataType) -> Self {
-        Sum {
-            data_type,
-            running_total: vec!(),
-        }
+    pub fn new(type_id: TypeID) -> Self {
+        Sum { running_total: type_id.create_zero() }
     }
 }
 
@@ -22,18 +21,18 @@ impl AggregationTrait for Sum {
     }
 
     fn initialize(&mut self) -> () {
-        self.running_total = vec!();
+        self.running_total = self.output_type().create_zero();
     }
 
-    fn consider_value(&mut self, value: Vec<u8>) -> () {
-        self.running_total = self.data_type.sum(&self.running_total, &value).0;
+    fn consider_value(&mut self, value: &Value) -> () {
+        self.running_total = self.running_total.add(force_numeric(value));
     }
 
-    fn output(&self) -> (Vec<u8>) {
-        self.running_total.clone()
+    fn output(&self) -> Box<Value> {
+        self.running_total.box_clone_value()
     }
 
-    fn output_type(&self) -> DataType {
-        self.data_type.clone()
+    fn output_type(&self) -> TypeID {
+        self.running_total.type_id()
     }
 }

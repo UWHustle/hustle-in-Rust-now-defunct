@@ -1,6 +1,6 @@
 use test_helpers::sqlite3::import_csv_to_sqlite3;
 
-
+use type_system::*;
 use logical_entities::relation::Relation;
 use logical_entities::column::Column;
 use logical_entities::schema::Schema;
@@ -10,16 +10,15 @@ use physical_operators::import_csv::ImportCsv;
 use physical_operators::insert::Insert;
 use physical_operators::test_relation::TestRelation;
 use physical_operators::export_csv::ExportCsv;
-
-use logical_entities::value::Value;
+use type_system::type_id::*;
 
 use physical_operators::Operator;
 
 
-pub fn generate_relation_into_hustle_and_sqlite3(record_count:usize, random:bool)->Relation{
+pub fn generate_relation_t_into_hustle_and_sqlite3(record_count:usize, random:bool)->Relation{
     let relation = Relation::new("T".to_string(),
-                                  Schema::new(vec!(Column::new("a".to_string(),"Int".to_string()),
-                                                  Column::new("b".to_string(),"Int".to_string())
+                                 Schema::new(vec!(Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("b".to_string(), TypeID::new(Variant::Int4, true))
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
@@ -32,12 +31,12 @@ pub fn generate_relation_into_hustle_and_sqlite3(record_count:usize, random:bool
     relation
 }
 
-pub fn generate_relation_a_into_hustle_and_sqlite3(record_count:usize)->Relation{
+pub fn generate_relation_a_into_hustle_and_sqlite3(record_count: usize) -> Relation {
     let relation = Relation::new("A".to_string(),
-                                 Schema::new(vec!(Column::new("w".to_string(),"Int".to_string()),
-                                                  Column::new("x".to_string(),"Int".to_string()),
-                                                  Column::new("y".to_string(),"Int".to_string()),
-                                                  Column::new("z".to_string(),"Int".to_string())
+                                 Schema::new(vec!(Column::new("w".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("x".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("y".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("z".to_string(), TypeID::new(Variant::Int4, true))
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
@@ -48,10 +47,10 @@ pub fn generate_relation_a_into_hustle_and_sqlite3(record_count:usize)->Relation
     relation
 }
 
-pub fn generate_relation_b_into_hustle_and_sqlite3(record_count:usize)->Relation{
+pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relation {
     let relation = Relation::new("B".to_string(),
-                                 Schema::new(vec!(Column::new("w".to_string(),"Int".to_string()),
-                                                  Column::new("x".to_string(),"Int".to_string())
+                                 Schema::new(vec!(Column::new("w".to_string(), TypeID::new(Variant::Int4, true)),
+                                                  Column::new("x".to_string(), TypeID::new(Variant::Int4, true))
                                  )));
 
     let csv_file = "test-data/data.csv".to_string();
@@ -77,13 +76,13 @@ pub fn export_csv(csv_file: String, relation: Relation) {
     export_csv.execute();
 }
 
-pub fn import_csv_to_hustle(csv_file: String, relation:Relation){
+pub fn import_csv_to_hustle(csv_file: String, relation: Relation) {
     let import_operator = ImportCsv::new(csv_file.clone(), relation.clone());
     import_operator.execute();
 }
 
-pub fn insert_into_hustle(count: u8, value: Value, relation: Relation){
-    let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(),vec!(value.clone(),value.clone())));
+pub fn insert_into_hustle(count: u8, value: &Value, relation: Relation) {
+    let insert_operator = Insert::new(relation.clone(), Row::new(relation.get_schema().clone(), vec!(value.box_clone_value(), value.box_clone_value())));
     for _ in 0..count {
         insert_operator.execute();
     }

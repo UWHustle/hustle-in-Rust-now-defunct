@@ -1,13 +1,13 @@
 extern crate rand;
 extern crate csv;
 
+use type_system::*;
 use logical_entities::relation::Relation;
 
 use storage_manager::StorageManager;
 
 use physical_operators::Operator;
 
-#[derive(Debug)]
 pub struct TestRelation {
     relation: Relation,
     row_count: usize,
@@ -44,8 +44,9 @@ impl Operator for TestRelation {
                 } else {
                     value = _y.to_string();
                 }
-                let (c,size) = column.get_datatype().parse_and_marshall(value);
-                data[n..n + size].clone_from_slice(&c);
+                let parsed = column.get_datatype().parse(&value);
+                let size = parsed.size();
+                data[n..n + size].clone_from_slice(&parsed.un_marshall().data());
                 n = n + size;
             }
         }

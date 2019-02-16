@@ -9,16 +9,18 @@ pub struct Relation {
 
 impl Relation {
     pub fn new(name: String, schema: Schema) -> Self {
-        Relation {
-            name, schema
+        Self {
+            name,
+            schema,
         }
     }
 
-    pub fn null()-> Self {
+    pub fn null() -> Self {
         let name = "Null".to_string();
         let schema = Schema::new(vec!());
-        Relation{
-            name,schema
+        Self {
+            name,
+            schema,
         }
     }
 
@@ -35,10 +37,10 @@ impl Relation {
     }
 
     pub fn get_filename(&self) -> String {
-        format!("test-data/{}{}",self.get_name(),".hsl")
+        format!("test-data/{}{}", self.get_name(), ".hsl")
     }
 
-    pub fn get_row_size(&self) -> usize {return self.schema.get_row_size();}
+    pub fn get_row_size(&self) -> usize { return self.schema.get_row_size(); }
 
     pub fn get_total_size(&self) -> usize {
         use std::fs;
@@ -46,46 +48,41 @@ impl Relation {
         match fs::metadata(self.get_filename()) {
             Ok(n) => {
                 let mut total_size = n.len() as usize;
-                total_size = total_size/self.get_row_size();
+                total_size = total_size / self.get_row_size();
                 total_size = (total_size) * self.get_row_size();
-                return total_size
-            },
+                return total_size;
+            }
             Err(err) => {
-                println!("Error getting file size: {}",err);
+                println!("Error getting file size: {}", err);
                 return 0;
             }
         }
+    }
+
+    pub fn get_n_rows(&self) -> usize {
+        self.get_total_size() / self.get_row_size()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use logical_entities::column::Column;
+    use logical_entities::relation::Relation;
+    use logical_entities::schema::Schema;
+    use type_system::type_id::*;
+
     #[test]
     fn relation_create() {
-        use logical_entities::relation::Relation;
-        use logical_entities::schema::Schema;
-        use logical_entities::column::Column;
+        let a = Column::new("a".to_string(), TypeID::new(Variant::Int4, true));
+        let b = Column::new("b".to_string(), TypeID::new(Variant::Int4, true));
+        let schema = Schema::new(vec!(a.clone(), b.clone()));
+        let relation = Relation::new("Test".to_string(), schema.clone());
 
-        let relation = Relation::new("Test".to_string(),
-                                   Schema::new(vec!(
-                                                Column::new("a".to_string(),"Int".to_string()),
-                                                Column::new("b".to_string(), "Int".to_string()))
-                                   ));
-
-        assert_eq!(relation.get_name(),&"Test".to_string());
-
-        assert_eq!(relation.get_columns().first().unwrap().get_name(),&"a".to_string());
-        assert_eq!(relation.get_columns().last().unwrap().get_name(),&"b".to_string());
-
-        assert_eq!(relation.get_schema(),&Schema::new(vec!(
-            Column::new("a".to_string(),"Int".to_string()),
-            Column::new("b".to_string(), "Int".to_string()))));
-
-        assert_eq!(relation.get_filename(),"test-data/Test.hsl".to_string());
-
-        assert_eq!(relation.get_row_size(), 16);
-
-        //assert_eq!(relation.get_total_size(), 0);
-        //TODO: Support this in a unit test, not just integrated test
+        assert_eq!(relation.get_name(), &"Test".to_string());
+        assert_eq!(relation.get_columns().first().unwrap().get_name(), &"a".to_string());
+        assert_eq!(relation.get_columns().last().unwrap().get_name(), &"b".to_string());
+        assert_eq!(relation.get_schema(), &schema);
+        assert_eq!(relation.get_filename(), "test-data/Test.hsl".to_string());
+        assert_eq!(relation.get_row_size(), a.get_size() + b.get_size());
     }
 }

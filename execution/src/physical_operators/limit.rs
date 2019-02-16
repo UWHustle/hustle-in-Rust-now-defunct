@@ -46,7 +46,7 @@ impl Operator for Limit {
         let mut records = 0;
         while i < input_data.len() && records < self.limit {
             for column in &columns {
-                let value_length = column.get_datatype().get_next_length(&input_data[i..]);
+                let value_length = column.get_datatype().next_size(&input_data[i..]);
                 output_data[i..i + value_length].clone_from_slice(&input_data[i..i + value_length]);
                 i += value_length;
             }

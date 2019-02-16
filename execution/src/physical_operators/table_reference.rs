@@ -2,7 +2,7 @@ use logical_entities::relation::Relation;
 
 use physical_operators::Operator;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct TableReference {
     relation: Relation
 }

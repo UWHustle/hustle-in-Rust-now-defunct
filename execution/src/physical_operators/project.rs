@@ -3,34 +3,39 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
+use type_system::*;
+use type_system::borrowed_buffer::*;
+use type_system::integer::*;
+use type_system::operators::*;
 
 use std::collections::HashMap;
 
-#[derive(Debug)]
 pub struct Project {
     relation: Relation,
     output_relation: Relation,
     predicate_name: String,
-    comparator: i8,
-    comp_value: Vec<u8>,
+    compare: bool,
+    comparator: Comparator,
+    comp_value: Box<Value>,
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: String, comparator: i8, comp_value: Vec<u8>) -> Self {
+    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: &String, compare: bool, comparator: Comparator, comp_value: &Value) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
         Project {
             relation,
             output_relation,
-            predicate_name,
+            predicate_name: predicate_name.clone(),
+            compare,
             comparator,
-            comp_value,
+            comp_value: comp_value.box_clone_value(),
         }
     }
 
     pub fn pure_project(relation: Relation, output_cols: Vec<Column>) -> Self {
-        Self::new(relation, output_cols, String::new(), 2, vec!())
+        Self::new(relation, output_cols, &String::new(), false, Comparator::Less, &Int2::create_null())
     }
 }
 
@@ -54,12 +59,12 @@ impl Operator for Project {
 
             // Check whether the current row satisfies the predicate
             let mut filter = true;
-            if self.comparator >= -1 && self.comparator <= 1 {
+            if self.compare {
                 for column in &input_cols {
-                    let value_len = column.get_datatype().get_next_length(&input_data[k..]);
+                    let value_len = column.get_datatype().next_size(&input_data[k..]);
                     if column.get_name().to_string() == self.predicate_name {
-                        let value = &input_data[k..k + value_len].to_vec();
-                        if !(column.get_datatype().compare(value, &self.comp_value) == self.comparator) {
+                        let value = BorrowedBuffer::new(&input_data[k..k + value_len], column.get_datatype(), false);
+                        if !value.marshall().compare(&*self.comp_value, self.comparator.clone()) {
                             filter = false;
                         }
                     }
@@ -74,7 +79,7 @@ impl Operator for Project {
                 let mut col_map = HashMap::new();
                 k = i;
                 for column in &input_cols {
-                    let value_len = column.get_datatype().get_next_length(&input_data[k..]);
+                    let value_len = column.get_datatype().next_size(&input_data[k..]);
                     col_map.insert(column, &input_data[k..k + value_len]);
                     k += value_len;
                 }
@@ -82,9 +87,8 @@ impl Operator for Project {
                 // Output values in the order of the output columns
                 for column in &output_cols {
                     let slice = col_map[column];
-                    let value_length = column.get_datatype().get_next_length(slice);
-                    output_data[j..j + value_length].clone_from_slice(slice);
-                    j += value_length;
+                    output_data[j..j + slice.len()].clone_from_slice(slice);
+                    j += slice.len();
                 }
             }
             i = k;

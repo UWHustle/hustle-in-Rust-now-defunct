@@ -1,18 +1,15 @@
 use logical_entities::aggregations::AggregationTrait;
-use logical_entities::types::DataType;
+use type_system::type_id::*;
+use type_system::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Max {
-    data_type: DataType,
-    current_max: Vec<u8>,
+    current_max: Box<Value>,
 }
 
 impl Max {
-    pub fn new(data_type: DataType) -> Self {
-        Max {
-            data_type,
-            current_max: vec!(),
-        }
+    pub fn new(data_type: TypeID) -> Self {
+        Max { current_max: data_type.create_null() }
     }
 }
 
@@ -22,20 +19,20 @@ impl AggregationTrait for Max {
     }
 
     fn initialize(&mut self) -> () {
-        self.current_max = vec!();
+        self.current_max = self.output_type().create_null();
     }
 
-    fn consider_value(&mut self, value: Vec<u8>) -> () {
-        if self.current_max.is_empty() || self.data_type.compare(&self.current_max, &value) < 0 {
-            self.current_max = value;
+    fn consider_value(&mut self, value: &Value) -> () {
+        if self.current_max.is_null() || !self.current_max.greater(value) {
+            self.current_max = value.box_clone_value();
         }
     }
 
-    fn output(&self) -> (Vec<u8>) {
-        self.current_max.clone()
+    fn output(&self) -> Box<Value> {
+        self.current_max.box_clone_value()
     }
 
-    fn output_type(&self) -> DataType {
-        self.data_type.clone()
+    fn output_type(&self) -> TypeID {
+        self.current_max.type_id().clone()
     }
 }

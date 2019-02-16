@@ -1,25 +1,16 @@
-use logical_entities::types::DataType;
+use type_system::type_id::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Column {
     name: String,
-    size: usize,
-    data_type: DataType,
+    data_type: TypeID,
 }
 
 impl Column {
-    pub fn new(name: String, type_string: String) -> Self {
-        let data_type;
-        if type_string == "Int" || type_string == "Int NULL" {
-            data_type = DataType::Integer;
-        } else {
-            data_type = DataType::IpAddress;
-        }
-        let size: usize = DataType::get_next_length(&data_type, Vec::new().as_slice());
+    pub fn new(name: String, type_id: TypeID) -> Self {
         Column {
             name,
-            size,
-            data_type,
+            data_type: type_id,
         }
     }
 
@@ -28,21 +19,24 @@ impl Column {
     }
 
     pub fn get_size(&self) -> usize {
-        return self.size;
+        return self.data_type.size();
     }
 
-    pub fn get_datatype(&self) -> DataType {
-        return self.data_type.clone();
+    pub fn get_datatype(&self) -> TypeID {
+        self.data_type.clone()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use logical_entities::column::Column;
+    use type_system::type_id::*;
+
     #[test]
     fn column_create() {
-        use logical_entities::column::Column;
-        let column = Column::new("test".to_string(), "Int".to_string());
+        let type_id = TypeID::new(Variant::Int4, true);
+        let column = Column::new("test".to_string(), type_id.clone());
         assert_eq!(column.get_name(), &"test".to_string());
-        assert_eq!(column.get_size(), 8);
+        assert_eq!(column.get_size(), type_id.size());
     }
 }
