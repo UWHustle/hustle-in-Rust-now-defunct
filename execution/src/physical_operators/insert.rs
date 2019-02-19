@@ -1,11 +1,11 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
+use type_system::*;
 
 use physical_operators::Operator;
 
 use storage_manager::StorageManager;
 
-#[derive(Debug)]
 pub struct Insert {
     relation: Relation,
     row: Row,
@@ -13,10 +13,7 @@ pub struct Insert {
 
 impl Insert {
     pub fn new(relation: Relation, row: Row) -> Self {
-        Insert {
-            relation,
-            row
-        }
+        Insert { relation, row }
     }
 }
 
@@ -31,12 +28,11 @@ impl Operator for Insert {
         let mut data = StorageManager::append_relation(&self.relation, row_size);
 
         let mut n = 0;
-        for (i, column) in self.row.get_schema().get_columns().iter().enumerate() {
-            let a = format!("{}",self.row.get_values()[i]);
-
-            let (marshalled_value, size) = column.get_datatype().parse_and_marshall(a);
-            data[n..n + size].clone_from_slice(&marshalled_value); // 0  8
-            n = n + size;
+        for (i, _column) in self.row.get_schema().get_columns().iter().enumerate() {
+            let value = &self.row.get_values()[i];
+            let size = value.size();
+            data[n..n + size].clone_from_slice(value.un_marshall().data());
+            n += size;
         }
 
         StorageManager::flush(&data);

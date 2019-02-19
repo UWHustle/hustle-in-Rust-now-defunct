@@ -4,23 +4,30 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
+use type_system::borrowed_buffer::BorrowedBuffer;
+use type_system::*;
 
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-#[derive(Debug)]
-pub struct Aggregate<T: AggregationTrait + Clone> {
+//#[derive(Debug)]
+pub struct Aggregate<T: AggregationTrait> {
     input_relation: Relation,
     output_relation: Relation,
     group_by_cols: Vec<Column>,
     aggregation: T,
 }
 
-impl<T: AggregationTrait + Clone> Aggregate<T> {
-    pub fn new(input_relation: Relation, agg_col: Column, group_by_cols: Vec<Column>, aggregation: T) -> Self {
+impl<T: AggregationTrait> Aggregate<T> {
+    pub fn new(
+        input_relation: Relation,
+        agg_col: Column,
+        group_by_cols: Vec<Column>,
+        aggregation: T,
+    ) -> Self {
         let agg_col_name = format!("{}({})", aggregation.get_name(), agg_col.get_name());
         let mut output_cols = group_by_cols.clone();
-        output_cols.push(Column::new(agg_col_name, aggregation.output_type().type_string()));
+        output_cols.push(Column::new(agg_col_name, aggregation.output_type()));
 
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_agg", input_relation.get_name()), schema);
@@ -42,24 +49,33 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
     fn execute(&self) -> Relation {
         let input_cols = self.input_relation.get_columns().to_vec();
         let input_data = StorageManager::get_full_data(&self.input_relation.clone());
-        let mut output_data = StorageManager::create_relation(&self.output_relation, self.input_relation.get_total_size());
+        let output_size = self.output_relation.get_row_size() * self.input_relation.get_n_rows();
+        let mut output_data = StorageManager::create_relation(&self.output_relation, output_size);
 
         //A HashMap mapping group by values to aggregations for that grouping
-        let mut group_by: HashMap<Vec<(Vec<u8>, Column)>, T> = HashMap::new();
+        let mut group_by: HashMap<Vec<(String, Column)>, T> = HashMap::new();
 
         let mut i = 0; // Current position in the input buffer
         let mut j = 0; // Current position in the output buffer
 
         // Loop over all the data
         while i < input_data.len() {
-            let mut group_by_values: Vec<(Vec<u8>, Column)> = vec!();
-            let mut agg_values: Vec<(Vec<u8>, Column)> = vec!();
+            let mut group_by_values: Vec<(String, Column)> = vec![];
+            let mut agg_values: Vec<(String, Column)> = vec![];
 
             // Split data by the columns relevant to the aggregation vs columns to group by
             for column in &input_cols {
-                let value_len = column.get_datatype().get_next_length(&input_data[i..]);
-                let value = (input_data[i..i + value_len].to_vec(), column.clone());
-                if (&self.group_by_cols).into_iter().any(|c| c.get_name() == column.get_name()) {
+                let value_len = column.get_datatype().next_size(&input_data[i..]);
+                let buffer = BorrowedBuffer::new(
+                    &input_data[i..i + value_len],
+                    column.get_datatype(),
+                    false,
+                );
+                let value = (buffer.marshall().to_string(), column.clone());
+                if (&self.group_by_cols)
+                    .iter()
+                    .any(|c| c.get_name() == column.get_name())
+                {
                     group_by_values.push(value);
                 } else {
                     agg_values.push(value);
@@ -71,13 +87,13 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
             if group_by.contains_key(&group_by_values) {
                 let agg_instance = group_by.get_mut(&group_by_values).unwrap();
                 for value in agg_values {
-                    agg_instance.consider_value(value.0);
+                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
                 }
             } else {
                 let mut agg_instance = self.aggregation.clone();
                 agg_instance.initialize();
                 for value in agg_values {
-                    agg_instance.consider_value(value.0);
+                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
                 }
                 group_by.entry(group_by_values).or_insert(agg_instance);
             }
@@ -85,17 +101,18 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
 
         // Output a relation
         for (group_by_values, agg_instance) in &group_by {
-
             // Copy group by values
-            for (data, _column) in group_by_values {
-                output_data[j..j + data.len()].clone_from_slice(&data);
-                j += data.len();
+            for (data, column) in group_by_values {
+                let data = column.get_datatype().parse(data).un_marshall();
+                output_data[j..j + data.data().len()].clone_from_slice(&data.data());
+                j += data.data().len();
             }
 
             // Copy aggregated values
-            let output: Vec<u8> = agg_instance.output();
-            output_data[j..j + output.len()].clone_from_slice(&output);
-            j += output.len();
+            let output: &Value = &*agg_instance.output();
+            output_data[j..j + output.un_marshall().data().len()]
+                .clone_from_slice(&output.un_marshall().data());
+            j += output.un_marshall().data().len();
         }
 
         StorageManager::flush(&output_data);

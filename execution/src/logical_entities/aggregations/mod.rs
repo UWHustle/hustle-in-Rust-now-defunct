@@ -1,4 +1,5 @@
-use logical_entities::types::DataType;
+use type_system::type_id::*;
+use type_system::*;
 
 pub mod avg;
 pub mod count;
@@ -9,7 +10,7 @@ pub mod sum;
 pub trait AggregationTrait {
     fn get_name(&self) -> &'static str;
     fn initialize(&mut self) -> ();
-    fn consider_value(&mut self, value: Vec<u8>) -> ();
-    fn output(&self) -> (Vec<u8>);
-    fn output_type(&self) -> DataType;
+    fn consider_value(&mut self, value: &Value) -> ();
+    fn output(&self) -> Box<Value>;
+    fn output_type(&self) -> TypeID;
 }

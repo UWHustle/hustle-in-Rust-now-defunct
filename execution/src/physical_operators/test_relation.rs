@@ -1,25 +1,25 @@
-extern crate rand;
 extern crate csv;
+extern crate rand;
 
 use logical_entities::relation::Relation;
+use type_system::*;
 
 use storage_manager::StorageManager;
 
 use physical_operators::Operator;
 
-#[derive(Debug)]
 pub struct TestRelation {
     relation: Relation,
     row_count: usize,
-    random: bool
+    random: bool,
 }
 
 impl TestRelation {
-    pub fn new(relation: Relation, row_count: usize, random:bool) -> Self {
+    pub fn new(relation: Relation, row_count: usize, random: bool) -> Self {
         TestRelation {
             relation,
             row_count,
-            random
+            random,
         }
     }
 }
@@ -31,22 +31,25 @@ impl Operator for TestRelation {
 
     fn execute(&self) -> Relation {
         #[warn(unused_variables)]
-        let mut data = StorageManager::create_relation(&self.relation, (self.relation.get_row_size() * self.row_count) as usize);
+        let mut data = StorageManager::create_relation(
+            &self.relation,
+            (self.relation.get_row_size() * self.row_count) as usize,
+        );
 
         let columns = self.relation.get_columns();
-        let mut n : usize = 0;
+        let mut n: usize = 0;
 
-        for _y in 0..self.row_count {
+        for y in 0..self.row_count {
             for column in columns.iter() {
-                let mut value;
-                if self.random {
-                    value = rand::random::<u8>().to_string();
+                let mut value = if self.random {
+                    rand::random::<u8>().to_string()
                 } else {
-                    value = _y.to_string();
-                }
-                let (c,size) = column.get_datatype().parse_and_marshall(value);
-                data[n..n + size].clone_from_slice(&c);
-                n = n + size;
+                    y.to_string()
+                };
+                let parsed = column.get_datatype().parse(&value);
+                let size = parsed.size();
+                data[n..n + size].clone_from_slice(&parsed.un_marshall().data());
+                n += size;
             }
         }
 
