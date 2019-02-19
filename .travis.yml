@@ -112,8 +112,6 @@ addons:
     - cmake
     - flex
     - bison
-    - rustc
-    - cargo
 
 cache:
   apt: true
