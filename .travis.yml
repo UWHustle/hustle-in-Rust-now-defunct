@@ -58,6 +58,7 @@ install:
 - export DEBUG_FLAGS="-g0";
 - export RELEASE_FLAGS="-O0 -DNDEBUG";
 - export LINKER_FLAGS="-s"
+- rustup component add clippy
 
 before_script:
 - $CC --version
