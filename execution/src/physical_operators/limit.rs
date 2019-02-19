@@ -3,8 +3,8 @@ Limit physical operator
 
 The output is the first limit rows of the input relation.
 */
-use logical_entities::relation::Relation;
 use logical_entities::column::Column;
+use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 
 use storage_manager::StorageManager;
@@ -19,27 +19,32 @@ pub struct Limit {
 }
 
 impl Limit {
-    pub fn new(relation: Relation, limit:u32) -> Limit {
+    pub fn new(relation: Relation, limit: u32) -> Limit {
         let schema = Schema::new(relation.get_columns().clone());
-        let output_relation =
-            Relation::new(format!("{}{}", relation.get_name(), "_limit".to_string()), schema);
+        let output_relation = Relation::new(
+            format!("{}{}", relation.get_name(), "_limit".to_string()),
+            schema,
+        );
         Limit {
             relation,
             limit,
-            output_relation
+            output_relation,
         }
     }
 }
 
 impl Operator for Limit {
-    fn get_target_relation(&self) -> Relation { self.output_relation.clone() }
+    fn get_target_relation(&self) -> Relation {
+        self.output_relation.clone()
+    }
 
-    fn execute(&self) -> Relation{
-        let mut output_data =
-            StorageManager::create_relation(&self.output_relation,
-                                            self.relation.get_row_size() * (self.limit as usize));
+    fn execute(&self) -> Relation {
+        let mut output_data = StorageManager::create_relation(
+            &self.output_relation,
+            self.relation.get_row_size() * (self.limit as usize),
+        );
 
-        let columns:Vec<Column> = self.relation.get_columns().to_vec();
+        let columns: Vec<Column> = self.relation.get_columns().to_vec();
         let input_data = StorageManager::get_full_data(&self.relation);
 
         let mut i = 0;
@@ -57,4 +62,3 @@ impl Operator for Limit {
         self.get_target_relation()
     }
 }
-

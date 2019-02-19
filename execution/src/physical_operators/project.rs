@@ -3,10 +3,10 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
-use type_system::*;
 use type_system::borrowed_buffer::*;
 use type_system::integer::*;
 use type_system::operators::*;
+use type_system::*;
 
 use std::collections::HashMap;
 
@@ -20,14 +20,21 @@ pub struct Project {
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate_name: &String, compare: bool, comparator: Comparator, comp_value: &Value) -> Self {
+    pub fn new(
+        relation: Relation,
+        output_cols: Vec<Column>,
+        predicate_name: &str,
+        compare: bool,
+        comparator: Comparator,
+        comp_value: &Value,
+    ) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
         Project {
             relation,
             output_relation,
-            predicate_name: predicate_name.clone(),
+            predicate_name: String::from(predicate_name),
             compare,
             comparator,
             comp_value: comp_value.box_clone_value(),
@@ -35,7 +42,14 @@ impl Project {
     }
 
     pub fn pure_project(relation: Relation, output_cols: Vec<Column>) -> Self {
-        Self::new(relation, output_cols, &String::new(), false, Comparator::Less, &Int2::create_null())
+        Self::new(
+            relation,
+            output_cols,
+            &String::new(),
+            false,
+            Comparator::Less,
+            &Int2::create_null(),
+        )
     }
 }
 
@@ -48,7 +62,8 @@ impl Operator for Project {
         let input_cols = self.relation.get_columns().to_vec();
         let input_data = StorageManager::get_full_data(&self.relation.clone());
         let output_cols = self.output_relation.get_columns().to_vec();
-        let mut output_data = StorageManager::create_relation(&self.output_relation, self.relation.get_total_size());
+        let mut output_data =
+            StorageManager::create_relation(&self.output_relation, self.relation.get_total_size());
 
         let mut i = 0; // Beginning of the current row in the input buffer
         let mut k = 0; // Current position in the input buffer
@@ -56,15 +71,21 @@ impl Operator for Project {
 
         // Loop over all the data
         while i < input_data.len() {
-
             // Check whether the current row satisfies the predicate
             let mut filter = true;
             if self.compare {
                 for column in &input_cols {
                     let value_len = column.get_datatype().next_size(&input_data[k..]);
-                    if column.get_name().to_string() == self.predicate_name {
-                        let value = BorrowedBuffer::new(&input_data[k..k + value_len], column.get_datatype(), false);
-                        if !value.marshall().compare(&*self.comp_value, self.comparator.clone()) {
+                    if *column.get_name() == self.predicate_name {
+                        let value = BorrowedBuffer::new(
+                            &input_data[k..k + value_len],
+                            column.get_datatype(),
+                            false,
+                        );
+                        if !value
+                            .marshall()
+                            .compare(&*self.comp_value, self.comparator.clone())
+                        {
                             filter = false;
                         }
                     }
@@ -74,7 +95,6 @@ impl Operator for Project {
 
             // Filter columns if the predicate is true for this row
             if filter {
-
                 // Place all values in the current row in a HashMap by column
                 let mut col_map = HashMap::new();
                 k = i;

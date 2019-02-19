@@ -14,12 +14,12 @@ impl Column {
         }
     }
 
-    pub fn get_name(&self) -> &String {
+    pub fn get_name(&self) -> &str {
         &self.name
     }
 
     pub fn get_size(&self) -> usize {
-        return self.data_type.size();
+        self.data_type.size()
     }
 
     pub fn get_datatype(&self) -> TypeID {

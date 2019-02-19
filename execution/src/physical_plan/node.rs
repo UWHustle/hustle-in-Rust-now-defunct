@@ -6,14 +6,14 @@ use logical_entities::relation::Relation;
 
 pub struct Node {
     operator: Rc<Operator>,
-    dependencies: Vec<Rc<Node>>
+    dependencies: Vec<Rc<Node>>,
 }
 
 impl Node {
-    pub fn new(operator: Rc<Operator>, dependencies:Vec<Rc<Node>>) -> Self {
+    pub fn new(operator: Rc<Operator>, dependencies: Vec<Rc<Node>>) -> Self {
         Node {
-            operator: operator,
-            dependencies: dependencies
+            operator,
+            dependencies,
         }
     }
 

@@ -1,4 +1,5 @@
 extern crate memmap;
+
 use std::{
     fs::OpenOptions,
     io::{Seek, SeekFrom, Write},
@@ -10,11 +11,8 @@ pub struct StorageManager;
 
 impl StorageManager {
     pub fn get_full_data(relation: &Relation) -> memmap::Mmap {
-
         let total_size = relation.get_total_size();
-        let data = StorageManager::get_chunk_data(relation, 0, total_size);
-
-        return data;
+        StorageManager::get_chunk_data(relation, 0, total_size)
     }
 
     pub fn get_chunk_data(relation: &Relation, offset: usize, length: usize) -> memmap::Mmap {
@@ -23,15 +21,13 @@ impl StorageManager {
             .open(relation.get_filename())
             .expect("Unable to open file");
 
-        let data = unsafe {
+        unsafe {
             memmap::MmapOptions::new()
                 .len(length)
                 .offset(offset as usize)
                 .map(&f)
                 .expect("Could not access data from memory mapped file")
-        };
-
-        return data;
+        }
     }
 
     pub fn create_relation(relation: &Relation, initial_len: usize) -> memmap::MmapMut {
@@ -57,7 +53,7 @@ impl StorageManager {
         }
     }
 
-    pub fn append_relation(relation: &Relation, appended_length: usize) -> memmap::MmapMut{
+    pub fn append_relation(relation: &Relation, appended_length: usize) -> memmap::MmapMut {
         let total_size = relation.get_total_size();
 
         let f = OpenOptions::new()
@@ -78,7 +74,7 @@ impl StorageManager {
         }
     }
 
-    pub fn trim_relation(relation: &Relation, total_length:usize) -> () {
+    pub fn trim_relation(relation: &Relation, total_length: usize) {
         let f = OpenOptions::new()
             .read(true)
             .write(true)
@@ -87,7 +83,7 @@ impl StorageManager {
         f.set_len(total_length as u64).unwrap();
     }
 
-    pub fn flush(data: &memmap::MmapMut) -> () {
+    pub fn flush(data: &memmap::MmapMut) {
         data.flush().unwrap();
     }
 }

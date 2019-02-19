@@ -9,7 +9,9 @@ pub struct Max {
 
 impl Max {
     pub fn new(data_type: TypeID) -> Self {
-        Max { current_max: data_type.create_null() }
+        Max {
+            current_max: data_type.create_null(),
+        }
     }
 }
 
@@ -18,11 +20,11 @@ impl AggregationTrait for Max {
         "MAX"
     }
 
-    fn initialize(&mut self) -> () {
+    fn initialize(&mut self) {
         self.current_max = self.output_type().create_null();
     }
 
-    fn consider_value(&mut self, value: &Value) -> () {
+    fn consider_value(&mut self, value: &Value) {
         if self.current_max.is_null() || !self.current_max.greater(value) {
             self.current_max = value.box_clone_value();
         }

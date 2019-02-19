@@ -9,16 +9,14 @@ pub struct Row {
 
 impl Row {
     pub fn new(schema: Schema, values: Vec<Box<Value>>) -> Self {
-        Row {
-            schema, values
-        }
+        Row { schema, values }
     }
 
     pub fn get_schema(&self) -> &Schema {
-        return &self.schema;
+        &self.schema
     }
     pub fn get_values(&self) -> &Vec<Box<Value>> {
-        return &self.values;
+        &self.values
     }
     pub fn get_size(&self) -> usize {
         let mut total_size = 0;

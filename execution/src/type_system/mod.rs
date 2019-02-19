@@ -32,27 +32,13 @@ pub trait Buffer {
         let is_null = self.is_null();
         let data = self.data();
         match self.type_id().variant {
-            Variant::Int2 => {
-                Box::new(Int2::marshall(data, nullable, is_null))
-            }
-            Variant::Int4 => {
-                Box::new(Int4::marshall(data, nullable, is_null))
-            }
-            Variant::Int8 => {
-                Box::new(Int8::marshall(data, nullable, is_null))
-            }
-            Variant::Float4 => {
-                Box::new(Float4::marshall(data, nullable, is_null))
-            }
-            Variant::Float8 => {
-                Box::new(Float8::marshall(data, nullable, is_null))
-            }
-            Variant::UTF8String => {
-                Box::new(UTF8String::marshall(data, nullable, is_null))
-            }
-            Variant::IPv4 => {
-                Box::new(IPv4::marshall(data, nullable, is_null))
-            }
+            Variant::Int2 => Box::new(Int2::marshall(data, nullable, is_null)),
+            Variant::Int4 => Box::new(Int4::marshall(data, nullable, is_null)),
+            Variant::Int8 => Box::new(Int8::marshall(data, nullable, is_null)),
+            Variant::Float4 => Box::new(Float4::marshall(data, nullable, is_null)),
+            Variant::Float8 => Box::new(Float8::marshall(data, nullable, is_null)),
+            Variant::UTF8String => Box::new(UTF8String::marshall(data, nullable, is_null)),
+            Variant::IPv4 => Box::new(IPv4::marshall(data, nullable, is_null)),
         }
     }
 
@@ -150,7 +136,10 @@ pub fn cast_value<T: Value>(value: &Value) -> &T {
 
 /// Helper for "incomparable types" message
 fn incomparable(type_1: TypeID, type_2: TypeID) -> String {
-    format!("Unable to compare type {:?} to type {:?}", type_1.variant, type_2.variant)
+    format!(
+        "Unable to compare type {:?} to type {:?}",
+        type_1.variant, type_2.variant
+    )
 }
 
 /// Helper for "null value" message
@@ -220,22 +209,12 @@ pub fn cast_numeric<T: Numeric>(value: &Numeric) -> &T {
 /// Panics if the input value is not of a numeric type
 pub fn force_numeric(value: &Value) -> &Numeric {
     match value.type_id().variant {
-        Variant::Int2 => {
-            cast_value::<Int2>(value)
-        }
-        Variant::Int4 => {
-            cast_value::<Int4>(value)
-        }
-        Variant::Int8 => {
-            cast_value::<Int8>(value)
-        }
-        Variant::Float4 => {
-            cast_value::<Float4>(value)
-        }
-        Variant::Float8 => {
-            cast_value::<Float8>(value)
-        }
-        _ => panic!("{:?} is not a numeric type", value.type_id())
+        Variant::Int2 => cast_value::<Int2>(value),
+        Variant::Int4 => cast_value::<Int4>(value),
+        Variant::Int8 => cast_value::<Int8>(value),
+        Variant::Float4 => cast_value::<Float4>(value),
+        Variant::Float8 => cast_value::<Float8>(value),
+        _ => panic!("{:?} is not a numeric type", value.type_id()),
     }
 }
 

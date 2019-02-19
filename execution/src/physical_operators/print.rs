@@ -1,6 +1,6 @@
-use type_system::*;
-use type_system::borrowed_buffer::BorrowedBuffer;
 use logical_entities::relation::Relation;
+use type_system::borrowed_buffer::BorrowedBuffer;
+use type_system::*;
 
 use storage_manager::StorageManager;
 
@@ -10,14 +10,12 @@ pub const CHUNK_SIZE: usize = 1024 * 1024;
 
 //#[derive(Debug)]
 pub struct Print {
-    relation: Relation
+    relation: Relation,
 }
 
 impl Print {
     pub fn new(relation: Relation) -> Print {
-        Print {
-            relation,
-        }
+        Print { relation }
     }
 }
 
@@ -41,7 +39,8 @@ impl Operator for Print {
             for column in columns {
                 let type_id = column.get_datatype();
                 let value_length = type_id.next_size(&data[i..]);
-                let buffer: BorrowedBuffer = BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
+                let buffer: BorrowedBuffer =
+                    BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
                 let value_string = buffer.marshall().to_string();
                 print!("|{value:>width$}", value = value_string, width = width);
                 i += value_length;

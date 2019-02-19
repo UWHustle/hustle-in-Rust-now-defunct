@@ -1,7 +1,7 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::*;
-use type_system::type_id::*;
 use type_system::integer::*;
+use type_system::type_id::*;
+use type_system::*;
 
 #[derive(Clone, Debug)]
 pub struct Avg {
@@ -23,12 +23,12 @@ impl AggregationTrait for Avg {
         "AVG"
     }
 
-    fn initialize(&mut self) -> () {
+    fn initialize(&mut self) {
         self.sum = self.sum.type_id().create_zero();
         self.count = 0;
     }
 
-    fn consider_value(&mut self, value: &Value) -> () {
+    fn consider_value(&mut self, value: &Value) {
         self.sum = self.sum.add(force_numeric(value));
         self.count += 1;
     }

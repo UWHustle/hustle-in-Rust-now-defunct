@@ -35,7 +35,7 @@ impl UTF8String {
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
-        let mut vec_data: Vec<u8> = vec!();
+        let mut vec_data: Vec<u8> = vec![];
         vec_data.clone_from_slice(data);
         let value = String::from_utf8(vec_data).expect("Invalid UTF8 string");
         Self {
@@ -51,7 +51,7 @@ impl UTF8String {
 
     pub fn value(&self) -> &str {
         if self.is_null {
-            panic!("Attempting to return string slice of null UTF8String");
+            panic!(null_value(self.type_id()));
         }
         &self.value
     }
@@ -107,7 +107,10 @@ mod test {
     fn utf8_string_un_marshall() {
         let utf8_string_value = UTF8String::from("Hello!");
         let utf8_string_buffer = utf8_string_value.un_marshall();
-        assert_eq!(TypeID::new(Variant::UTF8String, true), utf8_string_buffer.type_id());
+        assert_eq!(
+            TypeID::new(Variant::UTF8String, true),
+            utf8_string_buffer.type_id()
+        );
 
         let data = utf8_string_buffer.data();
         assert_eq!('H' as u8, data[0]);
@@ -127,7 +130,10 @@ mod test {
     #[test]
     fn utf8_string_type_id() {
         let utf8_string = UTF8String::from("Chocolate donuts");
-        assert_eq!(TypeID::new(Variant::UTF8String, true), utf8_string.type_id());
+        assert_eq!(
+            TypeID::new(Variant::UTF8String, true),
+            utf8_string.type_id()
+        );
     }
 
     #[test]

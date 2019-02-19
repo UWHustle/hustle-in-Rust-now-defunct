@@ -4,8 +4,8 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
-use type_system::*;
 use type_system::borrowed_buffer::BorrowedBuffer;
+use type_system::*;
 
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -19,7 +19,12 @@ pub struct Aggregate<T: AggregationTrait> {
 }
 
 impl<T: AggregationTrait> Aggregate<T> {
-    pub fn new(input_relation: Relation, agg_col: Column, group_by_cols: Vec<Column>, aggregation: T) -> Self {
+    pub fn new(
+        input_relation: Relation,
+        agg_col: Column,
+        group_by_cols: Vec<Column>,
+        aggregation: T,
+    ) -> Self {
         let agg_col_name = format!("{}({})", aggregation.get_name(), agg_col.get_name());
         let mut output_cols = group_by_cols.clone();
         output_cols.push(Column::new(agg_col_name, aggregation.output_type()));
@@ -55,15 +60,22 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
 
         // Loop over all the data
         while i < input_data.len() {
-            let mut group_by_values: Vec<(String, Column)> = vec!();
-            let mut agg_values: Vec<(String, Column)> = vec!();
+            let mut group_by_values: Vec<(String, Column)> = vec![];
+            let mut agg_values: Vec<(String, Column)> = vec![];
 
             // Split data by the columns relevant to the aggregation vs columns to group by
             for column in &input_cols {
                 let value_len = column.get_datatype().next_size(&input_data[i..]);
-                let buffer = BorrowedBuffer::new(&input_data[i..i + value_len], column.get_datatype(), false);
+                let buffer = BorrowedBuffer::new(
+                    &input_data[i..i + value_len],
+                    column.get_datatype(),
+                    false,
+                );
                 let value = (buffer.marshall().to_string(), column.clone());
-                if (&self.group_by_cols).into_iter().any(|c| c.get_name() == column.get_name()) {
+                if (&self.group_by_cols)
+                    .iter()
+                    .any(|c| c.get_name() == column.get_name())
+                {
                     group_by_values.push(value);
                 } else {
                     agg_values.push(value);
@@ -89,7 +101,6 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
 
         // Output a relation
         for (group_by_values, agg_instance) in &group_by {
-
             // Copy group by values
             for (data, column) in group_by_values {
                 let data = column.get_datatype().parse(data).un_marshall();
@@ -99,7 +110,8 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
 
             // Copy aggregated values
             let output: &Value = &*agg_instance.output();
-            output_data[j..j + output.un_marshall().data().len()].clone_from_slice(&output.un_marshall().data());
+            output_data[j..j + output.un_marshall().data().len()]
+                .clone_from_slice(&output.un_marshall().data());
             j += output.un_marshall().data().len();
         }
 
