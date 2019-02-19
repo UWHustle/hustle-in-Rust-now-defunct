@@ -60,6 +60,8 @@ install:
 - export LINKER_FLAGS="-s"
 
 before_script:
+- curl https://sh.rustup.rs -sSf | sh
+- rustup component add clippy
 - $CC --version
 - $CXX --version
 - $CLINKER --version
@@ -78,7 +80,6 @@ before_script:
   -D CMAKE_LINKER=$CLINKER
   -D USE_TCMALLOC=0
   -D ENABLE_COMPARISON_INLINE_EXPANSION=OFF ..)
-- rustup component add clippy
 
 script:
 - (cd build && make)
