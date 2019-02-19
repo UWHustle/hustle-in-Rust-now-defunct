@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Div, Mul, Sub};
 
 /// Defines essential comparison operators
 /// LessEq and GreaterEq can be defined via a combination of Less/Greater and Equal
@@ -14,21 +14,11 @@ pub enum Comparator {
 impl Comparator {
     pub fn apply<T: PartialOrd>(&self, val_1: T, val_2: T) -> bool {
         match self {
-            Comparator::Equal => {
-                val_1 == val_2
-            }
-            Comparator::Less => {
-                val_1 < val_2
-            }
-            Comparator::LessEq => {
-                val_1 <= val_2
-            }
-            Comparator::Greater => {
-                val_1 > val_2
-            }
-            Comparator::GreaterEq => {
-                val_1 >= val_2
-            }
+            Comparator::Equal => val_1 == val_2,
+            Comparator::Less => val_1 < val_2,
+            Comparator::LessEq => val_1 <= val_2,
+            Comparator::Greater => val_1 > val_2,
+            Comparator::GreaterEq => val_1 >= val_2,
         }
     }
 }
@@ -45,20 +35,14 @@ pub enum Arithmetic {
 
 impl Arithmetic {
     pub fn apply<T>(&self, val_1: T, val_2: T) -> T
-        where T: Add<Output=T> + Sub<Output=T> + Mul<Output=T> + Div<Output=T> {
+    where
+        T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T>,
+    {
         match self {
-            Arithmetic::Add => {
-                val_1 + val_2
-            }
-            Arithmetic::Subtract => {
-                val_1 - val_2
-            }
-            Arithmetic::Multiply => {
-                val_1 * val_2
-            }
-            Arithmetic::Divide => {
-                val_1 / val_2
-            }
+            Arithmetic::Add => val_1 + val_2,
+            Arithmetic::Subtract => val_1 - val_2,
+            Arithmetic::Multiply => val_1 * val_2,
+            Arithmetic::Divide => val_1 / val_2,
         }
     }
 }

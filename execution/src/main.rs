@@ -1,9 +1,9 @@
 pub mod logical_entities;
 pub mod physical_operators;
-pub mod storage_manager;
 pub mod physical_plan;
-pub mod type_system;
+pub mod storage_manager;
 pub mod test_helpers;
+pub mod type_system;
 
 use test_helpers::data_gen::*;
 

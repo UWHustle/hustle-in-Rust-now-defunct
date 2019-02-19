@@ -86,19 +86,19 @@ impl Value for IPv4 {
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.type_id().variant {
             Variant::Int2 => {
-                comp.apply(self.value as i64, cast_value::<Int2>(other).value() as i64)
+                comp.apply(i64::from(self.value), i64::from(cast_value::<Int2>(other).value()))
             }
             Variant::Int4 => {
-                comp.apply(self.value as i64, cast_value::<Int4>(other).value() as i64)
+                comp.apply(i64::from(self.value), i64::from(cast_value::<Int4>(other).value()))
             }
             Variant::Int8 => {
-                comp.apply(self.value as i64, cast_value::<Int8>(other).value())
+                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
             }
             Variant::Float4 => {
                 comp.apply(self.value as f32, cast_value::<Float4>(other).value())
             }
             Variant::Float8 => {
-                comp.apply(self.value as f64, cast_value::<Float8>(other).value())
+                comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
             Variant::IPv4 => {
                 comp.apply(self.value, cast_value::<IPv4>(other).value())

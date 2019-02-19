@@ -63,24 +63,12 @@ impl Integer for Int2 {}
 impl Numeric for Int2 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
         let other_cast = match other.type_id().variant {
-            Variant::Int2 => {
-                cast_numeric::<Int2>(other).value()
-            }
-            Variant::Int4 => {
-                cast_numeric::<Int4>(other).value() as i16
-            }
-            Variant::Int8 => {
-                cast_numeric::<Int8>(other).value() as i16
-            }
-            Variant::Float4 => {
-                cast_numeric::<Float4>(other).value() as i16
-            }
-            Variant::Float8 => {
-                cast_numeric::<Float8>(other).value() as i16
-            }
-            _ => {
-                panic!(not_numeric(other.type_id()))
-            }
+            Variant::Int2 => cast_numeric::<Int2>(other).value(),
+            Variant::Int4 => cast_numeric::<Int4>(other).value() as i16,
+            Variant::Int8 => cast_numeric::<Int8>(other).value() as i16,
+            Variant::Float4 => cast_numeric::<Float4>(other).value() as i16,
+            Variant::Float8 => cast_numeric::<Float8>(other).value() as i16,
+            _ => panic!(not_numeric(other.type_id())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -116,19 +104,19 @@ impl Value for Int2 {
                 comp.apply(self.value, cast_value::<Int2>(other).value())
             }
             Variant::Int4 => {
-                comp.apply(self.value as i32, cast_value::<Int4>(other).value())
+                comp.apply(i32::from(self.value), cast_value::<Int4>(other).value())
             }
             Variant::Int8 => {
-                comp.apply(self.value as i64, cast_value::<Int8>(other).value())
+                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
             }
             Variant::Float4 => {
-                comp.apply(self.value as f32, cast_value::<Float4>(other).value())
+                comp.apply(f32::from(self.value), cast_value::<Float4>(other).value())
             }
             Variant::Float8 => {
-                comp.apply(self.value as f64, cast_value::<Float8>(other).value())
+                comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
             Variant::IPv4 => {
-                comp.apply(self.value as i64, cast_value::<IPv4>(other).value() as i64)
+                comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
                 panic!(incomparable(self.type_id(), other.type_id()));
@@ -193,24 +181,12 @@ impl Integer for Int4 {}
 impl Numeric for Int4 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
         let other_cast = match other.type_id().variant {
-            Variant::Int2 => {
-                cast_numeric::<Int2>(other).value() as i32
-            }
-            Variant::Int4 => {
-                cast_numeric::<Int4>(other).value()
-            }
-            Variant::Int8 => {
-                cast_numeric::<Int8>(other).value() as i32
-            }
-            Variant::Float4 => {
-                cast_numeric::<Float4>(other).value() as i32
-            }
-            Variant::Float8 => {
-                cast_numeric::<Float8>(other).value() as i32
-            }
-            _ => {
-                panic!(not_numeric(other.type_id()))
-            }
+            Variant::Int2 => i32::from(cast_numeric::<Int2>(other).value()),
+            Variant::Int4 => cast_numeric::<Int4>(other).value(),
+            Variant::Int8 => cast_numeric::<Int8>(other).value() as i32,
+            Variant::Float4 => cast_numeric::<Float4>(other).value() as i32,
+            Variant::Float8 => cast_numeric::<Float8>(other).value() as i32,
+            _ => panic!(not_numeric(other.type_id())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -243,22 +219,22 @@ impl Value for Int4 {
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.type_id().variant {
             Variant::Int2 => {
-                comp.apply(self.value, cast_value::<Int2>(other).value() as i32)
+                comp.apply(self.value, i32::from(cast_value::<Int2>(other).value()))
             }
             Variant::Int4 => {
                 comp.apply(self.value, cast_value::<Int4>(other).value())
             }
             Variant::Int8 => {
-                comp.apply(self.value as i64, cast_value::<Int8>(other).value())
+                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
             }
             Variant::Float4 => {
                 comp.apply(self.value as f32, cast_value::<Float4>(other).value())
             }
             Variant::Float8 => {
-                comp.apply(self.value as f64, cast_value::<Float8>(other).value())
+                comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
             Variant::IPv4 => {
-                comp.apply(self.value as i64, cast_value::<IPv4>(other).value() as i64)
+                comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
                 panic!(incomparable(self.type_id(), other.type_id()));
@@ -323,24 +299,12 @@ impl Integer for Int8 {}
 impl Numeric for Int8 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
         let other_cast = match other.type_id().variant {
-            Variant::Int2 => {
-                cast_numeric::<Int2>(other).value() as i64
-            }
-            Variant::Int4 => {
-                cast_numeric::<Int4>(other).value() as i64
-            }
-            Variant::Int8 => {
-                cast_numeric::<Int8>(other).value()
-            }
-            Variant::Float4 => {
-                cast_numeric::<Float4>(other).value() as i64
-            }
-            Variant::Float8 => {
-                cast_numeric::<Float8>(other).value() as i64
-            }
-            _ => {
-                panic!(not_numeric(other.type_id()))
-            }
+            Variant::Int2 => i64::from(cast_numeric::<Int2>(other).value()),
+            Variant::Int4 => i64::from(cast_numeric::<Int4>(other).value()),
+            Variant::Int8 => cast_numeric::<Int8>(other).value(),
+            Variant::Float4 => cast_numeric::<Float4>(other).value() as i64,
+            Variant::Float8 => cast_numeric::<Float8>(other).value() as i64,
+            _ => panic!(not_numeric(other.type_id())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -373,22 +337,22 @@ impl Value for Int8 {
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.type_id().variant {
             Variant::Int2 => {
-                comp.apply(self.value, cast_value::<Int2>(other).value() as i64)
+                comp.apply(self.value, i64::from(cast_value::<Int2>(other).value()))
             }
             Variant::Int4 => {
-                comp.apply(self.value, cast_value::<Int4>(other).value() as i64)
+                comp.apply(self.value, i64::from(cast_value::<Int4>(other).value()))
             }
             Variant::Int8 => {
                 comp.apply(self.value, cast_value::<Int8>(other).value())
             }
             Variant::Float4 => {
-                comp.apply(self.value as f64, cast_value::<Float4>(other).value() as f64)
+                comp.apply(self.value as f64, f64::from(cast_value::<Float4>(other).value()))
             }
             Variant::Float8 => {
                 comp.apply(self.value as f64, cast_value::<Float8>(other).value())
             }
             Variant::IPv4 => {
-                comp.apply(self.value, cast_value::<IPv4>(other).value() as i64)
+                comp.apply(self.value, i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
                 panic!(incomparable(self.type_id(), other.type_id()));

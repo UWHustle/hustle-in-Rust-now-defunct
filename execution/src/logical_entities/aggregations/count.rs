@@ -1,16 +1,18 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::*;
 use type_system::integer::*;
 use type_system::type_id::*;
+use type_system::*;
 
 #[derive(Clone, Debug)]
 pub struct Count {
-    count: Box<Numeric>
+    count: Box<Numeric>,
 }
 
 impl Count {
     pub fn new(data_type: TypeID) -> Self {
-        Count { count: data_type.create_zero() }
+        Count {
+            count: data_type.create_zero(),
+        }
     }
 }
 
@@ -19,12 +21,12 @@ impl AggregationTrait for Count {
         "COUNT"
     }
 
-    fn initialize(&mut self) -> () {
+    fn initialize(&mut self) {
         self.count = self.count.type_id().create_zero();
     }
 
     #[allow(unused_variables)]
-    fn consider_value(&mut self, value: &Value) -> () {
+    fn consider_value(&mut self, value: &Value) {
         self.count = self.count.add(&Int2::from(1));
     }
 

@@ -1,8 +1,8 @@
 use logical_entities::aggregations::AggregationTrait;
+use type_system::force_numeric;
 use type_system::type_id::*;
 use type_system::Numeric;
 use type_system::*;
-use type_system::force_numeric;
 
 #[derive(Clone, Debug)]
 pub struct Sum {
@@ -11,7 +11,9 @@ pub struct Sum {
 
 impl Sum {
     pub fn new(type_id: TypeID) -> Self {
-        Sum { running_total: type_id.create_zero() }
+        Sum {
+            running_total: type_id.create_zero(),
+        }
     }
 }
 
@@ -20,11 +22,11 @@ impl AggregationTrait for Sum {
         "SUM"
     }
 
-    fn initialize(&mut self) -> () {
+    fn initialize(&mut self) {
         self.running_total = self.output_type().create_zero();
     }
 
-    fn consider_value(&mut self, value: &Value) -> () {
+    fn consider_value(&mut self, value: &Value) {
         self.running_total = self.running_total.add(force_numeric(value));
     }
 

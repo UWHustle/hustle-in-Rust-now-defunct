@@ -28,11 +28,8 @@ impl TypeID {
 
     pub fn from_string(string: String) -> TypeID {
         let lower = string.to_lowercase();
-        let tokens: Vec<&str> = lower
-            .split(' ')
-            .collect();
-        let variant_str = *tokens.get(0)
-            .expect("Error: type string is empty");
+        let tokens: Vec<&str> = lower.split(' ').collect();
+        let variant_str = *tokens.get(0).expect("Error: type string is empty");
 
         let variant = match variant_str {
             "smallint" => Variant::Int2,
@@ -41,7 +38,7 @@ impl TypeID {
             "real" => Variant::Float4,
             "double" => Variant::Float8,
             "varchar" => Variant::UTF8String,
-            _ => panic!("Unknown type variant {}", variant_str)
+            _ => panic!("Unknown type variant {}", variant_str),
         };
 
         let nullable = lower.contains("null");
@@ -65,9 +62,7 @@ impl TypeID {
             self.size()
         } else {
             match self.variant {
-                Variant::UTF8String => {
-                    UTF8String::next_size(data)
-                }
+                Variant::UTF8String => UTF8String::next_size(data),
                 _ => {
                     panic!("Variable size with no next_size() implementation");
                 }
@@ -77,27 +72,13 @@ impl TypeID {
 
     pub fn parse(&self, string: &str) -> Box<Value> {
         match self.variant {
-            Variant::Int2 => {
-                Box::new(Int2::parse(string))
-            }
-            Variant::Int4 => {
-                Box::new(Int4::parse(string))
-            }
-            Variant::Int8 => {
-                Box::new(Int8::parse(string))
-            }
-            Variant::Float4 => {
-                Box::new(Float4::parse(string))
-            }
-            Variant::Float8 => {
-                Box::new(Float8::parse(string))
-            }
-            Variant::IPv4 => {
-                Box::new(IPv4::parse(string))
-            }
-            Variant::UTF8String => {
-                Box::new(UTF8String::from(string))
-            }
+            Variant::Int2 => Box::new(Int2::parse(string)),
+            Variant::Int4 => Box::new(Int4::parse(string)),
+            Variant::Int8 => Box::new(Int8::parse(string)),
+            Variant::Float4 => Box::new(Float4::parse(string)),
+            Variant::Float8 => Box::new(Float8::parse(string)),
+            Variant::IPv4 => Box::new(IPv4::parse(string)),
+            Variant::UTF8String => Box::new(UTF8String::from(string)),
         }
     }
 
@@ -106,50 +87,24 @@ impl TypeID {
             panic!("Non-nullable version of {:?}", self.variant);
         }
         match self.variant {
-            Variant::Int2 => {
-                Box::new(Int2::create_null())
-            }
-            Variant::Int4 => {
-                Box::new(Int4::create_null())
-            }
-            Variant::Int8 => {
-                Box::new(Int8::create_null())
-            }
-            Variant::Float4 => {
-                Box::new(Float4::create_null())
-            }
-            Variant::Float8 => {
-                Box::new(Float8::create_null())
-            }
-            Variant::UTF8String => {
-                Box::new(UTF8String::create_null())
-            }
-            _ => {
-                panic!("Type {:?} cannot be null", self.variant);
-            }
+            Variant::Int2 => Box::new(Int2::create_null()),
+            Variant::Int4 => Box::new(Int4::create_null()),
+            Variant::Int8 => Box::new(Int8::create_null()),
+            Variant::Float4 => Box::new(Float4::create_null()),
+            Variant::Float8 => Box::new(Float8::create_null()),
+            Variant::UTF8String => Box::new(UTF8String::create_null()),
+            _ => panic!("Type {:?} cannot be null", self.variant),
         }
     }
 
     pub fn create_zero(&self) -> Box<Numeric> {
         match self.variant {
-            Variant::Int2 => {
-                Box::new(Int2::new(0, self.nullable))
-            }
-            Variant::Int4 => {
-                Box::new(Int4::new(0, self.nullable))
-            }
-            Variant::Int8 => {
-                Box::new(Int8::new(0, self.nullable))
-            }
-            Variant::Float4 => {
-                Box::new(Float4::new(0.0, self.nullable))
-            }
-            Variant::Float8 => {
-                Box::new(Float8::new(0.0, self.nullable))
-            }
-            _ => {
-                panic!("Type {:?} is not numeric", self.variant);
-            }
+            Variant::Int2 => Box::new(Int2::new(0, self.nullable)),
+            Variant::Int4 => Box::new(Int4::new(0, self.nullable)),
+            Variant::Int8 => Box::new(Int8::new(0, self.nullable)),
+            Variant::Float4 => Box::new(Float4::new(0.0, self.nullable)),
+            Variant::Float8 => Box::new(Float8::new(0.0, self.nullable)),
+            _ => panic!("Type {:?} is not numeric", self.variant),
         }
     }
 }

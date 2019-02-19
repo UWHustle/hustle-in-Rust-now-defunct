@@ -4,14 +4,12 @@ use physical_operators::Operator;
 
 //#[derive(Debug)]
 pub struct TableReference {
-    relation: Relation
+    relation: Relation,
 }
 
 impl TableReference {
     pub fn new(relation: Relation) -> Self {
-        TableReference {
-            relation
-        }
+        TableReference { relation }
     }
 }
 
