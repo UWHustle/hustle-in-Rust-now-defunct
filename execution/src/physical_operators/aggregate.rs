@@ -1,29 +1,33 @@
-use logical_entities::aggregations::AggregationTrait;
+use logical_entities::aggregations::avg::Avg;
+use logical_entities::aggregations::count::Count;
+use logical_entities::aggregations::max::Max;
+use logical_entities::aggregations::min::Min;
+use logical_entities::aggregations::sum::Sum;
+use logical_entities::aggregations::*;
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
 use type_system::borrowed_buffer::BorrowedBuffer;
+use type_system::type_id::TypeID;
 use type_system::*;
 
 use std::collections::HashMap;
-use std::fmt::Debug;
 
-//#[derive(Debug)]
-pub struct Aggregate<T: AggregationTrait> {
+pub struct Aggregate {
     input_relation: Relation,
     output_relation: Relation,
     group_by_cols: Vec<Column>,
-    aggregation: T,
+    aggregation: Box<AggregationTrait>,
 }
 
-impl<T: AggregationTrait> Aggregate<T> {
+impl Aggregate {
     pub fn new(
         input_relation: Relation,
         agg_col: Column,
         group_by_cols: Vec<Column>,
-        aggregation: T,
+        aggregation: Box<AggregationTrait>,
     ) -> Self {
         let agg_col_name = format!("{}({})", aggregation.get_name(), agg_col.get_name());
         let mut output_cols = group_by_cols.clone();
@@ -39,9 +43,27 @@ impl<T: AggregationTrait> Aggregate<T> {
             aggregation,
         }
     }
+
+    pub fn from_str(
+        input_relation: Relation,
+        agg_col: Column,
+        group_by_cols: Vec<Column>,
+        agg_type: TypeID,
+        agg_name: &str,
+    ) -> Self {
+        let aggregation: Box<AggregationTrait> = match agg_name {
+            "AVG" => Box::new(Avg::new(agg_type)),
+            "COUNT" => Box::new(Count::new(agg_type)),
+            "MAX" => Box::new(Max::new(agg_type)),
+            "MIN" => Box::new(Min::new(agg_type)),
+            "SUM" => Box::new(Sum::new(agg_type)),
+            _ => panic!("Unknown aggregate function {}", agg_name),
+        };
+        Self::new(input_relation, agg_col, group_by_cols, aggregation)
+    }
 }
 
-impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
+impl Operator for Aggregate {
     fn get_target_relation(&self) -> Relation {
         self.output_relation.clone()
     }
@@ -53,7 +75,7 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
         let mut output_data = StorageManager::create_relation(&self.output_relation, output_size);
 
         //A HashMap mapping group by values to aggregations for that grouping
-        let mut group_by: HashMap<Vec<(String, Column)>, T> = HashMap::new();
+        let mut group_by: HashMap<Vec<(String, Column)>, Box<AggregationTrait>> = HashMap::new();
 
         let mut i = 0; // Current position in the input buffer
         let mut j = 0; // Current position in the output buffer
@@ -90,7 +112,7 @@ impl<T: AggregationTrait + Clone + Debug> Operator for Aggregate<T> {
                     agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
                 }
             } else {
-                let mut agg_instance = self.aggregation.clone();
+                let mut agg_instance = self.aggregation.box_clone_aggregation();
                 agg_instance.initialize();
                 for value in agg_values {
                     agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
