@@ -67,7 +67,7 @@ class LogicalGenerator {
    * @param parse_statement The parse tree to be converted.
    * @return An optimized logical plan.
    */
-  logical::LogicalPtr generatePlan(const CatalogDatabase &catalog_database,
+  logical::LogicalPtr generatePlan(CatalogDatabase *catalog_database,
                                    const ParseStatement &parse_statement);
 
   logical::LogicalPtr hustleGeneratePlan(const CatalogDatabase &catalog_database,

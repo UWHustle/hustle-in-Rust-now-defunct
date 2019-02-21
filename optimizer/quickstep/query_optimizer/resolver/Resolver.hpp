@@ -101,7 +101,7 @@ class Resolver {
    * @param catalog_database The database that the query is executed on.
    * @param context The context of this query.
    */
-  Resolver(const CatalogDatabase &catalog_database, OptimizerContext *context)
+  Resolver(CatalogDatabase *catalog_database, OptimizerContext *context)
       : catalog_database_(catalog_database),
         context_(context) {}
 
@@ -732,7 +732,7 @@ class Resolver {
       std::vector<expressions::NamedExpressionPtr> *select_list_expressions,
       logical::LogicalPtr *logical_plan);
 
-  const CatalogDatabase &catalog_database_;
+  CatalogDatabase *catalog_database_;
 
   OptimizerContext *context_;
   WithQueriesInfo with_queries_info_;

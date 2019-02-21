@@ -61,7 +61,12 @@ target_link_libraries(hustle_optimizer
         quickstep_queryoptimizer_OptimizerContext
         quickstep_queryoptimizer_PhysicalGenerator
         quickstep_queryoptimizer_resolver_Resolver
-        quickstep_utility_Macros)
+        quickstep_utility_Macros
+        quickstep_catalog_Catalog
+        quickstep_catalog_Catalog_proto
+        quickstep_catalog_CatalogDatabase
+        quickstep_catalog_CatalogTypedefs
+        )
 
 #target_link_libraries(quickstep_queryoptimizer_ExecutionGenerator
 #                      ${GFLAGS_LIB_NAME}
