@@ -663,21 +663,23 @@ L::LogicalPtr Resolver::resolveCreateTable(
       resolvePartitionClause(create_table_statement));
 
   // Create catalog Relation
-  std::unique_ptr<CatalogRelation> catalog_relation(new CatalogRelation(catalog_database_,
-                                             create_table_statement.relation_name()->value() ,
+  if (hustleMode_) {
+    std::unique_ptr<CatalogRelation>
+        catalog_relation(new CatalogRelation(catalog_database_,
+                                             create_table_statement.relation_name()->value(),
                                              -1 /* id */,
                                              false /* temporary */));
 
-  for (E::AttributeReferencePtr attr : attributes) {
-    int attr_id = -1;
-    catalog_relation->addAttribute(new CatalogAttribute(
+    for (E::AttributeReferencePtr attr : attributes) {
+      int attr_id = -1;
+      catalog_relation->addAttribute(new CatalogAttribute(
           catalog_relation.get(),
           attr->attribute_name(),
           attr->getValueType(),
           ++attr_id));
+    }
+    catalog_database_->addRelation(catalog_relation.release());
   }
-  catalog_database_->addRelation(catalog_relation.release());
-
   return L::CreateTable::Create(relation_name, attributes, block_properties, partition_scheme_header_proto);
 }
 
@@ -995,8 +997,9 @@ L::LogicalPtr Resolver::resolveDropTable(
   const CatalogRelation* rel = resolveRelationName(drop_table_statement.relation_name());
 
   // Update Catalog
-  catalog_database_->dropRelationByName(drop_table_statement.relation_name()->value());
-
+  if (hustleMode_) {
+    catalog_database_->dropRelationByName(drop_table_statement.relation_name()->value());
+  }
   return L::DropTable::Create(rel);
 }
 

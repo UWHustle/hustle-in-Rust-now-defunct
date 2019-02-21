@@ -101,9 +101,10 @@ class Resolver {
    * @param catalog_database The database that the query is executed on.
    * @param context The context of this query.
    */
-  Resolver(CatalogDatabase *catalog_database, OptimizerContext *context)
+  Resolver(CatalogDatabase *catalog_database, OptimizerContext *context, bool hustleMode = false)
       : catalog_database_(catalog_database),
-        context_(context) {}
+        context_(context),
+        hustleMode_(hustleMode){}
 
   /**
    * @brief Validates the query is semantically correct and converts the parse
@@ -738,6 +739,8 @@ class Resolver {
   WithQueriesInfo with_queries_info_;
 
   logical::LogicalPtr logical_plan_;
+
+  const bool hustleMode_;
 
   DISALLOW_COPY_AND_ASSIGN(Resolver);
 };

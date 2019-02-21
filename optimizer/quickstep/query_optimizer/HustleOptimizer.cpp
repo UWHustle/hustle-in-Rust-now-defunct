@@ -119,7 +119,7 @@ std::string OptimizerWrapper::hustle_optimize(const std::shared_ptr<ParseNode> &
           &parse_statement = *result.parsed_statement;
       // Convert the query to the logical plan using quickstep's optimizer
       lplan = logical_generator.generatePlan(
-          catalog_database, parse_statement);
+          catalog_database, parse_statement, true /* husteMode */);
     }
 
 //    std::cout<< "Logical Plan: " << lplan->jsonString() << std::endl;
