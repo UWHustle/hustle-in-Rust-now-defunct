@@ -6,16 +6,94 @@
 #include "parser/SqlParserWrapper.hpp"
 #include "query_optimizer/tests/TestDatabaseLoader.hpp"
 #include "utility/SqlError.hpp"
+#include "types/TypeID.hpp"
+#include "catalog/Catalog.hpp"
+#include "catalog/Catalog.pb.h"
 
-std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
-                            const std::string &sql) {
+#include <fstream>
+#include <memory>
+#include <string>
 
+namespace quickstep {
+
+void OptimizerWrapper::readCatalog() {
+  quickstep::serialization::Catalog catalog_proto;
+  std::ifstream catalog_file(std::string(kCatalogPath).c_str());
+  if (!catalog_file.good()) {
+    throw UnableToReadCatalogE(kCatalogPath);
+  }
+
+  if (!catalog_proto.ParseFromIstream(&catalog_file)) {
+    throw CatalogNotProtoE(kCatalogPath);
+  }
+  catalog_file.close();
+  catalog_ = std::make_shared<Catalog>(catalog_proto);
+}
+
+void OptimizerWrapper::saveCatalog() {
+  std::ofstream catalog_file(std::string(kCatalogPath).c_str());
+
+  if (!catalog_->getProto().SerializeToOstream(&catalog_file)) {
+    throw UnableToWriteCatalogE(kCatalogPath);
+  }
+
+  catalog_file.close();
+}
+
+void OptimizerWrapper::CreateDefaultCatalog() {
+
+  catalog_->addDatabase(new quickstep::CatalogDatabase(nullptr /* parent */,
+                                                      "default_db" /* name */,
+                                                      0 /* id */));
+
+  quickstep::CatalogDatabase *catalog_database =
+      catalog_->getDatabaseByNameMutable("default_db");
+
+  std::vector<std::string> rel_names = {"t", "a", "b"};
+  std::vector<std::vector<std::pair<std::string, quickstep::TypeID>>>
+      rel_columns = {
+      {{"a", quickstep::kInt}, {"b", quickstep::kInt}},
+      {{"w", quickstep::kInt}, {"x", quickstep::kInt}, {"y", quickstep::kInt},
+       {"z", quickstep::kInt}},
+      {{"w", quickstep::kInt}, {"x", quickstep::kInt}}
+  };
+
+  for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
+    std::unique_ptr<quickstep::CatalogRelation> relation(
+        new quickstep::CatalogRelation(catalog_database,
+                                       rel_names[rel_idx],
+                                       -1 /* id */,
+                                       true /* temporary */));
+
+    const std::vector<std::pair<std::string, quickstep::TypeID>>
+        &columns = rel_columns[rel_idx];
+    int attr_id = -1;
+    for (std::size_t col_idx = 0; col_idx < columns.size(); ++col_idx) {
+      relation->addAttribute(new quickstep::CatalogAttribute(
+          relation.get(),
+          columns[col_idx].first,
+          quickstep::TypeFactory::GetType(columns[col_idx].second),
+          ++attr_id));
+    }
+    catalog_database->addRelation(relation.release());
+  }
+}
+
+std::string OptimizerWrapper::hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
+                                              const std::string &sql) {
   quickstep::optimizer::OptimizerContext optimizer_context;
+  catalog_.reset();
 
-  quickstep::optimizer::TestDatabaseLoader test_database_loader_;
-  test_database_loader_.createHustleTestRelation(false /* allow_vchar */);
-  test_database_loader_.loadHustleTestRelation();
-  test_database_loader_.createHustleJoinRelations();
+  try {
+    readCatalog();
+  } catch (UnableToReadCatalogE &read_exception) {
+    printf("Catalog initialized. \n");
+    catalog_ = std::make_shared<Catalog>();
+    CreateDefaultCatalog();
+  }
+
+  quickstep::CatalogDatabase *catalog_database =
+      catalog_->getDatabaseByNameMutable("default_db");
 
   quickstep::optimizer::LogicalGenerator logical_generator(&optimizer_context);
   quickstep::optimizer::PhysicalGenerator
@@ -27,28 +105,28 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
     // If the sql is empty the parser/resolver of Hustle is used.
     if (sql.empty()) {
       lplan = logical_generator.hustleGeneratePlan(
-          *test_database_loader_.catalog_database(), syntax_tree);
+          *catalog_database, syntax_tree);
     } else {  // Parse the query using the quickstep parser
       quickstep::SqlParserWrapper sql_parser_;
       auto query = new std::string(sql);
       sql_parser_.feedNextBuffer(query);
       quickstep::ParseResult result = sql_parser_.getNextStatement();
       if (result.condition == quickstep::ParseResult::kError) {
-        printf( "%s", result.error_message.c_str());
+        printf("%s", result.error_message.c_str());
         return "";
       }
       const quickstep::ParseStatement
           &parse_statement = *result.parsed_statement;
       // Convert the query to the logical plan using quickstep's optimizer
       lplan = logical_generator.generatePlan(
-          *test_database_loader_.catalog_database(), parse_statement);
+          catalog_database, parse_statement, true /* husteMode */);
     }
 
 //    std::cout<< "Logical Plan: " << lplan->jsonString() << std::endl;
 //    std::cout << " --------------------- " << std::endl;
     pplan =
         physical_generator.generatePlan(
-            lplan, test_database_loader_.catalog_database());
+            lplan, catalog_database);
 
 //    std::cout<< "Physical Plan: " << pplan->jsonString() << std::endl;
   } catch (const quickstep::SqlError &sql_error) {
@@ -56,5 +134,8 @@ std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
     return "";
   }
 
+  saveCatalog();
+
   return pplan->jsonString();
+}
 }
