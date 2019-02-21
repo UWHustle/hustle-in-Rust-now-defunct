@@ -2,32 +2,26 @@ use logical_entities::relation::Relation;
 use storage_manager::StorageManager;
 use physical_operators::Operator;
 
-pub struct Create_Table{
+pub struct CreateTable {
     relation: Relation
 }
 
-impl Create_Table {
+impl CreateTable {
     pub fn new(relation: Relation) -> Self {
-        Create_Table {
+        CreateTable {
             relation,
         }
     }
 }
 
-impl Operator for Create_Table {
-
+impl Operator for CreateTable {
     fn get_target_relation(&self) -> Relation {
         self.relation.clone()
     }
 
     fn execute(&self) -> Relation {
-        let mut data = StorageManager::create_relation(
-            &self.relation,
-            0,
-        );
-
+        let data = StorageManager::create_relation(&self.relation, 0);
         StorageManager::flush(&data);
-
         self.get_target_relation()
     }
 }
