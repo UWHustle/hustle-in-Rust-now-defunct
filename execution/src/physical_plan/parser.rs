@@ -11,6 +11,7 @@ use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
+use physical_operators::create_table::Create_Table;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
 use type_system::operators::*;
@@ -165,6 +166,12 @@ fn parse_selection(json: &Value) -> Node {
         }
     };
     Node::new(Rc::new(project_op), vec![Rc::new(input)])
+}
+
+fn parse_create_table(json: &Value) -> Node {
+    let cols = parse_column_list(&json["attributes"]);
+    let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
+    Node::new(Rc::new(Create_Table::new(relation)), vec![])
 }
 
 fn parse_table_reference(json: &Value) -> Node {

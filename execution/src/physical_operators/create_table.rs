@@ -1,16 +1,21 @@
+use logical_entities::relation::Relation;
+use storage_manager::StorageManager;
+use physical_operators::Operator;
+
 pub struct Create_Table{
     relation: Relation
 }
 
 impl Create_Table {
-    pun fn new(relation: Relation) -> Self {
+    pub fn new(relation: Relation) -> Self {
         Create_Table {
             relation,
         }
     }
 }
 
-impl Operator for ImportCsv {
+impl Operator for Create_Table {
+
     fn get_target_relation(&self) -> Relation {
         self.relation.clone()
     }
