@@ -49,7 +49,7 @@ void OptimizerWrapper::CreateDefaultCatalog() {
   quickstep::CatalogDatabase *catalog_database =
       catalog_->getDatabaseByNameMutable("default_db");
 
-  std::vector<std::string> rel_names = {"T", "A", "B"};
+  std::vector<std::string> rel_names = {"t", "a", "b"};
   std::vector<std::vector<std::pair<std::string, quickstep::TypeID>>>
       rel_columns = {
       {{"a", quickstep::kInt}, {"b", quickstep::kInt}},

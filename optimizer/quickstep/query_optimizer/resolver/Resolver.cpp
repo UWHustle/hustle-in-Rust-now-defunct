@@ -991,8 +991,13 @@ L::LogicalPtr Resolver::resolveDelete(
 
 L::LogicalPtr Resolver::resolveDropTable(
     const ParseStatementDropTable &drop_table_statement) {
-  return L::DropTable::Create(
-      resolveRelationName(drop_table_statement.relation_name()));
+
+  const CatalogRelation* rel = resolveRelationName(drop_table_statement.relation_name());
+
+  // Update Catalog
+  catalog_database_->dropRelationByName(drop_table_statement.relation_name()->value());
+
+  return L::DropTable::Create(rel);
 }
 
 L::LogicalPtr Resolver::resolveInsertSelection(
