@@ -1,3 +1,5 @@
+extern crate sqlite;
+
 pub mod logical_entities;
 pub mod physical_operators;
 pub mod physical_plan;
