@@ -5,19 +5,19 @@ use logical_entities::aggregations::min::Min;
 use logical_entities::aggregations::sum::Sum;
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
+use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::Aggregate;
+use physical_operators::insert::Insert;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
+use type_system;
 use type_system::operators::*;
 use type_system::type_id::*;
-use physical_operators::insert::Insert;
-use logical_entities::row::Row;
-use type_system;
 
 extern crate serde_json;
 use std::rc::Rc;
@@ -138,7 +138,7 @@ fn parse_insert_tuple(json: &serde_json::Value) -> Node {
     let values = parse_value_list(&json["column_values"]);
     let row = Row::new(relation.get_schema().clone(), values);
     let insert_op = Insert::new(relation, row);
-    Node::new(Rc::new(insert_op), vec!(Rc::new(input)))
+    Node::new(Rc::new(insert_op), vec![Rc::new(input)])
 }
 
 fn parse_selection(json: &serde_json::Value) -> Node {
@@ -202,7 +202,7 @@ fn parse_column(json: &serde_json::Value) -> Column {
 
 fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
     let json_values = json.as_array().expect("Unable to extract values");
-    let mut values: Vec<Box<type_system::Value>> = vec!();
+    let mut values: Vec<Box<type_system::Value>> = vec![];
     for value in json_values {
         values.push(parse_value(value));
     }
