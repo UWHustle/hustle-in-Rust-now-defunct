@@ -18,6 +18,8 @@ class ParserDriver;
 #include <memory>
 #include <sstream>
 #include "ParseNode.h"
+#include "CreateTableNode.h"
+#include "AttributeNode.h"
 #include "SelectNode.h"
 #include "FunctionNode.h"
 #include "ReferenceNode.h"
@@ -204,10 +206,14 @@ class ParserDriver;
 
 %type <std::string>
   id
+  ids
   nm
+  typename
+  typetoken
 %type <std::shared_ptr<ParseNode> >
   cmd
   expr
+  columnname
   select
   selectnowith
   oneselect
@@ -217,6 +223,8 @@ class ParserDriver;
   seltablist
   on_opt
 %type <std::vector<std::shared_ptr<ParseNode> > >
+  create_table_args
+  columnlist
   exprlist
   groupby_opt
   nexprlist
@@ -256,7 +264,9 @@ cmd:
 | SAVEPOINT nm { error(drv.location, "SAVEPOINT not yet supported"); }
 | RELEASE savepoint_opt nm { error(drv.location, "RELEASE not yet supported"); }
 | ROLLBACK trans_opt TO savepoint_opt nm { error(drv.location, "ROLLBACK not yet supported"); }
-| createkw temp TABLE ifnotexists nm dbnm create_table_args { error(drv.location, "CREATE TABLE not yet supported"); }
+| createkw temp TABLE ifnotexists nm dbnm create_table_args {
+    $$ = std::make_shared<CreateTableNode>(std::move($5), std::move($7));
+  }
 | DROP TABLE ifexists fullname { error(drv.location, "DROP TABLE not yet supported"); }
 | createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select { error(drv.location, "CREATE VIEW not yet supported"); }
 | DROP VIEW ifexists fullname { error(drv.location, "DROP VIEW not yet supported"); }
@@ -313,31 +323,38 @@ createkw:
 
 ifnotexists:
   /* empty */
-| IF NOT EXISTS
+| IF NOT EXISTS { error(drv.location, "IF NOT EXISTS not yet supported"); }
 ;
 
 temp:
-  TEMP
+  TEMP { error(drv.location, "TEMP not yet supported"); }
 | /* empty */
 ;
 
 create_table_args:
-  LP columnlist conslist_opt RP table_options
-| AS select
+  LP columnlist conslist_opt RP table_options {
+    $$ = std::move($2);
+  }
+| AS select { error(drv.location, "CREATE TABLE AS not yet supported"); }
 ;
 
 table_options:
   /* empty */
-| WITHOUT nm
+| WITHOUT nm { error(drv.location, "WITHOUT not yet supported"); }
 ;
 
 columnlist:
-  columnlist COMMA columnname carglist
-| columnname carglist
+  columnlist COMMA columnname carglist {
+    $$ = std::move($1);
+    $$.push_back(std::move($3));
+  }
+| columnname carglist {
+    $$.push_back(std::move($1));
+  }
 ;
 
 columnname:
-  nm typetoken
+  nm typetoken { $$ = std::make_shared<AttributeNode>(std::move($1), std::move($2)); }
 ;
 
 nm:
@@ -347,15 +364,17 @@ nm:
 ;
 
 typetoken:
-  /* empty */
-| typename
-| typename LP signed RP
-| typename LP signed COMMA signed RP
+  /* empty */ {}
+| typename {
+    $$ = std::move($1);
+  }
+| typename LP signed RP { error(drv.location, "complex type definitions not yet supported"); }
+| typename LP signed COMMA signed RP { error(drv.location, "complex type definitions not yet supported"); }
 ;
 
 typename:
-  ids
-| typename ids
+  ids { $$ = std::move($1); }
+| typename ids { error(drv.location, "multiple type names not yet supported"); }
 ;
 
 signed:
@@ -368,7 +387,7 @@ scanpt:
 ;
 
 carglist:
-  carglist ccons
+  carglist ccons { error(drv.location, "column constraints not yet supported"); }
 | /* empty */
 ;
 
@@ -427,7 +446,7 @@ init_deferred_pred_opt:
 
 conslist_opt:
   /* empty */
-| COMMA conslist
+| COMMA conslist { error(drv.location, "table constraints not yet supported"); }
 ;
 
 conslist:
@@ -1028,8 +1047,8 @@ id:
 ;
 
 ids:
-  ID
-| STRING
+  ID { $$ = std::move($1); }
+| STRING { $$ = std::move($1); }
 ;
 
 number:

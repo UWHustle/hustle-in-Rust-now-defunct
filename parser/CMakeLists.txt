@@ -9,6 +9,8 @@ add_library(
         parser
         ParserDriver.h ParserDriver.cpp
         ParseNode.h ParseNode.cpp
+        AttributeNode.h AttributeNode.cpp
+        CreateTableNode.h CreateTableNode.cpp
         SelectNode.h SelectNode.cpp
         ReferenceNode.h ReferenceNode.cpp
         FunctionNode.h FunctionNode.cpp
