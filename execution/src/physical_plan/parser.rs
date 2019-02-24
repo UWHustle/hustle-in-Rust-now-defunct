@@ -25,10 +25,16 @@ use std::rc::Rc;
 
 pub fn parse(string_plan: &str) -> Node {
     let json: Value = serde_json::from_str(string_plan).unwrap();
-
     let root_node = parse_node(&json["plan"]);
-    let print_op = Print::new(root_node.get_output_relation());
-    Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
+
+    // We only want to print for a selection
+    if &json["plan"]["json_name"] == "Selection" {
+        let print_op = Print::new(root_node.get_output_relation());
+        Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
+    } else {
+        root_node
+    }
+
 }
 
 fn parse_node(json: &Value) -> Node {

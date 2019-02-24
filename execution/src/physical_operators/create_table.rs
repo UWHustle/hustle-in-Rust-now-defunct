@@ -1,5 +1,4 @@
 use logical_entities::relation::Relation;
-use storage_manager::StorageManager;
 use physical_operators::Operator;
 
 pub struct CreateTable {
@@ -19,9 +18,10 @@ impl Operator for CreateTable {
         self.relation.clone()
     }
 
+    /// This currently is just a pass-through because memmap doesn't like zero-length maps
     fn execute(&self) -> Relation {
-        let data = StorageManager::create_relation(&self.relation, 0);
-        StorageManager::flush(&data);
+//        let data = StorageManager::create_relation(&self.relation, 0);
+//        StorageManager::flush(&data);
         self.get_target_relation()
     }
 }
