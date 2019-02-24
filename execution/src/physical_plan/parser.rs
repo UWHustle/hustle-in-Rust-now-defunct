@@ -13,6 +13,7 @@ use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
+use physical_operators::create_table::CreateTable;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
 use type_system;
@@ -24,10 +25,16 @@ use std::rc::Rc;
 
 pub fn parse(string_plan: &str) -> Node {
     let json: serde_json::Value = serde_json::from_str(string_plan).unwrap();
-
     let root_node = parse_node(&json["plan"]);
-    let print_op = Print::new(root_node.get_output_relation());
-    Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
+
+    // We only want to print for a selection
+    if &json["plan"]["json_name"] == "Selection" {
+        let print_op = Print::new(root_node.get_output_relation());
+        Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
+    } else {
+        root_node
+    }
+
 }
 
 fn parse_node(json: &serde_json::Value) -> Node {
@@ -39,6 +46,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
         "HashJoin" => parse_hash_join(json),
         "Limit" => parse_limit(json),
         "InsertTuple" => parse_insert_tuple(json),
+        "CreateTable" => parse_create_table(json),
         _ => panic!("Optimizer tree node type {} not supported", json_name),
     }
 }
@@ -177,7 +185,13 @@ fn parse_selection(json: &serde_json::Value) -> Node {
     Node::new(Rc::new(project_op), vec![Rc::new(input)])
 }
 
-fn parse_table_reference(json: &serde_json::Value) -> Node {
+fn parse_create_table(json: &Value) -> Node {
+    let cols = parse_column_list(&json["attributes"]);
+    let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
+    Node::new(Rc::new(CreateTable::new(relation)), vec![])
+}
+
+fn parse_table_reference(json: &Value) -> Node {
     let cols = parse_column_list(&json["array"]);
     let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
     Node::new(Rc::new(TableReference::new(relation)), vec![])

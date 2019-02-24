@@ -9,6 +9,7 @@ pub mod project;
 pub mod select_sum;
 pub mod table_reference;
 pub mod test_relation;
+pub mod create_table;
 
 use logical_entities::relation::Relation;
 
