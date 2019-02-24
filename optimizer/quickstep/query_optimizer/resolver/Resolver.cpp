@@ -620,7 +620,7 @@ L::LogicalPtr Resolver::resolveCreateTable(
   // Resolve relation name.
   const std::string relation_name =
       create_table_statement.relation_name()->value();
-  if (catalog_database_.hasRelationWithName(relation_name)) {
+  if (catalog_database_->hasRelationWithName(relation_name)) {
     THROW_SQL_ERROR_AT(create_table_statement.relation_name())
         << "Relation " << create_table_statement.relation_name()->value()
         << " already exists";
@@ -662,6 +662,24 @@ L::LogicalPtr Resolver::resolveCreateTable(
   std::shared_ptr<const S::PartitionSchemeHeader> partition_scheme_header_proto(
       resolvePartitionClause(create_table_statement));
 
+  // Create catalog Relation
+  if (hustleMode_) {
+    std::unique_ptr<CatalogRelation>
+        catalog_relation(new CatalogRelation(catalog_database_,
+                                             create_table_statement.relation_name()->value(),
+                                             -1 /* id */,
+                                             false /* temporary */));
+
+    for (E::AttributeReferencePtr attr : attributes) {
+      int attr_id = -1;
+      catalog_relation->addAttribute(new CatalogAttribute(
+          catalog_relation.get(),
+          attr->attribute_name(),
+          attr->getValueType(),
+          ++attr_id));
+    }
+    catalog_database_->addRelation(catalog_relation.release());
+  }
   return L::CreateTable::Create(relation_name, attributes, block_properties, partition_scheme_header_proto);
 }
 
@@ -975,8 +993,14 @@ L::LogicalPtr Resolver::resolveDelete(
 
 L::LogicalPtr Resolver::resolveDropTable(
     const ParseStatementDropTable &drop_table_statement) {
-  return L::DropTable::Create(
-      resolveRelationName(drop_table_statement.relation_name()));
+
+  const CatalogRelation* rel = resolveRelationName(drop_table_statement.relation_name());
+
+  // Update Catalog
+  if (hustleMode_) {
+    catalog_database_->dropRelationByName(drop_table_statement.relation_name()->value());
+  }
+  return L::DropTable::Create(rel);
 }
 
 L::LogicalPtr Resolver::resolveInsertSelection(
@@ -2121,7 +2145,7 @@ E::WindowInfo Resolver::resolveWindow(const ParseWindow &parse_window,
 const CatalogRelation* Resolver::resolveRelationName(
     const ParseString *relation_name) {
   const CatalogRelation *relation =
-      catalog_database_.getRelationByName(
+      catalog_database_->getRelationByName(
           ToLower(relation_name->value()));
   if (relation == nullptr) {
     THROW_SQL_ERROR_AT(relation_name) << "Unrecognized relation "

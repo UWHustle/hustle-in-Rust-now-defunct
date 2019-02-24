@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 
+#include "glog/logging.h"
+
 #include "parser/ParserDriver.h"
 #include "optimizer/optimizer_wrapper.hpp"
 
@@ -11,6 +13,7 @@
 using namespace std;
 
 int main(int argc, char **argv) {
+    google::InitGoogleLogging("hustle");
     char buffer[BUFFER_SIZE];
 
     cout << "Hustle version " << HUSTLE_VERSION << endl;

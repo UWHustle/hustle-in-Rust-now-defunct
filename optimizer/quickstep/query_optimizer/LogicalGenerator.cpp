@@ -49,9 +49,10 @@ LogicalGenerator::LogicalGenerator(OptimizerContext *optimizer_context)
 LogicalGenerator::~LogicalGenerator() {}
 
 L::LogicalPtr LogicalGenerator::generatePlan(
-        const CatalogDatabase &catalog_database,
-        const ParseStatement &parse_statement) {
-    resolver::Resolver resolver(catalog_database, optimizer_context_);
+        CatalogDatabase *catalog_database,
+        const ParseStatement &parse_statement,
+        bool hustelMode) {
+    resolver::Resolver resolver(catalog_database, optimizer_context_, hustelMode);
     DVLOG(4) << "Parse tree:\n" << parse_statement.toString();
 
   logical_plan_ = resolver.resolve(parse_statement);
