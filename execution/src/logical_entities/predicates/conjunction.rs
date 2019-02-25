@@ -22,7 +22,11 @@ pub struct Conjunction {
 }
 
 impl Conjunction {
-    fn new(conjunction_type: ConjunctionType, predicate_1: Box<Predicate>, predicate_2: Box<Predicate>) -> Self {
+    fn new(
+        conjunction_type: ConjunctionType,
+        predicate_1: Box<Predicate>,
+        predicate_2: Box<Predicate>,
+    ) -> Self {
         Self {
             conjunction_type,
             predicate_1,
@@ -33,6 +37,9 @@ impl Conjunction {
 
 impl Predicate for Conjunction {
     fn evaluate(&self, row: &Row) -> bool {
-        self.conjunction_type.apply(self.predicate_1.evaluate(row), self.predicate_2.evaluate(row))
+        self.conjunction_type.apply(
+            self.predicate_1.evaluate(row),
+            self.predicate_2.evaluate(row),
+        )
     }
 }

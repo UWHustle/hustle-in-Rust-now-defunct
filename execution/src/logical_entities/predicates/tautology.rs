@@ -10,7 +10,7 @@ impl Tautology {
 }
 
 impl Predicate for Tautology {
-    fn evaluate(&self, row: &Row) -> bool {
+    fn evaluate(&self, _row: &Row) -> bool {
         true
     }
 }

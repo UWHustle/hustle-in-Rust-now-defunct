@@ -4,20 +4,19 @@ use logical_entities::aggregations::max::Max;
 use logical_entities::aggregations::min::Min;
 use logical_entities::aggregations::sum::Sum;
 use logical_entities::column::Column;
+use logical_entities::predicates::comparison::*;
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::Aggregate;
+use physical_operators::create_table::CreateTable;
 use physical_operators::insert::Insert;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
-use physical_operators::create_table::CreateTable;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
-use logical_entities::predicates::*;
-use logical_entities::predicates::compare::*;
 use type_system;
 use type_system::operators::*;
 use type_system::type_id::*;
@@ -174,12 +173,8 @@ fn parse_selection(json: &serde_json::Value) -> Node {
                 _ => panic!("Unknown comparison type {}", comparator_str),
             };
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
-            let predicate = Box::new(Compare::new(comp_value, comparator, filter_col));
-            Project::new(
-                input.get_output_relation(),
-                output_cols,
-                predicate,
-            )
+            let predicate = Box::new(Comparison::new(comp_value, comparator, filter_col));
+            Project::new(input.get_output_relation(), output_cols, predicate)
         }
     };
     Node::new(Rc::new(project_op), vec![Rc::new(input)])
@@ -231,9 +226,7 @@ fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
 fn parse_limit(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
     let limit = get_int(&json["limit"]);
-
     let limit_operator = Limit::new(input.get_output_relation(), limit);
-
     Node::new(Rc::new(limit_operator), vec![Rc::new(input)])
 }
 

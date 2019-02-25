@@ -1,14 +1,12 @@
 use logical_entities::column::Column;
+use logical_entities::predicates::tautology::*;
 use logical_entities::predicates::*;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
 use type_system::borrowed_buffer::*;
-use type_system::integer::*;
-use type_system::operators::*;
 use type_system::*;
-use logical_entities::predicates::tautology::*;
 
 use logical_entities::row::Row;
 use std::collections::HashMap;
@@ -54,7 +52,6 @@ impl Operator for Project {
 
         // Loop over all the data
         while i < input_data.len() {
-
             // Check whether the current row satisfies the predicate
             let mut values: Vec<Box<Value>> = vec![];
             for column in &input_cols {

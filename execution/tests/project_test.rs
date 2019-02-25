@@ -1,6 +1,7 @@
 extern crate execution;
 
 use execution::logical_entities::column::Column;
+use execution::logical_entities::predicates::comparison::*;
 use execution::logical_entities::relation::Relation;
 use execution::physical_operators::print::Print;
 use execution::physical_operators::project::Project;
@@ -12,7 +13,6 @@ use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::integer::*;
 use execution::type_system::operators::*;
 use execution::type_system::type_id::*;
-use execution::logical_entities::predicates::compare::*;
 
 use std::rc::Rc;
 
@@ -49,7 +49,11 @@ fn hustle_where(relation1: Relation) -> Relation {
     let project_operator_after = Rc::new(Project::new(
         relation1.clone(),
         vec![a.clone()],
-        Box::new(Compare::new(Box::new(Int4::from(50)), Comparator::Less, a.clone())),
+        Box::new(Comparison::new(
+            Box::new(Int4::from(50)),
+            Comparator::Less,
+            a.clone(),
+        )),
     ));
     let print_operator_after = Rc::new(Print::new(
         project_operator_after.get_target_relation().clone(),

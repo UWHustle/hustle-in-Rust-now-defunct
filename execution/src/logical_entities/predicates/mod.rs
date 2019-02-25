@@ -1,9 +1,7 @@
-pub mod compare;
+pub mod comparison;
 pub mod conjunction;
 pub mod tautology;
 
-use type_system::type_id::*;
-use type_system::*;
 use logical_entities::row::Row;
 
 pub trait Predicate {

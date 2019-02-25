@@ -1,16 +1,16 @@
-use type_system::*;
-use type_system::operators::Comparator;
 use logical_entities::column::Column;
 use logical_entities::predicates::Predicate;
 use logical_entities::row::Row;
+use type_system::operators::Comparator;
+use type_system::*;
 
-pub struct Compare {
+pub struct Comparison {
     value: Box<Value>,
     comparator: Comparator,
     column: Column,
 }
 
-impl Compare {
+impl Comparison {
     pub fn new(value: Box<Value>, comparator: Comparator, column: Column) -> Self {
         Self {
             value,
@@ -20,7 +20,7 @@ impl Compare {
     }
 }
 
-impl Predicate for Compare {
+impl Predicate for Comparison {
     fn evaluate(&self, row: &Row) -> bool {
         let all_values = row.get_values();
         let all_columns = row.get_schema().get_columns();
