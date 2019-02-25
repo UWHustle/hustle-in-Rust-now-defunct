@@ -2,13 +2,13 @@ use logical_entities::column::Column;
 use logical_entities::predicates::tautology::*;
 use logical_entities::predicates::*;
 use logical_entities::relation::Relation;
+use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use storage_manager::StorageManager;
 use type_system::borrowed_buffer::*;
 use type_system::*;
 
-use logical_entities::row::Row;
 use std::collections::HashMap;
 
 pub struct Project {
@@ -63,6 +63,7 @@ impl Operator for Project {
                 )
                 .marshall();
                 values.push(value);
+                k += value_len;
             }
             let row = Row::new(self.relation.get_schema().clone(), values);
             let filter = self.predicate.evaluate(&row);

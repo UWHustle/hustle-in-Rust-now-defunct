@@ -173,7 +173,7 @@ fn parse_selection(json: &serde_json::Value) -> Node {
                 _ => panic!("Unknown comparison type {}", comparator_str),
             };
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
-            let predicate = Box::new(Comparison::new(comp_value, comparator, filter_col));
+            let predicate = Box::new(Comparison::new(filter_col, comparator, comp_value));
             Project::new(input.get_output_relation(), output_cols, predicate)
         }
     };
