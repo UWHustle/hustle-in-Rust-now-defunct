@@ -55,6 +55,9 @@ impl StorageManager {
 
     pub fn append_relation(relation: &Relation, appended_length: usize) -> memmap::MmapMut {
         let total_size = relation.get_total_size();
+        if total_size == 0 {
+            Self::create_relation(relation, appended_length);
+        }
 
         let f = OpenOptions::new()
             .read(true)

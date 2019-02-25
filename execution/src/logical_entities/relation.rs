@@ -39,13 +39,9 @@ impl Relation {
     }
 
     pub fn get_total_size(&self) -> usize {
-        use std::fs;
-
-        match fs::metadata(self.get_filename()) {
-            Ok(n) => n.len() as usize,
-            Err(err) => {
-                panic!("Error getting file size: {}", err);
-            }
+        match std::fs::metadata(self.get_filename()) {
+            Ok(metadata) => metadata.len() as usize,
+            Err(_err) => 0,
         }
     }
 
