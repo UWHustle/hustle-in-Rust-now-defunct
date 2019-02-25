@@ -16,11 +16,14 @@ use physical_operators::project::Project;
 use physical_operators::create_table::CreateTable;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
+use logical_entities::predicates::*;
+use logical_entities::predicates::compare::*;
 use type_system;
 use type_system::operators::*;
 use type_system::type_id::*;
 
 extern crate serde_json;
+
 use std::rc::Rc;
 
 pub fn parse(string_plan: &str) -> Node {
@@ -34,7 +37,6 @@ pub fn parse(string_plan: &str) -> Node {
     } else {
         root_node
     }
-
 }
 
 fn parse_node(json: &serde_json::Value) -> Node {
@@ -172,13 +174,11 @@ fn parse_selection(json: &serde_json::Value) -> Node {
                 _ => panic!("Unknown comparison type {}", comparator_str),
             };
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
+            let predicate = Box::new(Compare::new(comp_value, comparator, filter_col));
             Project::new(
                 input.get_output_relation(),
                 output_cols,
-                filter_col.get_name(),
-                true,
-                comparator,
-                &*comp_value,
+                predicate,
             )
         }
     };

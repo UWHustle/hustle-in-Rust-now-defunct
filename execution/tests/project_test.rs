@@ -12,6 +12,7 @@ use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::integer::*;
 use execution::type_system::operators::*;
 use execution::type_system::type_id::*;
+use execution::logical_entities::predicates::compare::*;
 
 use std::rc::Rc;
 
@@ -44,16 +45,11 @@ fn hustle_where(relation1: Relation) -> Relation {
         )],
     );
     let print_operator = Rc::new(Print::new(project_operator.get_target_relation().clone()));
+    let a = Column::new("a".to_string(), TypeID::new(Variant::Int4, true));
     let project_operator_after = Rc::new(Project::new(
         relation1.clone(),
-        vec![Column::new(
-            "a".to_string(),
-            TypeID::new(Variant::Int4, true),
-        )],
-        &"a".to_string(),
-        true,
-        Comparator::Less,
-        &Int4::from(50),
+        vec![a.clone()],
+        Box::new(Compare::new(Box::new(Int4::from(50)), Comparator::Less, a.clone())),
     ));
     let print_operator_after = Rc::new(Print::new(
         project_operator_after.get_target_relation().clone(),

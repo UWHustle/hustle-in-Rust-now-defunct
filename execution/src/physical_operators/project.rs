@@ -1,5 +1,5 @@
 use logical_entities::column::Column;
-use logical_entities::predicate::Predicate;
+use logical_entities::predicates::*;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
@@ -8,23 +8,19 @@ use type_system::borrowed_buffer::*;
 use type_system::integer::*;
 use type_system::operators::*;
 use type_system::*;
+use logical_entities::predicates::tautology::*;
 
+use logical_entities::row::Row;
 use std::collections::HashMap;
 
-pub struct Project<T>
-    where
-        T: Fn(&[&Value]) -> bool,
-{
+pub struct Project {
     relation: Relation,
     output_relation: Relation,
-    predicate: Predicate<T>,
+    predicate: Box<Predicate>,
 }
 
-impl<T> Project<T>
-    where
-        T: Fn(&[&Value]) -> bool,
-{
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate: Predicate<T>) -> Self {
+impl Project {
+    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate: Box<Predicate>) -> Self {
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
 
@@ -36,17 +32,11 @@ impl<T> Project<T>
     }
 
     pub fn pure_project(relation: Relation, output_cols: Vec<Column>) -> Self {
-        Self::new(
-            relation,
-            output_cols,
-            Predicate::new(|values| -> bool { true }, vec!()),
-        )
+        Self::new(relation, output_cols, Box::new(Tautology::new()))
     }
 }
 
-impl<T> Operator for Project<T>
-    where
-        T: Fn(&[&Value]) -> bool {
+impl Operator for Project {
     fn get_target_relation(&self) -> Relation {
         self.output_relation.clone()
     }
@@ -64,27 +54,21 @@ impl<T> Operator for Project<T>
 
         // Loop over all the data
         while i < input_data.len() {
+
             // Check whether the current row satisfies the predicate
-            let mut filter = true;
-            if self.compare {
-                for column in &input_cols {
-                    let value_len = column.get_datatype().next_size(&input_data[k..]);
-                    if *column.get_name() == self.predicate_name {
-                        let value = BorrowedBuffer::new(
-                            &input_data[k..k + value_len],
-                            column.get_datatype(),
-                            false,
-                        );
-                        if !value
-                            .marshall()
-                            .compare(&*self.comp_value, self.comparator.clone())
-                        {
-                            filter = false;
-                        }
-                    }
-                    k += value_len;
-                }
+            let mut values: Vec<Box<Value>> = vec![];
+            for column in &input_cols {
+                let value_len = column.get_datatype().next_size(&input_data[k..]);
+                let value = BorrowedBuffer::new(
+                    &input_data[k..k + value_len],
+                    column.get_datatype(),
+                    false,
+                )
+                .marshall();
+                values.push(value);
             }
+            let row = Row::new(self.relation.get_schema().clone(), values);
+            let filter = self.predicate.evaluate(&row);
 
             // Filter columns if the predicate is true for this row
             if filter {
