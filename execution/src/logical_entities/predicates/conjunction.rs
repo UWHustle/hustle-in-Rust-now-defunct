@@ -1,29 +1,29 @@
 use logical_entities::predicates::Predicate;
 use logical_entities::row::Row;
 
-pub enum ConjunctionType {
+pub enum ConnectiveType {
     And,
     Or,
 }
 
-impl ConjunctionType {
+impl ConnectiveType {
     fn apply(&self, val_1: bool, val_2: bool) -> bool {
         match self {
-            ConjunctionType::And => val_1 && val_2,
-            ConjunctionType::Or => val_1 || val_2,
+            ConnectiveType::And => val_1 && val_2,
+            ConnectiveType::Or => val_1 || val_2,
         }
     }
 }
 
-pub struct Conjunction {
-    conjunction_type: ConjunctionType,
+pub struct Connective {
+    conjunction_type: ConnectiveType,
     predicate_1: Box<Predicate>,
     predicate_2: Box<Predicate>,
 }
 
-impl Conjunction {
+impl Connective {
     fn new(
-        conjunction_type: ConjunctionType,
+        conjunction_type: ConnectiveType,
         predicate_1: Box<Predicate>,
         predicate_2: Box<Predicate>,
     ) -> Self {
@@ -35,7 +35,7 @@ impl Conjunction {
     }
 }
 
-impl Predicate for Conjunction {
+impl Predicate for Connective {
     fn evaluate(&self, row: &Row) -> bool {
         self.conjunction_type.apply(
             self.predicate_1.evaluate(row),
