@@ -5,6 +5,7 @@ authors = ["gaffneyk <kpgaffney@wisc.edu>"]
 
 [dependencies]
 memmap = "0.7.0"
+omap = { git = "https://github.com/UWHustle/omap" }
 
 [lib]
 name = "storage"
