@@ -5,10 +5,10 @@ use self::memmap::Mmap;
 use self::omap::OrderedHashMap;
 use std::path::PathBuf;
 use std::fs::{self, File};
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock, Weak};
 
 struct BufferRecord {
-    value: Mmap
+    value: Arc<Mmap>
 }
 
 pub struct Buffer {
@@ -20,7 +20,7 @@ pub struct Buffer {
 impl BufferRecord {
     fn new(value: Mmap) -> Self {
         BufferRecord {
-            value
+            value: Arc::new(value)
         }
     }
 }
@@ -44,14 +44,24 @@ impl Buffer {
         None
     }
 
-    pub fn get(&self, key: &str) -> Option<Mmap> {
-        let path = self.file_path(key);
-        let file = File::open(path).ok()?;
-        let mmap = unsafe { Mmap::map(&file).ok()? };
-        Some(mmap)
+    pub fn get(&self, key: &str) -> Option<Weak<Mmap>> {
+        if !self.records.read().unwrap().contains_key(key) {
+            let path = self.file_path(key);
+            let file = File::open(path).ok()?;
+            let mmap = unsafe { Mmap::map(&file).ok()? };
+            self.records.write().unwrap().insert_front(key.to_string(), BufferRecord::new(mmap));
+        } else {
+            let mut records_write_guard = self.records.write().unwrap();
+            let record = records_write_guard.remove(key).unwrap();
+            records_write_guard.insert_front(key.to_string(), record);
+        }
+
+        self.records.read().unwrap().get(key).map(|r| Arc::downgrade(&r.value))
     }
 
     pub fn delete(&self, key: &str) {
+        let mut records_guard = self.records.write().unwrap();
+        records_guard.remove(key);
         let path = self.file_path(key);
         fs::remove_file(path);
     }
