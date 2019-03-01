@@ -38,22 +38,21 @@ impl Buffer {
         }
     }
 
-    pub fn put(&self, key: &str, value: &[u8]) -> Option<()> {
+    pub fn put(&self, key: &str, value: &[u8]) {
         let path = self.file_path(key);
-        fs::write(&path, value);
-        None
+        fs::write(&path, value).unwrap();
     }
 
     pub fn get(&self, key: &str) -> Option<Weak<Mmap>> {
-        if !self.records.read().unwrap().contains_key(key) {
+        if let Some(record) = if !self.records.read().unwrap().contains_key(key) {
             let path = self.file_path(key);
             let file = File::open(path).ok()?;
             let mmap = unsafe { Mmap::map(&file).ok()? };
-            self.records.write().unwrap().insert_front(key.to_string(), BufferRecord::new(mmap));
+            Some(BufferRecord::new(mmap))
         } else {
-            let mut records_write_guard = self.records.write().unwrap();
-            let record = records_write_guard.remove(key).unwrap();
-            records_write_guard.insert_front(key.to_string(), record);
+            self.records.write().unwrap().remove(key)
+        } {
+            self.records.write().unwrap().insert_front(key.to_string(), record);
         }
 
         self.records.read().unwrap().get(key).map(|r| Arc::downgrade(&r.value))
@@ -63,7 +62,7 @@ impl Buffer {
         let mut records_guard = self.records.write().unwrap();
         records_guard.remove(key);
         let path = self.file_path(key);
-        fs::remove_file(path);
+        fs::remove_file(path).unwrap();
     }
 
     fn file_path(&self, key: &str) -> PathBuf {
