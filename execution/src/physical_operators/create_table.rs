@@ -2,14 +2,12 @@ use logical_entities::relation::Relation;
 use physical_operators::Operator;
 
 pub struct CreateTable {
-    relation: Relation
+    relation: Relation,
 }
 
 impl CreateTable {
     pub fn new(relation: Relation) -> Self {
-        CreateTable {
-            relation,
-        }
+        CreateTable { relation }
     }
 }
 
