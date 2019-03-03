@@ -14,11 +14,13 @@ use storage_manager::StorageManager;
 use type_system::operators::*;
 use type_system::type_id::TypeID;
 use type_system::Value;
+use std::hash::Hash;
+use std::hash::Hasher;
 
 // TODO: Unsafe - wrap this in a mutex
 static mut CURRENT_ID: u32 = 0;
 
-struct ImmediateRelation {
+pub struct ImmediateRelation {
     relation: Relation,
 }
 
@@ -48,6 +50,10 @@ impl ImmediateRelation {
     pub fn load_csv(&self, filename: &str) {
         let import_csv_op = ImportCsv::new(String::from(filename), self.relation.clone());
         import_csv_op.execute();
+    }
+
+    pub fn get_name(&self) -> &str {
+        self.relation.get_name()
     }
 
     /// Replaces current data in the relation with data from the Hustle file
@@ -144,5 +150,19 @@ impl Drop for ImmediateRelation {
         match remove_file(self.relation.get_filename()) {
             _ => return,
         }
+    }
+}
+
+impl PartialEq for ImmediateRelation {
+    fn eq(&self, other: &ImmediateRelation) -> bool {
+        self.relation.get_name() == other.relation.get_name()
+    }
+}
+
+impl Eq for ImmediateRelation {}
+
+impl Hash for ImmediateRelation {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.relation.get_name().hash(state);
     }
 }
