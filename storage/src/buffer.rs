@@ -53,7 +53,7 @@ impl Buffer {
         fs::write(&path, value).unwrap();
     }
 
-    pub fn get(&self, key: &str) -> Option<Weak<Mmap>> {
+    pub fn get(&self, key: &str) -> Option<Arc<Mmap>> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
@@ -61,7 +61,7 @@ impl Buffer {
         if let Some(record) = t1_read_guard.get(key).or(t2_read_guard.get(key)) {
             // Cache hit. Set reference bit to 1 and return.
             *record.reference.write().unwrap() = true;
-            return Some(Arc::downgrade(&record.value.clone()));
+            return Some(record.value.clone());
         }
 
         // Cache miss. Drop read locks on cache lists.
@@ -73,7 +73,7 @@ impl Buffer {
         let file = File::open(path).ok()?;
         let mmap = Arc::new(unsafe { Mmap::map(&file).ok()? });
         let record = BufferRecord::new(mmap);
-        let value = Arc::downgrade(&record.value);
+        let value = record.value.clone();
 
         // Request write locks on all lists.
         let mut t1_write_guard = self.t1.write().unwrap();
@@ -132,6 +132,12 @@ impl Buffer {
     }
 
     pub fn delete(&self, key: &str) {
+
+        // Request write locks on all lists.
+        let mut t1_write_guard = self.t1.write().unwrap();
+        let mut t2_write_guard = self.t2.write().unwrap();
+        let mut b1_guard = self.b1.lock().unwrap();
+        let mut b2_guard = self.b2.lock().unwrap();
 //        let mut records_guard = self.records.write().unwrap();
 //        records_guard.remove(key);
 //        let path = self.file_path(key);
@@ -153,8 +159,10 @@ impl Buffer {
             // T1 is at or above target size. Pop the front of T1.
             let (t1_front_key, t1_front_record) = t1.pop_front().unwrap();
 
-            if !*t1_front_record.reference.read().unwrap() {
-                // Page reference bit is 0. Push the key to the MRU position of B1.
+            if !*t1_front_record.reference.read().unwrap()
+                && Arc::strong_count(&t1_front_record.value) == 1 {
+                // Page reference bit is 0 and no other threads are using it.
+                // Replace this page and push the key to the MRU position of B1.
                 b1.push_back(t1_front_key, ());
             } else {
                 // Set the page reference bit to 0. Push the record to the back of T2.
@@ -166,8 +174,10 @@ impl Buffer {
             // Pop the front of T2.
             let (t2_front_key, t2_front_record) = t2.pop_front().unwrap();
 
-            if !*t2_front_record.reference.read().unwrap() {
-                // Page reference bit is 0. Push the key to the MRU position of B2.
+            if !*t2_front_record.reference.read().unwrap()
+                && Arc::strong_count(&t2_front_record.value) == 1 {
+                // Page reference bit is 0 and no other threads are using it.
+                // Replace this page and push the key to the MRU position of B2.
                 b2.push_back(t2_front_key, ());
             } else {
                 // Set the page reference bit to 0. Push the record to the back of T2.
