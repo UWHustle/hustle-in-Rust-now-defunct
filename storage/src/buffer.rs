@@ -9,13 +9,18 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 use std::mem;
 use std::cmp::{max, min};
 use std::collections::HashSet;
+use std::ops::Deref;
 
 const TEMP_RECORD_PREFIX: char = '$';
 
+pub struct Value {
+    data: Arc<Mmap>,
+    rc: Arc<(Mutex<u64>, Condvar)>
+}
+
 struct BufferRecord {
-    value: Arc<Mmap>,
+    value: Value,
     reference: RwLock<bool>,
-    pin_count: (Mutex<u64>, Condvar)
 }
 
 pub struct Buffer {
@@ -29,12 +34,49 @@ pub struct Buffer {
     p: Mutex<usize>
 }
 
+impl Clone for Value {
+    fn clone(&self) -> Self {
+        let mut rc_guard = self.rc.0.lock().unwrap();
+        *rc_guard += 1;
+        Value {
+            data: self.data.clone(),
+            rc: self.rc.clone()
+        }
+    }
+}
+
+impl Deref for Value {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        &self.data
+    }
+}
+
+impl Drop for Value {
+    fn drop(&mut self) {
+        // Decrement the reference count when Value is dropped.
+        let &(ref rc_lock, ref cvar) = &*self.rc;
+        let mut rc_guard = rc_lock.lock().unwrap();
+        *rc_guard = rc_guard.saturating_sub(1);
+        cvar.notify_all();
+    }
+}
+
+impl Value {
+    fn new(data: Arc<Mmap>) -> Self {
+        Value {
+            data,
+            rc: Arc::new((Mutex::new(1), Condvar::new()))
+        }
+    }
+}
+
 impl BufferRecord {
-    fn new(value: Arc<Mmap>) -> Self {
+    fn new(data: Arc<Mmap>) -> Self {
         BufferRecord {
-            value,
-            reference: RwLock::new(false),
-            pin_count: (Mutex::new(0), Condvar::new())
+            value: Value::new(data),
+            reference: RwLock::new(false)
         }
     }
 }
@@ -80,7 +122,7 @@ impl Buffer {
         // Generate a unique key, prefixed with the reserved character.
         let mut anon_ctr = self.anon_ctr.lock().unwrap();
         let key = format!("{}{}", TEMP_RECORD_PREFIX, *anon_ctr);
-        *anon_ctr += 1;
+        *anon_ctr = anon_ctr.wrapping_add(1);
         mem::drop(anon_ctr);
 
         // Put the value and return the key.
@@ -88,7 +130,7 @@ impl Buffer {
         key
     }
 
-    pub fn get(&self, key: &str) -> Option<Arc<Mmap>> {
+    pub fn get(&self, key: &str) -> Option<Value> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
@@ -97,8 +139,6 @@ impl Buffer {
             // Cache hit. Set reference bit to 1.
             *record.reference.write().unwrap() = true;
 
-            // Increment the pin count.
-            *record.pin_count.0.lock().unwrap() += 1;
             return Some(record.value.clone());
         }
 
@@ -135,15 +175,6 @@ impl Buffer {
         self.unlock(key);
     }
 
-    pub fn release(&self, key: &str) {
-        if let Some(record) = self.t1.read().unwrap().get(key)
-            .or(self.t2.read().unwrap().get(key)) {
-            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
-            *pin_count_lock.lock().unwrap() -= 1;
-            cvar.notify_all();
-        }
-    }
-
     fn file_path(&self, key: &str) -> PathBuf {
         let mut path = PathBuf::from(key);
         path.set_extension("hustle");
@@ -160,7 +191,7 @@ impl Buffer {
             let (t1_front_key, t1_front_record) = t1.pop_front().unwrap();
 
             if !*t1_front_record.reference.read().unwrap()
-                && Arc::strong_count(&t1_front_record.value) == 1 {
+                && *t1_front_record.value.rc.0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
                 // Replace this page and push the key to the MRU position of B1.
                 b1.push_back(t1_front_key, ());
@@ -175,7 +206,7 @@ impl Buffer {
             let (t2_front_key, t2_front_record) = t2.pop_front().unwrap();
 
             if !*t2_front_record.reference.read().unwrap()
-                && Arc::strong_count(&t2_front_record.value) == 1 {
+                && *t2_front_record.value.rc.0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
                 // Replace this page and push the key to the MRU position of B2.
                 b2.push_back(t2_front_key, ());
@@ -187,18 +218,15 @@ impl Buffer {
         }
     }
 
-    /// Loads the file from storage into the buffer, incrementing the pin count. This function is
-    /// marked unsafe because it does not guarantee that another thread will not be concurrently
-    /// modifying the file. Only use this when the file is locked.
-    unsafe fn load_unlocked(&self, key: &str) -> Option<Arc<Mmap>> {
+    /// Loads the file from storage into the buffer. This function is marked unsafe because it does
+    /// not guarantee that another thread will not be concurrently modifying the file. Only use
+    /// this when the file is locked.
+    unsafe fn load_unlocked(&self, key: &str) -> Option<Value> {
         // Load the file from storage
         let path = self.file_path(key);
         let file = File::open(path).ok()?;
         let mmap = Arc::new(Mmap::map(&file).ok()?);
         let record = BufferRecord::new(mmap);
-
-        // Increment the pin count.
-        *record.pin_count.0.lock().unwrap() += 1;
 
         let value = record.value.clone();
 
@@ -262,11 +290,11 @@ impl Buffer {
         if let Some(record) = self.t1.write().unwrap().remove(key)
             .or(self.t2.write().unwrap().remove(key)) {
 
-            // Wait for the pin count to drop to 0.
-            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
-            let mut pin_count = pin_count_lock.lock().unwrap();
-            while *pin_count > 0 {
-                pin_count = cvar.wait(pin_count).unwrap();
+            // Wait for the reference count to drop to 0.
+            let &(ref rc_lock, ref cvar) = &*record.value.rc;
+            let mut rc_guard = rc_lock.lock().unwrap();
+            while *rc_guard > 1 {
+                rc_guard = cvar.wait(rc_guard).unwrap();
             }
 
         } else {
