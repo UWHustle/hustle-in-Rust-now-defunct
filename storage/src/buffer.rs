@@ -69,7 +69,8 @@ impl Buffer {
         // Write the new file to storage and load it into the buffer.
         let path = self.file_path(key);
         fs::write(path, value).expect(format!("Error writing {} to storage.", key).as_str());
-        self.get(key);
+
+        unsafe { self.load_unlocked(key); }
 
         // Unlock the file and notify other threads.
         self.unlock(key);
@@ -112,10 +113,88 @@ impl Buffer {
         locked.insert(key.to_string());
         mem::drop(locked);
 
+        // Load the file from storage.
+        let value = unsafe { self.load_unlocked(key) };
+
+        // Unlock the file and notify other threads.
+        self.unlock(key);
+
+        // Return the buffered byte array.
+        value
+    }
+
+    pub fn delete(&self, key: &str) {
+        // If the file is locked, wait until it becomes unlocked.
+        let mut locked = self.await_unlock(key);
+        locked.insert(key.to_string());
+        mem::drop(locked);
+
+        unsafe { self.delete_unlocked(key); }
+
+        // Unlock the file and notify other threads.
+        self.unlock(key);
+    }
+
+    pub fn release(&self, key: &str) {
+        if let Some(record) = self.t1.read().unwrap().get(key)
+            .or(self.t2.read().unwrap().get(key)) {
+            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
+            *pin_count_lock.lock().unwrap() -= 1;
+            cvar.notify_all();
+        }
+    }
+
+    fn file_path(&self, key: &str) -> PathBuf {
+        let mut path = PathBuf::from(key);
+        path.set_extension("hustle");
+        path
+    }
+
+    fn replace(&self,
+               t1: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
+               t2: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
+               b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
+               b2: &mut MutexGuard<OrderedHashMap<String, ()>>) {
+        if t1.len() >= max(1, *self.p.lock().unwrap()) {
+            // T1 is at or above target size. Pop the front of T1.
+            let (t1_front_key, t1_front_record) = t1.pop_front().unwrap();
+
+            if !*t1_front_record.reference.read().unwrap()
+                && Arc::strong_count(&t1_front_record.value) == 1 {
+                // Page reference bit is 0 and no other threads are using it.
+                // Replace this page and push the key to the MRU position of B1.
+                b1.push_back(t1_front_key, ());
+            } else {
+                // Set the page reference bit to 0. Push the record to the back of T2.
+                *t1_front_record.reference.write().unwrap() = false;
+                t2.push_back(t1_front_key, t1_front_record);
+            }
+
+        } else {
+            // Pop the front of T2.
+            let (t2_front_key, t2_front_record) = t2.pop_front().unwrap();
+
+            if !*t2_front_record.reference.read().unwrap()
+                && Arc::strong_count(&t2_front_record.value) == 1 {
+                // Page reference bit is 0 and no other threads are using it.
+                // Replace this page and push the key to the MRU position of B2.
+                b2.push_back(t2_front_key, ());
+            } else {
+                // Set the page reference bit to 0. Push the record to the back of T2.
+                *t2_front_record.reference.write().unwrap() = false;
+                t2.push_back(t2_front_key, t2_front_record);
+            }
+        }
+    }
+
+    /// Loads the file from storage into the buffer, incrementing the pin count. This function is
+    /// marked unsafe because it does not guarantee that another thread will not be concurrently
+    /// modifying the file. Only use this when the file is locked.
+    unsafe fn load_unlocked(&self, key: &str) -> Option<Arc<Mmap>> {
         // Load the file from storage
         let path = self.file_path(key);
         let file = File::open(path).ok()?;
-        let mmap = Arc::new(unsafe { Mmap::map(&file).ok()? });
+        let mmap = Arc::new(Mmap::map(&file).ok()?);
         let record = BufferRecord::new(mmap);
 
         // Increment the pin count.
@@ -173,75 +252,7 @@ impl Buffer {
             t2_write_guard.push_back(key.to_string(), record);
         }
 
-        // Unlock the file and notify other threads.
-        self.unlock(key);
-
-        // Return the buffered byte array.
         Some(value)
-    }
-
-    pub fn delete(&self, key: &str) {
-        // If the file is locked, wait until it becomes unlocked.
-        let mut locked = self.await_unlock(key);
-        locked.insert(key.to_string());
-        mem::drop(locked);
-
-        unsafe { self.delete_unlocked(key); }
-
-        // Unlock the file and notify other threads.
-        self.unlock(key);
-    }
-
-    pub fn release(&self, key: &str) {
-        if let Some(record) = self.t1.read().unwrap().get(key)
-            .or(self.t2.read().unwrap().get(key)) {
-            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
-            *pin_count_lock.lock().unwrap() -= 0;
-            cvar.notify_all();
-        }
-    }
-
-    fn file_path(&self, key: &str) -> PathBuf {
-        let mut path = PathBuf::from(key);
-        path.set_extension("hustle");
-        path
-    }
-
-    fn replace(&self,
-               t1: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
-               t2: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
-               b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
-               b2: &mut MutexGuard<OrderedHashMap<String, ()>>) {
-        if t1.len() >= max(1, *self.p.lock().unwrap()) {
-            // T1 is at or above target size. Pop the front of T1.
-            let (t1_front_key, t1_front_record) = t1.pop_front().unwrap();
-
-            if !*t1_front_record.reference.read().unwrap()
-                && Arc::strong_count(&t1_front_record.value) == 1 {
-                // Page reference bit is 0 and no other threads are using it.
-                // Replace this page and push the key to the MRU position of B1.
-                b1.push_back(t1_front_key, ());
-            } else {
-                // Set the page reference bit to 0. Push the record to the back of T2.
-                *t1_front_record.reference.write().unwrap() = false;
-                t2.push_back(t1_front_key, t1_front_record);
-            }
-
-        } else {
-            // Pop the front of T2.
-            let (t2_front_key, t2_front_record) = t2.pop_front().unwrap();
-
-            if !*t2_front_record.reference.read().unwrap()
-                && Arc::strong_count(&t2_front_record.value) == 1 {
-                // Page reference bit is 0 and no other threads are using it.
-                // Replace this page and push the key to the MRU position of B2.
-                b2.push_back(t2_front_key, ());
-            } else {
-                // Set the page reference bit to 0. Push the record to the back of T2.
-                *t2_front_record.reference.write().unwrap() = false;
-                t2.push_back(t2_front_key, t2_front_record);
-            }
-        }
     }
 
     /// Remove the page associated with the key from the buffer and delete the underlying file on
@@ -264,7 +275,10 @@ impl Buffer {
 
         // Delete the file.
         let path = self.file_path(key);
-        fs::remove_file(path).unwrap();
+        if path.exists() {
+            fs::remove_file(path).expect(format!("Error deleting {}.", key).as_str());
+        }
+
     }
 
     fn unlock(&self, key: &str) {

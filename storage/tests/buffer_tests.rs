@@ -11,6 +11,8 @@ mod buffer_tests {
         buffer.put("key_get", b"value");
         assert_eq!(&buffer.get("key_get").unwrap()[0..5], b"value");
         assert!(buffer.get("nonexistent_key").is_none());
+        buffer.release("key_get");
+        buffer.release("key_get");
         buffer.delete("key_get");
     }
 
