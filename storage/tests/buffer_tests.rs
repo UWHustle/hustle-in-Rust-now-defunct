@@ -30,5 +30,9 @@ mod buffer_tests {
         buffer.put("key_replacement_2", b"value");
         buffer.put("key_replacement_3", b"value");
         buffer.put("key_replacement_4", b"value");
+        buffer.delete("key_replacement_1");
+        buffer.delete("key_replacement_2");
+        buffer.delete("key_replacement_3");
+        buffer.delete("key_replacement_4");
     }
 }
