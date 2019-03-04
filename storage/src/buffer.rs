@@ -10,14 +10,17 @@ use std::mem;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 
+const TEMP_RECORD_PREFIX: char = '$';
+
 struct BufferRecord {
     value: Arc<Mmap>,
     reference: RwLock<bool>,
-    pin_count: (Mutex<u32>, Condvar)
+    pin_count: (Mutex<u64>, Condvar)
 }
 
 pub struct Buffer {
     capacity: usize,
+    anon_ctr: Mutex<u64>,
     locked: (Mutex<HashSet<String>>, Condvar),
     t1: RwLock<OrderedHashMap<String, BufferRecord>>,
     t2: RwLock<OrderedHashMap<String, BufferRecord>>,
@@ -44,6 +47,7 @@ impl Buffer {
     pub fn with_capacity(capacity: usize) -> Self {
         Buffer {
             capacity,
+            anon_ctr: Mutex::new(0),
             locked: (Mutex::new(HashSet::new()), Condvar::new()),
             t1: RwLock::new(OrderedHashMap::new()),
             t2: RwLock::new(OrderedHashMap::new()),
@@ -69,6 +73,18 @@ impl Buffer {
 
         // Unlock the file and notify other threads.
         self.unlock(key);
+    }
+
+    pub fn put_anon(&self, value: &[u8]) -> String {
+        // Generate a unique key, prefixed with the reserved character.
+        let mut anon_ctr = self.anon_ctr.lock().unwrap();
+        let key = format!("{}{}", TEMP_RECORD_PREFIX, *anon_ctr);
+        *anon_ctr += 1;
+        mem::drop(anon_ctr);
+
+        // Put the value and return the key.
+        self.put(key.as_str(), value);
+        key
     }
 
     pub fn get(&self, key: &str) -> Option<Arc<Mmap>> {
