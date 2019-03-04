@@ -308,7 +308,6 @@ impl Buffer {
         if path.exists() {
             fs::remove_file(path).expect(format!("Error deleting {}.", key).as_str());
         }
-
     }
 
     fn unlock(&self, key: &str) {

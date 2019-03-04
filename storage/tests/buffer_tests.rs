@@ -15,6 +15,16 @@ mod buffer_tests {
     }
 
     #[test]
+    fn put() {
+        let buffer = Buffer::new();
+        buffer.put("key_put", b"value");
+        assert_eq!(&buffer.get("key_put").unwrap()[0..5], b"value");
+        buffer.put("key_put", b"new_value");
+        assert_eq!(&buffer.get("key_put").unwrap()[0..9], b"new_value");
+        buffer.delete("key_put");
+    }
+
+    #[test]
     fn delete() {
         let buffer = Buffer::new();
         buffer.put("key_delete", b"value");
