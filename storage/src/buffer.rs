@@ -176,6 +176,10 @@ impl Buffer {
         self.unlock(key);
     }
 
+    pub fn is_cached(&self, key: &str) -> bool {
+        self.t1.read().unwrap().contains_key(key) || self.t2.read().unwrap().contains_key(key)
+    }
+
     fn file_path(&self, key: &str) -> PathBuf {
         let mut path = PathBuf::from(key);
         path.set_extension("hustle");
