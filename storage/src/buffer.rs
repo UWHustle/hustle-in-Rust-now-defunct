@@ -157,15 +157,8 @@ impl Buffer {
         locked.insert(key.to_string());
         mem::drop(locked);
 
-        // Request write locks on cache lists.
-        let mut t1_write_guard = self.t1.write().unwrap();
-        let mut t2_write_guard = self.t2.write().unwrap();
-
-        if let Some(record) = t1_write_guard.remove(key).or(t2_write_guard.remove(key)) {
-
-            // Release the write locks.
-            mem::drop(t1_write_guard);
-            mem::drop(t2_write_guard);
+        if let Some(record) = self.t1.write().unwrap().remove(key)
+            .or(self.t2.write().unwrap().remove(key)) {
 
             // Wait for the pin count to drop to 0.
             let &(ref pin_count_lock, ref cvar) = &record.pin_count;
@@ -184,6 +177,15 @@ impl Buffer {
 
         // Unlock the file and notify other threads.
         self.unlock(key);
+    }
+
+    pub fn release(&self, key: &str) {
+        if let Some(record) = self.t1.read().unwrap().get(key)
+            .or(self.t2.read().unwrap().get(key)) {
+            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
+            *pin_count_lock.lock().unwrap() -= 0;
+            cvar.notify_all();
+        }
     }
 
     fn file_path(&self, key: &str) -> PathBuf {
