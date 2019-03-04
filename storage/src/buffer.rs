@@ -54,8 +54,21 @@ impl Buffer {
     }
 
     pub fn put(&self, key: &str, value: &[u8]) {
+        // If the file is locked, wait until it becomes unlocked.
+        let mut locked = self.await_unlock(key);
+        locked.insert(key.to_string());
+        mem::drop(locked);
+
+        // Remove the old file from storage.
+        unsafe { self.delete_unlocked(key); }
+
+        // Write the new file to storage and load it into the buffer.
         let path = self.file_path(key);
-        fs::write(&path, value).unwrap();
+        fs::write(path, value).expect(format!("Error writing {} to storage.", key).as_str());
+        self.get(key);
+
+        // Unlock the file and notify other threads.
+        self.unlock(key);
     }
 
     pub fn get(&self, key: &str) -> Option<Arc<Mmap>> {
@@ -157,23 +170,7 @@ impl Buffer {
         locked.insert(key.to_string());
         mem::drop(locked);
 
-        if let Some(record) = self.t1.write().unwrap().remove(key)
-            .or(self.t2.write().unwrap().remove(key)) {
-
-            // Wait for the pin count to drop to 0.
-            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
-            let mut pin_count = pin_count_lock.lock().unwrap();
-            while *pin_count > 0 {
-                pin_count = cvar.wait(pin_count).unwrap();
-            }
-
-        } else {
-            self.b1.lock().unwrap().remove(key).or(self.b2.lock().unwrap().remove(key));
-        }
-
-        // It is now safe to delete the file.
-        let path = self.file_path(key);
-        fs::remove_file(path).unwrap();
+        unsafe { self.delete_unlocked(key); }
 
         // Unlock the file and notify other threads.
         self.unlock(key);
@@ -229,6 +226,29 @@ impl Buffer {
                 t2.push_back(t2_front_key, t2_front_record);
             }
         }
+    }
+
+    /// Remove the page associated with the key from the buffer and delete the underlying file on
+    /// storage. This function is marked unsafe because it does not guarantee that another thread
+    /// will not be concurrently reading the file. Only use this when the file is locked.
+    unsafe fn delete_unlocked(&self, key: &str) {
+        if let Some(record) = self.t1.write().unwrap().remove(key)
+            .or(self.t2.write().unwrap().remove(key)) {
+
+            // Wait for the pin count to drop to 0.
+            let &(ref pin_count_lock, ref cvar) = &record.pin_count;
+            let mut pin_count = pin_count_lock.lock().unwrap();
+            while *pin_count > 0 {
+                pin_count = cvar.wait(pin_count).unwrap();
+            }
+
+        } else {
+            self.b1.lock().unwrap().remove(key).or(self.b2.lock().unwrap().remove(key));
+        }
+
+        // Delete the file.
+        let path = self.file_path(key);
+        fs::remove_file(path).unwrap();
     }
 
     fn unlock(&self, key: &str) {
