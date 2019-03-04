@@ -11,6 +11,7 @@ use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::ops::Deref;
 
+const DEFAULT_CAPACITY: usize = 1000;
 const TEMP_RECORD_PREFIX: char = '$';
 
 pub struct Value {
@@ -83,7 +84,7 @@ impl BufferRecord {
 
 impl Buffer {
     pub fn new() -> Self {
-        Self::with_capacity(1000)
+        Self::with_capacity(DEFAULT_CAPACITY)
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
@@ -185,8 +186,9 @@ impl Buffer {
                t1: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
                t2: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
                b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
-               b2: &mut MutexGuard<OrderedHashMap<String, ()>>) {
-        if t1.len() >= max(1, *self.p.lock().unwrap()) {
+               b2: &mut MutexGuard<OrderedHashMap<String, ()>>,
+               p: &MutexGuard<usize>) {
+        if t1.len() >= max(1, **p) {
             // T1 is at or above target size. Pop the front of T1.
             let (t1_front_key, t1_front_record) = t1.pop_front().unwrap();
 
@@ -243,7 +245,7 @@ impl Buffer {
         if t1_write_guard.len() + t2_write_guard.len() == self.capacity {
             // Cache is full. Replace a page from the cache.
             self.replace(&mut t1_write_guard, &mut t2_write_guard,
-                         &mut b1_guard, &mut b2_guard);
+                         &mut b1_guard, &mut b2_guard, &p_guard);
 
             // Cache directory replacement.
             if cache_directory_miss {

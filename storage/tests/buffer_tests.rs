@@ -16,12 +16,19 @@ mod buffer_tests {
 
     #[test]
     fn delete() {
-//        let buffer = Buffer::new();
-//        buffer.put("key_delete", b"value");
-//        let value = buffer.get("key_delete").unwrap();
-//        assert_eq!(&value.upgrade().unwrap()[0..5], b"value");
-//        buffer.delete("key_delete");
-//        assert!(value.upgrade().is_none());
-//        assert!(buffer.get("key_delete").is_none());
+        let buffer = Buffer::new();
+        buffer.put("key_delete", b"value");
+        assert_eq!(&buffer.get("key_delete").unwrap()[0..5], b"value");
+        buffer.delete("key_delete");
+        assert!(buffer.get("key_delete").is_none());
+    }
+
+    #[test]
+    fn replacement() {
+        let buffer = Buffer::with_capacity(3);
+        buffer.put("key_replacement_1", b"value");
+        buffer.put("key_replacement_2", b"value");
+        buffer.put("key_replacement_3", b"value");
+        buffer.put("key_replacement_4", b"value");
     }
 }
