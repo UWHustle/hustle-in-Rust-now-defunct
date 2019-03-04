@@ -26,6 +26,14 @@ mod buffer_tests {
     }
 
     #[test]
+    fn put_anon() {
+        let buffer = Buffer::new();
+        let key = buffer.put_anon(b"value");
+        assert_eq!(&buffer.get(key.as_str()).unwrap()[0..5], b"value");
+        buffer.delete(key.as_str());
+    }
+
+    #[test]
     fn delete() {
         let buffer = Buffer::new();
         buffer.put("key_delete", b"value");
