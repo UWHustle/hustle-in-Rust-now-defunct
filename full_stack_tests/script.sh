@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
-rm -f test_output.txt
-cd ../build
+rm -f ../full_stack_tests/test_output.txt
+rm -f diff.txt
 rm -f ./test-data/test_table.hsl
 rm -f ./test-data/test_table_project.hsl
 
@@ -17,3 +17,11 @@ done < $CMD
 DIFF=$(diff $OUT $CMP)
 echo "$DIFF"
 echo "$DIFF" >> diff.txt
+
+if [ -z "$DIFF" ]
+then
+    exit 0
+fi
+
+exit 1
+
