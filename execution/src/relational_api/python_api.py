@@ -1,33 +1,98 @@
 import ctypes
 
-# If this is distributed as a Python package we'll want to find a way to
-# include the dynamic lib within that package
-lib = ctypes.cdll.LoadLibrary("../../target/debug/libexecution.dylib")
+lib = ctypes.cdll.LoadLibrary('../../../build/execution/libexecution.dylib')
 
 
 class Relation:
-    rust_ptr = ctypes.c_void_p()
+    relation_ptr = ctypes.c_void_p()
+    name_ptr = ctypes.c_void_p()
 
-    def __init__(self, col_names, col_type_names):
-        cstr_col_names = (ctypes.c_char_p * len(col_names))()
-        for i, name in enumerate(col_names):
-            cstr_col_names[i] = name.encode("utf-8")
-        cstr_col_type_names = (ctypes.c_char_p * len(col_type_names))()
-        for i, type_name in enumerate(col_type_names):
-            cstr_col_type_names[i] = type_name.encode("utf-8")
-
-        new_relation = lib.new_relation
-        new_relation.restype = ctypes.c_void_p
-        result = new_relation(cstr_col_names, cstr_col_type_names, len(col_names))
-        self.rust_ptr = ctypes.c_void_p(result)
-
-    def print_name(self):
-        lib.print_relation_name(self.rust_ptr)
+    def __init__(self, relation_ptr):
+        self.relation_ptr = relation_ptr
+        ffi_get_name = lib.ffi_get_name
+        ffi_get_name.restype = ctypes.c_void_p
+        self.name_ptr = ctypes.c_void_p(ffi_get_name(self.relation_ptr))
 
     def __del__(self):
-        lib.drop_relation(self.rust_ptr)
+        lib.ffi_drop(self.relation_ptr)
+        lib.ffi_drop(self.name_ptr)
+
+    @classmethod
+    def create(cls, col_names, col_type_names):
+        col_names_ptr = _encode_c_str_list(col_names)
+        col_type_names_ptr = _encode_c_str_list(col_type_names)
+        ffi_new_relation = lib.ffi_new_relation
+        ffi_new_relation.restype = ctypes.c_void_p
+        relation_ptr = ctypes.c_void_p(ffi_new_relation(
+            col_names_ptr, col_type_names_ptr, len(col_names)))
+        return Relation(relation_ptr)
+
+    def get_name(self):
+        return _decode_c_str(self.name_ptr)
+
+    def import_hustle(self, name):
+        lib.ffi_import_hustle(self.relation_ptr, name.encode('utf-8'))
+
+    def export_hustle(self, name):
+        lib.ffi_export_hustle(self.relation_ptr, name.encode('utf-8'))
+
+    def import_csv(self, filename):
+        lib.ffi_import_csv(self.relation_ptr, filename.encode('utf-8'))
+
+    def export_csv(self, filename):
+        lib.ffi_export_csv(self.relation_ptr, filename.encode('utf-8'))
+
+    def aggregate(self, agg_col_name, group_by_col_names, agg_name):
+        agg_col_name_ptr = agg_col_name.encode('utf-8')
+        group_by_col_names_ptr = _encode_c_str_list(group_by_col_names)
+        n_group_by_cols = len(group_by_col_names)
+        agg_name_ptr = agg_name.encode('utf-8')
+        ffi_aggregate = lib.ffi_aggregate
+        ffi_aggregate.restype = ctypes.c_void_p
+        relation_ptr = ffi_aggregate(
+            self.relation_ptr,
+            agg_col_name_ptr,
+            group_by_col_names_ptr,
+            n_group_by_cols,
+            agg_name_ptr)
+        return Relation(relation_ptr)
+
+    def join(self, other):
+        ffi_join = lib.ffi_join
+        ffi_join.restype = ctypes.c_void_p
+        relation_ptr = ffi_join(self.relation_ptr, other.relation_ptr)
+        return Relation(relation_ptr)
+
+    def limit(self, limit):
+        limit_c = ctypes.c_uint32(limit)
+        ffi_limit = lib.ffi_limit
+        ffi_limit.restype = ctypes.c_void_p
+        relation_ptr = ffi_limit(self.relation_ptr, limit_c)
+        return Relation(relation_ptr)
+
+    def print(self):
+        lib.ffi_print(self.relation_ptr)
+
+    def project(self, col_names):
+        col_names_ptr = _encode_c_str_list(col_names)
+        ffi_project = lib.ffi_project
+        ffi_project.restype = ctypes.c_void_p
+        relation_ptr = ffi_project(self.relation_ptr, col_names_ptr)
+        return Relation(relation_ptr)
+
+    def select(self, predicate):
+        ffi_select = lib.ffi_select
+        ffi_select.restype = ctypes.c_void_p
+        relation_ptr = ffi_select(self.relation_ptr, predicate.encode('utf-8'))
+        return Relation(relation_ptr)
 
 
-relation = Relation(["a", "b"], ["int", "int"])
-relation.print_name()
-del relation
+def _decode_c_str(c_str):
+    return ctypes.cast(c_str, ctypes.c_char_p).value.decode('utf-8')
+
+
+def _encode_c_str_list(py_list):
+    encoded = (ctypes.c_char_p * len(py_list))()
+    for i, name in enumerate(py_list):
+        encoded[i] = name.encode('utf-8')
+    return encoded

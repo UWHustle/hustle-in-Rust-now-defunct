@@ -1,23 +1,19 @@
 use logical_entities::column::Column;
 use logical_entities::relation::Relation;
-use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::*;
 use physical_operators::export_csv::ExportCsv;
 use physical_operators::import_csv::ImportCsv;
-use physical_operators::insert::Insert;
+use physical_operators::join::Join;
+use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
-use std::fs::remove_file;
 use storage_manager::StorageManager;
 use type_system::operators::*;
 use type_system::type_id::TypeID;
-use type_system::Value;
-use std::hash::Hash;
-use std::hash::Hasher;
 
-// TODO: Unsafe - wrap this in a mutex
+// TODO: Replace with new storage manager functionality
 static mut CURRENT_ID: u32 = 0;
 
 pub struct ImmediateRelation {
@@ -25,7 +21,6 @@ pub struct ImmediateRelation {
 }
 
 impl ImmediateRelation {
-    /// Creates an empty in-memory relation
     pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Self {
         if col_names.len() != col_type_names.len() {
             panic!("Number of types does not match number of columns");
@@ -46,21 +41,13 @@ impl ImmediateRelation {
         }
     }
 
-    /// Replaces current data in the relation with data from the CSV file
-    pub fn load_csv(&self, filename: &str) {
-        let import_csv_op = ImportCsv::new(String::from(filename), self.relation.clone());
-        import_csv_op.execute();
-    }
-
     pub fn get_name(&self) -> &str {
         self.relation.get_name()
     }
 
     /// Replaces current data in the relation with data from the Hustle file
-    ///
-    /// TODO: We should have a method that creates a new ImmediateRelation from a
-    /// Hustle file based on the schema from the catalog
-    pub fn load_database(&self, name: &str) {
+    /// TODO: Pull schema from the catalog
+    pub fn import_hustle(&self, name: &str) {
         let data_relation = Relation::new(String::from(name), self.relation.get_schema().clone());
         let data = StorageManager::get_full_data(&data_relation);
         let mut copy = StorageManager::create_relation(&self.relation, data.len());
@@ -68,12 +55,7 @@ impl ImmediateRelation {
         StorageManager::flush(&copy);
     }
 
-    pub fn to_csv(&self, filename: &str) {
-        let export_csv_op = ExportCsv::new(String::from(filename), self.relation.clone());
-        export_csv_op.execute();
-    }
-
-    pub fn to_database(&self, name: &str) {
+    pub fn export_hustle(&self, name: &str) {
         let copy_relation = Relation::new(String::from(name), self.relation.get_schema().clone());
         let data = StorageManager::get_full_data(&self.relation);
         let mut copy = StorageManager::create_relation(&copy_relation, data.len());
@@ -81,13 +63,50 @@ impl ImmediateRelation {
         StorageManager::flush(&copy);
     }
 
-    pub fn insert(&self, values: Vec<Box<Value>>) {
-        if values.len() != self.relation.get_columns().len() {
-            panic!("Incorrect number of values in row");
+    /// Replaces current data in the relation with data from the CSV file
+    pub fn import_csv(&self, filename: &str) {
+        let import_csv_op = ImportCsv::new(String::from(filename), self.relation.clone());
+        import_csv_op.execute();
+    }
+
+    pub fn export_csv(&self, filename: &str) {
+        let export_csv_op = ExportCsv::new(String::from(filename), self.relation.clone());
+        export_csv_op.execute();
+    }
+
+    pub fn aggregate(
+        &self,
+        agg_col_name: &str,
+        group_by_col_names: Vec<&str>,
+        agg_name: &str) -> Self
+    {
+        let agg_col = self.relation.column_from_name(agg_col_name);
+        let group_by_cols = self.relation.columns_from_names(group_by_col_names);
+        let agg_op = Aggregate::from_str(
+            self.relation.clone(),
+            agg_col.clone(),
+            group_by_cols,
+            agg_col.get_datatype(),
+            agg_name,
+        );
+        ImmediateRelation {
+            relation: agg_op.execute(),
         }
-        let row = Row::new(self.relation.get_schema().clone(), values);
-        let insert_op = Insert::new(self.relation.clone(), row);
-        insert_op.execute();
+    }
+
+    pub fn join(&self, other: &ImmediateRelation) {
+        let join_op = Join::new(self.relation.clone(), other.relation.clone());
+        join_op.execute();
+    }
+
+    pub fn limit(&self, limit: u32) {
+        let limit_op = Limit::new(self.relation.clone(), limit);
+        limit_op.execute();
+    }
+
+    pub fn print(&self) {
+        let print_op = Print::new(self.relation.clone());
+        print_op.execute();
     }
 
     pub fn project(&self, col_names: Vec<&str>) -> Self {
@@ -98,7 +117,7 @@ impl ImmediateRelation {
         }
     }
 
-    /// Note that this function only accepts predicates of the form <column> <operator> <literal>
+    /// Accepts predicate strings of the form "<column> <operator> <literal>"
     pub fn select(&self, predicate: &str) -> Self {
         let tokens: Vec<&str> = predicate.split(' ').collect();
         let col_name = tokens[0];
@@ -118,51 +137,12 @@ impl ImmediateRelation {
             relation: project_op.execute(),
         }
     }
-
-    pub fn print(&self) {
-        let print_op = Print::new(self.relation.clone());
-        print_op.execute();
-    }
-
-    pub fn aggregate(
-        &self,
-        agg_col_name: &str,
-        group_by_col_names: Vec<&str>,
-        agg_name: &str,
-    ) -> Self {
-        let agg_col = self.relation.column_from_name(agg_col_name);
-        let group_by_cols = self.relation.columns_from_names(group_by_col_names);
-        let agg_op = Aggregate::from_str(
-            self.relation.clone(),
-            agg_col.clone(),
-            group_by_cols,
-            agg_col.get_datatype(),
-            agg_name,
-        );
-        ImmediateRelation {
-            relation: agg_op.execute(),
-        }
-    }
 }
 
 impl Drop for ImmediateRelation {
     fn drop(&mut self) {
-        match remove_file(self.relation.get_filename()) {
+        match std::fs::remove_file(self.relation.get_filename()) {
             _ => return,
         }
-    }
-}
-
-impl PartialEq for ImmediateRelation {
-    fn eq(&self, other: &ImmediateRelation) -> bool {
-        self.relation.get_name() == other.relation.get_name()
-    }
-}
-
-impl Eq for ImmediateRelation {}
-
-impl Hash for ImmediateRelation {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.relation.get_name().hash(state);
     }
 }
