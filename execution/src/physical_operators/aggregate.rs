@@ -49,14 +49,15 @@ impl Aggregate {
         agg_col: Column,
         group_by_cols: Vec<Column>,
         agg_type: TypeID,
-        agg_name: &str,
-    ) -> Self {
-        let aggregation: Box<AggregationTrait> = match agg_name {
-            "AVG" => Box::new(Avg::new(agg_type)),
-            "COUNT" => Box::new(Count::new(agg_type)),
-            "MAX" => Box::new(Max::new(agg_type)),
-            "MIN" => Box::new(Min::new(agg_type)),
-            "SUM" => Box::new(Sum::new(agg_type)),
+        agg_name: &str) -> Self
+    {
+        let lower = agg_name.to_lowercase();
+        let aggregation: Box<AggregationTrait> = match lower.as_str() {
+            "avg" => Box::new(Avg::new(agg_type)),
+            "count" => Box::new(Count::new(agg_type)),
+            "max" => Box::new(Max::new(agg_type)),
+            "min" => Box::new(Min::new(agg_type)),
+            "sum" => Box::new(Sum::new(agg_type)),
             _ => panic!("Unknown aggregate function {}", agg_name),
         };
         Self::new(input_relation, agg_col, group_by_cols, aggregation)

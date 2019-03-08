@@ -15,8 +15,8 @@ pub unsafe extern "C" fn ffi_new_relation(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_drop(ptr: *mut c_void) {
-    Box::from_raw(ptr);
+pub unsafe extern "C" fn ffi_drop_relation(relation_ptr: *mut c_void) {
+    Box::from_raw(relation_ptr as *mut ImmediateRelation);
 }
 
 #[no_mangle]
@@ -25,6 +25,11 @@ pub unsafe extern "C" fn ffi_get_name(relation_ptr: *const c_void) -> *const c_v
     CString::new((*relation).get_name())
         .expect("Unable to construct C string")
         .into_raw() as *const c_void
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_c_str(c_str: *mut c_void) {
+    CString::from_raw(c_str as *mut c_char);
 }
 
 #[no_mangle]

@@ -94,14 +94,18 @@ impl ImmediateRelation {
         }
     }
 
-    pub fn join(&self, other: &ImmediateRelation) {
+    pub fn join(&self, other: &ImmediateRelation) -> Self {
         let join_op = Join::new(self.relation.clone(), other.relation.clone());
-        join_op.execute();
+        ImmediateRelation {
+            relation: join_op.execute()
+        }
     }
 
-    pub fn limit(&self, limit: u32) {
+    pub fn limit(&self, limit: u32) -> Self {
         let limit_op = Limit::new(self.relation.clone(), limit);
-        limit_op.execute();
+        ImmediateRelation {
+            relation: limit_op.execute()
+        }
     }
 
     pub fn print(&self) {
@@ -142,7 +146,8 @@ impl ImmediateRelation {
 impl Drop for ImmediateRelation {
     fn drop(&mut self) {
         match std::fs::remove_file(self.relation.get_filename()) {
-            _ => return,
+            Ok(_) => return,
+            Err(_) => println!("Unable to delete file for relation {}", self.get_name()),
         }
     }
 }
