@@ -1,4 +1,5 @@
 use logical_entities::column::Column;
+use logical_entities::predicates::comparison::Comparison;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::*;
@@ -97,14 +98,14 @@ impl ImmediateRelation {
     pub fn join(&self, other: &ImmediateRelation) -> Self {
         let join_op = Join::new(self.relation.clone(), other.relation.clone());
         ImmediateRelation {
-            relation: join_op.execute()
+            relation: join_op.execute(),
         }
     }
 
     pub fn limit(&self, limit: u32) -> Self {
         let limit_op = Limit::new(self.relation.clone(), limit);
         ImmediateRelation {
-            relation: limit_op.execute()
+            relation: limit_op.execute(),
         }
     }
 
@@ -128,14 +129,12 @@ impl ImmediateRelation {
         let column = self.relation.column_from_name(col_name);
         let comparator = Comparator::from_str(tokens[1]);
         let value = column.get_datatype().parse(tokens[2]);
+        let predicate = Comparison::new(column, comparator, value);
 
         let project_op = Project::new(
             self.relation.clone(),
             self.relation.get_columns().clone(),
-            col_name,
-            true,
-            comparator,
-            &*value,
+            Box::new(predicate),
         );
         ImmediateRelation {
             relation: project_op.execute(),
