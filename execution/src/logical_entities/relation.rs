@@ -48,6 +48,23 @@ impl Relation {
     pub fn get_n_rows(&self) -> usize {
         self.get_total_size() / self.get_row_size()
     }
+
+    pub fn column_from_name(&self, name: &str) -> Column {
+        for column in self.get_columns() {
+            if name == column.get_name() {
+                return column.clone();
+            }
+        }
+        panic!("Column {} not found", name);
+    }
+
+    pub fn columns_from_names(&self, col_names: Vec<&str>) -> Vec<Column> {
+        let mut columns: Vec<Column> = vec![];
+        for name in col_names {
+            columns.push(self.column_from_name(name));
+        }
+        columns
+    }
 }
 
 #[cfg(test)]
