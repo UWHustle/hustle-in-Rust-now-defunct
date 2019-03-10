@@ -26,7 +26,7 @@ impl TypeID {
         TypeID { variant, nullable }
     }
 
-    pub fn from_string(string: String) -> TypeID {
+    pub fn from_str(string: &str) -> TypeID {
         let lower = string.to_lowercase();
         let tokens: Vec<&str> = lower.split(' ').collect();
         let variant_str = *tokens.get(0).expect("Error: type string is empty");

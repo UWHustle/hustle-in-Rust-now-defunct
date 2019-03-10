@@ -1,8 +1,3 @@
-use logical_entities::aggregations::avg::Avg;
-use logical_entities::aggregations::count::Count;
-use logical_entities::aggregations::max::Max;
-use logical_entities::aggregations::min::Min;
-use logical_entities::aggregations::sum::Sum;
 use logical_entities::column::Column;
 use logical_entities::predicates::comparison::*;
 use logical_entities::relation::Relation;
@@ -81,64 +76,24 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
     let project_op = Project::pure_project(input.get_output_relation(), project_cols);
     let project_node = Node::new(Rc::new(project_op), vec![Rc::new(input)]);
 
-    let agg_type = TypeID::from_string(get_string(
+    let agg_type = TypeID::from_str(
         &json["aggregate_expressions"]
             .as_array()
             .unwrap()
             .get(0)
-            .unwrap()["type"],
-    ));
+            .unwrap()["type"]
+            .as_str()
+            .unwrap(),
+    );
     let agg_name = agg_json["function"].as_str().unwrap();
-    match agg_name {
-        "AVG" => {
-            let avg_op = Aggregate::new(
-                project_node.get_output_relation(),
-                agg_col.clone(),
-                group_by_cols,
-                Avg::new(agg_type),
-            );
-            Node::new(Rc::new(avg_op), vec![Rc::new(project_node)])
-        }
-        "COUNT" => {
-            let count_op = Aggregate::new(
-                project_node.get_output_relation(),
-                agg_col.clone(),
-                group_by_cols,
-                Count::new(agg_type),
-            );
-            Node::new(Rc::new(count_op), vec![Rc::new(project_node)])
-        }
-        "MAX" => {
-            let max_op = Aggregate::new(
-                project_node.get_output_relation(),
-                agg_col.clone(),
-                group_by_cols,
-                Max::new(agg_type),
-            );
-            Node::new(Rc::new(max_op), vec![Rc::new(project_node)])
-        }
-        "MIN" => {
-            let min_op = Aggregate::new(
-                project_node.get_output_relation(),
-                agg_col.clone(),
-                group_by_cols,
-                Min::new(agg_type),
-            );
-            Node::new(Rc::new(min_op), vec![Rc::new(project_node)])
-        }
-        "SUM" => {
-            let sum_op = Aggregate::new(
-                project_node.get_output_relation(),
-                agg_col.clone(),
-                group_by_cols,
-                Sum::new(agg_type),
-            );
-            Node::new(Rc::new(sum_op), vec![Rc::new(project_node)])
-        }
-        _ => {
-            panic!("Aggregate function {} not supported", agg_name);
-        }
-    }
+    let agg_op = Aggregate::from_str(
+        project_node.get_output_relation(),
+        agg_col,
+        group_by_cols,
+        agg_type,
+        agg_name,
+    );
+    Node::new(Rc::new(agg_op), vec![Rc::new(project_node)])
 }
 
 fn parse_insert_tuple(json: &serde_json::Value) -> Node {
@@ -160,18 +115,11 @@ fn parse_selection(json: &serde_json::Value) -> Node {
         _ => {
             let comp_value_str = get_string(&filter_predicate["literal"]["value"]);
             let comp_value_type =
-                TypeID::from_string(get_string(&filter_predicate["literal"]["type"]));
+                TypeID::from_str(filter_predicate["literal"]["type"].as_str().unwrap());
             let comp_value = comp_value_type.parse(&comp_value_str);
 
             let comparator_str = filter_predicate["json_name"].as_str().unwrap();
-            let comparator = match comparator_str {
-                "Equal" => Comparator::Equal,
-                "Less" => Comparator::Less,
-                "LessOrEqual" => Comparator::LessEq,
-                "Greater" => Comparator::Greater,
-                "GreaterOrEqual" => Comparator::GreaterEq,
-                _ => panic!("Unknown comparison type {}", comparator_str),
-            };
+            let comparator = Comparator::from_str(comparator_str);
             let filter_col = parse_column(&filter_predicate["attribute_reference"]);
             let predicate = Box::new(Comparison::new(filter_col, comparator, comp_value));
             Project::new(input.get_output_relation(), output_cols, predicate)
@@ -206,7 +154,7 @@ fn parse_column(json: &serde_json::Value) -> Column {
     if name == "" {
         name = get_string(&json["alias"]);
     }
-    Column::new(name, TypeID::from_string(get_string(&json["type"])))
+    Column::new(name, TypeID::from_str(&json["type"].as_str().unwrap()))
 }
 
 fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
@@ -219,7 +167,7 @@ fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
 }
 
 fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
-    let type_id = TypeID::from_string(get_string(&json["type"]));
+    let type_id = TypeID::from_str(&json["type"].as_str().unwrap());
     type_id.parse(&json["value"].as_str().unwrap())
 }
 

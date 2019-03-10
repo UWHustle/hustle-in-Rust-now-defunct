@@ -12,6 +12,17 @@ pub enum Comparator {
 }
 
 impl Comparator {
+    pub fn from_str(string: &str) -> Self {
+        match string {
+            "=" | "Equal" => Comparator::Equal,
+            "<" | "Less" => Comparator::Less,
+            "<=" | "LessOrEqual" => Comparator::LessEq,
+            ">" | "Greater" => Comparator::Greater,
+            ">=" | "GreaterOrEqual" => Comparator::GreaterEq,
+            _ => panic!("Unknown comparison {}", string),
+        }
+    }
+
     pub fn apply<T: PartialOrd>(&self, val_1: T, val_2: T) -> bool {
         match self {
             Comparator::Equal => val_1 == val_2,
