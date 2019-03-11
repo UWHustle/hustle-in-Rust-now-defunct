@@ -5,8 +5,16 @@ authors = ["gaffneyk <kpgaffney@wisc.edu>"]
 
 [dependencies]
 memmap = "0.7.0"
+omap = { git = "https://github.com/UWHustle/omap" }
+
+[dev-dependencies]
+criterion = "0.2"
 
 [lib]
 name = "storage"
 path = "src/lib.rs"
 crate-type = ["rlib", "dylib", "staticlib"]
+
+[[bench]]
+name = "buffer_benchmarks"
+harness = false
