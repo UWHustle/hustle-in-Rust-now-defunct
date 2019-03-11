@@ -24,7 +24,7 @@ struct BufferRecord {
     reference: RwLock<bool>,
 }
 
-pub struct Buffer {
+pub struct StorageManager {
     capacity: usize,
     anon_ctr: Mutex<u64>,
     locked: (Mutex<HashSet<String>>, Condvar),
@@ -82,13 +82,13 @@ impl BufferRecord {
     }
 }
 
-impl Buffer {
+impl StorageManager {
     pub fn new() -> Self {
         Self::with_capacity(DEFAULT_CAPACITY)
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        Buffer {
+        StorageManager {
             capacity,
             anon_ctr: Mutex::new(0),
             locked: (Mutex::new(HashSet::new()), Condvar::new()),
@@ -160,7 +160,7 @@ impl Buffer {
         // Unlock the file and notify other threads.
         self.unlock(key);
 
-        // Return the buffered byte array.
+        // Return the cached byte array.
         value
     }
 
@@ -224,7 +224,7 @@ impl Buffer {
         }
     }
 
-    /// Loads the file from storage into the buffer. This function is marked unsafe because it does
+    /// Loads the file from storage into the cache. This function is marked unsafe because it does
     /// not guarantee that another thread will not be concurrently modifying the file. Only use
     /// this when the file is locked.
     unsafe fn load_unlocked(&self, key: &str) -> Option<Value> {
