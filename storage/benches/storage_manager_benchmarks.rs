@@ -8,10 +8,10 @@ use criterion::Criterion;
 use std::thread;
 use std::sync::Arc;
 
-const PAGE_SIZE: usize = 1000;
+const VALUE_SIZE: usize = 1000;
 
-fn put(capacity: usize, threads: u16) {
-    let sm = Arc::new(StorageManager::with_capacity(capacity));
+fn put(threads: u16) {
+    let sm = Arc::new(StorageManager::new());
     let mut handles = vec![];
 
     for t in 0..threads {
@@ -19,8 +19,8 @@ fn put(capacity: usize, threads: u16) {
         let handle = thread::spawn(move || {
             for p in 0..10 {
                 let key = format!("{}{}", t, p);
-                let page: [u8; PAGE_SIZE] = [0; PAGE_SIZE];
-                sm.put(key.as_str(), &page);
+                let value: [u8; VALUE_SIZE] = [0; VALUE_SIZE];
+                sm.put(key.as_str(), &value);
                 sm.delete(key.as_str());
             }
         });
@@ -33,7 +33,7 @@ fn put(capacity: usize, threads: u16) {
 }
 
 fn bench(c: &mut Criterion) {
-    c.bench_function("put", |b| b.iter(|| put(10, 4)));
+    c.bench_function("put", |b| b.iter(|| put(4)));
 }
 
 criterion_group!(benches, bench);
