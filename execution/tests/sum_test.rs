@@ -13,6 +13,9 @@ use execution::type_system::type_id::*;
 
 use std::rc::Rc;
 
+extern crate storage;
+use self::storage::StorageManager;
+
 const RECORD_COUNT: usize = 10;
 
 #[test]
@@ -30,7 +33,7 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
         relation.clone(),
         Column::new(column_name, TypeID::new(Variant::Int4, true)),
     );
-    select_operator.execute().parse::<u128>().unwrap()
+    select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
 }
 
 fn hustle_sum(relation: Relation, agg_col: Column) -> Relation {
@@ -42,5 +45,5 @@ fn hustle_sum(relation: Relation, agg_col: Column) -> Relation {
         vec![],
         Box::new(Sum::new(agg_col.get_datatype())),
     );
-    Node::new(Rc::new(agg_op), vec![Rc::new(project_node)]).execute()
+    Node::new(Rc::new(agg_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())
 }

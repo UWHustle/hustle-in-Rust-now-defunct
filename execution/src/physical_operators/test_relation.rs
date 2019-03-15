@@ -2,11 +2,10 @@ extern crate csv;
 extern crate rand;
 
 use logical_entities::relation::Relation;
+use physical_operators::Operator;
 use type_system::*;
 
-use storage_manager::StorageManager;
-
-use physical_operators::Operator;
+use super::storage::StorageManager;
 
 pub struct TestRelation {
     relation: Relation,
@@ -29,18 +28,14 @@ impl Operator for TestRelation {
         self.relation.clone()
     }
 
-    fn execute(&self) -> Relation {
-        #[warn(unused_variables)]
-        let mut data = StorageManager::create_relation(
-            &self.relation,
-            (self.relation.get_row_size() * self.row_count) as usize,
-        );
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
+        let size = self.relation.get_row_size() * self.row_count;
+        let mut data = vec![0; size];
 
-        let columns = self.relation.get_columns();
         let mut n: usize = 0;
-
         for y in 0..self.row_count {
-            for column in columns.iter() {
+            for column in self.relation.get_columns() {
                 let mut value = if self.random {
                     rand::random::<u8>().to_string()
                 } else {
@@ -53,7 +48,8 @@ impl Operator for TestRelation {
             }
         }
 
-        StorageManager::flush(&data);
+        storage_manager.put(self.relation.get_name(), &data);
+
         self.get_target_relation()
     }
 }

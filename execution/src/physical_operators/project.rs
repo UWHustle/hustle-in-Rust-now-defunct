@@ -5,11 +5,12 @@ use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
-use storage_manager::StorageManager;
 use type_system::borrowed_buffer::*;
 use type_system::*;
 
 use std::collections::HashMap;
+
+use super::storage::StorageManager;
 
 pub struct Project {
     relation: Relation,
@@ -20,7 +21,7 @@ pub struct Project {
 impl Project {
     pub fn new(relation: Relation, output_cols: Vec<Column>, predicate: Box<Predicate>) -> Self {
         let schema = Schema::new(output_cols);
-        let output_relation = Relation::new(format!("{}_project", relation.get_name()), schema);
+        let output_relation = Relation::new(&format!("{}_project", relation.get_name()), schema);
 
         Project {
             relation,
@@ -39,18 +40,18 @@ impl Operator for Project {
         self.output_relation.clone()
     }
 
-    fn execute(&self) -> Relation {
-        let input_cols = self.relation.get_columns().to_vec();
-        let input_data = StorageManager::get_full_data(&self.relation.clone());
-        let output_cols = self.output_relation.get_columns().to_vec();
-        let mut output_data =
-            StorageManager::create_relation(&self.output_relation, self.relation.get_total_size());
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        let input_data = storage_manager.get(self.relation.get_name()).unwrap();
+
+        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
+        let mut output_data: Vec<u8> = vec![0; self.relation.get_total_size(storage_manager)];
 
         let mut i = 0; // Beginning of the current row in the input buffer
         let mut k = 0; // Current position in the input buffer
         let mut j = 0; // Current position in the output buffer
 
         // Loop over all the data
+        let input_cols = self.relation.get_columns().to_vec();
         while i < input_data.len() {
             // Check whether the current row satisfies the predicate
             let mut values: Vec<Box<Value>> = vec![];
@@ -80,7 +81,7 @@ impl Operator for Project {
                 }
 
                 // Output values in the order of the output columns
-                for column in &output_cols {
+                for column in self.output_relation.get_columns() {
                     let slice = col_map[column];
                     output_data[j..j + slice.len()].clone_from_slice(slice);
                     j += slice.len();
@@ -89,7 +90,9 @@ impl Operator for Project {
             i = k;
         }
 
-        StorageManager::trim_relation(&self.output_relation, j);
+        output_data.resize(j, 0);
+        storage_manager.put(self.output_relation.get_name(), &output_data);
+
         self.get_target_relation()
     }
 }

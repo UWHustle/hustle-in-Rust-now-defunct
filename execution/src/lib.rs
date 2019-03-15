@@ -1,5 +1,3 @@
-extern crate sqlite;
-
 pub mod logical_entities;
 pub mod physical_operators;
 pub mod physical_plan;
@@ -7,15 +5,21 @@ pub mod relational_api;
 pub mod test_helpers;
 pub mod type_system;
 
+use physical_plan::parser::parse;
+
+extern crate sqlite;
+
 use std::os::raw::c_char;
 
-use physical_plan::parser::parse;
+extern crate storage;
+use self::storage::StorageManager;
 
 #[no_mangle]
 pub extern "C" fn execute_plan(name: *const c_char) {
     let plan_string = from_cstr(name);
     let node = parse(plan_string.as_str());
-    node.execute();
+    let storage_manager = StorageManager::new();
+    node.execute(&storage_manager);
 }
 
 use std::ffi::CStr;

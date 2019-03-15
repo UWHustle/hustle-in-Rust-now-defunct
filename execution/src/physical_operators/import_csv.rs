@@ -2,9 +2,10 @@ use logical_entities::relation::Relation;
 use physical_operators::Operator;
 use type_system::*;
 
-use storage_manager::StorageManager;
+use super::storage::StorageManager;
 
-//#[derive(Debug)]
+extern crate csv;
+
 pub struct ImportCsv {
     file_name: String,
     relation: Relation,
@@ -24,34 +25,30 @@ impl Operator for ImportCsv {
         self.relation.clone()
     }
 
-    fn execute(&self) -> Relation {
-        extern crate csv;
-        let mut rdr = csv::Reader::from_path(&self.file_name).unwrap();
-        let record_count = rdr.records().count() + 1;
-        rdr.seek(csv::Position::new()).unwrap();
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        let mut reader = csv::Reader::from_path(&self.file_name).unwrap();
+        let record_count = reader.records().count() + 1;
+        reader.seek(csv::Position::new()).unwrap();
 
-        let mut data = StorageManager::create_relation(
-            &self.relation,
-            self.relation.get_row_size() * record_count,
-        );
+        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
+        let size = self.relation.get_row_size() * record_count;
+        let mut data: Vec<u8> = vec![0; size];
 
-        let columns = self.relation.get_columns();
         let mut n: usize = 0;
-
-        for result in rdr.records() {
+        for result in reader.records() {
             let record = result.unwrap();
 
-            for (i, column) in columns.iter().enumerate() {
+            for (i, column) in self.relation.get_columns().iter().enumerate() {
                 let a = record.get(i).unwrap().to_string();
 
                 let c = column.get_datatype().parse(&a);
                 let size = c.size();
-                data[n..n + size].clone_from_slice(c.un_marshall().data()); // 0  8
+                data[n..n + size].clone_from_slice(c.un_marshall().data());
                 n += size;
             }
         }
 
-        StorageManager::flush(&data);
+        storage_manager.put(self.relation.get_name(), &data);
 
         self.get_target_relation()
     }

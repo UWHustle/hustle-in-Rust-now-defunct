@@ -1,14 +1,12 @@
 use logical_entities::relation::Relation;
+use physical_operators::Operator;
 use type_system::borrowed_buffer::BorrowedBuffer;
 use type_system::*;
 
-use storage_manager::StorageManager;
-
-use physical_operators::Operator;
+use super::storage::StorageManager;
 
 pub const CHUNK_SIZE: usize = 1024 * 1024;
 
-//#[derive(Debug)]
 pub struct Print {
     relation: Relation,
 }
@@ -24,12 +22,12 @@ impl Operator for Print {
         Relation::null()
     }
 
-    fn execute(&self) -> Relation {
-        let columns = self.relation.get_columns();
-        let data = StorageManager::get_full_data(&self.relation.clone());
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        let data = storage_manager.get(self.relation.get_name()).unwrap();
 
+        let columns = self.relation.get_columns();
         let width = 5;
-        for column in self.relation.get_schema().get_columns() {
+        for column in columns {
             print!("|{value:>width$}", value = column.get_name(), width = width);
         }
         println!("|");

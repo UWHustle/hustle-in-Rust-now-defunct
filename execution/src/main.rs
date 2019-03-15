@@ -1,4 +1,5 @@
 extern crate serde_json;
+extern crate storage;
 
 pub mod logical_entities;
 pub mod physical_operators;

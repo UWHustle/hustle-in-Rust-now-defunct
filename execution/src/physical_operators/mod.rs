@@ -13,10 +13,13 @@ pub mod test_relation;
 
 use logical_entities::relation::Relation;
 
+extern crate storage;
+use self::storage::StorageManager;
+
 pub trait Operator {
     // Returns the information for what relation will be returned when execute is called.
     fn get_target_relation(&self) -> Relation;
 
     // Executes the operator and returns the relation containing the results.
-    fn execute(&self) -> Relation;
+    fn execute(&self, storage_manager: &StorageManager) -> Relation;
 }

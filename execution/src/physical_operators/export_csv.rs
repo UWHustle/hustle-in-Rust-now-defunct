@@ -1,15 +1,12 @@
-extern crate csv;
-extern crate rand;
-
 use logical_entities::relation::Relation;
+use physical_operators::Operator;
 use type_system::borrowed_buffer::BorrowedBuffer;
 use type_system::*;
 
-use physical_operators::Operator;
+use super::storage::StorageManager;
 
-use storage_manager::StorageManager;
+extern crate csv;
 
-//#[derive(Debug)]
 pub struct ExportCsv {
     file_name: String,
     relation: Relation,
@@ -33,17 +30,16 @@ impl Operator for ExportCsv {
         Relation::null()
     }
 
-    fn execute(&self) -> Relation {
-        let mut wtr = csv::Writer::from_path(self.get_file_name()).unwrap();
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        let data = storage_manager.get(self.relation.get_name()).unwrap();
 
-        let columns = self.relation.get_columns();
-        let data = StorageManager::get_full_data(&self.relation.clone());
+        let mut writer = csv::Writer::from_path(self.get_file_name()).unwrap();
 
         let mut i = 0;
         while i < data.len() {
             let mut r = Vec::new();
 
-            for column in columns {
+            for column in self.relation.get_columns() {
                 let type_id = column.get_datatype();
                 let value_length = type_id.size();
                 let buffer: BorrowedBuffer =
@@ -51,9 +47,9 @@ impl Operator for ExportCsv {
                 r.push(buffer.marshall().to_string());
                 i += value_length;
             }
-            wtr.write_record(&r).unwrap();
+            writer.write_record(&r).unwrap();
         }
-        wtr.flush().unwrap();
+        writer.flush().unwrap();
 
         self.get_target_relation()
     }

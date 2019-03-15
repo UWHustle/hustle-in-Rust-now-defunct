@@ -15,11 +15,14 @@ use execution::type_system::type_id::*;
 
 use std::rc::Rc;
 
+extern crate storage;
+use self::storage::StorageManager;
+
 const RECORD_COUNT: usize = 10;
 
 fn sum_column_hustle(relation: Relation, column: Column) -> u128 {
     let select_operator = SelectSum::new(relation.clone(), column);
-    select_operator.execute().parse::<u128>().unwrap()
+    select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
 }
 
 #[test]
@@ -48,5 +51,5 @@ fn hustle_where(
     predicate: Box<Predicate>,
 ) -> Relation {
     let project_op = Project::new(relation.clone(), projection, predicate);
-    Node::new(Rc::new(project_op), vec![]).execute()
+    Node::new(Rc::new(project_op), vec![]).execute(&StorageManager::new())
 }

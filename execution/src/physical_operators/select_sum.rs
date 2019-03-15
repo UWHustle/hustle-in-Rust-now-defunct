@@ -3,13 +3,12 @@ use logical_entities::relation::Relation;
 use type_system::borrowed_buffer::*;
 use type_system::*;
 
-use storage_manager::StorageManager;
+use super::storage::StorageManager;
 
-//There's an off-by-one error somewhere in this operator when multi-threaded so setting this high.
-//Reproduce by setting this low and running integrated tests.
+// There's an off-by-one error somewhere in this operator when multi-threaded so setting this high.
+// Reproduce by setting this low and running integrated tests.
 pub const CHUNK_SIZE: usize = 1024 * 1024 * 1024 * 1024 * 1024;
 
-//#[derive(Debug)]
 pub struct SelectSum {
     relation: Relation,
     column: Column,
@@ -20,16 +19,13 @@ impl SelectSum {
         SelectSum { relation, column }
     }
 
-    pub fn execute(&self) -> String {
-        let total_size = self.relation.get_total_size();
-        let data = StorageManager::get_full_data(&self.relation);
-        let columns = self.relation.get_columns();
+    pub fn execute(&self, storage_manager: &StorageManager) -> String {
+        let data = storage_manager.get(self.relation.get_name()).unwrap();
 
         let mut sum = self.column.get_datatype().create_zero();
-
         let mut i = 0;
-        while i < total_size {
-            for column in columns {
+        while i < data.len() {
+            for column in self.relation.get_columns() {
                 let next_len = column.get_datatype().next_size(&data[i..]);
                 if column.get_name() == self.column.get_name() {
                     let buffer =

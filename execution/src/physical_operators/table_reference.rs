@@ -1,8 +1,8 @@
 use logical_entities::relation::Relation;
-
 use physical_operators::Operator;
 
-//#[derive(Debug)]
+use super::storage::StorageManager;
+
 pub struct TableReference {
     relation: Relation,
 }
@@ -18,7 +18,7 @@ impl Operator for TableReference {
         self.relation.clone()
     }
 
-    fn execute(&self) -> Relation {
+    fn execute(&self, _storage_manager: &StorageManager) -> Relation {
         self.get_target_relation()
     }
 }

@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
 use physical_operators::Operator;
-
 use logical_entities::relation::Relation;
+
+extern crate storage;
+use self::storage::StorageManager;
 
 pub struct Node {
     operator: Rc<Operator>,
@@ -21,10 +23,10 @@ impl Node {
         self.operator.get_target_relation()
     }
 
-    pub fn execute(&self) -> Relation {
+    pub fn execute(&self, storage_manager: &StorageManager) -> Relation {
         for node in &self.dependencies {
-            node.execute();
+            node.execute(storage_manager);
         }
-        self.operator.execute()
+        self.operator.execute(storage_manager)
     }
 }
