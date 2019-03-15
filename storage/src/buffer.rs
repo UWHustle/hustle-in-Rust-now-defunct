@@ -105,7 +105,7 @@ impl Buffer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::Buffer;
     /// let buffer = Buffer::with_capacity(10);
     /// buffer.write("key", b"value");
@@ -124,7 +124,7 @@ impl Buffer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::Buffer;
     /// let buffer = Buffer::with_capacity(10);
     /// buffer.write("key", b"value");
@@ -157,7 +157,7 @@ impl Buffer {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::Buffer;
     /// let buffer = Buffer::with_capacity(10);
     /// buffer.write("key", b"value");
