@@ -16,5 +16,5 @@ path = "src/lib.rs"
 crate-type = ["rlib", "dylib", "staticlib"]
 
 [[bench]]
-name = "buffer_benchmarks"
+name = "storage_manager_benchmarks"
 harness = false
