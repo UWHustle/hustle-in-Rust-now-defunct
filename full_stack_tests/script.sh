@@ -1,6 +1,6 @@
 #!/bin/bash
 set -x
-rm -f ../full_stack_tests/test_output.txt
+#rm -f ../full_stack_tests/test_output.txt
 cd ../build
 rm -f diff.txt
 rm -f ./test-data/test_table.hsl
@@ -12,7 +12,7 @@ CMP="../full_stack_tests/compare_output.txt"
 
 while IFS='' read -r line || [[ -n "$line" ]]; do
 echo "$line" >> $OUT
-./hustle <<<$line >> $OUT 2>&1
+sudo ./hustle <<<$line >> $OUT 2>&1
 done < $CMD
 
 DIFF=$(diff $OUT $CMP)
