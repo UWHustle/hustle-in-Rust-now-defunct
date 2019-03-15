@@ -139,7 +139,7 @@ impl StorageManager {
     /// # Examples
     ///
     /// ```
-    /// use storage:StorageManager;
+    /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// sm.put("key", b"value");
     /// ```
@@ -163,7 +163,7 @@ impl StorageManager {
     /// # Examples
     ///
     /// ```
-    /// use storage:StorageManager;
+    /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// let key = sm.put_anon(b"value");
     /// sm.get(&key);
@@ -185,7 +185,7 @@ impl StorageManager {
     /// # Examples
     ///
     /// ```
-    /// use storage:StorageManager;
+    /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// sm.put("key", b"value");
     /// sm.get("key");
@@ -207,6 +207,7 @@ impl StorageManager {
     /// # Examples
     ///
     /// ```
+    /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// sm.put("key", b"value");
     /// sm.delete("key");
