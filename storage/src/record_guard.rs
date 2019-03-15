@@ -45,3 +45,16 @@ impl RecordGuard for MutexRecordGuard {
         self.end_read(key)
     }
 }
+
+#[allow(unused)]
+pub struct NoLockRecordGuard {}
+
+impl RecordGuard for NoLockRecordGuard {
+    fn begin_read(&self, _key: &str) {}
+
+    fn begin_write(&self, _key: &str) {}
+
+    fn end_read(&self, _key: &str) {}
+
+    fn end_write(&self, _key: &str) {}
+}
