@@ -138,7 +138,7 @@ impl StorageManager {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// sm.put("key", b"value");
@@ -162,7 +162,7 @@ impl StorageManager {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// let key = sm.put_anon(b"value");
@@ -184,7 +184,7 @@ impl StorageManager {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// sm.put("key", b"value");
@@ -206,7 +206,7 @@ impl StorageManager {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust,no_run
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// sm.put("key", b"value");
