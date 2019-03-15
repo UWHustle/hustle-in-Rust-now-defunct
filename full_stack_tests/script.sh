@@ -1,6 +1,7 @@
 #!/bin/bash
 set -x
 rm -f ../full_stack_tests/test_output.txt
+cd ../build
 rm -f diff.txt
 rm -f ./test-data/test_table.hsl
 rm -f ./test-data/test_table_project.hsl
