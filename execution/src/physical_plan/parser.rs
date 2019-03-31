@@ -5,6 +5,7 @@ use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::Aggregate;
 use physical_operators::create_table::CreateTable;
+use physical_operators::drop_table::DropTable;
 use physical_operators::insert::Insert;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
@@ -43,6 +44,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
         "Limit" => parse_limit(json),
         "InsertTuple" => parse_insert_tuple(json),
         "CreateTable" => parse_create_table(json),
+        "DropTable" => parse_drop_table(json),
         _ => panic!("Optimizer tree node type {} not supported", json_name),
     }
 }
@@ -132,6 +134,10 @@ fn parse_create_table(json: &serde_json::Value) -> Node {
     let cols = parse_column_list(&json["attributes"]);
     let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
     Node::new(Rc::new(CreateTable::new(relation)), vec![])
+}
+
+fn parse_drop_table(json: &serde_json::Value) -> Node {
+    Node::new(Rc::new(DropTable::new(&json["relation"].as_str().unwrap())), vec![])
 }
 
 fn parse_table_reference(json: &serde_json::Value) -> Node {
