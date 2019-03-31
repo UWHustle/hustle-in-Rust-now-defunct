@@ -85,6 +85,9 @@ impl Value for IPv4 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.type_id().variant {
+            Variant::Int1 => {
+                comp.apply(self.value, u32::from(cast_value::<Int1>(other).value()))
+            }
             Variant::Int2 => {
                 comp.apply(i64::from(self.value), i64::from(cast_value::<Int2>(other).value()))
             }
@@ -138,6 +141,11 @@ mod test {
     #[test]
     fn ipv4_compare() {
         let ipv4 = IPv4::from(2105834626);
+
+        let int1 = Int1::from(127);
+        assert!(!ipv4.less(&int1));
+        assert!(ipv4.greater(&int1));
+        assert!(!ipv4.equals(&int1));
 
         let int2 = Int2::from(120);
         assert!(!ipv4.less(&int2));

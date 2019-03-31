@@ -32,6 +32,7 @@ pub trait Buffer {
         let is_null = self.is_null();
         let data = self.data();
         match self.type_id().variant {
+            Variant::Int1 => Box::new(Int1::marshall(data, nullable, is_null)),
             Variant::Int2 => Box::new(Int2::marshall(data, nullable, is_null)),
             Variant::Int4 => Box::new(Int4::marshall(data, nullable, is_null)),
             Variant::Int8 => Box::new(Int8::marshall(data, nullable, is_null)),

@@ -3,6 +3,7 @@ use super::*;
 /// An enumeration of all possible concrete types
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Variant {
+    Int1,
     Int2,
     Int4,
     Int8,
@@ -32,6 +33,7 @@ impl TypeID {
         let variant_str = *tokens.get(0).expect("Error: type string is empty");
 
         let variant = match variant_str {
+            "tinyint" => Variant::Int1,
             "smallint" => Variant::Int2,
             "int" => Variant::Int4,
             "bigint" | "long" => Variant::Int8,
@@ -47,6 +49,7 @@ impl TypeID {
 
     pub fn size(&self) -> usize {
         match self.variant {
+            Variant::Int1 => 1,
             Variant::Int2 => 2,
             Variant::Int4 => 4,
             Variant::Int8 => 8,
@@ -72,6 +75,7 @@ impl TypeID {
 
     pub fn parse(&self, string: &str) -> Box<Value> {
         match self.variant {
+            Variant::Int1 => Box::new(Int1::parse(string)),
             Variant::Int2 => Box::new(Int2::parse(string)),
             Variant::Int4 => Box::new(Int4::parse(string)),
             Variant::Int8 => Box::new(Int8::parse(string)),
@@ -87,6 +91,7 @@ impl TypeID {
             panic!("Non-nullable version of {:?}", self.variant);
         }
         match self.variant {
+            Variant::Int1 => Box::new(Int1::create_null()),
             Variant::Int2 => Box::new(Int2::create_null()),
             Variant::Int4 => Box::new(Int4::create_null()),
             Variant::Int8 => Box::new(Int8::create_null()),
@@ -99,6 +104,7 @@ impl TypeID {
 
     pub fn create_zero(&self) -> Box<Numeric> {
         match self.variant {
+            Variant::Int1 => Box::new(Int1::new(0, self.nullable)),
             Variant::Int2 => Box::new(Int2::new(0, self.nullable)),
             Variant::Int4 => Box::new(Int4::new(0, self.nullable)),
             Variant::Int8 => Box::new(Int8::new(0, self.nullable)),
