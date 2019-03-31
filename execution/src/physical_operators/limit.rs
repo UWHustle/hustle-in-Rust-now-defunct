@@ -3,13 +3,11 @@ Limit physical operator
 
 The output is the first limit rows of the input relation.
 */
-use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
-
-use storage_manager::StorageManager;
-
 use physical_operators::Operator;
+
+use super::storage::StorageManager;
 
 #[derive(Debug)]
 pub struct Limit {
@@ -22,7 +20,7 @@ impl Limit {
     pub fn new(relation: Relation, limit: u32) -> Limit {
         let schema = Schema::new(relation.get_columns().clone());
         let output_relation = Relation::new(
-            format!("{}{}", relation.get_name(), "_limit".to_string()),
+            &format!("{}{}", relation.get_name(), "_limit".to_string()),
             schema,
         );
         Limit {
@@ -38,19 +36,17 @@ impl Operator for Limit {
         self.output_relation.clone()
     }
 
-    fn execute(&self) -> Relation {
-        let mut output_data = StorageManager::create_relation(
-            &self.output_relation,
-            self.relation.get_row_size() * (self.limit as usize),
-        );
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        let input_data = storage_manager.get(self.relation.get_name()).unwrap();
 
-        let columns: Vec<Column> = self.relation.get_columns().to_vec();
-        let input_data = StorageManager::get_full_data(&self.relation);
+        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
+        let output_size = self.relation.get_row_size() * (self.limit as usize);
+        let mut output_data: Vec<u8> = vec![0; output_size];
 
         let mut i = 0;
         let mut records = 0;
         while i < input_data.len() && records < self.limit {
-            for column in &columns {
+            for column in self.relation.get_columns() {
                 let value_length = column.get_datatype().next_size(&input_data[i..]);
                 output_data[i..i + value_length].clone_from_slice(&input_data[i..i + value_length]);
                 i += value_length;
@@ -58,7 +54,9 @@ impl Operator for Limit {
             records += 1;
         }
 
-        StorageManager::trim_relation(&self.output_relation, i);
+        output_data.resize(i, 0);
+        storage_manager.put(self.output_relation.get_name(), &output_data);
+
         self.get_target_relation()
     }
 }

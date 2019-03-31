@@ -130,13 +130,13 @@ fn parse_selection(json: &serde_json::Value) -> Node {
 
 fn parse_create_table(json: &serde_json::Value) -> Node {
     let cols = parse_column_list(&json["attributes"]);
-    let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
+    let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
     Node::new(Rc::new(CreateTable::new(relation)), vec![])
 }
 
 fn parse_table_reference(json: &serde_json::Value) -> Node {
     let cols = parse_column_list(&json["array"]);
-    let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
+    let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
     Node::new(Rc::new(TableReference::new(relation)), vec![])
 }
 

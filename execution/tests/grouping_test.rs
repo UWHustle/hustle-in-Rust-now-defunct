@@ -4,23 +4,26 @@ use execution::logical_entities::aggregations::sum::Sum;
 use execution::logical_entities::column::Column;
 use execution::logical_entities::relation::Relation;
 use execution::physical_operators::aggregate::Aggregate;
+use execution::physical_plan::node::Node;
 use execution::physical_operators::project::Project;
 use execution::physical_operators::select_sum::SelectSum;
 use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::type_id::*;
 
-const RECORD_COUNT: usize = 10;
-
-use execution::physical_plan::node::Node;
 use std::rc::Rc;
+
+extern crate storage;
+use self::storage::StorageManager;
+
+const RECORD_COUNT: usize = 10;
 
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
     let select_operator = SelectSum::new(
         relation.clone(),
         Column::new(column_name, TypeID::new(Variant::Int4, true)),
     );
-    select_operator.execute().parse::<u128>().unwrap()
+    select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
 }
 
 #[test]
@@ -45,5 +48,5 @@ fn hustle_sum_group_by(relation: Relation) -> Relation {
         vec![],
         Box::new(Sum::new(col.get_datatype())),
     );
-    Node::new(Rc::new(aggregate_op), vec![Rc::new(project_node)]).execute()
+    Node::new(Rc::new(aggregate_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())
 }

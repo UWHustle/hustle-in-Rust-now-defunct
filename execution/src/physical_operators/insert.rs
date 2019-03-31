@@ -1,10 +1,9 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
+use physical_operators::Operator;
 use type_system::*;
 
-use physical_operators::Operator;
-
-use storage_manager::StorageManager;
+use super::storage::StorageManager;
 
 pub struct Insert {
     relation: Relation,
@@ -22,20 +21,23 @@ impl Operator for Insert {
         self.relation.clone()
     }
 
-    fn execute(&self) -> Relation {
-        let row_size = self.row.get_size();
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+        let mut data: Vec<u8> = vec![];
+        match storage_manager.get(self.relation.get_name()) {
+            Some(value) => data = value.to_vec(),
+            None => (),
+        }
 
-        let mut data = StorageManager::append_relation(&self.relation, row_size);
-
-        let mut n = 0;
-        for (i, _column) in self.row.get_schema().get_columns().iter().enumerate() {
-            let value = &self.row.get_values()[i];
+        let mut n = data.len();
+        data.resize(n + self.row.get_size(), 0);
+        for value in self.row.get_values() {
             let size = value.size();
             data[n..n + size].clone_from_slice(value.un_marshall().data());
             n += size;
         }
 
-        StorageManager::flush(&data);
+        storage_manager.put(self.relation.get_name(), &data);
+
         self.get_target_relation()
     }
 }

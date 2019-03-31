@@ -10,18 +10,21 @@ use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
-use storage_manager::StorageManager;
 use type_system::operators::*;
 use type_system::type_id::TypeID;
 
-// TODO: Replace with new storage manager functionality
-static mut CURRENT_ID: u32 = 0;
+extern crate storage;
+use self::storage::StorageManager;
 
-pub struct ImmediateRelation {
+// This is semi-temporary
+static mut STORAGE_MANAGER: *mut StorageManager = 0 as *mut StorageManager;
+
+pub struct ImmediateRelation<'a> {
     relation: Relation,
+    storage_manager: &'a StorageManager,
 }
 
-impl ImmediateRelation {
+impl<'a> ImmediateRelation<'a> {
     pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Self {
         if col_names.len() != col_type_names.len() {
             panic!("Number of types does not match number of columns");
@@ -32,13 +35,19 @@ impl ImmediateRelation {
             columns.push(Column::new(String::from(col_names[i]), type_id));
         }
 
-        let name = unsafe {
-            CURRENT_ID += 1;
-            format!("${}", CURRENT_ID)
-        };
+        unsafe {
+            if STORAGE_MANAGER == 0 as *mut StorageManager {
+                STORAGE_MANAGER = Box::into_raw(Box::new(StorageManager::new()));
+            }
+        }
+
         let schema = Schema::new(columns);
-        ImmediateRelation {
-            relation: Relation::new(name, schema),
+        unsafe {
+            let name = (*STORAGE_MANAGER).put_anon(&vec![]);
+            ImmediateRelation {
+                relation: Relation::new(&name, schema),
+                storage_manager: &*STORAGE_MANAGER,
+            }
         }
     }
 
@@ -49,30 +58,25 @@ impl ImmediateRelation {
     /// Replaces current data in the relation with data from the Hustle file
     /// TODO: Pull schema from the catalog
     pub fn import_hustle(&self, name: &str) {
-        let data_relation = Relation::new(String::from(name), self.relation.get_schema().clone());
-        let data = StorageManager::get_full_data(&data_relation);
-        let mut copy = StorageManager::create_relation(&self.relation, data.len());
-        copy.clone_from_slice(&data);
-        StorageManager::flush(&copy);
+        let import_relation = Relation::new(name, self.relation.get_schema().clone());
+        let data = self.storage_manager.get(import_relation.get_name()).unwrap();
+        self.storage_manager.put(self.relation.get_name(), &data);
     }
 
     pub fn export_hustle(&self, name: &str) {
-        let copy_relation = Relation::new(String::from(name), self.relation.get_schema().clone());
-        let data = StorageManager::get_full_data(&self.relation);
-        let mut copy = StorageManager::create_relation(&copy_relation, data.len());
-        copy.clone_from_slice(&data);
-        StorageManager::flush(&copy);
+        let data = self.storage_manager.get(self.relation.get_name()).unwrap();
+        self.storage_manager.put(name, &data);
     }
 
     /// Replaces current data in the relation with data from the CSV file
     pub fn import_csv(&self, filename: &str) {
         let import_csv_op = ImportCsv::new(String::from(filename), self.relation.clone());
-        import_csv_op.execute();
+        import_csv_op.execute(&self.storage_manager);
     }
 
     pub fn export_csv(&self, filename: &str) {
         let export_csv_op = ExportCsv::new(String::from(filename), self.relation.clone());
-        export_csv_op.execute();
+        export_csv_op.execute(&self.storage_manager);
     }
 
     pub fn aggregate(
@@ -91,34 +95,38 @@ impl ImmediateRelation {
             agg_name,
         );
         ImmediateRelation {
-            relation: agg_op.execute(),
+            relation: agg_op.execute(&self.storage_manager),
+            storage_manager: self.storage_manager,
         }
     }
 
     pub fn join(&self, other: &ImmediateRelation) -> Self {
         let join_op = Join::new(self.relation.clone(), other.relation.clone());
         ImmediateRelation {
-            relation: join_op.execute(),
+            relation: join_op.execute(&self.storage_manager),
+            storage_manager: self.storage_manager,
         }
     }
 
     pub fn limit(&self, limit: u32) -> Self {
         let limit_op = Limit::new(self.relation.clone(), limit);
         ImmediateRelation {
-            relation: limit_op.execute(),
+            relation: limit_op.execute(self.storage_manager),
+            storage_manager: self.storage_manager,
         }
     }
 
     pub fn print(&self) {
         let print_op = Print::new(self.relation.clone());
-        print_op.execute();
+        print_op.execute(self.storage_manager);
     }
 
     pub fn project(&self, col_names: Vec<&str>) -> Self {
         let columns = self.relation.columns_from_names(col_names);
         let project_op = Project::pure_project(self.relation.clone(), columns);
         ImmediateRelation {
-            relation: project_op.execute(),
+            relation: project_op.execute(self.storage_manager),
+            storage_manager: self.storage_manager,
         }
     }
 
@@ -137,12 +145,13 @@ impl ImmediateRelation {
             Box::new(predicate),
         );
         ImmediateRelation {
-            relation: project_op.execute(),
+            relation: project_op.execute(self.storage_manager),
+            storage_manager: self.storage_manager,
         }
     }
 }
 
-impl Drop for ImmediateRelation {
+impl<'a> Drop for ImmediateRelation<'a> {
     fn drop(&mut self) {
         match std::fs::remove_file(self.relation.get_filename()) {
             Ok(_) => return,

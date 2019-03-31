@@ -8,12 +8,13 @@ use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
-use storage_manager::StorageManager;
 use type_system::borrowed_buffer::BorrowedBuffer;
 use type_system::type_id::TypeID;
 use type_system::*;
 
 use std::collections::HashMap;
+
+use super::storage::StorageManager;
 
 pub struct Aggregate {
     input_relation: Relation,
@@ -34,7 +35,7 @@ impl Aggregate {
         output_cols.push(Column::new(agg_col_name, aggregation.output_type()));
 
         let schema = Schema::new(output_cols);
-        let output_relation = Relation::new(format!("{}_agg", input_relation.get_name()), schema);
+        let output_relation = Relation::new(&format!("{}_agg", input_relation.get_name()), schema);
 
         Aggregate {
             input_relation,
@@ -69,11 +70,13 @@ impl Operator for Aggregate {
         self.output_relation.clone()
     }
 
-    fn execute(&self) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
         let input_cols = self.input_relation.get_columns().to_vec();
-        let input_data = StorageManager::get_full_data(&self.input_relation.clone());
-        let output_size = self.output_relation.get_row_size() * self.input_relation.get_n_rows();
-        let mut output_data = StorageManager::create_relation(&self.output_relation, output_size);
+        let input_data = storage_manager.get(self.input_relation.get_name()).unwrap();
+
+        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
+        let output_size = self.output_relation.get_row_size() * self.input_relation.get_n_rows(storage_manager);
+        let mut output_data: Vec<u8> = vec![0; output_size];
 
         //A HashMap mapping group by values to aggregations for that grouping
         let mut group_by: HashMap<Vec<(String, Column)>, Box<AggregationTrait>> = HashMap::new();
@@ -138,8 +141,9 @@ impl Operator for Aggregate {
             j += output.un_marshall().data().len();
         }
 
-        StorageManager::flush(&output_data);
-        StorageManager::trim_relation(&self.output_relation, j);
+        output_data.resize(j, 0);
+        storage_manager.put(self.output_relation.get_name(), &output_data);
+
         self.get_target_relation()
     }
 }
