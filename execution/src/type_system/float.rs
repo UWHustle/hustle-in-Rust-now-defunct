@@ -315,7 +315,7 @@ mod test {
     #[should_panic]
     fn invalid_float4_compare() {
         let float4 = Float4::from(1843.5);
-        let utf8_string = UTF8String::from("Forty two: ");
+        let utf8_string = ByteString::from("Forty two: ");
         float4.equals(&utf8_string);
     }
 
@@ -381,7 +381,7 @@ mod test {
     #[should_panic]
     fn invalid_float8_compare() {
         let float8 = Float8::from(987654321.0);
-        let utf8_string = UTF8String::from("the answer ");
+        let utf8_string = ByteString::from("the answer ");
         float8.equals(&utf8_string);
     }
 }

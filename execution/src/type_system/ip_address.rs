@@ -177,7 +177,7 @@ mod test {
     #[should_panic]
     fn invalid_ipv4_compare() {
         let ipv4 = IPv4::from(2105834626);
-        let utf8_string = UTF8String::from("localhost");
+        let utf8_string = ByteString::from("localhost");
         ipv4.equals(&utf8_string);
     }
 }

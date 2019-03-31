@@ -5,7 +5,7 @@ pub mod ip_address;
 pub mod operators;
 pub mod owned_buffer;
 pub mod type_id;
-pub mod utf8_string;
+pub mod byte_string;
 
 use std::any::Any;
 use std::fmt::Debug;
@@ -16,7 +16,7 @@ use self::ip_address::*;
 use self::operators::*;
 use self::owned_buffer::*;
 use self::type_id::*;
-use self::utf8_string::*;
+use self::byte_string::*;
 
 /* ============================================================================================== */
 
@@ -38,7 +38,7 @@ pub trait Buffer {
             Variant::Int8 => Box::new(Int8::marshall(data, nullable, is_null)),
             Variant::Float4 => Box::new(Float4::marshall(data, nullable, is_null)),
             Variant::Float8 => Box::new(Float8::marshall(data, nullable, is_null)),
-            Variant::UTF8String => Box::new(UTF8String::marshall(data, nullable, is_null)),
+            Variant::ByteString(max_size, varchar) => Box::new(ByteString::marshall(data, nullable, is_null, max_size, varchar)),
             Variant::IPv4 => Box::new(IPv4::marshall(data, nullable, is_null)),
         }
     }

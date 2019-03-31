@@ -9,7 +9,7 @@ pub enum Variant {
     Int8,
     Float4,
     Float8,
-    UTF8String,
+    ByteString(usize, bool), // Represent (max_size, varchar)
     IPv4,
 }
 
@@ -30,7 +30,17 @@ impl TypeID {
     pub fn from_str(string: &str) -> TypeID {
         let lower = string.to_lowercase();
         let tokens: Vec<&str> = lower.split(' ').collect();
-        let variant_str = *tokens.get(0).expect("Error: type string is empty");
+        let mut variant_str = *tokens.get(0).expect("Error: type string is empty");
+
+        let mut size_arg: usize = 0;
+        let l_paren = variant_str.find('(');
+        let r_paren = variant_str.find(')');
+        if l_paren != None && r_paren != None {
+            let i_l = l_paren.unwrap();
+            let i_r = r_paren.unwrap();
+            size_arg = variant_str[i_l + 1..i_r].parse::<usize>().expect("Invalid size parameter");
+            variant_str = &variant_str[0..i_l];
+        }
 
         let variant = match variant_str {
             "tinyint" => Variant::Int1,
@@ -39,7 +49,8 @@ impl TypeID {
             "bigint" | "long" => Variant::Int8,
             "real" => Variant::Float4,
             "double" => Variant::Float8,
-            "varchar" => Variant::UTF8String,
+            "varchar" => Variant::ByteString(size_arg, true),
+            "char" => Variant::ByteString(size_arg, false),
             _ => panic!("Unknown type variant {}", variant_str),
         };
 
@@ -55,17 +66,16 @@ impl TypeID {
             Variant::Int8 => 8,
             Variant::Float4 => 4,
             Variant::Float8 => 8,
-            Variant::UTF8String => 0,
+            Variant::ByteString(max_size, _) => max_size,
             Variant::IPv4 => 4,
         }
     }
 
-    pub fn next_size(&self, data: &[u8]) -> usize {
+    pub fn next_size(&self, _data: &[u8]) -> usize {
         if self.size() > 0 {
             self.size()
         } else {
             match self.variant {
-                Variant::UTF8String => UTF8String::next_size(data),
                 _ => {
                     panic!("Variable size with no next_size() implementation");
                 }
@@ -82,7 +92,7 @@ impl TypeID {
             Variant::Float4 => Box::new(Float4::parse(string)),
             Variant::Float8 => Box::new(Float8::parse(string)),
             Variant::IPv4 => Box::new(IPv4::parse(string)),
-            Variant::UTF8String => Box::new(UTF8String::from(string)),
+            Variant::ByteString(max_size, varchar) => Box::new(ByteString::new(string.as_bytes(), true, max_size, varchar)),
         }
     }
 
@@ -97,7 +107,7 @@ impl TypeID {
             Variant::Int8 => Box::new(Int8::create_null()),
             Variant::Float4 => Box::new(Float4::create_null()),
             Variant::Float8 => Box::new(Float8::create_null()),
-            Variant::UTF8String => Box::new(UTF8String::create_null()),
+            Variant::ByteString(max_size, varchar) => Box::new(ByteString::create_null(max_size, varchar)),
             _ => panic!("Type {:?} cannot be null", self.variant),
         }
     }

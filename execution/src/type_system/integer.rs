@@ -554,7 +554,7 @@ mod test {
     #[should_panic]
     fn invalid_int1_compare() {
         let int1 = Int1::from(123);
-        let utf8_string = UTF8String::from("late arrival");
+        let utf8_string = ByteString::from("late arrival");
         assert!(!int1.equals(&utf8_string));
     }
 
@@ -614,7 +614,7 @@ mod test {
     #[should_panic]
     fn invalid_int2_compare() {
         let int2 = Int2::from(17);
-        let utf8_string = UTF8String::from("to life, ");
+        let utf8_string = ByteString::from("to life, ");
         assert!(!int2.equals(&utf8_string));
     }
 
@@ -675,7 +675,7 @@ mod test {
     #[should_panic]
     fn invalid_int4_compare() {
         let int4 = Int4::from(1748);
-        let utf8_string = UTF8String::from("the universe, ");
+        let utf8_string = ByteString::from("the universe, ");
         int4.equals(&utf8_string);
     }
 
@@ -738,7 +738,7 @@ mod test {
     #[should_panic]
     fn invalid_int8_compare() {
         let int8 = Int8::from(13784940);
-        let utf8_string = UTF8String::from("and everything.");
+        let utf8_string = ByteString::from("and everything.");
         int8.equals(&utf8_string);
     }
 }
