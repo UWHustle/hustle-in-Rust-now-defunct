@@ -32,12 +32,25 @@ SELECT s_id, sub_nbr, bit_1, bit_2, bit_3, bit_4, bit_5, bit_6, bit_7, bit_8, bi
 SELECT cf.numberx FROM Special_Facility AS sf, Call_Forwarding AS cf WHERE (sf.s_id = <s_id> AND sf.sf_type = <sf_type> AND sf.is_active = 1) AND (cf.s_id = sf.s_id AND cf.sf_type = sf.sf_type) AND (cf.start_time <= <start_time> AND <end_time> < cf.end_time);
 
 /*
+ * GET_NEW_DESTINATION with sample values
+ */
+INSERT INTO Special_Facility VALUES(17, 4, 1, 5, 5, 'ABCDE');
+INSERT INTO Call_Forwarding VALUES(17, 4, 7, 8, 'ABCDEFGHIJKLMNO');
+SELECT cf.numberx FROM Special_Facility AS sf, Call_Forwarding AS cf WHERE (sf.s_id = 17 AND sf.sf_type = 4 AND sf.is_active = 1) AND (cf.s_id = sf.s_id AND cf.sf_type = sf.sf_type) AND (cf.start_time <= 8 AND 1 < cf.end_time);
+
+/*
  * GET_ACCESS_DATA
  *  - <s_id> is randomly selected from [1, size of Subscriber table]
  *  - <ai_type> is randomly selected from [1, 4]
  *  - The probability for the transaction to succeed is 62.5%
  */
 SELECT data1, data2, data3, data4 FROM Access_Info WHERE s_id = <s_id> AND ai_type = <ai_type>;
+
+/*
+ * GET_ACCESS_DATA with sample values
+ */
+INSERT INTO Access_Info VALUES(22, 4, 7, 8, 'AAA', 'AAAAA');
+SELECT data1, data2, data3, data4 FROM Access_Info WHERE s_id = 22 AND ai_type = 4;
 
 /*
  * UPDATE_LOCATION

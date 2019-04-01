@@ -1,5 +1,5 @@
 pub mod comparison;
-pub mod conjunction;
+pub mod connective;
 pub mod tautology;
 
 use logical_entities::row::Row;
