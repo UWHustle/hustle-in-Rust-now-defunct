@@ -24,7 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "catalog/CatalogRelation.hpp"
 #include "query_optimizer/OptimizerTree.hpp"
 #include "query_optimizer/expressions/AttributeReference.hpp"
 #include "query_optimizer/logical/Logical.hpp"
