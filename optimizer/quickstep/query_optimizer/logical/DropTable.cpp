@@ -40,7 +40,7 @@ void DropTable::getFieldStringItems(
     std::vector<std::string> *container_child_field_names,
     std::vector<std::vector<OptimizerTreeBaseNodePtr>> *container_child_fields) const {
   inline_field_names->push_back("relation");
-  inline_field_values->push_back(catalog_relation_->getName());
+  inline_field_values->push_back(relation_name_);
 }
 
 }  // namespace logical

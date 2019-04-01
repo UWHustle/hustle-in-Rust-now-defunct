@@ -152,7 +152,7 @@ bool OneToOne::generatePlan(const L::LogicalPtr &logical_input,
     case L::LogicalType::kDropTable: {
       const L::DropTablePtr drop_table =
           std::static_pointer_cast<const L::DropTable>(logical_input);
-      *physical_output = P::DropTable::Create(drop_table->catalog_relation());
+      *physical_output = P::DropTable::Create(drop_table->relation_name());
       return true;
     }
     case L::LogicalType::kInsertSelection: {

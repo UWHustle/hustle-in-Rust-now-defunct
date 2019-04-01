@@ -60,12 +60,12 @@ class DropTable : public Physical {
   /**
    * @return Gets the catalog relation to be dropped.
    */
-  const CatalogRelation* catalog_relation() const { return catalog_relation_; }
+  const std::string& relation_name() const { return relation_name_; }
 
   PhysicalPtr copyWithNewChildren(
       const std::vector<PhysicalPtr> &new_children) const override {
     DCHECK_EQ(getNumChildren(), new_children.size());
-    return Create(catalog_relation_);
+    return Create(relation_name_);
   }
 
   std::vector<expressions::AttributeReferencePtr> getOutputAttributes() const override {
@@ -88,8 +88,8 @@ class DropTable : public Physical {
    * @param catalog_relation The relation to be dropped.
    * @return An immutable DropTable node.
    */
-  static DropTablePtr Create(const CatalogRelation *catalog_relation) {
-    return DropTablePtr(new DropTable(catalog_relation));
+  static DropTablePtr Create(const std::string relation_name) {
+    return DropTablePtr(new DropTable(relation_name));
   }
 
  protected:
@@ -102,10 +102,10 @@ class DropTable : public Physical {
       std::vector<std::vector<OptimizerTreeBaseNodePtr>> *container_child_fields) const override;
 
  private:
-  explicit DropTable(const CatalogRelation *catalog_relation)
-      : catalog_relation_(catalog_relation) {}
+  explicit DropTable(const std::string relation_name)
+      : relation_name_(relation_name) {}
 
-  const CatalogRelation *catalog_relation_;
+  const std::string relation_name_;
 
   DISALLOW_COPY_AND_ASSIGN(DropTable);
 };
