@@ -26,6 +26,16 @@ impl Deref for Block {
     }
 }
 
+impl Block {
+    fn new(value: Arc<Mmap>) -> Self {
+        Block {
+            value,
+            rc: Arc::new((Mutex::new(1), Condvar::new()))
+        }
+    }
+}
+
+
 impl Drop for Block {
     fn drop(&mut self) {
         // Decrement the reference count when Value is dropped.
@@ -36,11 +46,13 @@ impl Drop for Block {
     }
 }
 
-impl Block {
-    fn new(value: Arc<Mmap>) -> Self {
+impl Clone for Block {
+    fn clone(&self) -> Self {
+        let mut rc_guard = self.rc.0.lock().unwrap();
+        *rc_guard += 1;
         Block {
-            value,
-            rc: Arc::new((Mutex::new(1), Condvar::new()))
+            value: self.value.clone(),
+            rc: self.rc.clone()
         }
     }
 }
@@ -72,17 +84,6 @@ pub struct Buffer {
     b1: Mutex<OrderedHashMap<String, ()>>,
     b2: Mutex<OrderedHashMap<String, ()>>,
     p: Mutex<usize>
-}
-
-impl Clone for Block {
-    fn clone(&self) -> Self {
-        let mut rc_guard = self.rc.0.lock().unwrap();
-        *rc_guard += 1;
-        Block {
-            value: self.value.clone(),
-            rc: self.rc.clone()
-        }
-    }
 }
 
 impl Buffer {

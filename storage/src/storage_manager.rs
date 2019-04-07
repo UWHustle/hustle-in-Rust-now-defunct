@@ -12,10 +12,23 @@ const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 const BLOCK_SIZE: usize = 1000;
 const TEMP_RECORD_PREFIX: char = '$';
 
-/// A record that represents a key-value pair. Initially, the `Record` contains no references to the
-/// value's blocks in the buffer. The blocks are requested from the buffer as needed. Blocks can
-/// be accessed through the iterator `RecordBlockIter`, or specific blocks can be requested by index
-/// or overall byte offset.
+pub trait RawRecordAccess {
+    fn get_byte(&self, byte: usize) -> Option<u8>;
+}
+
+pub trait BlockRecordAccess {
+    fn blocks(&self) -> RecordBlockIter;
+    fn get_block(&self, block_index: usize) -> Option<RecordBlock>;
+}
+
+pub trait StructuredRecordAccess<'a> {
+    fn get_row_col(&'a mut self, row: usize, col: usize) -> Option<&[u8]>;
+    fn get_row(&'a mut self, row: usize) -> RowIter;
+    fn get_col(&'a mut self, col: usize) -> ColIter;
+}
+
+/// A record that represents a key-value pair in the `StorageManager`. The value can be accessed
+/// with raw byte offset or at the block level for bulk operations.
 pub struct Record<'a> {
     key: &'a str,
     buffer: &'a Buffer,
@@ -23,38 +36,105 @@ pub struct Record<'a> {
 }
 
 impl<'a> Record<'a> {
+    /// Creates a new `Record`.
     fn new(key: &'a str, buffer: &'a Buffer,
-               record_guard: &'a Box<RecordGuard + Send + Sync>) -> Self {
+           record_guard: &'a Box<RecordGuard + Send + Sync>) -> Self {
         Record {
             key,
             buffer,
             record_guard
         }
     }
+}
 
+impl<'a> RawRecordAccess for Record<'a> {
+    fn get_byte(&self, byte: usize) -> Option<u8> {
+        unimplemented!()
+    }
+}
+
+impl<'a> BlockRecordAccess for Record<'a> {
     /// Returns an iterator over the record's blocks.
-    pub fn blocks(&self) -> RecordBlockIter {
+    fn blocks(&self) -> RecordBlockIter {
         RecordBlockIter::new(self)
     }
 
     /// Returns a reference to the block at the specified `block_index` if it exists.
-    pub fn get_block(&self, block_index: usize) -> Option<RecordBlock> {
+    fn get_block(&self, block_index: usize) -> Option<RecordBlock> {
         let key_for_block = StorageManager::key_for_block(self.key, block_index);
         self.buffer.get(&key_for_block).map(|block| (RecordBlock::new(self, block)))
     }
+}
 
-    /// Returns a tuple containing the block that spans the specified byte `offset` and the index of
-    /// that byte within the block.
-    pub fn get_block_with_byte_offset(&self, offset: usize) -> Option<(RecordBlock, usize)> {
-        let block_index = offset / BLOCK_SIZE;
-        let index_in_block = offset % BLOCK_SIZE;
-        self.get_block(block_index).map(|block| (block, index_in_block))
+pub struct StructuredRecord<'a> {
+    record: Record<'a>,
+    schema: &'a [usize],
+    row_size: usize,
+    rows_per_block: usize,
+    current_block: Option<Block>,
+    current_block_index: usize
+}
+
+impl<'a> StructuredRecord<'a> {
+    fn new(key: &'a str, buffer: &'a Buffer, record_guard: &'a Box<RecordGuard + Send + Sync>,
+           schema: &'a [usize]) -> Self {
+        // Pre-compute some frequently used constants.
+        let row_size: usize = schema.iter().sum();
+        let rows_per_block: usize = BLOCK_SIZE / row_size;
+
+        StructuredRecord {
+            record: Record::new(key, buffer, record_guard),
+            schema,
+            row_size,
+            rows_per_block,
+            current_block: None,
+            current_block_index: 0
+        }
     }
 }
 
-impl<'a> Drop for Record<'a> {
-    fn drop(&mut self) {
-        self.record_guard.end_read(self.key);
+impl<'a> RawRecordAccess for StructuredRecord<'a> {
+    fn get_byte(&self, byte: usize) -> Option<u8> {
+        self.record.get_byte(byte)
+    }
+}
+
+impl<'a> BlockRecordAccess for StructuredRecord<'a> {
+    /// Returns an iterator over the record's blocks.
+    fn blocks(&self) -> RecordBlockIter {
+        self.record.blocks()
+    }
+
+    /// Returns a reference to the block at the specified `block_index` if it exists.
+    fn get_block(&self, block_index: usize) -> Option<RecordBlock> {
+        self.record.get_block(block_index)
+    }
+}
+
+impl<'a> StructuredRecordAccess<'a> for StructuredRecord<'a> {
+    fn get_row_col(&mut self, row: usize, col: usize) -> Option<&[u8]> {
+        let block_index = row / self.rows_per_block;
+        let row_in_block = row % self.rows_per_block;
+
+        if self.current_block.is_none() || block_index != self.current_block_index {
+            let key_for_block = StorageManager::key_for_block(self.record.key, block_index);
+            self.current_block = self.record.buffer.get(&key_for_block);
+        }
+
+        self.current_block.as_ref()
+            .map(|block| {
+                let offset_in_row: usize = self.schema[..col].iter().sum();
+                let offset_in_block =  self.row_size * row_in_block + offset_in_row;
+                &block[offset_in_block..offset_in_block + self.schema[col]]
+            })
+    }
+
+    fn get_row(&'a mut self, row: usize) -> RowIter {
+        RowIter::new(self, row)
+    }
+
+    fn get_col(&'a mut self, col: usize) -> ColIter {
+        ColIter::new(self, col)
     }
 }
 
@@ -107,6 +187,56 @@ impl<'a> Iterator for RecordBlockIter<'a> {
     }
 }
 
+impl<'a> Drop for Record<'a> {
+    fn drop(&mut self) {
+        self.record_guard.end_read(self.key);
+    }
+}
+
+pub struct RowIter<'a> {
+    structured_record: &'a mut StructuredRecord<'a>,
+    row: usize,
+    col: usize
+}
+
+impl<'a> RowIter<'a> {
+    fn new(structured_record: &'a mut StructuredRecord<'a>, row: usize) -> Self {
+        RowIter {
+            structured_record,
+            row,
+            col: 0
+        }
+    }
+
+    fn next(&'a mut self) -> Option<&[u8]> {
+        let value = self.structured_record.get_row_col(self.row, self.col);
+        self.col += 1;
+        value
+    }
+}
+
+pub struct ColIter<'a> {
+    structured_record: &'a mut StructuredRecord<'a>,
+    row: usize,
+    col: usize
+}
+
+impl<'a> ColIter<'a> {
+    fn new(structured_record: &'a mut StructuredRecord<'a>, col: usize) -> Self {
+        ColIter {
+            structured_record,
+            row: 0,
+            col
+        }
+    }
+
+    fn next(&'a mut self) -> Option<&'a [u8]> {
+        let value = self.structured_record.get_row_col(self.row, self.col);
+        self.col += 1;
+        value
+    }
+}
+
 /// A storage manager for persisting and caching key-value pairs. Keys are strings and values are
 /// arbitrarily long arrays of bytes. The `StorageManager` breaks the values into uniform blocks and
 /// writes them to the `Buffer`, which handles caching. When the value for a key is requested, a
@@ -134,7 +264,8 @@ impl StorageManager {
         }
     }
 
-    /// Writes the key-value pair to the buffer.
+    /// Writes the key-value pair to the buffer. If the size of the value is greater than the block
+    /// size, the value is broken down into blocks.
     ///
     /// # Examples
     ///
@@ -190,12 +321,24 @@ impl StorageManager {
     /// sm.put("key", b"value");
     /// sm.get("key");
     /// ```
-    pub fn get<'a>(&'a self, key: &'a str) -> Option<Record<'a>> {
+//    pub fn get<'a>(&'a self, key: &'a str) -> Option<Record<'a>> {
+//        self.record_guard.begin_read(key);
+//        let key_for_block = Self::key_for_block(key, 0);
+//        if self.buffer.exists(&key_for_block) {
+//            Some(Record::new(key, &self.buffer, &self.record_guard))
+//            // When the record drops, record_guard.end_read(key) is called
+//        } else {
+//            self.record_guard.end_read(key);
+//            None
+//        }
+//    }
+
+    pub fn get_with_schema<'a>(&'a self, key: &'a str,
+                               schema: &'a [usize]) -> Option<StructuredRecord<'a>> {
         self.record_guard.begin_read(key);
         let key_for_block = Self::key_for_block(key, 0);
         if self.buffer.exists(&key_for_block) {
-            Some(Record::new(key, &self.buffer, &self.record_guard))
-            // When the record drops, record_guard.end_read(key) is called
+            Some(StructuredRecord::new(key, &self.buffer, &self.record_guard, schema))
         } else {
             self.record_guard.end_read(key);
             None
