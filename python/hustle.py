@@ -1,6 +1,9 @@
 import ctypes
+import ctypes.util
 
-lib = ctypes.cdll.LoadLibrary('execution/libexecution.dylib')
+lib_path = ctypes.util.find_library('execution')
+assert lib_path is not None, 'Unable to find Hustle shared lib "execution"'
+lib = ctypes.cdll.LoadLibrary(lib_path)
 
 
 class Relation:

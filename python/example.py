@@ -1,4 +1,4 @@
-from python_api import Relation
+from hustle import Relation
 
 relation = Relation.create(['a', 'b'], ['int', 'int'])
 relation.import_hustle('T')
