@@ -77,6 +77,17 @@ pub unsafe extern "C" fn ffi_aggregate(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn ffi_insert(
+    relation_ptr: *const c_void,
+    value_strings_ptr: *const *const c_char,
+    n_value_strings: u32)
+{
+    let relation = relation_ptr as *const ImmediateRelation;
+    let value_strings = decode_c_str_list(value_strings_ptr, n_value_strings);
+    (*relation).insert(value_strings);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn ffi_join(
     relation1_ptr: *const c_void,
     relation2_ptr: *const c_void) -> *const c_void

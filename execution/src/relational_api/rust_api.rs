@@ -1,10 +1,12 @@
 use logical_entities::column::Column;
 use logical_entities::predicates::comparison::Comparison;
 use logical_entities::relation::Relation;
+use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::*;
 use physical_operators::export_csv::ExportCsv;
 use physical_operators::import_csv::ImportCsv;
+use physical_operators::insert::Insert;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
@@ -12,8 +14,10 @@ use physical_operators::project::Project;
 use physical_operators::Operator;
 use type_system::operators::*;
 use type_system::data_type::DataType;
+use type_system::Value;
 
 extern crate storage;
+
 use self::storage::StorageManager;
 
 // This is semi-temporary
@@ -59,8 +63,10 @@ impl<'a> ImmediateRelation<'a> {
     /// TODO: Pull schema from the catalog
     pub fn import_hustle(&self, name: &str) {
         let import_relation = Relation::new(name, self.relation.get_schema().clone());
-        let data = self.storage_manager.get(import_relation.get_name()).unwrap();
-        self.storage_manager.put(self.relation.get_name(), &data);
+        match self.storage_manager.get(import_relation.get_name()) {
+            None => return,
+            Some(data) => self.storage_manager.put(self.relation.get_name(), &data),
+        }
     }
 
     pub fn export_hustle(&self, name: &str) {
@@ -98,6 +104,21 @@ impl<'a> ImmediateRelation<'a> {
             relation: agg_op.execute(&self.storage_manager),
             storage_manager: self.storage_manager,
         }
+    }
+
+    pub fn insert(
+        &self,
+        value_strings: Vec<&str>)
+    {
+        let schema = self.relation.get_schema();
+        let columns = schema.get_columns();
+        let mut values: Vec<Box<Value>> = vec![];
+        for i in 0..columns.len() {
+            let value = columns[i].get_datatype().parse(value_strings[i]);
+            values.push(value);
+        }
+        let row = Row::new(schema.clone(), values);
+        Insert::new(self.relation.clone(), row).execute(&self.storage_manager);
     }
 
     pub fn join(&self, other: &ImmediateRelation) -> Self {
@@ -153,9 +174,6 @@ impl<'a> ImmediateRelation<'a> {
 
 impl<'a> Drop for ImmediateRelation<'a> {
     fn drop(&mut self) {
-        match std::fs::remove_file(self.relation.get_filename()) {
-            Ok(_) => return,
-            Err(_) => println!("Unable to delete file for relation {}", self.get_name()),
-        }
+        self.storage_manager.delete(self.relation.get_name());
     }
 }

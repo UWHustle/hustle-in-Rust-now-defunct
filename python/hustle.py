@@ -61,6 +61,12 @@ class Relation:
             agg_name_ptr))
         return Relation(relation_ptr)
 
+    def insert(self, values):
+        value_strings = [str(value) for value in values]
+        value_strings_ptr = _encode_c_str_list(value_strings)
+        n_value_strings = ctypes.c_uint32(len(values))
+        lib.ffi_insert(self.relation_ptr, value_strings_ptr, n_value_strings)
+
     def join(self, other):
         ffi_join = lib.ffi_join
         ffi_join.restype = ctypes.c_void_p
