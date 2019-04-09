@@ -1,137 +1,209 @@
 use relational_api::rust_api::ImmediateRelation;
 use std::ffi::*;
 use std::os::raw::c_char;
+use storage::storage_manager::Value;
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_new_relation(
-    col_names_ptr: *const *const c_char,
-    col_type_names_ptr: *const *const c_char,
+    col_names_p: *const *const c_char,
+    type_names_p: *const *const c_char,
     n_cols: u32) -> *const c_void
 {
-    let col_names = decode_c_str_list(col_names_ptr, n_cols);
-    let col_type_names = decode_c_str_list(col_type_names_ptr, n_cols);
-    let relation = Box::new(ImmediateRelation::new(col_names, col_type_names));
+    let col_names = decode_c_str_list(col_names_p, n_cols);
+    let type_names = decode_c_str_list(type_names_p, n_cols);
+    let relation = Box::new(ImmediateRelation::new(col_names, type_names));
     Box::into_raw(relation) as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_drop_relation(relation_ptr: *mut c_void) {
-    Box::from_raw(relation_ptr as *mut ImmediateRelation);
+pub unsafe extern "C" fn ffi_get_name_p(relation_p: *const ImmediateRelation) -> *const c_void {
+    encode_c_str((*relation_p).get_name()) as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_get_name(relation_ptr: *const c_void) -> *const c_void {
-    let relation = relation_ptr as *const ImmediateRelation;
-    CString::new((*relation).get_name())
-        .expect("Unable to construct C string")
-        .into_raw() as *const c_void
+pub unsafe extern "C" fn ffi_get_col_names_p(
+    relation_p: *const ImmediateRelation) -> *const c_void
+{
+    encode_c_str_vec((*relation_p).get_col_names()) as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_drop_c_str(c_str: *mut c_void) {
-    CString::from_raw(c_str as *mut c_char);
+pub unsafe extern "C" fn ffi_get_type_names_p(
+    relation_p: *const ImmediateRelation) -> *const c_void
+{
+    encode_c_str_vec((*relation_p).get_col_type_names()) as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_import_hustle(relation_ptr: *const c_void, name_ptr: *const c_char) {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let name = decode_c_str(name_ptr);
-    (*relation).import_hustle(name);
+pub unsafe extern "C" fn ffi_get_n_cols(relation_p: *const ImmediateRelation) -> u32 {
+    (*relation_p).get_col_names().len() as u32
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_export_hustle(relation_ptr: *const c_void, name_ptr: *const c_char) {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let name = decode_c_str(name_ptr);
-    (*relation).export_hustle(name);
+pub unsafe extern "C" fn ffi_get_data_p(relation_p: *const ImmediateRelation) -> *const c_void {
+    match (*relation_p).get_data() {
+        Some(value) => Box::into_raw(Box::new(value)) as *const c_void,
+        None => 0 as *const c_void,
+    }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_import_csv(relation_ptr: *const c_void, filename_ptr: *const c_char) {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let filename = decode_c_str(filename_ptr);
-    (*relation).import_csv(filename);
+pub unsafe extern "C" fn ffi_get_slice_p(data_p: *const Value) -> *const c_void {
+    let slice: &[u8] = &**data_p;
+    let slice_p = slice.as_ptr() as *const c_void;
+    slice_p
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_export_csv(relation_ptr: *const c_void, filename_ptr: *const c_char) {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let filename = decode_c_str(filename_ptr);
-    (*relation).export_csv(filename);
+pub unsafe extern "C" fn ffi_get_slice_size(data_p: *const Value) -> u32 {
+    let slice: &[u8] = &**data_p;
+    slice.len() as u32
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_get_str_i(vec_p: *mut Vec<*const c_void>, i: usize) -> *const c_void {
+    (*vec_p)[i] as *const c_void
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_relation(relation_p: *mut ImmediateRelation) {
+    Box::from_raw(relation_p);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_c_str(c_str_p: *mut c_char) {
+    CString::from_raw(c_str_p);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_c_str_vec(vec_p: *mut Vec<*mut c_char>) {
+    let c_str_list = Box::from_raw(vec_p);
+    for c_str in *c_str_list {
+        ffi_drop_c_str(c_str);
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_data(data_p: *mut Value) {
+    Box::from_raw(data_p);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_copy_buffer(
+    relation_p: *const ImmediateRelation,
+    buffer: *const u8,
+    size: usize)
+{
+    let slice = std::slice::from_raw_parts(buffer, size);
+    (*relation_p).copy_slice(slice);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_import_hustle(
+    relation_p: *const ImmediateRelation,
+    name_p: *const c_char)
+{
+    (*relation_p).import_hustle(decode_c_str(name_p));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_export_hustle(
+    relation_p: *const ImmediateRelation,
+    name_p: *const c_char)
+{
+    (*relation_p).export_hustle(decode_c_str(name_p));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_import_csv(
+    relation_p: *const ImmediateRelation,
+    filename_p: *const c_char)
+{
+    (*relation_p).import_csv(decode_c_str(filename_p));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_export_csv(
+    relation_p: *const ImmediateRelation,
+    filename_p: *const c_char)
+{
+    (*relation_p).export_csv(decode_c_str(filename_p));
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_aggregate(
-    relation_ptr: *const c_void,
-    agg_col_name_ptr: *const c_char,
-    group_by_col_names_ptr: *const *const c_char,
-    n_group_by_cols: u32,
-    agg_name_ptr: *const c_char) -> *const c_void
+    relation_p: *const ImmediateRelation,
+    agg_col_name_p: *const c_char,
+    group_by_col_names_p: *const *const c_char,
+    n_group_by: u32,
+    agg_func_p: *const c_char) -> *const c_void
 {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let agg_col_name = decode_c_str(agg_col_name_ptr);
-    let group_by_col_names = decode_c_str_list(group_by_col_names_ptr, n_group_by_cols);
-    let agg_name = decode_c_str(agg_name_ptr);
-    let output = (*relation).aggregate(agg_col_name, group_by_col_names, agg_name);
+    let agg_col_name = decode_c_str(agg_col_name_p);
+    let group_by_col_names = decode_c_str_list(group_by_col_names_p, n_group_by);
+    let agg_name = decode_c_str(agg_func_p);
+    let output = (*relation_p).aggregate(agg_col_name, group_by_col_names, agg_name);
     Box::into_raw(Box::new(output)) as *const c_void
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_insert(
-    relation_ptr: *const c_void,
-    value_strings_ptr: *const *const c_char,
-    n_value_strings: u32)
+    relation_p: *const ImmediateRelation,
+    value_strings_p: *const *const c_char,
+    n_values: u32)
 {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let value_strings = decode_c_str_list(value_strings_ptr, n_value_strings);
-    (*relation).insert(value_strings);
+    (*relation_p).insert(decode_c_str_list(value_strings_p, n_values));
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_join(
-    relation1_ptr: *const c_void,
-    relation2_ptr: *const c_void) -> *const c_void
+    relation1_p: *const ImmediateRelation,
+    relation2_p: *const ImmediateRelation) -> *const c_void
 {
-    let relation1 = relation1_ptr as *const ImmediateRelation;
-    let relation2 = relation2_ptr as *const ImmediateRelation;
-    let output = (*relation1).join(&*relation2);
-    Box::into_raw(Box::new(output)) as *const c_void
+    Box::into_raw(Box::new((*relation1_p).join(&*relation2_p))) as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_limit(relation_ptr: *const c_void, limit: u32) -> *const c_void {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let output = (*relation).limit(limit);
-    Box::into_raw(Box::new(output)) as *const c_void
+pub unsafe extern "C" fn ffi_limit(
+    relation_p: *const ImmediateRelation,
+    limit: u32) -> *const c_void
+{
+    Box::into_raw(Box::new((*relation_p).limit(limit))) as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_print(relation_ptr: *const c_void) {
-    let relation = relation_ptr as *const ImmediateRelation;
-    (*relation).print();
+pub unsafe extern "C" fn ffi_print(relation_p: *const ImmediateRelation) {
+    (*relation_p).print();
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_project(
-    relation_ptr: *const c_void,
-    col_names_ptr: *const *const c_char,
+    relation_p: *const ImmediateRelation,
+    col_names_p: *const *const c_char,
     n_cols: u32) -> *const c_void
 {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let col_names = decode_c_str_list(col_names_ptr, n_cols);
-    let output = (*relation).project(col_names);
-    Box::into_raw(Box::new(output)) as *const c_void
+    let col_names = decode_c_str_list(col_names_p, n_cols);
+    Box::into_raw(Box::new((*relation_p).project(col_names))) as *const c_void
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_select(
-    relation_ptr: *const c_void,
-    predicate_ptr: *const c_char) -> *const c_void
+    relation_p: *const ImmediateRelation,
+    predicate_p: *const c_char) -> *const c_void
 {
-    let relation = relation_ptr as *const ImmediateRelation;
-    let predicate = decode_c_str(predicate_ptr);
-    let output = (*relation).select(predicate);
-    Box::into_raw(Box::new(output)) as *const c_void
+    let predicate = decode_c_str(predicate_p);
+    Box::into_raw(Box::new((*relation_p).select(predicate))) as *const c_void
+}
+
+unsafe fn encode_c_str(string: &str) -> *const c_void {
+    CString::new(string).unwrap().into_raw() as *const c_void
+}
+
+unsafe fn encode_c_str_vec(list: Vec<String>) -> *const c_void {
+    let mut encoded: Vec<*const c_void> = vec![];
+    for string in list {
+        encoded.push(encode_c_str(&string));
+    }
+    Box::into_raw(Box::new(encoded)) as *const c_void
 }
 
 unsafe fn decode_c_str<'a>(c_str: *const c_char) -> &'a str {

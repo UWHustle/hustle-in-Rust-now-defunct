@@ -58,6 +58,25 @@ impl DataType {
         Self::new(variant, nullable)
     }
 
+    pub fn to_string(&self) -> String {
+        match self.variant {
+            Variant::Int1 => String::from("tinyint"),
+            Variant::Int2 => String::from("smallint"),
+            Variant::Int4 => String::from("int"),
+            Variant::Int8 => String::from("bigint"),
+            Variant::Float4 => String::from("real"),
+            Variant::Float8 => String::from("double"),
+            Variant::ByteString(max_size, varchar) => {
+                if varchar {
+                    String::from(format!("varchar({})", max_size))
+                } else {
+                    String::from(format!("char({})", max_size))
+                }
+            },
+            Variant::IPv4 => String::from("ipv4")
+        }
+    }
+
     pub fn size(&self) -> usize {
         match self.variant {
             Variant::Int1 => 1,

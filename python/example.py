@@ -1,28 +1,57 @@
 from hustle import Relation
+import numpy as np
 
 relation = Relation.create(['a', 'b'], ['int', 'int'])
-relation.import_hustle('T')
-print('Relation name: ' + relation.get_name())
+relation.insert([1, 2])
+print(relation.get_name())
 relation.print()
 
-print('Sum of a grouped by b:')
-relation.aggregate('a', ['b'], 'sum').print()
+array = relation.to_numpy()
+array = np.resize(array, 3)
+array[1] = (3, 4)
+array[2] = (4, 5)
+print(array.dtype)
+print(array)
 
-print('T join A:')
-join_relation = Relation.create(
-    ['w', 'x', 'y', 'z'], ['int', 'int', 'int', 'int'])
-join_relation.import_hustle('A')
-joined = relation.join(join_relation)
+relation = Relation.from_numpy(array)
+print(relation.get_name())
+relation.print()
+
+relation.export_hustle('T')
+del relation
+
+relation = Relation.create(['c', 'd'], ['int', 'int'])
+relation.import_hustle('T')
+print(relation.get_name())
+relation.print()
+
+relation.export_csv('T.csv')
+del relation
+
+relation = Relation.create(['e', 'f'], ['int', 'int'])
+relation.import_csv('T.csv')
+print(relation.get_name())
+relation.print()
+
+sum_e = relation.aggregate('e', [], 'count')
+print(sum_e.get_name())
+sum_e.print()
+
+other = Relation.create(['g'], ['long'])
+other.insert([1234])
+other.insert([5678])
+joined = relation.join(other)
+print(joined.get_name())
 joined.print()
 
-print('T limited to 10:')
-relation.limit(10).print()
+limited = relation.limit(2)
+print(limited.get_name())
+limited.print()
 
-print('Projection onto a:')
-relation.project(['a']).print()
+projected = relation.project(['e'])
+print(projected.get_name())
+projected.print()
 
-print('T where a < 20:')
-relation.select('a < 20').print()
-
-relation.export_hustle('T_copy')
-relation.export_csv('test-data/T.csv')
+selected = relation.select('e >= 3')
+print(selected.get_name())
+selected.print()

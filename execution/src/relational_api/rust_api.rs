@@ -12,6 +12,7 @@ use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
+use storage::storage_manager;
 use type_system::operators::*;
 use type_system::data_type::DataType;
 use type_system::Value;
@@ -59,6 +60,39 @@ impl<'a> ImmediateRelation<'a> {
         self.relation.get_name()
     }
 
+    pub fn get_col_names(&self) -> Vec<String> {
+        let mut output: Vec<String> = vec![];
+        for column in self.relation.get_schema().get_columns() {
+            output.push(String::from(column.get_name()));
+        }
+        output
+    }
+
+    pub fn get_col_type_names(&self) -> Vec<String> {
+        let mut output: Vec<String> = vec![];
+        for column in self.relation.get_schema().get_columns() {
+            output.push(column.get_datatype().to_string());
+        }
+        output
+    }
+
+    pub fn copy_slice(&self, buffer: &[u8]) {
+        let mut data: Vec<u8> = vec![0; buffer.len()];
+        data.clone_from_slice(buffer);
+        self.storage_manager.put(self.relation.get_name(), &data);
+    }
+
+    pub fn get_data_size(&self) -> usize {
+        match self.storage_manager.get(self.relation.get_name()) {
+            Some(value) => (&value).len(),
+            None => 0,
+        }
+    }
+
+    pub fn get_data(&self) -> Option<storage_manager::Value> {
+        self.storage_manager.get(self.relation.get_name())
+    }
+
     /// Replaces current data in the relation with data from the Hustle file
     /// TODO: Pull schema from the catalog
     pub fn import_hustle(&self, name: &str) {
@@ -92,9 +126,14 @@ impl<'a> ImmediateRelation<'a> {
         agg_name: &str) -> Self
     {
         let agg_col = self.relation.column_from_name(agg_col_name);
-        let group_by_cols = self.relation.columns_from_names(group_by_col_names);
+        let group_by_cols = self.relation.columns_from_names(group_by_col_names.clone());
+
+        let mut project_col_names = group_by_col_names.clone();
+        project_col_names.push(agg_col_name);
+        let projected = self.project(project_col_names);
+
         let agg_op = Aggregate::from_str(
-            self.relation.clone(),
+            projected.relation.clone(),
             agg_col.clone(),
             group_by_cols,
             agg_col.get_datatype(),
@@ -106,10 +145,7 @@ impl<'a> ImmediateRelation<'a> {
         }
     }
 
-    pub fn insert(
-        &self,
-        value_strings: Vec<&str>)
-    {
+    pub fn insert(&self, value_strings: Vec<&str>) {
         let schema = self.relation.get_schema();
         let columns = schema.get_columns();
         let mut values: Vec<Box<Value>> = vec![];
