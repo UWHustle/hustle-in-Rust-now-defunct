@@ -1,5 +1,6 @@
 pub mod aggregate;
 pub mod create_table;
+pub mod drop_table;
 pub mod export_csv;
 pub mod import_csv;
 pub mod insert;

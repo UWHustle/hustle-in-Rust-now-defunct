@@ -63,6 +63,7 @@ impl Float for Float4 {}
 impl Numeric for Float4 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
         let other_cast = match other.type_id().variant {
+            Variant::Int1 => f32::from(cast_numeric::<Int1>(other).value()),
             Variant::Int2 => f32::from(cast_numeric::<Int2>(other).value()),
             Variant::Int4 => cast_numeric::<Int4>(other).value() as f32,
             Variant::Int8 => cast_numeric::<Int8>(other).value() as f32,
@@ -100,6 +101,9 @@ impl Value for Float4 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.type_id().variant {
+            Variant::Int1 => {
+                comp.apply(self.value, f32::from(cast_value::<Int1>(other).value()))
+            }
             Variant::Int2 => {
                 comp.apply(self.value, f32::from(cast_value::<Int2>(other).value()))
             }
@@ -181,6 +185,7 @@ impl Float for Float8 {}
 impl Numeric for Float8 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
         let other_cast = match other.type_id().variant {
+            Variant::Int1 => f64::from(cast_numeric::<Int1>(other).value()),
             Variant::Int2 => f64::from(cast_numeric::<Int2>(other).value()),
             Variant::Int4 => f64::from(cast_numeric::<Int4>(other).value()),
             Variant::Int8 => cast_numeric::<Int8>(other).value() as f64,
@@ -218,6 +223,9 @@ impl Value for Float8 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.type_id().variant {
+            Variant::Int1 => {
+                comp.apply(self.value, f64::from(cast_value::<Int1>(other).value()))
+            }
             Variant::Int2 => {
                 comp.apply(self.value, f64::from(cast_value::<Int2>(other).value()))
             }
@@ -258,6 +266,11 @@ mod test {
     #[test]
     fn float4_compare() {
         let float4 = Float4::from(1843.5);
+
+        let int1 = Int1::from(11);
+        assert!(!float4.less(&int1));
+        assert!(float4.greater(&int1));
+        assert!(!float4.equals(&int1));
 
         let int2 = Int2::from(1843);
         assert!(!float4.less(&int2));
@@ -302,7 +315,7 @@ mod test {
     #[should_panic]
     fn invalid_float4_compare() {
         let float4 = Float4::from(1843.5);
-        let utf8_string = UTF8String::from("Forty two: ");
+        let utf8_string = ByteString::from("Forty two: ");
         float4.equals(&utf8_string);
     }
 
@@ -332,6 +345,11 @@ mod test {
     #[test]
     fn float8_compare() {
         let float8 = Float8::from(987654321.0);
+
+        let int1 = Int1::from(11);
+        assert!(!float8.less(&int1));
+        assert!(float8.greater(&int1));
+        assert!(!float8.equals(&int1));
 
         let int2 = Int2::from(-10);
         assert!(!float8.less(&int2));
@@ -363,7 +381,7 @@ mod test {
     #[should_panic]
     fn invalid_float8_compare() {
         let float8 = Float8::from(987654321.0);
-        let utf8_string = UTF8String::from("the answer ");
+        let utf8_string = ByteString::from("the answer ");
         float8.equals(&utf8_string);
     }
 }
