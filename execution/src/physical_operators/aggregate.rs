@@ -9,7 +9,7 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::type_id::TypeID;
+use type_system::data_type::DataType;
 use type_system::*;
 
 use std::collections::HashMap;
@@ -49,7 +49,7 @@ impl Aggregate {
         input_relation: Relation,
         agg_col: Column,
         group_by_cols: Vec<Column>,
-        agg_type: TypeID,
+        agg_type: DataType,
         agg_name: &str) -> Self
     {
         let lower = agg_name.to_lowercase();

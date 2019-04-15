@@ -11,7 +11,7 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
 use type_system::operators::*;
-use type_system::type_id::TypeID;
+use type_system::data_type::DataType;
 
 extern crate storage;
 use self::storage::StorageManager;
@@ -31,7 +31,7 @@ impl<'a> ImmediateRelation<'a> {
         }
         let mut columns: Vec<Column> = vec![];
         for i in 0..col_names.len() {
-            let type_id = TypeID::from_str(col_type_names[i]);
+            let type_id = DataType::from_str(col_type_names[i]);
             columns.push(Column::new(String::from(col_names[i]), type_id));
         }
 

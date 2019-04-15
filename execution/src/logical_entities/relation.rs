@@ -77,12 +77,12 @@ mod tests {
     use logical_entities::column::Column;
     use logical_entities::relation::Relation;
     use logical_entities::schema::Schema;
-    use type_system::type_id::*;
+    use type_system::data_type::*;
 
     #[test]
     fn relation_create() {
-        let a = Column::new("a".to_string(), TypeID::new(Variant::Int4, true));
-        let b = Column::new("b".to_string(), TypeID::new(Variant::Int4, true));
+        let a = Column::new("a".to_string(), DataType::new(Variant::Int4, true));
+        let b = Column::new("b".to_string(), DataType::new(Variant::Int4, true));
         let schema = Schema::new(vec![a.clone(), b.clone()]);
         let relation = Relation::new("Test", schema.clone());
 

@@ -11,7 +11,7 @@ use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlit
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::integer::*;
 use execution::type_system::operators::*;
-use execution::type_system::type_id::*;
+use execution::type_system::data_type::*;
 
 use std::rc::Rc;
 
@@ -28,7 +28,7 @@ fn sum_column_hustle(relation: Relation, column: Column) -> u128 {
 #[test]
 fn test_project_predicate() {
     let relation = generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, false);
-    let project_col = Column::new(String::from("a"), TypeID::new(Variant::Int4, true));
+    let project_col = Column::new(String::from("a"), DataType::new(Variant::Int4, true));
     let predicate = Comparison::new(
         project_col.clone(),
         Comparator::Less,

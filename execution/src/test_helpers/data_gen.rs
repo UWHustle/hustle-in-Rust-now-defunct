@@ -9,7 +9,7 @@ use physical_operators::import_csv::ImportCsv;
 use physical_operators::insert::Insert;
 use physical_operators::test_relation::TestRelation;
 use physical_operators::Operator;
-use type_system::type_id::*;
+use type_system::data_type::*;
 use type_system::*;
 
 extern crate storage;
@@ -19,8 +19,8 @@ pub fn generate_relation_t_into_hustle_and_sqlite3(record_count: usize, random: 
     let relation = Relation::new(
         "T",
         Schema::new(vec![
-            Column::new("a".to_string(), TypeID::new(Variant::Int4, true)),
-            Column::new("b".to_string(), TypeID::new(Variant::Int4, true)),
+            Column::new("a".to_string(), DataType::new(Variant::Int4, true)),
+            Column::new("b".to_string(), DataType::new(Variant::Int4, true)),
         ]),
     );
 
@@ -38,10 +38,10 @@ pub fn generate_relation_a_into_hustle_and_sqlite3(record_count: usize) -> Relat
     let relation = Relation::new(
         "A",
         Schema::new(vec![
-            Column::new("w".to_string(), TypeID::new(Variant::Int4, true)),
-            Column::new("x".to_string(), TypeID::new(Variant::Int4, true)),
-            Column::new("y".to_string(), TypeID::new(Variant::Int4, true)),
-            Column::new("z".to_string(), TypeID::new(Variant::Int4, true)),
+            Column::new("w".to_string(), DataType::new(Variant::Int4, true)),
+            Column::new("x".to_string(), DataType::new(Variant::Int4, true)),
+            Column::new("y".to_string(), DataType::new(Variant::Int4, true)),
+            Column::new("z".to_string(), DataType::new(Variant::Int4, true)),
         ]),
     );
 
@@ -57,8 +57,8 @@ pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relat
     let relation = Relation::new(
         "B",
         Schema::new(vec![
-            Column::new("w".to_string(), TypeID::new(Variant::Int4, true)),
-            Column::new("x".to_string(), TypeID::new(Variant::Int4, true)),
+            Column::new("w".to_string(), DataType::new(Variant::Int4, true)),
+            Column::new("x".to_string(), DataType::new(Variant::Int4, true)),
         ]),
     );
 
