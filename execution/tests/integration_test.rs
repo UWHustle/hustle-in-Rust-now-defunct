@@ -9,7 +9,7 @@ use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlit
 use execution::test_helpers::data_gen::insert_into_hustle;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::integer::*;
-use execution::type_system::type_id::*;
+use execution::type_system::data_type::*;
 
 extern crate csv;
 
@@ -52,7 +52,7 @@ fn test_flow() {
 fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
     let select_operator = SelectSum::new(
         relation.clone(),
-        Column::new(column_name, TypeID::new(Variant::Int4, true)),
+        Column::new(column_name, DataType::new(Variant::Int4, true)),
     );
     select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
 }

@@ -65,7 +65,7 @@ impl ByteString {
 
     pub fn value(&self) -> &[u8] {
         if self.is_null {
-            panic!(null_value(self.type_id()));
+            panic!(null_value(self.data_type()));
         }
         &self.value
     }
@@ -88,8 +88,8 @@ impl ByteString {
 }
 
 impl Value for ByteString {
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::ByteString(self.value.len(), self.varchar), self.nullable)
+    fn data_type(&self) -> DataType {
+        DataType::new(Variant::ByteString(self.value.len(), self.varchar), self.nullable)
     }
 
     fn is_null(&self) -> bool {
@@ -108,16 +108,16 @@ impl Value for ByteString {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut value: Vec<u8> = vec![0; self.size()];
         value.clone_from_slice(&self.value);
-        OwnedBuffer::new(value, self.type_id(), self.is_null())
+        OwnedBuffer::new(value, self.data_type(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
-        match other.type_id().variant {
+        match other.data_type().variant {
             Variant::ByteString(_, _) => {
                 comp.apply(self.trimmed_slice(), cast_value::<ByteString>(other).trimmed_slice())
             }
             _ => {
-                panic!(incomparable(self.type_id(), other.type_id()));
+                panic!(incomparable(self.data_type(), other.data_type()));
             }
         }
     }
@@ -139,8 +139,8 @@ mod test {
         let utf8_string_value = ByteString::from("Hello!");
         let utf8_string_buffer = utf8_string_value.un_marshall();
         assert_eq!(
-            TypeID::new(Variant::ByteString("Hello!".len(), false), true),
-            utf8_string_buffer.type_id()
+            DataType::new(Variant::ByteString("Hello!".len(), false), true),
+            utf8_string_buffer.data_type()
         );
 
         let data = utf8_string_buffer.data();
@@ -162,8 +162,8 @@ mod test {
     fn utf8_string_type_id() {
         let utf8_string = ByteString::from("Chocolate donuts");
         assert_eq!(
-            TypeID::new(Variant::ByteString(16, false), true),
-            utf8_string.type_id()
+            DataType::new(Variant::ByteString(16, false), true),
+            utf8_string.data_type()
         );
     }
 

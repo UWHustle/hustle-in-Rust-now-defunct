@@ -17,17 +17,17 @@ pub enum Variant {
 
 /// A complete description of a type
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct TypeID {
+pub struct DataType {
     pub variant: Variant,
     pub nullable: bool,
 }
 
-impl TypeID {
+impl DataType {
     pub fn new(variant: Variant, nullable: bool) -> Self {
-        TypeID { variant, nullable }
+        DataType { variant, nullable }
     }
 
-    pub fn from_str(string: &str) -> TypeID {
+    pub fn from_str(string: &str) -> DataType {
         let lower = string.to_lowercase();
         let tokens: Vec<&str> = lower.split(' ').collect();
         let mut variant_str = *tokens.get(0).expect("Error: type string is empty");

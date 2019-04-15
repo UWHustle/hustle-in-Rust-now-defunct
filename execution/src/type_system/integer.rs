@@ -52,7 +52,7 @@ impl Int1 {
 
     pub fn value(&self) -> u8 {
         if self.is_null {
-            panic!(null_value(self.type_id()));
+            panic!(null_value(self.data_type()));
         }
         self.value
     }
@@ -62,14 +62,14 @@ impl Integer for Int1 {}
 
 impl Numeric for Int1 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let other_cast = match other.type_id().variant {
+        let other_cast = match other.data_type().variant {
             Variant::Int1 => cast_numeric::<Int1>(other).value(),
             Variant::Int2 => cast_numeric::<Int2>(other).value() as u8,
             Variant::Int4 => cast_numeric::<Int4>(other).value() as u8,
             Variant::Int8 => cast_numeric::<Int8>(other).value() as u8,
             Variant::Float4 => cast_numeric::<Float4>(other).value() as u8,
             Variant::Float8 => cast_numeric::<Float8>(other).value() as u8,
-            _ => panic!(not_numeric(other.type_id())),
+            _ => panic!(not_numeric(other.data_type())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -77,8 +77,8 @@ impl Numeric for Int1 {
 }
 
 impl Value for Int1 {
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::Int1, self.nullable)
+    fn data_type(&self) -> DataType {
+        DataType::new(Variant::Int1, self.nullable)
     }
 
     fn is_null(&self) -> bool {
@@ -96,11 +96,11 @@ impl Value for Int1 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         data[0] = self.value;
-        OwnedBuffer::new(data, self.type_id(), self.is_null())
+        OwnedBuffer::new(data, self.data_type(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
-        match other.type_id().variant {
+        match other.data_type().variant {
             Variant::Int1 => {
                 comp.apply(self.value, cast_value::<Int1>(other).value())
             }
@@ -123,7 +123,7 @@ impl Value for Int1 {
                 comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
-                panic!(incomparable(self.type_id(), other.type_id()));
+                panic!(incomparable(self.data_type(), other.data_type()));
             }
         }
     }
@@ -172,7 +172,7 @@ impl Int2 {
 
     pub fn value(&self) -> i16 {
         if self.is_null {
-            panic!(null_value(self.type_id()));
+            panic!(null_value(self.data_type()));
         }
         self.value
     }
@@ -182,14 +182,14 @@ impl Integer for Int2 {}
 
 impl Numeric for Int2 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let other_cast = match other.type_id().variant {
+        let other_cast = match other.data_type().variant {
             Variant::Int1 => cast_numeric::<Int1>(other).value() as i16,
             Variant::Int2 => cast_numeric::<Int2>(other).value(),
             Variant::Int4 => cast_numeric::<Int4>(other).value() as i16,
             Variant::Int8 => cast_numeric::<Int8>(other).value() as i16,
             Variant::Float4 => cast_numeric::<Float4>(other).value() as i16,
             Variant::Float8 => cast_numeric::<Float8>(other).value() as i16,
-            _ => panic!(not_numeric(other.type_id())),
+            _ => panic!(not_numeric(other.data_type())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -197,8 +197,8 @@ impl Numeric for Int2 {
 }
 
 impl Value for Int2 {
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::Int2, self.nullable)
+    fn data_type(&self) -> DataType {
+        DataType::new(Variant::Int2, self.nullable)
     }
 
     fn is_null(&self) -> bool {
@@ -216,11 +216,11 @@ impl Value for Int2 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_i16(&mut data, self.value);
-        OwnedBuffer::new(data, self.type_id(), self.is_null())
+        OwnedBuffer::new(data, self.data_type(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
-        match other.type_id().variant {
+        match other.data_type().variant {
             Variant::Int1 => {
                 comp.apply(self.value, i16::from(cast_value::<Int1>(other).value()))
             }
@@ -243,7 +243,7 @@ impl Value for Int2 {
                 comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
-                panic!(incomparable(self.type_id(), other.type_id()));
+                panic!(incomparable(self.data_type(), other.data_type()));
             }
         }
     }
@@ -294,7 +294,7 @@ impl Int4 {
 
     pub fn value(&self) -> i32 {
         if self.is_null {
-            panic!(null_value(self.type_id()));
+            panic!(null_value(self.data_type()));
         }
         self.value
     }
@@ -304,14 +304,14 @@ impl Integer for Int4 {}
 
 impl Numeric for Int4 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let other_cast = match other.type_id().variant {
+        let other_cast = match other.data_type().variant {
             Variant::Int1 => i32::from(cast_numeric::<Int1>(other).value()),
             Variant::Int2 => i32::from(cast_numeric::<Int2>(other).value()),
             Variant::Int4 => cast_numeric::<Int4>(other).value(),
             Variant::Int8 => cast_numeric::<Int8>(other).value() as i32,
             Variant::Float4 => cast_numeric::<Float4>(other).value() as i32,
             Variant::Float8 => cast_numeric::<Float8>(other).value() as i32,
-            _ => panic!(not_numeric(other.type_id())),
+            _ => panic!(not_numeric(other.data_type())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -319,8 +319,8 @@ impl Numeric for Int4 {
 }
 
 impl Value for Int4 {
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::Int4, self.nullable)
+    fn data_type(&self) -> DataType {
+        DataType::new(Variant::Int4, self.nullable)
     }
 
     fn is_null(&self) -> bool {
@@ -338,11 +338,11 @@ impl Value for Int4 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_i32(&mut data, self.value);
-        OwnedBuffer::new(data, self.type_id(), self.is_null())
+        OwnedBuffer::new(data, self.data_type(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
-        match other.type_id().variant {
+        match other.data_type().variant {
             Variant::Int1 => {
                 comp.apply(self.value, i32::from(cast_value::<Int1>(other).value()))
             }
@@ -365,7 +365,7 @@ impl Value for Int4 {
                 comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
-                panic!(incomparable(self.type_id(), other.type_id()));
+                panic!(incomparable(self.data_type(), other.data_type()));
             }
         }
     }
@@ -416,7 +416,7 @@ impl Int8 {
 
     pub fn value(&self) -> i64 {
         if self.is_null {
-            panic!(null_value(self.type_id()));
+            panic!(null_value(self.data_type()));
         }
         self.value
     }
@@ -426,14 +426,14 @@ impl Integer for Int8 {}
 
 impl Numeric for Int8 {
     fn arithmetic(&self, other: &Numeric, oper: Arithmetic) -> Box<Numeric> {
-        let other_cast = match other.type_id().variant {
+        let other_cast = match other.data_type().variant {
             Variant::Int1 => i64::from(cast_numeric::<Int1>(other).value()),
             Variant::Int2 => i64::from(cast_numeric::<Int2>(other).value()),
             Variant::Int4 => i64::from(cast_numeric::<Int4>(other).value()),
             Variant::Int8 => cast_numeric::<Int8>(other).value(),
             Variant::Float4 => cast_numeric::<Float4>(other).value() as i64,
             Variant::Float8 => cast_numeric::<Float8>(other).value() as i64,
-            _ => panic!(not_numeric(other.type_id())),
+            _ => panic!(not_numeric(other.data_type())),
         };
         let result = oper.apply(self.value, other_cast);
         Box::new(Self::new(result, self.nullable))
@@ -441,8 +441,8 @@ impl Numeric for Int8 {
 }
 
 impl Value for Int8 {
-    fn type_id(&self) -> TypeID {
-        TypeID::new(Variant::Int8, self.nullable)
+    fn data_type(&self) -> DataType {
+        DataType::new(Variant::Int8, self.nullable)
     }
 
     fn is_null(&self) -> bool {
@@ -460,11 +460,11 @@ impl Value for Int8 {
     fn un_marshall(&self) -> OwnedBuffer {
         let mut data: Vec<u8> = vec![0; self.size()];
         LittleEndian::write_i64(&mut data, self.value);
-        OwnedBuffer::new(data, self.type_id(), self.is_null())
+        OwnedBuffer::new(data, self.data_type(), self.is_null())
     }
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
-        match other.type_id().variant {
+        match other.data_type().variant {
             Variant::Int1 => {
                 comp.apply(self.value, i64::from(cast_value::<Int1>(other).value()))
             }
@@ -487,7 +487,7 @@ impl Value for Int8 {
                 comp.apply(self.value, i64::from(cast_value::<IPv4>(other).value()))
             }
             _ => {
-                panic!(incomparable(self.type_id(), other.type_id()));
+                panic!(incomparable(self.data_type(), other.data_type()));
             }
         }
     }
@@ -502,14 +502,14 @@ mod test {
     #[test]
     fn int1_type_id() {
         let int1 = Int1::from(11);
-        assert_eq!(TypeID::new(Variant::Int1, true), int1.type_id());
+        assert_eq!(DataType::new(Variant::Int1, true), int1.data_type());
     }
 
     #[test]
     fn int1_un_marshall() {
         let int1_value = Int1::from(11);
         let int1_buffer = int1_value.un_marshall();
-        assert_eq!(TypeID::new(Variant::Int1, true), int1_buffer.type_id());
+        assert_eq!(DataType::new(Variant::Int1, true), int1_buffer.data_type());
 
         let data = int1_buffer.data();
         assert_eq!(0x0b, data[0]);
@@ -561,14 +561,14 @@ mod test {
     #[test]
     fn int2_type_id() {
         let int2 = Int2::from(56);
-        assert_eq!(TypeID::new(Variant::Int2, true), int2.type_id());
+        assert_eq!(DataType::new(Variant::Int2, true), int2.data_type());
     }
 
     #[test]
     fn int2_un_marshall() {
         let int2_value = Int2::from(56);
         let int2_buffer = int2_value.un_marshall();
-        assert_eq!(TypeID::new(Variant::Int2, true), int2_buffer.type_id());
+        assert_eq!(DataType::new(Variant::Int2, true), int2_buffer.data_type());
 
         let data = int2_buffer.data();
         assert_eq!(0x38, data[0]);
@@ -621,14 +621,14 @@ mod test {
     #[test]
     fn int4_type_id() {
         let int4 = Int4::from(2611);
-        assert_eq!(TypeID::new(Variant::Int4, true), int4.type_id());
+        assert_eq!(DataType::new(Variant::Int4, true), int4.data_type());
     }
 
     #[test]
     fn int4_un_marshall() {
         let int4_value = Int4::from(2611);
         let int4_buffer = int4_value.un_marshall();
-        assert_eq!(TypeID::new(Variant::Int4, true), int4_buffer.type_id());
+        assert_eq!(DataType::new(Variant::Int4, true), int4_buffer.data_type());
 
         let data = int4_buffer.data();
         assert_eq!(0x33, data[0]);
@@ -682,14 +682,14 @@ mod test {
     #[test]
     fn int8_type_id() {
         let int8 = Int8::from(3483646);
-        assert_eq!(TypeID::new(Variant::Int8, true), int8.type_id());
+        assert_eq!(DataType::new(Variant::Int8, true), int8.data_type());
     }
 
     #[test]
     fn int8_un_marshall() {
         let int8_value = Int8::from(26119474);
         let int8_buffer = int8_value.un_marshall();
-        assert_eq!(TypeID::new(Variant::Int8, true), int8_buffer.type_id());
+        assert_eq!(DataType::new(Variant::Int8, true), int8_buffer.data_type());
 
         let data = int8_buffer.data();
         assert_eq!(0x32, data[0]);

@@ -1,5 +1,5 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::type_id::*;
+use type_system::data_type::*;
 use type_system::*;
 
 #[derive(Clone, Debug)]
@@ -8,7 +8,7 @@ pub struct Max {
 }
 
 impl Max {
-    pub fn new(data_type: TypeID) -> Self {
+    pub fn new(data_type: DataType) -> Self {
         Max {
             current_max: data_type.create_null(),
         }
@@ -34,7 +34,7 @@ impl AggregationTrait for Max {
         self.current_max.box_clone_value()
     }
 
-    fn output_type(&self) -> TypeID {
-        self.current_max.type_id().clone()
+    fn output_type(&self) -> DataType {
+        self.current_max.data_type().clone()
     }
 }

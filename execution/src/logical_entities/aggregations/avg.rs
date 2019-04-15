@@ -1,6 +1,6 @@
 use logical_entities::aggregations::AggregationTrait;
 use type_system::integer::*;
-use type_system::type_id::*;
+use type_system::data_type::*;
 use type_system::*;
 
 #[derive(Clone, Debug)]
@@ -10,7 +10,7 @@ pub struct Avg {
 }
 
 impl Avg {
-    pub fn new(data_type: TypeID) -> Self {
+    pub fn new(data_type: DataType) -> Self {
         Avg {
             sum: data_type.create_zero(),
             count: 0,
@@ -24,7 +24,7 @@ impl AggregationTrait for Avg {
     }
 
     fn initialize(&mut self) {
-        self.sum = self.sum.type_id().create_zero();
+        self.sum = self.sum.data_type().create_zero();
         self.count = 0;
     }
 
@@ -38,7 +38,7 @@ impl AggregationTrait for Avg {
         self.sum.divide(&denom).box_clone_value()
     }
 
-    fn output_type(&self) -> TypeID {
-        self.output().type_id()
+    fn output_type(&self) -> DataType {
+        self.output().data_type()
     }
 }
