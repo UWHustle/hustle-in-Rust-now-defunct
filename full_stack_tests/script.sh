@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 cd ../build
 rm -f diff.txt
 
