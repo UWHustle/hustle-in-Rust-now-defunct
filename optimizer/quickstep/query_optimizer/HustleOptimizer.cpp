@@ -87,7 +87,6 @@ std::string OptimizerWrapper::hustle_optimize(const std::shared_ptr<ParseNode> &
   try {
     readCatalog();
   } catch (UnableToReadCatalogE &read_exception) {
-    printf("Catalog initialized. \n");
     catalog_ = std::make_shared<Catalog>();
     CreateDefaultCatalog();
   }
