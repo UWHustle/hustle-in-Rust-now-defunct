@@ -1,0 +1,138 @@
+SELECT a FROM t;
+Hustle version 0.1.0
+|    a|
+|   54|
+|   13|
+|    0|
+|  240|
+|  137|
+|  220|
+|  245|
+|  160|
+|  220|
+|   86|
+|  103|
+|   62|
+|  208|
+|  166|
+|  138|
+|   69|
+|   51|
+|  241|
+|   89|
+|  215|
+|   47|
+|    7|
+|  136|
+|  110|
+|   76|
+|  145|
+|    8|
+|   30|
+|   87|
+|  201|
+hustle> 
+hustle> 
+SELECT a, b FROM t;
+Hustle version 0.1.0
+|    a|    b|
+|   54|  185|
+|   13|   40|
+|    0|    7|
+|  240|   82|
+|  137|   40|
+|  220|  119|
+|  245|  187|
+|  160|  216|
+|  220|   82|
+|   86|  209|
+|  103|  185|
+|   62|  233|
+|  208|   59|
+|  166|  134|
+|  138|   55|
+|   69|   61|
+|   51|  108|
+|  241|  129|
+|   89|  197|
+|  215|   64|
+|   47|  222|
+|    7|  119|
+|  136|  150|
+|  110|  116|
+|   76|  109|
+|  145|   53|
+|    8|   77|
+|   30|  201|
+|   87|  190|
+|  201|  145|
+hustle> 
+hustle> 
+SELECT MIN(a) FROM t;
+Hustle version 0.1.0
+|MIN(a)|
+|    0|
+hustle> 
+hustle> 
+SELECT MAX(a) FROM t;
+Hustle version 0.1.0
+|MAX(a)|
+|  245|
+hustle> 
+hustle> 
+SELECT SUM(a) FROM t;
+Hustle version 0.1.0
+|SUM(a)|
+| 3564|
+hustle> 
+hustle> 
+SELECT COUNT(a) FROM t;
+Hustle version 0.1.0
+|COUNT(a)|
+|   30|
+hustle> 
+hustle> 
+SELECT b FROM t WHERE a=54;
+Hustle version 0.1.0
+hustle> Parser: SELECT b FROM t WHERE a=54;
+:1.1: expression terms not yet supported
+Falling back on Quickstep parser/resolver...
+|    b|
+|  185|
+hustle> 
+SELECT a FROM t WHERE b>36;
+Hustle version 0.1.0
+hustle> Parser: SELECT a FROM t WHERE b>36;
+:1.1: expression terms not yet supported
+Falling back on Quickstep parser/resolver...
+|    a|
+|   54|
+|   13|
+|  240|
+|  137|
+|  220|
+|  245|
+|  160|
+|  220|
+|   86|
+|  103|
+|   62|
+|  208|
+|  166|
+|  138|
+|   69|
+|   51|
+|  241|
+|   89|
+|  215|
+|   47|
+|    7|
+|  136|
+|  110|
+|   76|
+|  145|
+|    8|
+|   30|
+|   87|
+|  201|
+hustle> 
