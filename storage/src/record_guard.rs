@@ -2,10 +2,8 @@ use std::collections::HashSet;
 use std::sync::{Condvar, Mutex};
 
 pub trait RecordGuard {
-    fn begin_read(&self, key: &str);
-    fn begin_write(&self, key: &str);
-    fn end_read(&self, key: &str);
-    fn end_write(&self, key: &str);
+    fn lock(&self, key: &str);
+    fn unlock(&self, key: &str);
 }
 
 pub struct MutexRecordGuard {
@@ -21,7 +19,7 @@ impl MutexRecordGuard {
 }
 
 impl RecordGuard for MutexRecordGuard {
-    fn begin_read(&self, key: &str) {
+    fn lock(&self, key: &str) {
         let &(ref locked, ref cvar) = &self.locked;
         let mut locked_guard = locked.lock().unwrap();
         while locked_guard.contains(key) {
@@ -30,19 +28,11 @@ impl RecordGuard for MutexRecordGuard {
         locked_guard.insert(key.to_string());
     }
 
-    fn begin_write(&self, key: &str) {
-        self.begin_read(key);
-    }
-
-    fn end_read(&self, key: &str) {
+    fn unlock(&self, key: &str) {
         let &(ref locked, ref cvar) = &self.locked;
         let mut locked_guard = locked.lock().unwrap();
         locked_guard.remove(key);
         cvar.notify_all();
-    }
-
-    fn end_write(&self, key: &str) {
-        self.end_read(key)
     }
 }
 
@@ -50,11 +40,7 @@ impl RecordGuard for MutexRecordGuard {
 pub struct NoLockRecordGuard {}
 
 impl RecordGuard for NoLockRecordGuard {
-    fn begin_read(&self, _key: &str) {}
+    fn lock(&self, _key: &str) {}
 
-    fn begin_write(&self, _key: &str) {}
-
-    fn end_read(&self, _key: &str) {}
-
-    fn end_write(&self, _key: &str) {}
+    fn unlock(&self, _key: &str) {}
 }
