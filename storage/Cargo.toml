@@ -9,6 +9,7 @@ omap = { git = "https://github.com/UWHustle/omap" }
 
 [dev-dependencies]
 criterion = "0.2"
+rand = "0.6.5"
 
 [lib]
 name = "storage"
