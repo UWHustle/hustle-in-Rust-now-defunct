@@ -30,13 +30,13 @@ pub struct ImmediateRelation<'a> {
 }
 
 impl<'a> ImmediateRelation<'a> {
-    pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Self {
+    pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Result<Self, String>  {
         if col_names.len() != col_type_names.len() {
-            panic!("Number of types does not match number of columns");
+            return Err(String::from("Number of types does not match number of columns"));
         }
         let mut columns: Vec<Column> = vec![];
         for i in 0..col_names.len() {
-            let type_id = DataType::from_str(col_type_names[i]);
+            let type_id = DataType::from_str(col_type_names[i])?;
             columns.push(Column::new(String::from(col_names[i]), type_id));
         }
 
@@ -49,10 +49,11 @@ impl<'a> ImmediateRelation<'a> {
         let schema = Schema::new(columns);
         unsafe {
             let name = (*STORAGE_MANAGER).put_anon(&vec![]);
-            ImmediateRelation {
+            let relation = ImmediateRelation {
                 relation: Relation::new(&name, schema),
                 storage_manager: &*STORAGE_MANAGER,
-            }
+            };
+            Ok(relation)
         }
     }
 

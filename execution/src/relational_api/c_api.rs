@@ -4,15 +4,25 @@ use std::os::raw::c_char;
 use storage::storage_manager::Value;
 
 #[no_mangle]
+pub unsafe extern "C" fn ffi_get_err_p() -> *const c_void {
+    Box::into_raw(Box::new(String::from("No errors"))) as *const c_void
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_get_err_str_p(err_p: *const String) -> *const c_void {
+    encode_c_str(&*err_p)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn ffi_new_relation(
     col_names_p: *const *const c_char,
     type_names_p: *const *const c_char,
-    n_cols: u32) -> *const c_void
+    n_cols: u32,
+    err_p: *mut String) -> *const c_void
 {
     let col_names = decode_c_str_list(col_names_p, n_cols);
     let type_names = decode_c_str_list(type_names_p, n_cols);
-    let relation = Box::new(ImmediateRelation::new(col_names, type_names));
-    Box::into_raw(relation) as *const c_void
+    process_result(ImmediateRelation::new(col_names, type_names), err_p)
 }
 
 #[no_mangle]
@@ -63,6 +73,11 @@ pub unsafe extern "C" fn ffi_get_slice_size(data_p: *const Value) -> u32 {
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_str_i(vec_p: *mut Vec<*const c_void>, i: usize) -> *const c_void {
     (*vec_p)[i] as *const c_void
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_err_p(err_p: *mut String) {
+    Box::from_raw(err_p);
 }
 
 #[no_mangle]
@@ -218,4 +233,15 @@ unsafe fn decode_c_str_list<'a>(c_str_list: *const *const c_char, length: u32) -
         decoded.push(decode_c_str(c_str));
     }
     decoded
+}
+
+unsafe fn process_result<T>(result: Result<T, String>, err_p: *mut String) -> *const c_void {
+    match result {
+        Ok(val) => Box::into_raw(Box::new(val)) as *const c_void,
+        Err(string) => {
+            (*err_p).truncate(0);
+            (*err_p).push_str(&string);
+            0 as *const c_void
+        },
+    }
 }

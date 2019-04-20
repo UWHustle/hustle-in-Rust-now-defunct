@@ -9,6 +9,9 @@ lib_path = '/Users/Matthew/Repos/hustle/build/execution/libexecution.dylib'
 assert lib_path is not None, 'Unable to load hustle dylib'
 ffi = ctypes.cdll.LoadLibrary(lib_path)
 
+ffi.ffi_get_err_p.restype = c_void_p
+err_p = c_void_p(ffi.ffi_get_err_p())
+
 
 class Relation:
     def __init__(self, relation_p):
@@ -30,11 +33,15 @@ class Relation:
 
     @classmethod
     def create(cls, col_names, type_names):
+        if len(col_names) != len(type_names):
+            raise ValueError('Number of columns and typenames not equal')
         ffi.ffi_new_relation.restype = c_void_p
         relation_p = c_void_p(ffi.ffi_new_relation(
             _encode_c_str_list(col_names),
             _encode_c_str_list(type_names),
-            c_uint32(len(col_names))))
+            c_uint32(len(col_names)),
+            err_p))
+        _check_ffi_err(relation_p)
         return Relation(relation_p)
 
     @classmethod
@@ -186,3 +193,10 @@ def _decode_c_str_vec(vec_p, n_str):
         string = c_void_p(ffi.ffi_get_str_i(vec_p, i))
         decoded.append(_decode_c_str(string))
     return decoded
+
+
+def _check_ffi_err(return_p):
+    if return_p.value is None:
+        ffi.ffi_get_err_str_p.restype = c_void_p
+        err_str = c_void_p(ffi.ffi_get_err_str_p(err_p))
+        raise RuntimeError(_decode_c_str(err_str))

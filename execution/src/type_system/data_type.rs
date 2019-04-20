@@ -27,7 +27,7 @@ impl DataType {
         DataType { variant, nullable }
     }
 
-    pub fn from_str(string: &str) -> DataType {
+    pub fn from_str(string: &str) -> Result<DataType, String> {
         let lower = string.to_lowercase();
         let tokens: Vec<&str> = lower.split(' ').collect();
         let mut variant_str = *tokens.get(0).expect("Error: type string is empty");
@@ -38,7 +38,10 @@ impl DataType {
         if l_paren != None && r_paren != None {
             let i_l = l_paren.unwrap();
             let i_r = r_paren.unwrap();
-            size_arg = variant_str[i_l + 1..i_r].parse::<usize>().expect("Invalid size parameter");
+            size_arg = match variant_str[i_l + 1..i_r].parse::<usize>() {
+                Ok(size) => size,
+                Err(err) => return Err(err.to_string()),
+            };
             variant_str = &variant_str[0..i_l];
         }
 
@@ -51,11 +54,11 @@ impl DataType {
             "double" => Variant::Float8,
             "varchar" => Variant::ByteString(size_arg, true),
             "char" => Variant::ByteString(size_arg, false),
-            _ => panic!("Unknown type variant {}", variant_str),
+            _ => return Err(String::from(format!("Unknown type variant {}", variant_str))),
         };
 
         let nullable = lower.contains("null");
-        Self::new(variant, nullable)
+        Ok(Self::new(variant, nullable))
     }
 
     pub fn to_string(&self) -> String {

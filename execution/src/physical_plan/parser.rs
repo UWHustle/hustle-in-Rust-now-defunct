@@ -88,7 +88,7 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
             .unwrap()["type"]
             .as_str()
             .unwrap(),
-    );
+    ).unwrap();
     let agg_name = agg_json["function"].as_str().unwrap();
     let agg_op = Aggregate::from_str(
         project_node.get_output_relation(),
@@ -121,7 +121,7 @@ fn parse_connective_predicate(json: &serde_json::Value) -> Connective {
 
 fn parse_comparison_predicate(json: &serde_json::Value) -> Comparison {
     let comp_value_str = get_string(&json["literal"]["value"]);
-    let comp_value_type = DataType::from_str(json["literal"]["type"].as_str().unwrap());
+    let comp_value_type = DataType::from_str(json["literal"]["type"].as_str().unwrap()).unwrap();
     let comp_value = comp_value_type.parse(&comp_value_str);
 
     let comparator_str = json["json_name"].as_str().unwrap();
@@ -188,7 +188,7 @@ fn parse_column(json: &serde_json::Value) -> Column {
     if name == "" {
         name = get_string(&json["alias"]);
     }
-    Column::new(name, DataType::from_str(&json["type"].as_str().unwrap()))
+    Column::new(name, DataType::from_str(&json["type"].as_str().unwrap()).unwrap())
 }
 
 fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
@@ -201,7 +201,7 @@ fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
 }
 
 fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
-    let type_id = DataType::from_str(&json["type"].as_str().unwrap());
+    let type_id = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
     type_id.parse(&json["value"].as_str().unwrap())
 }
 
