@@ -3,17 +3,16 @@ extern crate memmap;
 extern crate omap;
 
 use self::byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use self::memmap::{Mmap, MmapMut};
+use self::memmap::MmapMut;
 use self::omap::OrderedHashMap;
 use std::ops::Deref;
 use std::fs;
 use std::path::PathBuf;
 use std::mem;
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::cmp::{max, min};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
-use core::borrow::BorrowMut;
-use std::io::{Write, Cursor, Seek, SeekFrom};
+use std::io::{Write};
 
 pub const BLOCK_SIZE: usize = 1000;
 const HEADER_SIZE: usize = 4;
@@ -41,7 +40,7 @@ impl Block {
         let offset_in_block = offset + HEADER_SIZE;
         unsafe {
             (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
-            (*self.value).flush();
+            (*self.value).flush().expect("Error flushing changes to storage.");
         }
     }
 
@@ -52,7 +51,7 @@ impl Block {
         }
         unsafe {
             (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
-            (*self.value).flush();
+            (*self.value).flush().expect("Error flushing changes to storage.");
         }
     }
 
@@ -66,14 +65,14 @@ impl Block {
         unsafe {
             (*self.value)[..HEADER_SIZE].copy_from_slice(&len);
             (*self.value)[HEADER_SIZE..HEADER_SIZE + value.len()].copy_from_slice(value);
-            (*self.value).flush();
+            (*self.value).flush().expect("Error flushing changes to storage.");
         }
     }
 
     fn load(key: &str) -> Option<Block> {
         let path = Self::file_path(key);
         let file = OpenOptions::new().read(true).write(true).open(&path).ok()?;
-        file.set_len((HEADER_SIZE + BLOCK_SIZE) as u64);
+        file.set_len((HEADER_SIZE + BLOCK_SIZE) as u64).ok()?;
         let mmap = unsafe { MmapMut::map_mut(&file).ok()? };
         Some(Block {
             value: Box::into_raw(Box::new(mmap)),
@@ -90,8 +89,8 @@ impl Block {
         let path = Self::file_path(key);
         let mut file = OpenOptions::new().write(true).create(true).open(&path)
             .expect("Error opening file.");
-        file.write(&len);
-        file.write(value);
+        file.write(&len).expect("Error writing to file.");
+        file.write(value).expect("Error writing to file.");
     }
 
     fn erase(key: &str) {

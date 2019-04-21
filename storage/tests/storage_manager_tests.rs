@@ -5,8 +5,6 @@ extern crate memmap;
 #[allow(unused_must_use)]
 mod storage_manager_tests {
     use storage::StorageManager;
-    use std::path::Path;
-    use std::fs::OpenOptions;
 
     #[test]
     fn get() {
