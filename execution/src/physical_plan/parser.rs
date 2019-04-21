@@ -96,7 +96,7 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
         group_by_cols,
         agg_type,
         agg_name,
-    );
+    ).unwrap();
     Node::new(Rc::new(agg_op), vec![Rc::new(project_node)])
 }
 

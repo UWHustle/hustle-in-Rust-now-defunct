@@ -147,7 +147,7 @@ impl<'a> ImmediateRelation<'a> {
             group_by_cols,
             agg_col.get_datatype(),
             agg_name,
-        );
+        )?;
         let output = ImmediateRelation {
             relation: agg_op.execute(&self.storage_manager)?,
             storage_manager: self.storage_manager,

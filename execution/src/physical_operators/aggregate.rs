@@ -50,7 +50,7 @@ impl Aggregate {
         agg_col: Column,
         group_by_cols: Vec<Column>,
         agg_type: DataType,
-        agg_name: &str) -> Self
+        agg_name: &str) -> Result<Self, String>
     {
         let lower = agg_name.to_lowercase();
         let aggregation: Box<AggregationTrait> = match lower.as_str() {
@@ -59,9 +59,9 @@ impl Aggregate {
             "max" => Box::new(Max::new(agg_type)),
             "min" => Box::new(Min::new(agg_type)),
             "sum" => Box::new(Sum::new(agg_type)),
-            _ => panic!("Unknown aggregate function {}", agg_name),
+            _ => return Err(String::from(format!("Unknown aggregate function {}", agg_name))),
         };
-        Self::new(input_relation, agg_col, group_by_cols, aggregation)
+        Ok(Self::new(input_relation, agg_col, group_by_cols, aggregation))
     }
 }
 
