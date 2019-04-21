@@ -1,20 +1,24 @@
 extern crate memmap;
 extern crate omap;
 
-use self::memmap::Mmap;
+use self::memmap::{Mmap, MmapMut};
 use self::omap::OrderedHashMap;
 use std::ops::Deref;
 use std::fs;
 use std::path::PathBuf;
 use std::mem;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::cmp::{max, min};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
+use core::borrow::BorrowMut;
+use std::io::Write;
+
+pub const BLOCK_SIZE: usize = 1000;
 
 /// The unit of storage and replacement in the cache. It is assumed that all `Block`s in the buffer
 /// are the same size, but this is not enforced.
 pub struct Block {
-    value: Arc<Mmap>,
+    value: *mut MmapMut,
     rc: Arc<(Mutex<u64>, Condvar)>
 }
 
@@ -22,27 +26,32 @@ impl Deref for Block {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
-        &self.value
+        unsafe { &*self.value }
     }
 }
 
 impl Block {
-    fn new(value: Arc<Mmap>) -> Self {
+    fn new(value: MmapMut) -> Self {
         Block {
-            value,
+            value: Box::into_raw(Box::new(value)),
             rc: Arc::new((Mutex::new(1), Condvar::new()))
         }
     }
 }
-
 
 impl Drop for Block {
     fn drop(&mut self) {
         // Decrement the reference count when Value is dropped.
         let &(ref rc_lock, ref cvar) = &*self.rc;
         let mut rc_guard = rc_lock.lock().unwrap();
-        *rc_guard = rc_guard.saturating_sub(1);
+        *rc_guard -= 1;
         cvar.notify_all();
+
+        if *rc_guard == 0 {
+            // This was the last reference to the Block.
+            // Convert the raw pointer back into a Box to release the memory.
+            unsafe { Box::from_raw(self.value) };
+        }
     }
 }
 
@@ -51,11 +60,15 @@ impl Clone for Block {
         let mut rc_guard = self.rc.0.lock().unwrap();
         *rc_guard += 1;
         Block {
-            value: self.value.clone(),
+            value: self.value,
             rc: self.rc.clone()
         }
     }
 }
+
+unsafe impl Send for Block {}
+
+unsafe impl Sync for Block {}
 
 struct BufferRecord {
     block: Block,
@@ -63,7 +76,7 @@ struct BufferRecord {
 }
 
 impl BufferRecord {
-    fn new(data: Arc<Mmap>) -> Self {
+    fn new(data: MmapMut) -> Self {
         BufferRecord {
             block: Block::new(data),
             reference: RwLock::new(false)
@@ -112,13 +125,19 @@ impl Buffer {
     /// buffer.write("key", b"value");
     /// ```
     pub fn write(&self, key: &str, value: &[u8]) {
-        // Remove the old file from storage.
-        self.erase(key);
-
-        // Write the new file to storage and load it into the cache.
-        let path = self.file_path(key);
-        fs::write(path, value).expect(format!("Error writing {} to storage.", key).as_str());
-        self.load(key);
+        if let Some(record) = self.get(key) {
+            // Update the existing value.
+            unsafe {
+                // TODO: Enforce block size somehow
+                (*record.value)[..value.len()].copy_from_slice(value);
+                (*record.value).flush();
+            }
+        } else {
+            // Write the new file to storage and load it into the cache.
+            let path = self.file_path(key);
+            fs::write(path, value).expect(format!("Error writing {} to storage.", key).as_str());
+            self.load(key);
+        }
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.
@@ -194,8 +213,9 @@ impl Buffer {
     fn load(&self, key: &str) -> Option<Block> {
         // Load the file from storage
         let path = self.file_path(key);
-        let file = File::open(path).ok()?;
-        let mmap = Arc::new(unsafe { Mmap::map(&file).ok()? });
+        let file = OpenOptions::new().read(true).write(true).open(&path).ok()?;
+        file.set_len(BLOCK_SIZE as u64);
+        let mmap = unsafe { MmapMut::map_mut(&file).ok()? };
         let record = BufferRecord::new(mmap);
         let block = record.block.clone();
 
@@ -212,7 +232,7 @@ impl Buffer {
             // Cache hit. Set reference bit to 1.
             *record.reference.write().unwrap() = true;
             return Some(record.block.clone());
-        }
+        };
 
         let cache_directory_miss = !b1_guard.contains_key(key)
             && !b2_guard.contains_key(key);
@@ -232,9 +252,9 @@ impl Buffer {
                     + b1_guard.len() + b2_guard.len() == 2 * self.capacity {
                     // Discard the LRU page in B2.
                     b2_guard.pop_front();
-                }
-            }
-        }
+                };
+            };
+        };
 
         if cache_directory_miss {
             // Move the page to the back of T1.
@@ -255,7 +275,7 @@ impl Buffer {
             // Move the page to the back of T2.
             b2_guard.remove(key);
             t2_write_guard.push_back(key.to_string(), record);
-        }
+        };
 
         Some(block)
     }
