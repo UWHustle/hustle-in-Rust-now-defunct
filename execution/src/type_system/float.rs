@@ -38,8 +38,11 @@ impl Float4 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<f32>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<f32>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
@@ -160,8 +163,11 @@ impl Float8 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<f64>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<f64>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {

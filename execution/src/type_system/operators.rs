@@ -12,14 +12,14 @@ pub enum Comparator {
 }
 
 impl Comparator {
-    pub fn from_str(string: &str) -> Self {
+    pub fn from_str(string: &str) -> Result<Self, String> {
         match string {
-            "=" | "Equal" => Comparator::Equal,
-            "<" | "Less" => Comparator::Less,
-            "<=" | "LessOrEqual" => Comparator::LessEq,
-            ">" | "Greater" => Comparator::Greater,
-            ">=" | "GreaterOrEqual" => Comparator::GreaterEq,
-            _ => panic!("Unknown comparison {}", string),
+            "=" | "Equal" => Ok(Comparator::Equal),
+            "<" | "Less" => Ok(Comparator::Less),
+            "<=" | "LessOrEqual" => Ok(Comparator::LessEq),
+            ">" | "Greater" => Ok(Comparator::Greater),
+            ">=" | "GreaterOrEqual" => Ok(Comparator::GreaterEq),
+            _ => Err(format!("unknown comparison {}", string)),
         }
     }
 

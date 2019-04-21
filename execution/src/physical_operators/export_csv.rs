@@ -19,10 +19,6 @@ impl ExportCsv {
             relation,
         }
     }
-
-    pub fn get_file_name(&self) -> &String {
-        &self.file_name
-    }
 }
 
 impl Operator for ExportCsv {
@@ -30,10 +26,15 @@ impl Operator for ExportCsv {
         Relation::null()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
-        let data = storage_manager.get(self.relation.get_name()).unwrap();
-
-        let mut writer = csv::Writer::from_path(self.get_file_name()).unwrap();
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+        let data = match storage_manager.get(self.relation.get_name()) {
+            Some(data) => data,
+            None => return Err(format!("relation {} not found in storage manager", self.relation.get_name())),
+        };
+        let mut writer = match csv::Writer::from_path(&self.file_name) {
+            Ok(val) => val,
+            Err(_err) => return Err(String::from(format!("unable to open file '{}'", self.file_name))),
+        };
 
         let mut i = 0;
         while i < data.len() {
@@ -51,6 +52,6 @@ impl Operator for ExportCsv {
         }
         writer.flush().unwrap();
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

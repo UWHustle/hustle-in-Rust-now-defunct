@@ -38,8 +38,11 @@ impl IPv4 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<u32>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<u32>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {

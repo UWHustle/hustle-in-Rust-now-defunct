@@ -70,7 +70,7 @@ impl Operator for Aggregate {
         self.output_relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let input_cols = self.input_relation.get_columns().to_vec();
         let input_data = storage_manager.get(self.input_relation.get_name()).unwrap();
 
@@ -113,13 +113,13 @@ impl Operator for Aggregate {
             if group_by.contains_key(&group_by_values) {
                 let agg_instance = group_by.get_mut(&group_by_values).unwrap();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
+                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0)?);
                 }
             } else {
                 let mut agg_instance = self.aggregation.box_clone_aggregation();
                 agg_instance.initialize();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
+                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0)?);
                 }
                 group_by.entry(group_by_values).or_insert(agg_instance);
             }
@@ -129,7 +129,7 @@ impl Operator for Aggregate {
         for (group_by_values, agg_instance) in &group_by {
             // Copy group by values
             for (data, column) in group_by_values {
-                let data = column.get_datatype().parse(data).un_marshall();
+                let data = column.get_datatype().parse(data)?.un_marshall();
                 output_data[j..j + data.data().len()].clone_from_slice(&data.data());
                 j += data.data().len();
             }
@@ -144,6 +144,6 @@ impl Operator for Aggregate {
         output_data.resize(j, 0);
         storage_manager.put(self.output_relation.get_name(), &output_data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

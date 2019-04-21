@@ -59,5 +59,5 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
 
 fn hustle_join(relation1: Relation, relation2: Relation) -> Relation {
     let join_operator = Join::new(relation1.clone(), relation2.clone());
-    join_operator.execute(&StorageManager::new())
+    join_operator.execute(&StorageManager::new()).unwrap()
 }

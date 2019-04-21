@@ -22,7 +22,7 @@ impl Operator for Print {
         Relation::null()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let data = storage_manager.get(self.relation.get_name()).unwrap();
 
         let columns = self.relation.get_columns();
@@ -46,6 +46,6 @@ impl Operator for Print {
             println!("|");
         }
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

@@ -19,9 +19,9 @@ impl Operator for DropTable {
         Relation::new(&self.name, Schema::new(vec![]))
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         storage_manager.delete(&self.name);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

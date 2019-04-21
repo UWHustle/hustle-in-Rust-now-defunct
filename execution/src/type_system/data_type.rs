@@ -30,7 +30,10 @@ impl DataType {
     pub fn from_str(string: &str) -> Result<DataType, String> {
         let lower = string.to_lowercase();
         let tokens: Vec<&str> = lower.split(' ').collect();
-        let mut variant_str = *tokens.get(0).expect("Error: type string is empty");
+        let mut variant_str = *match tokens.get(0) {
+            Some(val) => val,
+            None => return Err(String::from("empty typename string")),
+        };
 
         let mut size_arg: usize = 0;
         let l_paren = variant_str.find('(');
@@ -54,7 +57,7 @@ impl DataType {
             "double" => Variant::Float8,
             "varchar" => Variant::ByteString(size_arg, true),
             "char" => Variant::ByteString(size_arg, false),
-            _ => return Err(String::from(format!("Unknown type variant {}", variant_str))),
+            _ => return Err(String::from(format!("unknown type variant {}", variant_str))),
         };
 
         let nullable = lower.contains("null");
@@ -105,16 +108,16 @@ impl DataType {
         }
     }
 
-    pub fn parse(&self, string: &str) -> Box<Value> {
+    pub fn parse(&self, string: &str) -> Result<Box<Value>, String> {
         match self.variant {
-            Variant::Int1 => Box::new(Int1::parse(string)),
-            Variant::Int2 => Box::new(Int2::parse(string)),
-            Variant::Int4 => Box::new(Int4::parse(string)),
-            Variant::Int8 => Box::new(Int8::parse(string)),
-            Variant::Float4 => Box::new(Float4::parse(string)),
-            Variant::Float8 => Box::new(Float8::parse(string)),
-            Variant::IPv4 => Box::new(IPv4::parse(string)),
-            Variant::ByteString(max_size, varchar) => Box::new(ByteString::new(string.as_bytes(), true, max_size, varchar)),
+            Variant::Int1 => Ok(Box::new(Int1::parse(string)?)),
+            Variant::Int2 => Ok(Box::new(Int2::parse(string)?)),
+            Variant::Int4 => Ok(Box::new(Int4::parse(string)?)),
+            Variant::Int8 => Ok(Box::new(Int8::parse(string)?)),
+            Variant::Float4 => Ok(Box::new(Float4::parse(string)?)),
+            Variant::Float8 => Ok(Box::new(Float8::parse(string)?)),
+            Variant::IPv4 => Ok(Box::new(IPv4::parse(string)?)),
+            Variant::ByteString(max_size, varchar) => Ok(Box::new(ByteString::new(string.as_bytes(), true, max_size, varchar))),
         }
     }
 

@@ -33,9 +33,9 @@ relation.import_csv('T.csv')
 print(relation.get_name())
 relation.print()
 
-sum_e = relation.aggregate('e', [], 'count')
-print(sum_e.get_name())
-sum_e.print()
+count_e = relation.aggregate('e', [], 'count')
+print(count_e.get_name())
+count_e.print()
 
 other = Relation.create(['g'], ['long'])
 other.insert([1234])

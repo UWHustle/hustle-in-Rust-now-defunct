@@ -25,8 +25,11 @@ impl Operator for ImportCsv {
         self.relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
-        let mut reader = csv::Reader::from_path(&self.file_name).unwrap();
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+        let mut reader = match csv::Reader::from_path(&self.file_name) {
+            Ok(val) => val,
+            Err(_err) => return Err(String::from(format!("unable to open file '{}'", self.file_name))),
+        };
         let record_count = reader.records().count() + 1;
         reader.seek(csv::Position::new()).unwrap();
 
@@ -41,7 +44,7 @@ impl Operator for ImportCsv {
             for (i, column) in self.relation.get_columns().iter().enumerate() {
                 let a = record.get(i).unwrap().to_string();
 
-                let c = column.get_datatype().parse(&a);
+                let c = column.get_datatype().parse(&a)?;
                 let size = c.size();
                 data[n..n + size].clone_from_slice(c.un_marshall().data());
                 n += size;
@@ -50,6 +53,6 @@ impl Operator for ImportCsv {
 
         storage_manager.put(self.relation.get_name(), &data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

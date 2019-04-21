@@ -22,25 +22,24 @@ pub unsafe extern "C" fn ffi_new_relation(
 {
     let col_names = decode_c_str_list(col_names_p, n_cols);
     let type_names = decode_c_str_list(type_names_p, n_cols);
-    process_result(ImmediateRelation::new(col_names, type_names), err_p)
+    process_result_p(ImmediateRelation::new(col_names, type_names), err_p)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_get_name_p(relation_p: *const ImmediateRelation) -> *const c_void {
+pub unsafe extern "C" fn ffi_get_name_p(
+    relation_p: *const ImmediateRelation) -> *const c_void {
     encode_c_str((*relation_p).get_name()) as *const c_void
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_col_names_p(
-    relation_p: *const ImmediateRelation) -> *const c_void
-{
+    relation_p: *const ImmediateRelation) -> *const c_void {
     encode_c_str_vec((*relation_p).get_col_names()) as *const c_void
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_type_names_p(
-    relation_p: *const ImmediateRelation) -> *const c_void
-{
+    relation_p: *const ImmediateRelation) -> *const c_void {
     encode_c_str_vec((*relation_p).get_col_type_names()) as *const c_void
 }
 
@@ -116,33 +115,37 @@ pub unsafe extern "C" fn ffi_copy_buffer(
 #[no_mangle]
 pub unsafe extern "C" fn ffi_import_hustle(
     relation_p: *const ImmediateRelation,
-    name_p: *const c_char)
+    name_p: *const c_char,
+    err_p: *mut String) -> i32
 {
-    (*relation_p).import_hustle(decode_c_str(name_p));
+    process_result_i((*relation_p).import_hustle(decode_c_str(name_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_export_hustle(
     relation_p: *const ImmediateRelation,
-    name_p: *const c_char)
+    name_p: *const c_char,
+    err_p: *mut String) -> i32
 {
-    (*relation_p).export_hustle(decode_c_str(name_p));
+    process_result_i((*relation_p).export_hustle(decode_c_str(name_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_import_csv(
     relation_p: *const ImmediateRelation,
-    filename_p: *const c_char)
+    filename_p: *const c_char,
+    err_p: *mut String) -> i32
 {
-    (*relation_p).import_csv(decode_c_str(filename_p));
+    process_result_i((*relation_p).import_csv(decode_c_str(filename_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_export_csv(
     relation_p: *const ImmediateRelation,
-    filename_p: *const c_char)
+    filename_p: *const c_char,
+    err_p: *mut String) -> i32
 {
-    (*relation_p).export_csv(decode_c_str(filename_p));
+    process_result_i((*relation_p).export_csv(decode_c_str(filename_p)), err_p)
 }
 
 #[no_mangle]
@@ -151,62 +154,70 @@ pub unsafe extern "C" fn ffi_aggregate(
     agg_col_name_p: *const c_char,
     group_by_col_names_p: *const *const c_char,
     n_group_by: u32,
-    agg_func_p: *const c_char) -> *const c_void
+    agg_func_p: *const c_char,
+    err_p: *mut String) -> *const c_void
 {
     let agg_col_name = decode_c_str(agg_col_name_p);
     let group_by_col_names = decode_c_str_list(group_by_col_names_p, n_group_by);
     let agg_name = decode_c_str(agg_func_p);
-    let output = (*relation_p).aggregate(agg_col_name, group_by_col_names, agg_name);
-    Box::into_raw(Box::new(output)) as *const c_void
+    process_result_p((*relation_p).aggregate(agg_col_name, group_by_col_names, agg_name), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_insert(
     relation_p: *const ImmediateRelation,
     value_strings_p: *const *const c_char,
-    n_values: u32)
+    n_values: u32,
+    err_p: *mut String) -> i32
 {
-    (*relation_p).insert(decode_c_str_list(value_strings_p, n_values));
+    process_result_i((*relation_p).insert(decode_c_str_list(value_strings_p, n_values)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_join(
     relation1_p: *const ImmediateRelation,
-    relation2_p: *const ImmediateRelation) -> *const c_void
+    relation2_p: *const ImmediateRelation,
+    err_p: *mut String) -> *const c_void
 {
-    Box::into_raw(Box::new((*relation1_p).join(&*relation2_p))) as *const c_void
+    process_result_p((*relation1_p).join(&*relation2_p), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_limit(
     relation_p: *const ImmediateRelation,
-    limit: u32) -> *const c_void
+    limit: u32,
+    err_p: *mut String) -> *const c_void
 {
-    Box::into_raw(Box::new((*relation_p).limit(limit))) as *const c_void
+    process_result_p((*relation_p).limit(limit), err_p)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_print(relation_p: *const ImmediateRelation) {
-    (*relation_p).print();
+pub unsafe extern "C" fn ffi_print(
+    relation_p: *const ImmediateRelation,
+    err_p: *mut String) -> i32
+{
+    process_result_i((*relation_p).print(), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_project(
     relation_p: *const ImmediateRelation,
     col_names_p: *const *const c_char,
-    n_cols: u32) -> *const c_void
+    n_cols: u32,
+    err_p: *mut String) -> *const c_void
 {
     let col_names = decode_c_str_list(col_names_p, n_cols);
-    Box::into_raw(Box::new((*relation_p).project(col_names))) as *const c_void
+    process_result_p((*relation_p).project(col_names), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_select(
     relation_p: *const ImmediateRelation,
-    predicate_p: *const c_char) -> *const c_void
+    predicate_p: *const c_char,
+    err_p: *mut String) -> *const c_void
 {
     let predicate = decode_c_str(predicate_p);
-    Box::into_raw(Box::new((*relation_p).select(predicate))) as *const c_void
+    process_result_p((*relation_p).select(predicate), err_p)
 }
 
 unsafe fn encode_c_str(string: &str) -> *const c_void {
@@ -235,13 +246,24 @@ unsafe fn decode_c_str_list<'a>(c_str_list: *const *const c_char, length: u32) -
     decoded
 }
 
-unsafe fn process_result<T>(result: Result<T, String>, err_p: *mut String) -> *const c_void {
+unsafe fn process_result_i<T>(result: Result<T, String>, err_p: *mut String) -> i32 {
     match result {
-        Ok(val) => Box::into_raw(Box::new(val)) as *const c_void,
+        Ok(_val) => 0,
         Err(string) => {
             (*err_p).truncate(0);
             (*err_p).push_str(&string);
-            0 as *const c_void
+            -1
+        }
+    }
+}
+
+unsafe fn process_result_p<T, U>(result: Result<T, String>, err_p: *mut String) -> *const U {
+    match result {
+        Ok(val) => Box::into_raw(Box::new(val)) as *const U,
+        Err(string) => {
+            (*err_p).truncate(0);
+            (*err_p).push_str(&string);
+            0 as *const U
         },
     }
 }

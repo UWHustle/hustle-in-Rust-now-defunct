@@ -122,10 +122,10 @@ fn parse_connective_predicate(json: &serde_json::Value) -> Connective {
 fn parse_comparison_predicate(json: &serde_json::Value) -> Comparison {
     let comp_value_str = get_string(&json["literal"]["value"]);
     let comp_value_type = DataType::from_str(json["literal"]["type"].as_str().unwrap()).unwrap();
-    let comp_value = comp_value_type.parse(&comp_value_str);
+    let comp_value = comp_value_type.parse(&comp_value_str).unwrap();
 
     let comparator_str = json["json_name"].as_str().unwrap();
-    let comparator = Comparator::from_str(comparator_str);
+    let comparator = Comparator::from_str(comparator_str).unwrap();
     let filter_col = parse_column(&json["attribute_reference"]);
     let predicate = Comparison::new(filter_col, comparator, comp_value);
     predicate
@@ -202,7 +202,7 @@ fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
 
 fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
     let type_id = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
-    type_id.parse(&json["value"].as_str().unwrap())
+    type_id.parse(&json["value"].as_str().unwrap()).unwrap()
 }
 
 fn parse_limit(json: &serde_json::Value) -> Node {

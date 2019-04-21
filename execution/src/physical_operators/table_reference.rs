@@ -18,7 +18,7 @@ impl Operator for TableReference {
         self.relation.clone()
     }
 
-    fn execute(&self, _storage_manager: &StorageManager) -> Relation {
-        self.get_target_relation()
+    fn execute(&self, _storage_manager: &StorageManager) -> Result<Relation, String> {
+        Ok(self.get_target_relation())
     }
 }

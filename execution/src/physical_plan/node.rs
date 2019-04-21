@@ -27,6 +27,12 @@ impl Node {
         for node in &self.dependencies {
             node.execute(storage_manager);
         }
-        self.operator.execute(storage_manager)
+        match self.operator.execute(storage_manager) {
+            Ok(val) => val,
+            Err(string) => {
+                println!("Error: {}", string);
+                self.get_output_relation()
+            }
+        }
     }
 }

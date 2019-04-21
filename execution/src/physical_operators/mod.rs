@@ -22,5 +22,5 @@ pub trait Operator {
     fn get_target_relation(&self) -> Relation;
 
     // Executes the operator and returns the relation containing the results.
-    fn execute(&self, storage_manager: &StorageManager) -> Relation;
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String>;
 }
