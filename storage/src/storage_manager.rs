@@ -61,11 +61,11 @@ impl<'a> Record<'a> {
     /// Returns the number of rows in the `Record`.
     pub fn len(&self) -> usize {
         let mut tail_block_index = 0;
-        while self.buffer.exists(&StorageManager::key_for_block(key, tail_block_index + 1)) {
+        while self.buffer.exists(&StorageManager::key_for_block(self.key, tail_block_index + 1)) {
             tail_block_index += 1;
         }
 
-        let key_for_tail_block = Self::key_for_block(key, tail_block_index);
+        let key_for_tail_block = StorageManager::key_for_block(self.key, tail_block_index);
         let rows_in_tail_block = self.buffer.get(&key_for_tail_block)
             .map(|block| block.len() / self.row_size)
             .unwrap_or(0);
