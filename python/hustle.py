@@ -135,14 +135,17 @@ class Relation:
             _encode_c_str(agg_func))
         return Relation(relation_p, _get_err_p())
 
-    def insert(self, values):
-        value_strings = [str(value) for value in values]
+    def insert(self, *args):
+        if len(args) != self.n_cols.value:
+            raise ValueError(
+                'should have ' + str(self.n_cols.value) + ' arguments')
+        value_strings = [str(arg) for arg in args]
         _run_ffi_i(
             ffi.ffi_insert,
             self.err_p,
             self.relation_p,
             _encode_c_str_list(value_strings),
-            c_uint32(len(values)))
+            self.n_cols)
 
     def join(self, other):
         relation_p = _run_ffi_p(
@@ -196,9 +199,18 @@ def _schema_to_numpy_type(col_names, type_names):
     type_list = []
     for i in range(len(col_names)):
         hustle_type = type_names[i]
-        numpy_type = type_map[hustle_type]
-        if numpy_type is None:
-            raise ValueError('no Numpy mapping for type ' + hustle_type)
+        if 'varchar' in hustle_type:
+            type_str = hustle_type.replace('varchar(', 'S')
+            type_str = type_str.replace(')', '')
+            numpy_type = numpy.dtype(type_str)
+        elif 'char' in hustle_type:
+            type_str = hustle_type.replace('char(', 'S')
+            type_str = type_str.replace(')', '')
+            numpy_type = numpy.dtype(type_str)
+        else:
+            numpy_type = type_map[hustle_type]
+            if numpy_type is None:
+                raise ValueError('no Numpy mapping for type ' + hustle_type)
         type_list.append((col_names[i], numpy_type))
     return numpy.dtype(type_list)
 
@@ -214,9 +226,14 @@ def _numpy_to_type_names(array):
     }
     type_names = []
     for numpy_type in array.dtype.names:
-        hustle_type = type_map[str(array.dtype[numpy_type])]
-        if hustle_type is None:
-            raise ValueError('no Hustle mapping for type ' + numpy_type)
+        type_str = str(array.dtype[numpy_type])
+        if '|S' in type_str:
+            hustle_type = type_str.replace('|S', 'varchar(')
+            hustle_type += ')'
+        else:
+            hustle_type = type_map[str(array.dtype[numpy_type])]
+            if hustle_type is None:
+                raise ValueError('no Hustle mapping for type ' + numpy_type)
         type_names.append(hustle_type)
     return type_names
 

@@ -17,14 +17,15 @@ impl ByteString {
     pub fn new(buffer: &[u8], nullable: bool, max_size: usize, varchar: bool) -> Self {
         let mut buffer_sub = buffer;
         if buffer.len() > max_size {
-            buffer_sub = &buffer[0..max_size - 1];
+            buffer_sub = &buffer[0..max_size];
         }
         let mut value: Vec<u8> = vec![0; buffer_sub.len()];
         value.clone_from_slice(buffer_sub);
-        value.resize(max_size, ' ' as u8);
-        if varchar && buffer.len() < value.len() {
-            value[buffer.len()] = '\0' as u8;
-        }
+        let pad_char = match varchar {
+            true => 0x00,
+            false => 0x20,
+        };
+        value.resize(max_size, pad_char);
         Self {
             value,
             nullable,
@@ -34,17 +35,15 @@ impl ByteString {
     }
 
     pub fn from(string: &str) -> Self {
-        println!("Calling from function...");
-        let output = Self::new(string.as_bytes(), true, string.len(), false);
-        println!("Done!");
-        output
+        Self::new(string.as_bytes(), true, string.len(), false)
     }
 
     pub fn create_null(max_size: usize, varchar: bool) -> Self {
-        let mut value: Vec<u8> = vec![0x20; max_size];
-        if varchar {
-            value[0] = 0x00;
-        }
+        let fill_char = match varchar {
+            true => 0x00,
+            false => 0x20,
+        };
+        let value: Vec<u8> = vec![fill_char; max_size];
         Self {
             value,
             nullable: true,
@@ -73,9 +72,9 @@ impl ByteString {
     fn trimmed_slice(&self) -> &[u8] {
         match self.varchar {
             true => {
-                let mut end_idx = self.value.len() - 1;
+                let mut end_idx = self.value.len();
                 for i in 0..self.value.len() {
-                    if self.value[i] == '\0' as u8 {
+                    if self.value[i] == 0x00 {
                         end_idx = i;
                         break;
                     }
