@@ -3,13 +3,13 @@ extern crate omap;
 
 use std::sync::Mutex;
 use std::mem;
-use buffer::{Block, Buffer};
+use buffer::{Block, Buffer, BLOCK_SIZE};
 use record_guard::{MutexRecordGuard, RecordGuard};
 use std::cmp::min;
 use std::ops::Deref;
+use std::io::BufReader;
 
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
-const BLOCK_SIZE: usize = 1000;
 const TEMP_RECORD_PREFIX: char = '$';
 
 pub struct Record<'a> {
@@ -130,12 +130,16 @@ impl<'a> RecordBlock<'a> {
         }
     }
 
-    /// Returns the raw value at the specified `row` and `col`.
+    /// Returns the raw value at the specified `row` and `col` if it exists.
     pub fn get_row_col(&self, row: usize, col: usize) -> Option<&[u8]> {
         let row_offset = self.row_size * row;
         let left_bound = row_offset + self.column_offsets.get(col)?;
         let right_bound = row_offset + self.column_offsets.get(col + 1)?;
         self.block.get(left_bound..right_bound)
+    }
+
+    pub fn set_row_col(&self, row: usize, col: usize, value: &[u8]) {
+
     }
 }
 
