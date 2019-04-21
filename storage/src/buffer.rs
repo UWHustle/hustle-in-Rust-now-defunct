@@ -45,6 +45,17 @@ impl Block {
         }
     }
 
+    pub fn append(&self, value: &[u8]) {
+        let offset_in_block = self.len() + HEADER_SIZE;
+        if offset_in_block + value.len() > BLOCK_SIZE {
+            panic!("Value of size {} too large for block.", value.len());
+        }
+        unsafe {
+            (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
+            (*self.value).flush();
+        }
+    }
+
     pub fn len(&self) -> usize {
         unsafe { (*self.value).as_ref().read_u32::<BigEndian>().unwrap() as usize }
     }
@@ -77,7 +88,7 @@ impl Block {
 
         // Write the data to storage.
         let path = Self::file_path(key);
-        let mut file = OpenOptions::new().create(true).write(true).open(&path)
+        let mut file = OpenOptions::new().write(true).create(true).open(&path)
             .expect("Error opening file.");
         file.write(&len);
         file.write(value);
