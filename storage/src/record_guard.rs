@@ -41,6 +41,5 @@ pub struct NoLockRecordGuard {}
 
 impl RecordGuard for NoLockRecordGuard {
     fn lock(&self, _key: &str) {}
-
     fn unlock(&self, _key: &str) {}
 }
