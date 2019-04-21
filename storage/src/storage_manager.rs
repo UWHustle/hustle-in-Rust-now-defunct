@@ -11,6 +11,9 @@ use std::ops::Deref;
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 const TEMP_RECORD_PREFIX: char = '$';
 
+/// A record that represents a key-value pair in the `StorageManager`. The value can be accessed
+/// with raw byte offset, at the block level for bulk operations, or at the row/column level for
+/// structured data processing.
 pub struct Record<'a> {
     key: &'a str,
     buffer: &'a Buffer,
@@ -20,9 +23,6 @@ pub struct Record<'a> {
     rows_per_block: usize
 }
 
-/// A record that represents a key-value pair in the `StorageManager`. The value can be accessed
-/// with raw byte offset, at the block level for bulk operations, or at the row/column level for
-/// structured data processing.
 impl<'a> Record<'a> {
     /// Creates a new `Record`.
     fn new(key: &'a str,
@@ -74,6 +74,8 @@ impl<'a> Record<'a> {
                 self.row_size))
     }
 
+    /// Returns the block that contains the specified `row` and the row index within that block if
+    /// it exists.
     pub fn get_block_for_row(&self, row: usize) -> Option<(RecordBlock, usize)> {
         let block_index = row / self.rows_per_block;
         let row_in_block = row % self.rows_per_block;
@@ -112,6 +114,7 @@ impl<'a> RecordBlock<'a> {
         }
     }
 
+    /// Returns an iterator over the columns of the specified `row`.
     pub fn get_row(&self, row: usize) -> Option<RowIter> {
         if row < self.n_rows {
             Some(RowIter::new(self, row))
@@ -120,6 +123,7 @@ impl<'a> RecordBlock<'a> {
         }
     }
 
+    /// Returns an iterator over the rows of the specified `col`.
     pub fn get_col(&self, col: usize) -> Option<ColIter> {
         if col < self.column_offsets.len() - 1 {
             Some(ColIter::new(self, col))
@@ -134,6 +138,8 @@ impl<'a> RecordBlock<'a> {
             .and_then(|(left_bound, right_bound)| self.block.get(left_bound..right_bound))
     }
 
+    /// Sets the raw value at the specified `row` and `col`. A `panic!` will occur if the `row` or
+    /// `col` is out of bounds or the value is the wrong size for the schema.
     pub fn set_row_col(&self, row: usize, col: usize, value: &[u8]) {
         let (left_bound, right_bound) = self.bounds_for_row_col(row, col)
             .expect(format!("Row {} and col {} out of bounds.", row, col).as_str());
@@ -146,6 +152,7 @@ impl<'a> RecordBlock<'a> {
         self.block.update(left_bound, value);
     }
 
+    /// Returns the left and right bounds in the block for the specified `row` and `col`.
     fn bounds_for_row_col(&self, row: usize, col: usize) -> Option<(usize, usize)> {
         if row < self.n_rows && col < self.column_offsets.len() - 1 {
             let row_offset = self.row_size * row;
@@ -322,6 +329,19 @@ impl StorageManager {
         key
     }
 
+    /// Appends the value to the existing value associated with the specified `key`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use storage::StorageManager;
+    /// let sm = StorageManager::new();
+    /// sm.append("key_append", b"a");
+    /// assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..1], b"a");
+    /// sm.append("key_append", b"bb");
+    /// assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
+    /// sm.delete("key_append");
+    /// ```
     pub fn append(&self, key: &str, value: &[u8]) {
         if value.len() > BLOCK_SIZE {
             panic!("Value size {} is too large for a single block", value.len());
@@ -429,6 +449,7 @@ impl StorageManager {
         self.record_guard.unlock(key);
     }
 
+    /// Returns the key for the block at the specified `block_index`.
     fn key_for_block(key: &str, block_index: usize) -> String {
         format!("{}${}", key, block_index)
     }

@@ -18,7 +18,8 @@ pub const BLOCK_SIZE: usize = 1000;
 const HEADER_SIZE: usize = 4;
 
 /// The unit of storage and replacement in the cache. It is assumed that all `Block`s in the buffer
-/// are the same size, but this is not enforced.
+/// are the same size, but this is not enforced in this module. Instead, it is enforced in the
+/// `StorageManager` layer.
 pub struct Block {
     value: *mut MmapMut,
     rc: Arc<(Mutex<u64>, Condvar)>
@@ -33,6 +34,8 @@ impl Deref for Block {
 }
 
 impl Block {
+    /// Update the raw value of the block at the specified `offset`. A `panic!` will occur if the
+    /// `offset` and `value` are out of range.
     pub fn update(&self, offset: usize, value: &[u8]) {
         if offset + value.len() > self.len() {
             panic!("Offset {} and value len {} out of range.", offset, value.len());
@@ -44,6 +47,8 @@ impl Block {
         }
     }
 
+    /// Append the raw value to the `Block`. A `panic!` will occure if the `value` is too large to fit
+    /// into the block.
     pub fn append(&self, value: &[u8]) {
         let offset_in_block = self.len() + HEADER_SIZE;
         if offset_in_block + value.len() > BLOCK_SIZE {
@@ -55,10 +60,12 @@ impl Block {
         }
     }
 
+    /// Returns the length of the `Block`.
     pub fn len(&self) -> usize {
         unsafe { (*self.value).as_ref().read_u32::<BigEndian>().unwrap() as usize }
     }
 
+    /// Overwrites the entire `Block` with `value` and persists the changes to storage.
     fn write(&self, value: &[u8]) {
         let mut len = vec![];
         len.write_u32::<BigEndian>(value.len() as u32).unwrap();
@@ -69,6 +76,7 @@ impl Block {
         }
     }
 
+    /// Loads the `Block` for the `key` from storage.
     fn load(key: &str) -> Option<Block> {
         let path = Self::file_path(key);
         let file = OpenOptions::new().read(true).write(true).open(&path).ok()?;
@@ -80,6 +88,7 @@ impl Block {
         })
     }
 
+    /// Writes the `key` and `value` directly to storage without creating a `Block` in memory.
     fn write_direct(key: &str, value: &[u8]) {
         // Serialize the length of the value. This is the header of the block.
         let mut len = vec![];
@@ -93,6 +102,7 @@ impl Block {
         file.write(value).expect("Error writing to file.");
     }
 
+    /// Erases the `Block` for the `key` from storage.
     fn erase(key: &str) {
         let path = Self::file_path(key);
         if path.exists() {
@@ -100,6 +110,7 @@ impl Block {
         }
     }
 
+    /// Returns true if the `Block` for the `key` exists.
     fn exists(key: &str) -> bool {
         Self::file_path(key).exists()
     }
@@ -140,9 +151,9 @@ impl Clone for Block {
 }
 
 unsafe impl Send for Block {}
-
 unsafe impl Sync for Block {}
 
+/// A wrapper around `Block` to keep track of information used by the cache.
 struct BufferBlock {
     block: Block,
     reference: RwLock<bool>
@@ -231,10 +242,10 @@ impl Buffer {
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
 
-        if let Some(record) = t1_read_guard.get(key).or(t2_read_guard.get(key)) {
+        if let Some(buffer_block) = t1_read_guard.get(key).or(t2_read_guard.get(key)) {
             // Cache hit. Set reference bit to 1.
-            *record.reference.write().unwrap() = true;
-            return Some(record.block.clone());
+            *buffer_block.reference.write().unwrap() = true;
+            return Some(buffer_block.block.clone());
         }
 
         // Cache miss. Drop read locks on cache lists.
@@ -288,7 +299,7 @@ impl Buffer {
     fn load(&self, key: &str) -> Option<Block> {
         // Load the file from storage
         let block = Block::load(key)?;
-        let record = BufferBlock::new(block.clone());
+        let buffer_block = BufferBlock::new(block.clone());
 
         // Request write locks on all lists.
         let mut t1_write_guard = self.t1.write().unwrap();
@@ -299,10 +310,10 @@ impl Buffer {
 
         // Another thread may have loaded the block into the cache while this one was waiting for
         // the write locks. If this is the case, return the cached block.
-        if let Some(record) = t1_write_guard.get(key).or(t2_write_guard.get(key)) {
+        if let Some(buffer_block) = t1_write_guard.get(key).or(t2_write_guard.get(key)) {
             // Cache hit. Set reference bit to 1.
-            *record.reference.write().unwrap() = true;
-            return Some(record.block.clone());
+            *buffer_block.reference.write().unwrap() = true;
+            return Some(buffer_block.block.clone());
         };
 
         let cache_directory_miss = !b1_guard.contains_key(key)
@@ -329,7 +340,7 @@ impl Buffer {
 
         if cache_directory_miss {
             // Move the page to the back of T1.
-            t1_write_guard.push_back(key.to_string(), record);
+            t1_write_guard.push_back(key.to_string(), buffer_block);
 
         } else if b1_guard.contains_key(key) {
             // B1 cache directory hit. Increase the target size for T1.
@@ -337,7 +348,7 @@ impl Buffer {
 
             // Move the page to the back of T2.
             b1_guard.remove(key);
-            t2_write_guard.push_back(key.to_string(), record);
+            t2_write_guard.push_back(key.to_string(), buffer_block);
 
         } else {
             // B2 cache directory hit. Decrease the target size for T2.
@@ -345,7 +356,7 @@ impl Buffer {
 
             // Move the page to the back of T2.
             b2_guard.remove(key);
-            t2_write_guard.push_back(key.to_string(), record);
+            t2_write_guard.push_back(key.to_string(), buffer_block);
         };
 
         Some(block)
@@ -360,35 +371,33 @@ impl Buffer {
                p: &MutexGuard<usize>) {
         if t1.len() >= max(1, **p) {
             // T1 is at or above target size. Pop the front of T1.
-            let (t1_front_key, t1_front_record) = t1.pop_front().unwrap();
+            let (t1_front_key, t1_front_block) = t1.pop_front().unwrap();
 
-            if !*t1_front_record.reference.read().unwrap()
-                && *t1_front_record.block.rc.0.lock().unwrap() == 1 {
+            if !*t1_front_block.reference.read().unwrap()
+                && *t1_front_block.block.rc.0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
                 // Replace this page and push the key to the MRU position of B1.
                 b1.push_back(t1_front_key, ());
             } else {
-                // Set the page reference bit to 0. Push the record to the back of T2.
-                *t1_front_record.reference.write().unwrap() = false;
-                t2.push_back(t1_front_key, t1_front_record);
+                // Set the page reference bit to 0. Push the block to the back of T2.
+                *t1_front_block.reference.write().unwrap() = false;
+                t2.push_back(t1_front_key, t1_front_block);
             }
 
         } else {
             // Pop the front of T2.
-            let (t2_front_key, t2_front_record) = t2.pop_front().unwrap();
+            let (t2_front_key, t2_front_block) = t2.pop_front().unwrap();
 
-            if !*t2_front_record.reference.read().unwrap()
-                && *t2_front_record.block.rc.0.lock().unwrap() == 1 {
+            if !*t2_front_block.reference.read().unwrap()
+                && *t2_front_block.block.rc.0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
                 // Replace this page and push the key to the MRU position of B2.
                 b2.push_back(t2_front_key, ());
             } else {
-                // Set the page reference bit to 0. Push the record to the back of T2.
-                *t2_front_record.reference.write().unwrap() = false;
-                t2.push_back(t2_front_key, t2_front_record);
+                // Set the page reference bit to 0. Push the block to the back of T2.
+                *t2_front_block.reference.write().unwrap() = false;
+                t2.push_back(t2_front_key, t2_front_block);
             }
         }
     }
-
-
 }
