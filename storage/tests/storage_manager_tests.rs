@@ -5,6 +5,8 @@ extern crate memmap;
 #[allow(unused_must_use)]
 mod storage_manager_tests {
     use storage::StorageManager;
+    use std::path::Path;
+    use std::fs::OpenOptions;
 
     #[test]
     fn get() {
@@ -110,5 +112,16 @@ mod storage_manager_tests {
         }
 
         sm.delete("key_set_row_col");
+    }
+
+    #[test]
+    fn append() {
+        let sm = StorageManager::new();
+        sm.delete("key_append");
+        sm.append("key_append", b"a");
+        assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..1], b"a");
+        sm.append("key_append", b"bb");
+        assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
+        sm.delete("key_append");
     }
 }

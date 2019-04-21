@@ -320,6 +320,36 @@ impl StorageManager {
         key
     }
 
+    pub fn append(&self, key: &str, value: &[u8]) {
+        if value.len() > BLOCK_SIZE {
+            panic!("Value size {} is too large for a single block", value.len());
+        }
+
+        self.record_guard.lock(key);
+
+        let mut tail_block_index = 0;
+        while self.buffer.exists(&Self::key_for_block(key, tail_block_index + 1)) {
+            let t = Self::key_for_block(key, tail_block_index + 1);
+            tail_block_index += 1;
+        }
+
+        let key_for_tail_block = Self::key_for_block(key, tail_block_index);
+        if let Some(block) = self.buffer.get(&key_for_tail_block) {
+            if block.len() + value.len() > BLOCK_SIZE {
+                // The value will not fit in the tail block, so we create a new block at the end.
+                self.buffer.write(&Self::key_for_block(key, tail_block_index + 1), value);
+            } else {
+                // The value can be appended to the tail block.
+                block.append(value);
+            }
+        } else {
+            // The key-value pair does not exist. Create it and initialize it with the value.
+            self.buffer.write(&key_for_tail_block, value);
+        }
+
+        self.record_guard.unlock(key);
+    }
+
     /// Gets the value associated with `key` from the buffer and returns a `Record` if it exists.
     ///
     /// # Examples
@@ -379,11 +409,21 @@ impl StorageManager {
     /// ```
     pub fn delete(&self, key: &str) {
         self.record_guard.lock(key);
-        self.buffer.erase(key);
+
+        let mut block_index = 0;
+        loop {
+            let key_for_block = Self::key_for_block(key, block_index);
+            if !self.buffer.exists(&key_for_block) {
+                break;
+            }
+            self.buffer.erase(&key_for_block);
+            block_index += 1;
+        }
+
         self.record_guard.unlock(key);
     }
 
     fn key_for_block(key: &str, block_index: usize) -> String {
-        format!("{}.{}", key, block_index)
+        format!("{}${}", key, block_index)
     }
 }
