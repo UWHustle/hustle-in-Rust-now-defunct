@@ -7,7 +7,6 @@ use buffer::{Block, Buffer, BLOCK_SIZE};
 use record_guard::{MutexRecordGuard, RecordGuard};
 use std::cmp::min;
 use std::ops::Deref;
-use std::io::BufReader;
 
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 const TEMP_RECORD_PREFIX: char = '$';
@@ -281,7 +280,9 @@ impl StorageManager {
     /// ```
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
-    /// sm.put("key", b"value");
+    /// sm.put("key_put", b"value");
+    /// assert_eq!(&sm.get("key_put").unwrap().get_block(0).unwrap()[0..5], b"value");
+    /// sm.delete("key_put");
     /// ```
     pub fn put(&self, key: &str, value: &[u8]) {
         self.record_guard.lock(key);
@@ -306,7 +307,8 @@ impl StorageManager {
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
     /// let key = sm.put_anon(b"value");
-    /// sm.get(&key);
+    /// assert_eq!(&sm.get(&key).unwrap().get_block(0).unwrap()[0..5], b"value");
+    /// sm.delete(&key);
     /// ```
     pub fn put_anon(&self, value: &[u8]) -> String {
         // Generate a unique key, prefixed with the reserved character.
@@ -329,7 +331,6 @@ impl StorageManager {
 
         let mut tail_block_index = 0;
         while self.buffer.exists(&Self::key_for_block(key, tail_block_index + 1)) {
-            let t = Self::key_for_block(key, tail_block_index + 1);
             tail_block_index += 1;
         }
 
@@ -357,8 +358,10 @@ impl StorageManager {
     /// ```
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
-    /// sm.put("key", b"value");
-    /// sm.get("key");
+    /// sm.put("key_get", b"value");
+    /// assert_eq!(&sm.get("key_get").unwrap().get_block(0).unwrap()[0..5], b"value");
+    /// assert!(sm.get("nonexistent_key").is_none());
+    /// sm.delete("key_get");
     /// ```
     pub fn get<'a>(&'a self, key: &'a str) -> Option<Record<'a>> {
         self.record_guard.lock(key);
@@ -380,8 +383,11 @@ impl StorageManager {
     /// ```
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
-    /// sm.put("key", b"aaabbcccc");
-    /// sm.get_structured("key", &[3, 2, 4]);
+    /// sm.put("key_get_with_schema", b"abbcdd");
+    /// assert_eq!(&sm.get_with_schema("key_get_with_schema", &[1, 2]).unwrap()
+    ///     .get_block(0).unwrap()
+    ///     .get_row_col(0, 0).unwrap(), &b"a");
+    /// sm.delete("key_get_with_schema");
     /// ```
     pub fn get_with_schema<'a>(&'a self,
                                key: &'a str,
@@ -404,8 +410,8 @@ impl StorageManager {
     /// ```
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
-    /// sm.put("key", b"value");
-    /// sm.delete("key");
+    /// sm.put("key_delete", b"value");
+    /// sm.delete("key_delete");
     /// ```
     pub fn delete(&self, key: &str) {
         self.record_guard.lock(key);
