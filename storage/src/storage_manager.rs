@@ -72,8 +72,7 @@ impl<'a> Record<'a> {
                 self,
                 block,
                 &self.column_offsets,
-                self.row_size,
-                self.rows_per_block))
+                self.row_size))
     }
 
     pub fn get_block_for_row(&self, row: usize) -> Option<(RecordBlock, usize)> {
@@ -96,26 +95,26 @@ pub struct RecordBlock<'a> {
     block: Block,
     column_offsets: &'a Vec<usize>,
     row_size: usize,
-    rows_per_block: usize,
+    n_rows: usize,
 }
 
 impl<'a> RecordBlock<'a> {
     fn new(record: &'a Record,
            block: Block,
            column_offsets: &'a Vec<usize>,
-           row_size: usize,
-           rows_per_block: usize,) -> Self {
+           row_size: usize) -> Self {
+        let n_rows = block.len() / row_size;
         RecordBlock {
             record,
             block,
             column_offsets,
             row_size,
-            rows_per_block
+            n_rows
         }
     }
 
     pub fn get_row(&self, row: usize) -> Option<RowIter> {
-        if row < self.rows_per_block {
+        if row < self.n_rows {
             Some(RowIter::new(self, row))
         } else {
             None
@@ -132,14 +131,31 @@ impl<'a> RecordBlock<'a> {
 
     /// Returns the raw value at the specified `row` and `col` if it exists.
     pub fn get_row_col(&self, row: usize, col: usize) -> Option<&[u8]> {
-        let row_offset = self.row_size * row;
-        let left_bound = row_offset + self.column_offsets.get(col)?;
-        let right_bound = row_offset + self.column_offsets.get(col + 1)?;
-        self.block.get(left_bound..right_bound)
+        self.bounds_for_row_col(row, col)
+            .and_then(|(left_bound, right_bound)| self.block.get(left_bound..right_bound))
     }
 
     pub fn set_row_col(&self, row: usize, col: usize, value: &[u8]) {
+        let (left_bound, right_bound) = self.bounds_for_row_col(row, col)
+            .expect(format!("Row {} and col {} out of bounds.", row, col).as_str());
 
+        if value.len() != right_bound - left_bound {
+            panic!("Value for row {} and col {} is the wrong size ({}).",
+                   row, col, value.len())
+        }
+
+        self.block.update(left_bound, value);
+    }
+
+    fn bounds_for_row_col(&self, row: usize, col: usize) -> Option<(usize, usize)> {
+        if row < self.n_rows && col < self.column_offsets.len() - 1 {
+            let row_offset = self.row_size * row;
+            let left_bound = row_offset + self.column_offsets.get(col)?;
+            let right_bound = row_offset + self.column_offsets.get(col + 1)?;
+            Some((left_bound, right_bound))
+        } else {
+            None
+        }
     }
 }
 

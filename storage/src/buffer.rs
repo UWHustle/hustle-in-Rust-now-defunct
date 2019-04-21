@@ -1,6 +1,8 @@
+extern crate byteorder;
 extern crate memmap;
 extern crate omap;
 
+use self::byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use self::memmap::{Mmap, MmapMut};
 use self::omap::OrderedHashMap;
 use std::ops::Deref;
@@ -11,9 +13,10 @@ use std::fs::{File, OpenOptions};
 use std::cmp::{max, min};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 use core::borrow::BorrowMut;
-use std::io::Write;
+use std::io::{Write, Cursor, Seek, SeekFrom};
 
 pub const BLOCK_SIZE: usize = 1000;
+const HEADER_SIZE: usize = 4;
 
 /// The unit of storage and replacement in the cache. It is assumed that all `Block`s in the buffer
 /// are the same size, but this is not enforced.
@@ -26,16 +29,76 @@ impl Deref for Block {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
-        unsafe { &*self.value }
+        unsafe { &(*self.value)[HEADER_SIZE..] }
     }
 }
 
 impl Block {
-    fn new(value: MmapMut) -> Self {
-        Block {
-            value: Box::into_raw(Box::new(value)),
-            rc: Arc::new((Mutex::new(1), Condvar::new()))
+    pub fn update(&self, offset: usize, value: &[u8]) {
+        if offset + value.len() > self.len() {
+            panic!("Offset {} and value len {} out of range.", offset, value.len());
         }
+        let offset_in_block = offset + HEADER_SIZE;
+        unsafe {
+            (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
+            (*self.value).flush();
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        unsafe { (*self.value).as_ref().read_u32::<BigEndian>().unwrap() as usize }
+    }
+
+    fn write(&self, value: &[u8]) {
+        let mut len = vec![];
+        len.write_u32::<BigEndian>(value.len() as u32).unwrap();
+        unsafe {
+            (*self.value)[..HEADER_SIZE].copy_from_slice(&len);
+            (*self.value)[HEADER_SIZE..HEADER_SIZE + value.len()].copy_from_slice(value);
+            (*self.value).flush();
+        }
+    }
+
+    fn load(key: &str) -> Option<Block> {
+        let path = Self::file_path(key);
+        let file = OpenOptions::new().read(true).write(true).open(&path).ok()?;
+        file.set_len((HEADER_SIZE + BLOCK_SIZE) as u64);
+        let mmap = unsafe { MmapMut::map_mut(&file).ok()? };
+        Some(Block {
+            value: Box::into_raw(Box::new(mmap)),
+            rc: Arc::new((Mutex::new(1), Condvar::new()))
+        })
+    }
+
+    fn write_direct(key: &str, value: &[u8]) {
+        // Serialize the length of the value. This is the header of the block.
+        let mut len = vec![];
+        len.write_u32::<BigEndian>(value.len() as u32).unwrap();
+
+        // Write the data to storage.
+        let path = Self::file_path(key);
+        let mut file = OpenOptions::new().create(true).write(true).open(&path)
+            .expect("Error opening file.");
+        file.write(&len);
+        file.write(value);
+    }
+
+    fn erase(key: &str) {
+        let path = Self::file_path(key);
+        if path.exists() {
+            fs::remove_file(path).expect(format!("Error deleting {}.", key).as_str());
+        }
+    }
+
+    fn exists(key: &str) -> bool {
+        Self::file_path(key).exists()
+    }
+
+    /// Returns the formatted file path.
+    fn file_path(key: &str) -> PathBuf {
+        let mut path = PathBuf::from(key);
+        path.set_extension("hsl");
+        path
     }
 }
 
@@ -70,15 +133,15 @@ unsafe impl Send for Block {}
 
 unsafe impl Sync for Block {}
 
-struct BufferRecord {
+struct BufferBlock {
     block: Block,
     reference: RwLock<bool>
 }
 
-impl BufferRecord {
-    fn new(data: MmapMut) -> Self {
-        BufferRecord {
-            block: Block::new(data),
+impl BufferBlock {
+    fn new(block: Block) -> Self {
+        BufferBlock {
+            block,
             reference: RwLock::new(false)
         }
     }
@@ -92,8 +155,8 @@ impl BufferRecord {
 /// writes to the same key-value. This must be handled by an external concurrency control module.
 pub struct Buffer {
     capacity: usize,
-    t1: RwLock<OrderedHashMap<String, BufferRecord>>,
-    t2: RwLock<OrderedHashMap<String, BufferRecord>>,
+    t1: RwLock<OrderedHashMap<String, BufferBlock>>,
+    t2: RwLock<OrderedHashMap<String, BufferBlock>>,
     b1: Mutex<OrderedHashMap<String, ()>>,
     b2: Mutex<OrderedHashMap<String, ()>>,
     p: Mutex<usize>
@@ -125,17 +188,16 @@ impl Buffer {
     /// buffer.write("key", b"value");
     /// ```
     pub fn write(&self, key: &str, value: &[u8]) {
-        if let Some(record) = self.get(key) {
-            // Update the existing value.
-            unsafe {
-                // TODO: Enforce block size somehow
-                (*record.value)[..value.len()].copy_from_slice(value);
-                (*record.value).flush();
+        if let Some(block) = self.get(key) {
+            if value.len() > BLOCK_SIZE {
+                panic!("Value to be written is larger than the block size.")
             }
+
+            // Update the existing value.
+            block.write(value);
         } else {
-            // Write the new file to storage and load it into the cache.
-            let path = self.file_path(key);
-            fs::write(path, value).expect(format!("Error writing {} to storage.", key).as_str());
+            // Write the new file directly to storage and load it into the cache.
+            Block::write_direct(key, value);
             self.load(key);
         }
     }
@@ -193,15 +255,12 @@ impl Buffer {
         }
 
         // Delete the file.
-        let path = self.file_path(key);
-        if path.exists() {
-            fs::remove_file(path).expect(format!("Error deleting {}.", key).as_str());
-        }
+        Block::erase(key);
     }
 
     /// Returns true if the key-value pair exists, regardless of whether it is cached.
     pub fn exists(&self, key: &str) -> bool {
-        self.file_path(key).exists()
+        Block::exists(key)
     }
 
     /// Returns true if the key-value pair exists and is cached.
@@ -212,12 +271,8 @@ impl Buffer {
     /// Loads the file from storage into the cache.
     fn load(&self, key: &str) -> Option<Block> {
         // Load the file from storage
-        let path = self.file_path(key);
-        let file = OpenOptions::new().read(true).write(true).open(&path).ok()?;
-        file.set_len(BLOCK_SIZE as u64);
-        let mmap = unsafe { MmapMut::map_mut(&file).ok()? };
-        let record = BufferRecord::new(mmap);
-        let block = record.block.clone();
+        let block = Block::load(key)?;
+        let record = BufferBlock::new(block.clone());
 
         // Request write locks on all lists.
         let mut t1_write_guard = self.t1.write().unwrap();
@@ -282,8 +337,8 @@ impl Buffer {
 
     /// Removes the approximated least recently used page from the cache.
     fn replace(&self,
-               t1: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
-               t2: &mut RwLockWriteGuard<OrderedHashMap<String, BufferRecord>>,
+               t1: &mut RwLockWriteGuard<OrderedHashMap<String, BufferBlock>>,
+               t2: &mut RwLockWriteGuard<OrderedHashMap<String, BufferBlock>>,
                b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
                b2: &mut MutexGuard<OrderedHashMap<String, ()>>,
                p: &MutexGuard<usize>) {
@@ -319,10 +374,5 @@ impl Buffer {
         }
     }
 
-    /// Returns the formatted file path.
-    fn file_path(&self, key: &str) -> PathBuf {
-        let mut path = PathBuf::from(key);
-        path.set_extension("hsl");
-        path
-    }
+
 }
