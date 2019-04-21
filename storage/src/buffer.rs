@@ -195,7 +195,9 @@ impl Buffer {
     /// ```
     /// use storage::Buffer;
     /// let buffer = Buffer::with_capacity(10);
-    /// buffer.write("key", b"value");
+    /// buffer.write("key_write", b"value");
+    /// assert_eq!(&buffer.get("key_write").unwrap()[0..5], b"value");
+    /// buffer.erase("key_write");
     /// ```
     pub fn write(&self, key: &str, value: &[u8]) {
         if let Some(block) = self.get(key) {
@@ -219,8 +221,10 @@ impl Buffer {
     /// ```
     /// use storage::Buffer;
     /// let buffer = Buffer::with_capacity(10);
-    /// buffer.write("key", b"value");
-    /// let value = buffer.get("key_get");
+    /// buffer.write("key_get", b"value");
+    /// assert_eq!(&buffer.get("key_get").unwrap()[0..5], b"value");
+    /// assert!(buffer.get("nonexistent_key").is_none());
+    /// buffer.erase("key_get");
     /// ```
     pub fn get(&self, key: &str) -> Option<Block> {
         // Request read locks on cache lists.
@@ -252,8 +256,10 @@ impl Buffer {
     /// ```
     /// use storage::Buffer;
     /// let buffer = Buffer::with_capacity(10);
-    /// buffer.write("key", b"value");
-    /// buffer.erase("key");
+    /// buffer.write("key_erase", b"value");
+    /// assert!(buffer.exists("key_erase"));
+    /// buffer.erase("key_erase");
+    /// assert!(!buffer.exists("key_erase"));
     /// ```
     pub fn erase(&self, key: &str) {
         // Remove the block from the cache and cache directory
