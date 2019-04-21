@@ -43,25 +43,6 @@ mod storage_manager_tests {
     }
 
     #[test]
-    fn get_row_col() {
-        let sm = StorageManager::new();
-        sm.put("key_get_row_col", b"abbcdd");
-
-        {
-            let record = sm.get_with_schema("key_get_row_col", &[1, 2]).unwrap();
-            let block = record.get_block(0).unwrap();
-            assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
-            assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
-            assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
-            assert_eq!(&block.get_row_col(1, 1).unwrap(), &b"dd");
-            assert!(block.get_row_col(0, 2).is_none());
-            assert!(block.get_row_col(2, 0).is_none());
-        }
-
-        sm.delete("key_get_row_col");
-    }
-
-    #[test]
     fn col_iter() {
         let sm = StorageManager::new();
         sm.put("key_col_iter", b"abbcdd");
@@ -94,5 +75,40 @@ mod storage_manager_tests {
         }
 
         sm.delete("key_row_iter");
+    }
+
+    #[test]
+    fn get_row_col() {
+        let sm = StorageManager::new();
+        sm.put("key_get_row_col", b"abbcdd");
+
+        {
+            let record = sm.get_with_schema("key_get_row_col", &[1, 2]).unwrap();
+            let block = record.get_block(0).unwrap();
+            assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
+            assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
+            assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
+            assert_eq!(&block.get_row_col(1, 1).unwrap(), &b"dd");
+            assert!(block.get_row_col(0, 2).is_none());
+            assert!(block.get_row_col(2, 0).is_none());
+        }
+
+        sm.delete("key_get_row_col");
+    }
+
+    #[test]
+    fn set_row_col() {
+        let sm = StorageManager::new();
+        sm.put("key_set_row_col", b"abbcdd");
+
+        {
+            let record = sm.get_with_schema("key_set_row_col", &[1, 2]).unwrap();
+            let block = record.get_block(0).unwrap();
+            block.set_row_col(0, 0, b"e");
+            block.set_row_col(1, 1, b"ff");
+            assert_eq!(&block[0..6], b"ebbcff");
+        }
+
+        sm.delete("key_set_row_col");
     }
 }
