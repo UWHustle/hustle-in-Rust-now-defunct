@@ -45,7 +45,6 @@ env:
 #    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
 
 install:
-- mkdir build
 - export TEST_JOBS=2;
 - if [ "$CC" = "gcc" ]; then
   export CC="gcc-5";

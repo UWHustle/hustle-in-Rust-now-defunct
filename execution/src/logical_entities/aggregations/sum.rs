@@ -1,6 +1,6 @@
 use logical_entities::aggregations::AggregationTrait;
 use type_system::force_numeric;
-use type_system::type_id::*;
+use type_system::data_type::*;
 use type_system::Numeric;
 use type_system::*;
 
@@ -10,7 +10,7 @@ pub struct Sum {
 }
 
 impl Sum {
-    pub fn new(type_id: TypeID) -> Self {
+    pub fn new(type_id: DataType) -> Self {
         Sum {
             running_total: type_id.create_zero(),
         }
@@ -34,7 +34,7 @@ impl AggregationTrait for Sum {
         self.running_total.box_clone_value()
     }
 
-    fn output_type(&self) -> TypeID {
-        self.running_total.type_id()
+    fn output_type(&self) -> DataType {
+        self.running_total.data_type()
     }
 }

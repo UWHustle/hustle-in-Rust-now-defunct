@@ -1,10 +1,13 @@
 use logical_entities::column::Column;
 use logical_entities::predicates::comparison::*;
+use logical_entities::predicates::connective::*;
+use logical_entities::predicates::Predicate;
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::aggregate::Aggregate;
 use physical_operators::create_table::CreateTable;
+use physical_operators::drop_table::DropTable;
 use physical_operators::insert::Insert;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
@@ -14,7 +17,7 @@ use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
 use type_system;
 use type_system::operators::*;
-use type_system::type_id::*;
+use type_system::data_type::*;
 
 extern crate serde_json;
 
@@ -43,6 +46,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
         "Limit" => parse_limit(json),
         "InsertTuple" => parse_insert_tuple(json),
         "CreateTable" => parse_create_table(json),
+        "DropTable" => parse_drop_table(json),
         _ => panic!("Optimizer tree node type {} not supported", json_name),
     }
 }
@@ -76,7 +80,7 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
     let project_op = Project::pure_project(input.get_output_relation(), project_cols);
     let project_node = Node::new(Rc::new(project_op), vec![Rc::new(input)]);
 
-    let agg_type = TypeID::from_str(
+    let agg_type = DataType::from_str(
         &json["aggregate_expressions"]
             .as_array()
             .unwrap()
@@ -105,6 +109,43 @@ fn parse_insert_tuple(json: &serde_json::Value) -> Node {
     Node::new(Rc::new(insert_op), vec![Rc::new(input)])
 }
 
+fn parse_connective_predicate(json: &serde_json::Value) -> Connective {
+    let connective_type = ConnectiveType::from_str(json["json_name"].as_str().unwrap());
+    let json_terms = json["array"].as_array().expect("Unable to extract predicate terms");
+    let mut terms: Vec<Box<Predicate>> = vec![];
+    for term in json_terms {
+        terms.push(parse_predicate(term));
+    }
+    Connective::new(connective_type, terms)
+}
+
+fn parse_comparison_predicate(json: &serde_json::Value) -> Comparison {
+    let comp_value_str = get_string(&json["literal"]["value"]);
+    let comp_value_type = DataType::from_str(json["literal"]["type"].as_str().unwrap());
+    let comp_value = comp_value_type.parse(&comp_value_str);
+
+    let comparator_str = json["json_name"].as_str().unwrap();
+    let comparator = Comparator::from_str(comparator_str);
+    let filter_col = parse_column(&json["attribute_reference"]);
+    let predicate = Comparison::new(filter_col, comparator, comp_value);
+    predicate
+}
+
+fn parse_predicate(json: &serde_json::Value) -> Box<Predicate> {
+    let json_name = json["json_name"].as_str().unwrap();
+    match json_name {
+        "Equal" | "Less" | "LessOrEqual" | "Greater" | "GreaterOrEqual" => {
+            Box::new(parse_comparison_predicate(json))
+        },
+        "And" | "Or" => {
+            Box::new(parse_connective_predicate(json))
+        }
+        _ => {
+            panic!("Unknown predicate type {}", json_name)
+        },
+    }
+}
+
 fn parse_selection(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
     let output_cols = parse_column_list(&json["project_expressions"]);
@@ -112,31 +153,24 @@ fn parse_selection(json: &serde_json::Value) -> Node {
     let filter_predicate = &json["filter_predicate"];
     let project_op = match filter_predicate {
         serde_json::Value::Null => Project::pure_project(input.get_output_relation(), output_cols),
-        _ => {
-            let comp_value_str = get_string(&filter_predicate["literal"]["value"]);
-            let comp_value_type =
-                TypeID::from_str(filter_predicate["literal"]["type"].as_str().unwrap());
-            let comp_value = comp_value_type.parse(&comp_value_str);
-
-            let comparator_str = filter_predicate["json_name"].as_str().unwrap();
-            let comparator = Comparator::from_str(comparator_str);
-            let filter_col = parse_column(&filter_predicate["attribute_reference"]);
-            let predicate = Box::new(Comparison::new(filter_col, comparator, comp_value));
-            Project::new(input.get_output_relation(), output_cols, predicate)
-        }
+        _ => Project::new(input.get_output_relation(), output_cols, parse_predicate(filter_predicate))
     };
     Node::new(Rc::new(project_op), vec![Rc::new(input)])
 }
 
 fn parse_create_table(json: &serde_json::Value) -> Node {
     let cols = parse_column_list(&json["attributes"]);
-    let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
+    let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
     Node::new(Rc::new(CreateTable::new(relation)), vec![])
+}
+
+fn parse_drop_table(json: &serde_json::Value) -> Node {
+    Node::new(Rc::new(DropTable::new(&json["relation"].as_str().unwrap())), vec![])
 }
 
 fn parse_table_reference(json: &serde_json::Value) -> Node {
     let cols = parse_column_list(&json["array"]);
-    let relation = Relation::new(get_string(&json["relation"]), Schema::new(cols));
+    let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
     Node::new(Rc::new(TableReference::new(relation)), vec![])
 }
 
@@ -154,7 +188,7 @@ fn parse_column(json: &serde_json::Value) -> Column {
     if name == "" {
         name = get_string(&json["alias"]);
     }
-    Column::new(name, TypeID::from_str(&json["type"].as_str().unwrap()))
+    Column::new(name, DataType::from_str(&json["type"].as_str().unwrap()))
 }
 
 fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
@@ -167,7 +201,7 @@ fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
 }
 
 fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
-    let type_id = TypeID::from_str(&json["type"].as_str().unwrap());
+    let type_id = DataType::from_str(&json["type"].as_str().unwrap());
     type_id.parse(&json["value"].as_str().unwrap())
 }
 

@@ -1,4 +1,4 @@
-use type_system::type_id::*;
+use type_system::data_type::*;
 use type_system::*;
 
 pub mod avg;
@@ -12,7 +12,7 @@ pub trait AggregationTrait: BoxCloneAggregation {
     fn initialize(&mut self) -> ();
     fn consider_value(&mut self, value: &Value) -> ();
     fn output(&self) -> Box<Value>;
-    fn output_type(&self) -> TypeID;
+    fn output_type(&self) -> DataType;
 }
 
 pub trait BoxCloneAggregation {

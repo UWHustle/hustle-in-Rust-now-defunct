@@ -1,12 +1,11 @@
-//Currently assumes fixed length 8 byte values.  Need to refactor to use value concepts.
+// Currently assumes fixed length 8 byte values.  Need to refactor to use value concepts.
 
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
-
 use physical_operators::Operator;
-use storage_manager::StorageManager;
 
-//#[derive(Debug)]
+use super::storage::StorageManager;
+
 pub struct Join {
     relation_left: Relation,
     relation_right: Relation,
@@ -27,7 +26,7 @@ impl Operator for Join {
         joined_cols.extend(self.relation_right.get_columns().clone());
 
         Relation::new(
-            format!(
+            &format!(
                 "{}_j_{}",
                 &self.relation_left.get_name(),
                 &self.relation_right.get_name()
@@ -36,11 +35,11 @@ impl Operator for Join {
         )
     }
 
-    fn execute(&self) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Relation {
         let rel_l = &self.relation_left;
         let rel_r = &self.relation_right;
-        let rel_l_size = rel_l.get_total_size();
-        let rel_r_size = rel_r.get_total_size();
+        let rel_l_size = rel_l.get_total_size(storage_manager);
+        let rel_r_size = rel_r.get_total_size(storage_manager);
         let cols_l = rel_l.get_columns();
         let cols_r = rel_r.get_columns();
         let rows_l = rel_l_size / rel_l.get_row_size();
@@ -48,13 +47,12 @@ impl Operator for Join {
         let rows_l_size = rel_l.get_row_size();
         let rows_r_size = rel_r.get_row_size();
 
+        let data_l = storage_manager.get(self.relation_left.get_name()).unwrap();
+        let data_r = storage_manager.get(self.relation_right.get_name()).unwrap();
+
+        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
         let output_size = (rows_l * rows_r) * (rows_l_size + rows_r_size);
-
-        let _join_relation = self.get_target_relation();
-
-        let data_l = StorageManager::get_full_data(&self.relation_left);
-        let data_r = StorageManager::get_full_data(&self.relation_right);
-        let mut data_o = StorageManager::create_relation(&_join_relation, output_size);
+        let mut data_o: Vec<u8> = vec![0; output_size];
 
         let mut n: usize = 0;
 
@@ -93,6 +91,9 @@ impl Operator for Join {
             i_l += 1;
             i_r = 0;
         }
-        _join_relation
+
+        storage_manager.put(self.get_target_relation().get_name(), &data_o);
+
+        self.get_target_relation()
     }
 }

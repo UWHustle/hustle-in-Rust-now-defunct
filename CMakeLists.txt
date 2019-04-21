@@ -37,4 +37,6 @@ add_subdirectory(optimizer)
 add_subdirectory(parser)
 add_subdirectory(cli)
 
+add_test (end_to_end_tests bash ${CMAKE_CURRENT_SOURCE_DIR}/full_stack_tests/script.sh)
+
 set_target_properties(cli PROPERTIES OUTPUT_NAME ${PROJECT_NAME} RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

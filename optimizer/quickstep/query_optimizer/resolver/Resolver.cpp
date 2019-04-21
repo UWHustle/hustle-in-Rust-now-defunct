@@ -996,11 +996,14 @@ L::LogicalPtr Resolver::resolveDropTable(
 
   const CatalogRelation* rel = resolveRelationName(drop_table_statement.relation_name());
 
+  L::LogicalPtr l = L::DropTable::Create(rel->getName());
+
   // Update Catalog
   if (hustleMode_) {
     catalog_database_->dropRelationByName(drop_table_statement.relation_name()->value());
   }
-  return L::DropTable::Create(rel);
+
+  return l;
 }
 
 L::LogicalPtr Resolver::resolveInsertSelection(

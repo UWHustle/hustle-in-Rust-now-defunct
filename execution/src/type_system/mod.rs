@@ -4,8 +4,8 @@ pub mod integer;
 pub mod ip_address;
 pub mod operators;
 pub mod owned_buffer;
-pub mod type_id;
-pub mod utf8_string;
+pub mod data_type;
+pub mod byte_string;
 
 use std::any::Any;
 use std::fmt::Debug;
@@ -15,29 +15,30 @@ use self::integer::*;
 use self::ip_address::*;
 use self::operators::*;
 use self::owned_buffer::*;
-use self::type_id::*;
-use self::utf8_string::*;
+use self::data_type::*;
+use self::byte_string::*;
 
 /* ============================================================================================== */
 
 /// Types whose values are stored in a byte buffer somewhere
 pub trait Buffer {
     fn data(&self) -> &[u8];
-    fn type_id(&self) -> TypeID;
+    fn data_type(&self) -> DataType;
     fn is_null(&self) -> bool;
 
     /// Converts the bytes in the buffer to a `Value` which is stored on the heap
     fn marshall(&self) -> Box<Value> {
-        let nullable = self.type_id().nullable;
+        let nullable = self.data_type().nullable;
         let is_null = self.is_null();
         let data = self.data();
-        match self.type_id().variant {
+        match self.data_type().variant {
+            Variant::Int1 => Box::new(Int1::marshall(data, nullable, is_null)),
             Variant::Int2 => Box::new(Int2::marshall(data, nullable, is_null)),
             Variant::Int4 => Box::new(Int4::marshall(data, nullable, is_null)),
             Variant::Int8 => Box::new(Int8::marshall(data, nullable, is_null)),
             Variant::Float4 => Box::new(Float4::marshall(data, nullable, is_null)),
             Variant::Float8 => Box::new(Float8::marshall(data, nullable, is_null)),
-            Variant::UTF8String => Box::new(UTF8String::marshall(data, nullable, is_null)),
+            Variant::ByteString(max_size, varchar) => Box::new(ByteString::marshall(data, nullable, is_null, max_size, varchar)),
             Variant::IPv4 => Box::new(IPv4::marshall(data, nullable, is_null)),
         }
     }
@@ -52,7 +53,7 @@ pub trait Buffer {
 /// Values are stored as various types - concrete implementations can define a 'value()' method
 /// which returns the internal type
 pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
-    fn type_id(&self) -> TypeID;
+    fn data_type(&self) -> DataType;
     fn is_null(&self) -> bool;
     fn to_string(&self) -> String;
 
@@ -65,7 +66,7 @@ pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
     /// By default returns self.type_id().size()
     /// Should be overriden for types which don't have a constant size (i.e. strings)
     fn size(&self) -> usize {
-        self.type_id().size()
+        self.data_type().size()
     }
 
     fn equals(&self, other: &Value) -> bool {
@@ -135,7 +136,7 @@ pub fn cast_value<T: Value>(value: &Value) -> &T {
 }
 
 /// Helper for "incomparable types" message
-fn incomparable(type_1: TypeID, type_2: TypeID) -> String {
+fn incomparable(type_1: DataType, type_2: DataType) -> String {
     format!(
         "Unable to compare type {:?} to type {:?}",
         type_1.variant, type_2.variant
@@ -143,7 +144,7 @@ fn incomparable(type_1: TypeID, type_2: TypeID) -> String {
 }
 
 /// Helper for "null value" message
-fn null_value(type_id: TypeID) -> String {
+fn null_value(type_id: DataType) -> String {
     format!("Attempting to retrieve value of null {:?}", type_id.variant)
 }
 
@@ -208,17 +209,17 @@ pub fn cast_numeric<T: Numeric>(value: &Numeric) -> &T {
 ///
 /// Panics if the input value is not of a numeric type
 pub fn force_numeric(value: &Value) -> &Numeric {
-    match value.type_id().variant {
+    match value.data_type().variant {
         Variant::Int2 => cast_value::<Int2>(value),
         Variant::Int4 => cast_value::<Int4>(value),
         Variant::Int8 => cast_value::<Int8>(value),
         Variant::Float4 => cast_value::<Float4>(value),
         Variant::Float8 => cast_value::<Float8>(value),
-        _ => panic!("{:?} is not a numeric type", value.type_id()),
+        _ => panic!("{:?} is not a numeric type", value.data_type()),
     }
 }
 
 /// Helper for "not numeric" message
-fn not_numeric(type_id: TypeID) -> String {
+fn not_numeric(type_id: DataType) -> String {
     format!("Type {:?} is not numeric", type_id.variant)
 }

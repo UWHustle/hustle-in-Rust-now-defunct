@@ -1,6 +1,8 @@
 use logical_entities::column::Column;
 use logical_entities::schema::Schema;
 
+use storage::StorageManager;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Relation {
     name: String,
@@ -8,8 +10,11 @@ pub struct Relation {
 }
 
 impl Relation {
-    pub fn new(name: String, schema: Schema) -> Self {
-        Self { name, schema }
+    pub fn new(name: &str, schema: Schema) -> Self {
+        Self {
+            name: String::from(name),
+            schema
+        }
     }
 
     pub fn null() -> Self {
@@ -38,15 +43,15 @@ impl Relation {
         self.schema.get_row_size()
     }
 
-    pub fn get_total_size(&self) -> usize {
-        match std::fs::metadata(self.get_filename()) {
-            Ok(metadata) => metadata.len() as usize,
-            Err(_err) => 0,
+    pub fn get_total_size(&self, storage_manager: &StorageManager) -> usize {
+        match storage_manager.get(self.get_name()) {
+            Some(value) => value.len(),
+            None => 0,
         }
     }
 
-    pub fn get_n_rows(&self) -> usize {
-        self.get_total_size() / self.get_row_size()
+    pub fn get_n_rows(&self, storage_manager: &StorageManager) -> usize {
+        self.get_total_size(storage_manager) / self.get_row_size()
     }
 
     pub fn column_from_name(&self, name: &str) -> Column {
@@ -72,14 +77,14 @@ mod tests {
     use logical_entities::column::Column;
     use logical_entities::relation::Relation;
     use logical_entities::schema::Schema;
-    use type_system::type_id::*;
+    use type_system::data_type::*;
 
     #[test]
     fn relation_create() {
-        let a = Column::new("a".to_string(), TypeID::new(Variant::Int4, true));
-        let b = Column::new("b".to_string(), TypeID::new(Variant::Int4, true));
+        let a = Column::new("a".to_string(), DataType::new(Variant::Int4, true));
+        let b = Column::new("b".to_string(), DataType::new(Variant::Int4, true));
         let schema = Schema::new(vec![a.clone(), b.clone()]);
-        let relation = Relation::new("Test".to_string(), schema.clone());
+        let relation = Relation::new("Test", schema.clone());
 
         assert_eq!(relation.get_name(), &"Test".to_string());
         assert_eq!(
