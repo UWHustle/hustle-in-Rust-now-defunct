@@ -1,6 +1,7 @@
 use relational_api::rust_api::ImmediateRelation;
 use std::ffi::*;
 use std::os::raw::c_char;
+use std::slice::from_raw_parts;
 use storage::storage_manager::Value;
 
 #[no_mangle]
@@ -52,22 +53,19 @@ pub unsafe extern "C" fn ffi_get_n_cols(relation_p: *const ImmediateRelation) ->
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_data_p(relation_p: *const ImmediateRelation) -> *const c_void {
     match (*relation_p).get_data() {
-        Some(value) => Box::into_raw(Box::new(value)) as *const c_void,
+        Some(val) => Box::into_raw(Box::new(val)) as *const c_void,
         None => 0 as *const c_void,
     }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_slice_p(data_p: *const Value) -> *const c_void {
-    let slice: &[u8] = &**data_p;
-    let slice_p = slice.as_ptr() as *const c_void;
-    slice_p
+    (&**data_p).as_ptr() as *const c_void
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_slice_size(data_p: *const Value) -> u32 {
-    let slice: &[u8] = &**data_p;
-    slice.len() as u32
+    (&**data_p).len() as u32
 }
 
 #[no_mangle]
@@ -92,8 +90,7 @@ pub unsafe extern "C" fn ffi_drop_c_str(c_str_p: *mut c_char) {
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_drop_c_str_vec(vec_p: *mut Vec<*mut c_char>) {
-    let c_str_list = Box::from_raw(vec_p);
-    for c_str in *c_str_list {
+    for c_str in *Box::from_raw(vec_p) {
         ffi_drop_c_str(c_str);
     }
 }
@@ -109,8 +106,7 @@ pub unsafe extern "C" fn ffi_copy_buffer(
     buffer: *const u8,
     size: usize,
 ) {
-    let slice = std::slice::from_raw_parts(buffer, size);
-    (*relation_p).copy_slice(slice);
+    (*relation_p).copy_slice(from_raw_parts(buffer, size));
 }
 
 #[no_mangle]
@@ -240,7 +236,7 @@ unsafe fn encode_c_str_vec(list: Vec<String>) -> *const c_void {
 }
 
 unsafe fn decode_c_str<'a>(c_str: *const c_char) -> &'a str {
-    CStr::from_ptr(c_str).to_str().expect("Invalid utf8-string")
+    CStr::from_ptr(c_str).to_str().expect("invalid UTF8 string")
 }
 
 unsafe fn decode_c_str_list<'a>(c_str_list: *const *const c_char, length: u32) -> Vec<&'a str> {
