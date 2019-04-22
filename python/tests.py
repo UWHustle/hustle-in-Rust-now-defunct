@@ -71,15 +71,15 @@ class CreateTestCase(unittest.TestCase):
 
     def test_to_from_hustle(self):
         expected = self.test_relation.to_numpy()
-        self.test_relation.export_hustle('T')
-        self.test_relation.import_hustle('T')
+        self.test_relation.export_hustle('U')
+        self.test_relation.import_hustle('U')
         actual = self.test_relation.to_numpy()
         self.assertTrue(numpy.array_equal(expected, actual))
 
     def test_to_from_csv(self):
         expected = self.test_relation.to_numpy()
-        self.test_relation.export_csv('T.csv')
-        self.test_relation.import_csv('T.csv')
+        self.test_relation.export_csv('U.csv')
+        self.test_relation.import_csv('U.csv')
         actual = self.test_relation.to_numpy()
         self.assertTrue(numpy.array_equal(expected, actual))
         self.assertTrue(os.path.isfile('T.csv'))

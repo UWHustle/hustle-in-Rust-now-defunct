@@ -82,9 +82,15 @@ before_script:
   -D ENABLE_COMPARISON_INLINE_EXPANSION=OFF ..)
 
 script:
+- python --version
+- python3 --version
+- python3.6 --version
+- echo $PATH
 - (cd build && make)
 - (cd build && ctest --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
 
+python:
+- "3.6"
 
 after_failure:
 - df -h
