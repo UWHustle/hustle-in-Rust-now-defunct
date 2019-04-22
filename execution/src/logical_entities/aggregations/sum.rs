@@ -10,9 +10,9 @@ pub struct Sum {
 }
 
 impl Sum {
-    pub fn new(type_id: DataType) -> Self {
+    pub fn new(data_type: DataType) -> Self {
         Sum {
-            running_total: type_id.create_zero(),
+            running_total: data_type.create_zero(),
         }
     }
 }

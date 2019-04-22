@@ -65,7 +65,7 @@ pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
     /// Applies the specified comparator to compare `self` with `other`
     fn compare(&self, other: &Value, cmp: Comparator) -> bool;
 
-    /// By default returns self.type_id().size()
+    /// By default returns self.data_type().size()
     /// Should be overriden for types which don't have a constant size (i.e. strings)
     fn size(&self) -> usize {
         self.data_type().size()
@@ -146,8 +146,11 @@ fn incomparable(type_1: DataType, type_2: DataType) -> String {
 }
 
 /// Helper for "null value" message
-fn null_value(type_id: DataType) -> String {
-    format!("Attempting to retrieve value of null {:?}", type_id.variant)
+fn null_value(data_type: DataType) -> String {
+    format!(
+        "Attempting to retrieve value of null {:?}",
+        data_type.variant
+    )
 }
 
 /* ============================================================================================== */
@@ -222,6 +225,6 @@ pub fn force_numeric(value: &Value) -> &Numeric {
 }
 
 /// Helper for "not numeric" message
-fn not_numeric(type_id: DataType) -> String {
-    format!("Type {:?} is not numeric", type_id.variant)
+fn not_numeric(data_type: DataType) -> String {
+    format!("Type {:?} is not numeric", data_type.variant)
 }

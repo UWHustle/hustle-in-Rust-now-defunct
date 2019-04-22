@@ -41,7 +41,7 @@ impl Operator for TestRelation {
                 } else {
                     y.to_string()
                 };
-                let parsed = column.get_datatype().parse(&value)?;
+                let parsed = column.data_type().parse(&value)?;
                 let size = parsed.size();
                 data[n..n + size].clone_from_slice(&parsed.un_marshall().data());
                 n += size;

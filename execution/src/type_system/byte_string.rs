@@ -169,7 +169,7 @@ mod test {
     }
 
     #[test]
-    fn utf8_string_type_id() {
+    fn utf8_string_data_type() {
         let utf8_string = ByteString::from("Chocolate donuts");
         assert_eq!(
             DataType::new(Variant::ByteString(16, false), true),

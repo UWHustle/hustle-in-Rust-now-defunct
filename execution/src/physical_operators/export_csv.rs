@@ -51,10 +51,10 @@ impl Operator for ExportCsv {
             let mut r = Vec::new();
 
             for column in self.relation.get_columns() {
-                let type_id = column.get_datatype();
-                let value_length = type_id.size();
+                let data_type = column.data_type();
+                let value_length = data_type.size();
                 let buffer: BorrowedBuffer =
-                    BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
+                    BorrowedBuffer::new(&data[i..i + value_length], data_type.clone(), false);
                 r.push(buffer.marshall().to_string());
                 i += value_length;
             }

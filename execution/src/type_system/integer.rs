@@ -478,7 +478,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn int1_type_id() {
+    fn int1_data_type() {
         let int1 = Int1::from(11);
         assert_eq!(DataType::new(Variant::Int1, true), int1.data_type());
     }
@@ -537,7 +537,7 @@ mod test {
     }
 
     #[test]
-    fn int2_type_id() {
+    fn int2_data_type() {
         let int2 = Int2::from(56);
         assert_eq!(DataType::new(Variant::Int2, true), int2.data_type());
     }
@@ -597,7 +597,7 @@ mod test {
     }
 
     #[test]
-    fn int4_type_id() {
+    fn int4_data_type() {
         let int4 = Int4::from(2611);
         assert_eq!(DataType::new(Variant::Int4, true), int4.data_type());
     }
@@ -658,7 +658,7 @@ mod test {
     }
 
     #[test]
-    fn int8_type_id() {
+    fn int8_data_type() {
         let int8 = Int8::from(3483646);
         assert_eq!(DataType::new(Variant::Int8, true), int8.data_type());
     }

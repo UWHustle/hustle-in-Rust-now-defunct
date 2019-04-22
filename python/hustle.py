@@ -7,11 +7,82 @@ from os.path import *
 lib_path = ctypes.util.find_library('execution')
 if lib_path is None:
     script_dir = dirname(realpath(__file__))
-    lib_path = join(script_dir, pardir,
-                    'build', 'execution', 'libexecution.dylib')
+    lib_path = join(
+        script_dir, pardir, 'build', 'execution', 'libexecution.dylib')
 ffi = ctypes.cdll.LoadLibrary(lib_path)
 if ffi is None:
     raise FileNotFoundError('unable to find Hustle dylib')
+
+
+class HustleConnection:
+    """
+    Represents a connection to the Hustle execution engine (storage manager).
+    """
+
+    def __init__(self):
+        """
+        The default constructor.
+        """
+        self.connection_p = _get_connection_p()
+
+    def __del__(self):
+        """
+        Frees the connection to the execution engine.
+        """
+        ffi.ffi_drop_connection(self.connection_p)
+
+    def create_relation(self, col_names, type_names):
+        """
+        Allocates a new relation with the specified schema.
+
+        :param col_names: The names of columns in the relation
+        :param type_names: Typenames of each column; allowed values are:
+            tinyint
+            smallint
+            int
+            bigint/long
+            real
+            double
+            varchar(size)
+            char(size)
+        :return: A new Relation object
+        """
+        if len(col_names) != len(type_names):
+            raise ValueError('number of columns and typenames not equal')
+        err_p = _get_err_p()
+        relation_p = _run_ffi_p(
+            ffi.ffi_new_relation,
+            err_p,
+            self.connection_p,
+            _encode_c_str_list(col_names),
+            _encode_c_str_list(type_names),
+            c_uint32(len(col_names)))
+        return Relation(self, relation_p, err_p)
+
+    def from_numpy(self, array):
+        """
+        Attempts to convert a Numpy array to a Hustle relation.
+
+        The array should be 1-dimensional, with each value having a compound
+        type corresponding to the schema of the relation. For example, an array
+        with type:
+            dtype([('a', '<i4'), ('b', '<i8')])
+        will be converted to a relation with schema:
+            ['a', 'b'], ['int', 'bigint']
+        The relation receives a copy of the data, so modifying the relation
+        will leave the array unchanged.
+
+        :param array: The Numpy array to convert
+        :return: A new Relation object containing the same data as the array
+        """
+        relation = self.create_relation(
+            array.dtype.names,
+            _numpy_to_type_names(array))
+        ffi.ffi_copy_buffer(
+            relation.relation_p,
+            c_void_p(array.ctypes.data),
+            c_uint32(array.nbytes))
+        return relation
 
 
 class Relation:
@@ -23,13 +94,16 @@ class Relation:
     internally parallelize operations.
     """
 
-    def __init__(self, relation_p, err_p):
+    def __init__(self, connection, relation_p, err_p):
         """
         The default constructor.
 
+        :param connection: Maintains a reference to the Hustle connection so it
+        doesn't get garbage collected before this does
         :param relation_p: A C pointer to the relation
         :param err_p: A C pointer to a string where error messages are stored
         """
+        self.connection = connection
         self.err_p = err_p
         self.relation_p = relation_p
         self.name_p = _run_ffi(
@@ -58,60 +132,6 @@ class Relation:
         ffi.ffi_drop_c_str(self.name_p)
         ffi.ffi_drop_c_str_vec(self.col_names_p)
         ffi.ffi_drop_c_str_vec(self.type_names_p)
-
-    @classmethod
-    def create(cls, col_names, type_names):
-        """
-        Allocates a new relation with the specified schema.
-
-        :param col_names: The names of columns in the relation
-        :param type_names: Typenames of each column; allowed values are:
-            tinyint
-            smallint
-            int
-            bigint/long
-            real
-            double
-            varchar(size)
-            char(size)
-        :return: A new Relation object
-        """
-        if len(col_names) != len(type_names):
-            raise ValueError('number of columns and typenames not equal')
-        err_p = _get_err_p()
-        relation_p = _run_ffi_p(
-            ffi.ffi_new_relation,
-            err_p,
-            _encode_c_str_list(col_names),
-            _encode_c_str_list(type_names),
-            c_uint32(len(col_names)))
-        return Relation(relation_p, err_p)
-
-    @classmethod
-    def from_numpy(cls, array):
-        """
-        Attempts to convert a Numpy array to a Hustle relation.
-
-        The array should be 1-dimensional, with each value having a compound
-        type corresponding to the schema of the relation. For example, an array
-        with type:
-            dtype([('a', '<i4'), ('b', '<i8')])
-        will be converted to a relation with schema:
-            ['a', 'b'], ['int', 'bigint']
-        The relation receives a copy of the data, so modifying the relation
-        will leave the array unchanged.
-
-        :param array: The Numpy array to convert
-        :return: A new Relation object containing the same data as the array
-        """
-        relation = Relation.create(
-            array.dtype.names,
-            _numpy_to_type_names(array))
-        ffi.ffi_copy_buffer(
-            relation.relation_p,
-            c_void_p(array.ctypes.data),
-            c_uint32(array.nbytes))
-        return relation
 
     def to_numpy(self):
         """
@@ -262,7 +282,7 @@ class Relation:
             _encode_c_str_list(group_by_col_names),
             c_uint32(len(group_by_col_names)),
             _encode_c_str(agg_func))
-        return Relation(relation_p, _get_err_p())
+        return Relation(self.connection, relation_p, _get_err_p())
 
     def insert(self, *args):
         """
@@ -298,7 +318,7 @@ class Relation:
             self.err_p,
             self.relation_p,
             other.relation_p)
-        return Relation(relation_p, _get_err_p())
+        return Relation(self.connection, relation_p, _get_err_p())
 
     def limit(self, limit):
         """
@@ -312,7 +332,7 @@ class Relation:
             self.err_p,
             self.relation_p,
             c_uint32(limit))
-        return Relation(relation_p, _get_err_p())
+        return Relation(self.connection, relation_p, _get_err_p())
 
     def print(self):
         """
@@ -337,7 +357,7 @@ class Relation:
             self.relation_p,
             _encode_c_str_list(args),
             c_uint32(len(args)))
-        return Relation(relation_p, _get_err_p())
+        return Relation(self.connection, relation_p, _get_err_p())
 
     def select(self, predicate):
         """
@@ -363,7 +383,7 @@ class Relation:
             self.err_p,
             self.relation_p,
             _encode_c_str(predicate))
-        return Relation(relation_p, _get_err_p())
+        return Relation(self.connection, relation_p, _get_err_p())
 
 
 def _schema_to_numpy_type(col_names, type_names):
@@ -511,6 +531,14 @@ def _get_err_str(err_p):
     output = _decode_c_str(err_str_p)
     ffi.ffi_drop_c_str(err_str_p)
     return output
+
+
+def _get_connection_p():
+    """
+    Helper for requesting a connection pointer from the storage manager
+    """
+    ffi.ffi_get_connection_p.restype = c_void_p
+    return c_void_p(ffi.ffi_get_connection_p())
 
 
 def _get_err_p():

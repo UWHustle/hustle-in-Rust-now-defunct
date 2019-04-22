@@ -49,7 +49,7 @@ impl Operator for ImportCsv {
             for (i, column) in self.relation.get_columns().iter().enumerate() {
                 let a = record.get(i).unwrap().to_string();
 
-                let c = column.get_datatype().parse(&a)?;
+                let c = column.data_type().parse(&a)?;
                 let size = c.size();
                 data[n..n + size].clone_from_slice(c.un_marshall().data());
                 n += size;

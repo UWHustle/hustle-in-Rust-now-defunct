@@ -35,10 +35,10 @@ impl Operator for Print {
         let mut i = 0;
         while i < data.len() {
             for column in columns {
-                let type_id = column.get_datatype();
-                let value_length = type_id.next_size(&data[i..]);
+                let data_type = column.data_type();
+                let value_length = data_type.next_size(&data[i..]);
                 let buffer: BorrowedBuffer =
-                    BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
+                    BorrowedBuffer::new(&data[i..i + value_length], data_type.clone(), false);
                 let value_string = buffer.marshall().to_string();
                 print!("|{value:>width$}", value = value_string, width = width);
                 i += value_length;

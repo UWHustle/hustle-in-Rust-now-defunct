@@ -22,16 +22,22 @@ extern crate storage;
 
 use self::storage::StorageManager;
 
-// This is semi-temporary
-static mut STORAGE_MANAGER: *mut StorageManager = 0 as *mut StorageManager;
-
-pub struct ImmediateRelation<'a> {
-    relation: Relation,
-    storage_manager: &'a StorageManager,
+pub struct HustleConnection {
+    storage_manager: StorageManager,
 }
 
-impl<'a> ImmediateRelation<'a> {
-    pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Result<Self, String> {
+impl HustleConnection {
+    pub fn new() -> Self {
+        HustleConnection {
+            storage_manager: StorageManager::new(),
+        }
+    }
+
+    pub fn create_relation(
+        &self,
+        col_names: Vec<&str>,
+        col_type_names: Vec<&str>,
+    ) -> Result<ImmediateRelation, String> {
         if col_names.len() != col_type_names.len() {
             return Err(String::from(
                 "number of types does not match number of columns",
@@ -39,27 +45,25 @@ impl<'a> ImmediateRelation<'a> {
         }
         let mut columns: Vec<Column> = vec![];
         for i in 0..col_names.len() {
-            let type_id = DataType::from_str(col_type_names[i])?;
-            columns.push(Column::new(String::from(col_names[i]), type_id));
+            let data_type = DataType::from_str(col_type_names[i])?;
+            columns.push(Column::new(String::from(col_names[i]), data_type));
         }
-
-        unsafe {
-            if STORAGE_MANAGER == 0 as *mut StorageManager {
-                STORAGE_MANAGER = Box::into_raw(Box::new(StorageManager::new()));
-            }
-        }
-
         let schema = Schema::new(columns);
-        unsafe {
-            let name = (*STORAGE_MANAGER).put_anon(&vec![]);
-            let output = ImmediateRelation {
-                relation: Relation::new(&name, schema),
-                storage_manager: &*STORAGE_MANAGER,
-            };
-            Ok(output)
-        }
+        let name = self.storage_manager.put_anon(&vec![]);
+        let output = ImmediateRelation {
+            relation: Relation::new(&name, schema),
+            storage_manager: &self.storage_manager,
+        };
+        Ok(output)
     }
+}
 
+pub struct ImmediateRelation<'a> {
+    relation: Relation,
+    storage_manager: &'a StorageManager,
+}
+
+impl<'a> ImmediateRelation<'a> {
     pub fn get_name(&self) -> &str {
         self.relation.get_name()
     }
@@ -75,7 +79,7 @@ impl<'a> ImmediateRelation<'a> {
     pub fn get_col_type_names(&self) -> Vec<String> {
         let mut output: Vec<String> = vec![];
         for column in self.relation.get_schema().get_columns() {
-            output.push(column.get_datatype().to_string());
+            output.push(column.data_type().to_string());
         }
         output
     }
@@ -149,7 +153,7 @@ impl<'a> ImmediateRelation<'a> {
             projected.relation.clone(),
             agg_col.clone(),
             group_by_cols,
-            agg_col.get_datatype(),
+            agg_col.data_type(),
             agg_name,
         )?;
         let output = ImmediateRelation {
@@ -164,7 +168,7 @@ impl<'a> ImmediateRelation<'a> {
         let columns = schema.get_columns();
         let mut values: Vec<Box<Value>> = vec![];
         for i in 0..columns.len() {
-            let value = columns[i].get_datatype().parse(value_strings[i])?;
+            let value = columns[i].data_type().parse(value_strings[i])?;
             values.push(value);
         }
         let row = Row::new(schema.clone(), values);
@@ -228,7 +232,7 @@ impl<'a> ImmediateRelation<'a> {
         let col_name = tokens[0];
         let column = self.relation.column_from_name(col_name)?;
         let comparator = Comparator::from_str(tokens[1])?;
-        let value = column.get_datatype().parse(tokens[2])?;
+        let value = column.data_type().parse(tokens[2])?;
         let predicate = Comparison::new(column, comparator, value);
         Ok(Box::new(predicate))
     }

@@ -241,7 +241,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn float4_type_id() {
+    fn float4_data_type() {
         let float4 = Float4::from(13.7);
         assert_eq!(DataType::new(Variant::Float4, true), float4.data_type());
     }
@@ -306,7 +306,7 @@ mod test {
     }
 
     #[test]
-    fn float8_type_id() {
+    fn float8_data_type() {
         let float8 = Float8::from(12228.444);
         assert_eq!(DataType::new(Variant::Float8, true), float8.data_type());
     }

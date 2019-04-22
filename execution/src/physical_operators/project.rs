@@ -56,13 +56,10 @@ impl Operator for Project {
             // Check whether the current row satisfies the predicate
             let mut values: Vec<Box<Value>> = vec![];
             for column in &input_cols {
-                let value_len = column.get_datatype().next_size(&input_data[k..]);
-                let value = BorrowedBuffer::new(
-                    &input_data[k..k + value_len],
-                    column.get_datatype(),
-                    false,
-                )
-                .marshall();
+                let value_len = column.data_type().next_size(&input_data[k..]);
+                let value =
+                    BorrowedBuffer::new(&input_data[k..k + value_len], column.data_type(), false)
+                        .marshall();
                 values.push(value);
                 k += value_len;
             }
@@ -75,7 +72,7 @@ impl Operator for Project {
                 let mut col_map = HashMap::new();
                 k = i;
                 for column in &input_cols {
-                    let value_len = column.get_datatype().next_size(&input_data[k..]);
+                    let value_len = column.data_type().next_size(&input_data[k..]);
                     col_map.insert(column, &input_data[k..k + value_len]);
                     k += value_len;
                 }

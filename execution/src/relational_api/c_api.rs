@@ -1,12 +1,17 @@
-use relational_api::rust_api::ImmediateRelation;
+use relational_api::rust_api::*;
 use std::ffi::*;
 use std::os::raw::c_char;
 use std::slice::from_raw_parts;
 use storage::storage_manager::Value;
 
 #[no_mangle]
+pub unsafe extern "C" fn ffi_get_connection_p() -> *const c_void {
+    Box::into_raw(Box::new(HustleConnection::new())) as *const c_void
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn ffi_get_err_p() -> *const c_void {
-    Box::into_raw(Box::new(String::from("No errors"))) as *const c_void
+    Box::into_raw(Box::new(String::from("no errors"))) as *const c_void
 }
 
 #[no_mangle]
@@ -16,6 +21,7 @@ pub unsafe extern "C" fn ffi_get_err_str_p(err_p: *const String) -> *const c_voi
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_new_relation(
+    connection_p: *const HustleConnection,
     col_names_p: *const *const c_char,
     type_names_p: *const *const c_char,
     n_cols: u32,
@@ -23,7 +29,10 @@ pub unsafe extern "C" fn ffi_new_relation(
 ) -> *const c_void {
     let col_names = decode_c_str_list(col_names_p, n_cols);
     let type_names = decode_c_str_list(type_names_p, n_cols);
-    process_result_p(ImmediateRelation::new(col_names, type_names), err_p)
+    process_result_p(
+        (*connection_p).create_relation(col_names, type_names),
+        err_p,
+    )
 }
 
 #[no_mangle]
@@ -71,6 +80,11 @@ pub unsafe extern "C" fn ffi_get_slice_size(data_p: *const Value) -> u32 {
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_str_i(vec_p: *mut Vec<*const c_void>, i: usize) -> *const c_void {
     (*vec_p)[i] as *const c_void
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn ffi_drop_connection(connection_p: *mut HustleConnection) {
+    Box::from_raw(connection_p);
 }
 
 #[no_mangle]

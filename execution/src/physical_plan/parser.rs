@@ -211,8 +211,8 @@ fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
 }
 
 fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
-    let type_id = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
-    type_id.parse(&json["value"].as_str().unwrap()).unwrap()
+    let data_type = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
+    data_type.parse(&json["value"].as_str().unwrap()).unwrap()
 }
 
 fn parse_limit(json: &serde_json::Value) -> Node {

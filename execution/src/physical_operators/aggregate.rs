@@ -102,12 +102,9 @@ impl Operator for Aggregate {
 
             // Split data by the columns relevant to the aggregation vs columns to group by
             for column in &input_cols {
-                let value_len = column.get_datatype().next_size(&input_data[i..]);
-                let buffer = BorrowedBuffer::new(
-                    &input_data[i..i + value_len],
-                    column.get_datatype(),
-                    false,
-                );
+                let value_len = column.data_type().next_size(&input_data[i..]);
+                let buffer =
+                    BorrowedBuffer::new(&input_data[i..i + value_len], column.data_type(), false);
                 let value = (buffer.marshall().to_string(), column.clone());
                 if (&self.group_by_cols)
                     .iter()
@@ -124,13 +121,13 @@ impl Operator for Aggregate {
             if group_by.contains_key(&group_by_values) {
                 let agg_instance = group_by.get_mut(&group_by_values).unwrap();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0)?);
+                    agg_instance.consider_value(&*value.1.data_type().parse(&value.0)?);
                 }
             } else {
                 let mut agg_instance = self.aggregation.box_clone_aggregation();
                 agg_instance.initialize();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0)?);
+                    agg_instance.consider_value(&*value.1.data_type().parse(&value.0)?);
                 }
                 group_by.entry(group_by_values).or_insert(agg_instance);
             }
@@ -140,7 +137,7 @@ impl Operator for Aggregate {
         for (group_by_values, agg_instance) in &group_by {
             // Copy group by values
             for (data, column) in group_by_values {
-                let data = column.get_datatype().parse(data)?.un_marshall();
+                let data = column.data_type().parse(data)?.un_marshall();
                 output_data[j..j + data.data().len()].clone_from_slice(&data.data());
                 j += data.data().len();
             }

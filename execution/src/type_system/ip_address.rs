@@ -117,7 +117,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn ipv4_type_id() {
+    fn ipv4_data_type() {
         let ipv4 = IPv4::from(88997);
         assert_eq!(DataType::new(Variant::IPv4, true), ipv4.data_type());
     }

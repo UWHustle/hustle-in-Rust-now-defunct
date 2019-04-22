@@ -1,12 +1,13 @@
-from hustle import Relation
+from hustle import *
 import numpy
 import os
 import unittest
 
 
-class CreateTestCase(unittest.TestCase):
+class HustlePythonTests(unittest.TestCase):
     def setUp(self):
-        self.test_relation = Relation.create(
+        self.connection = HustleConnection()
+        self.test_relation = self.connection.create_relation(
             ['a', 'b', 'c', 'd'],
             ['int', 'bigint', 'real', 'varchar(10)'])
         self.test_relation.insert(1, 10000, 10.2, 'Hello, ')
@@ -14,7 +15,7 @@ class CreateTestCase(unittest.TestCase):
         self.test_relation.insert(11, 55, 15.7, '.')
 
     def test_create_empty(self):
-        relation = Relation.create([], [])
+        relation = self.connection.create_relation([], [])
         self.assertEqual([], relation.get_col_names())
         self.assertEqual([], relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -22,7 +23,7 @@ class CreateTestCase(unittest.TestCase):
     def test_create_single_attr(self):
         col_names = ['a']
         type_names = ['int']
-        relation = Relation.create(col_names, type_names)
+        relation = self.connection.create_relation(col_names, type_names)
         self.assertEqual(col_names, relation.get_col_names())
         self.assertEqual(type_names, relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -30,7 +31,7 @@ class CreateTestCase(unittest.TestCase):
     def test_create(self):
         col_names = ['a', 'b']
         type_names = ['int', 'int']
-        relation = Relation.create(col_names, type_names)
+        relation = self.connection.create_relation(col_names, type_names)
         self.assertEqual(col_names, relation.get_col_names())
         self.assertEqual(type_names, relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -46,7 +47,7 @@ class CreateTestCase(unittest.TestCase):
             'double',
             'varchar(10)',
             'char(10)']
-        relation = Relation.create(col_names, type_names)
+        relation = self.connection.create_relation(col_names, type_names)
         self.assertEqual(col_names, relation.get_col_names())
         self.assertEqual(type_names, relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -54,17 +55,18 @@ class CreateTestCase(unittest.TestCase):
     def test_from_numpy(self):
         dtype = numpy.dtype([('a', 'int32'), ('b', 'S10')])
         array = numpy.zeros(5, dtype)
-        relation = Relation.from_numpy(array)
+        relation = self.connection.from_numpy(array)
         self.assertEqual(['a', 'b'], relation.get_col_names())
         self.assertEqual(['int', 'varchar(10)'], relation.get_type_names())
 
     def test_to_numpy(self):
-        relation = Relation.create(['a', 'b'], ['bigint', 'double'])
+        relation = self.connection.create_relation(
+            ['a', 'b'], ['bigint', 'double'])
         relation.insert(55, 11.8)
         relation.insert(12, 13.3)
         actual = relation.to_numpy()
-        expected = numpy.zeros(2,
-                               numpy.dtype([('a', 'int64'), ('b', 'float64')]))
+        expected = numpy.zeros(
+            2, numpy.dtype([('a', 'int64'), ('b', 'float64')]))
         expected[0] = (55, 11.8)
         expected[1] = (12, 13.3)
         self.assertTrue(numpy.array_equal(expected, actual))
@@ -88,7 +90,7 @@ class CreateTestCase(unittest.TestCase):
     def test_simple_aggregate(self):
         aggregate = self.test_relation.aggregate('a', [], 'avg')
         array = aggregate.to_numpy()
-        self.assertEquals(7.0, array[0][0])
+        self.assertEqual(7.0, array[0][0])
 
     # TODO: There are issues with the ordering of values and columns
     def test_grouped_aggregate(self):
@@ -99,7 +101,7 @@ class CreateTestCase(unittest.TestCase):
 
     # TODO: Hustle doesn't guarantee unique column names
     def test_join(self):
-        other_relation = Relation.create(['e'], ['int'])
+        other_relation = self.connection.create_relation(['e'], ['int'])
         other_relation.insert(1)
         other_relation.insert(2)
         other_relation.insert(3)
