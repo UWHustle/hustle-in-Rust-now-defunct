@@ -2,12 +2,16 @@ import ctypes
 import ctypes.util
 from ctypes import c_void_p, c_uint32, c_ubyte, c_char_p, c_int
 import numpy
+from os.path import *
 
-# TODO: Revert to find_library
-# lib_path = ctypes.util.find_library('execution')
-lib_path = '/Users/Matthew/Repos/hustle/build/execution/libexecution.dylib'
-assert lib_path is not None, 'Unable to load hustle dylib'
+lib_path = ctypes.util.find_library('execution')
+if lib_path is None:
+    script_dir = dirname(realpath(__file__))
+    lib_path = join(script_dir, pardir,
+                    'build', 'execution', 'libexecution.dylib')
 ffi = ctypes.cdll.LoadLibrary(lib_path)
+if ffi is None:
+    raise FileNotFoundError('unable to find Hustle dylib')
 
 
 class Relation:
@@ -320,19 +324,19 @@ class Relation:
             self.err_p,
             self.relation_p)
 
-    def project(self, col_names):
+    def project(self, *args):
         """
         Projects onto a subset of this relation's columns.
 
-        :param col_names: The names of columns which should be retained
+        :param args: The names of columns which should be retained
         :return: A new relation containing the specified columns
         """
         relation_p = _run_ffi_p(
             ffi.ffi_project,
             self.err_p,
             self.relation_p,
-            _encode_c_str_list(col_names),
-            c_uint32(len(col_names)))
+            _encode_c_str_list(args),
+            c_uint32(len(args)))
         return Relation(relation_p, _get_err_p())
 
     def select(self, predicate):
@@ -431,7 +435,7 @@ def _encode_c_str_list(py_list):
     Helper for converting a list of Python strings to an array of char
     pointers (C strings).
     """
-    encoded = (ctypes.c_char_p * len(py_list))()
+    encoded = (c_char_p * len(py_list))()
     for i, name in enumerate(py_list):
         encoded[i] = name.encode('utf-8')
     return encoded

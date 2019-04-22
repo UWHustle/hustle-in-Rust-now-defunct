@@ -39,6 +39,7 @@ impl AggregationTrait for Avg {
     }
 
     fn output_type(&self) -> DataType {
-        self.output().data_type()
+        let denom = Int4::from(1);
+        self.sum.divide(&denom).data_type()
     }
 }
