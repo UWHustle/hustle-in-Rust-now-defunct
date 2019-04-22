@@ -1,22 +1,22 @@
 pub mod borrowed_buffer;
+pub mod byte_string;
+pub mod data_type;
 pub mod float;
 pub mod integer;
 pub mod ip_address;
 pub mod operators;
 pub mod owned_buffer;
-pub mod data_type;
-pub mod byte_string;
 
 use std::any::Any;
 use std::fmt::Debug;
 
+use self::byte_string::*;
+use self::data_type::*;
 use self::float::*;
 use self::integer::*;
 use self::ip_address::*;
 use self::operators::*;
 use self::owned_buffer::*;
-use self::data_type::*;
-use self::byte_string::*;
 
 /* ============================================================================================== */
 
@@ -38,7 +38,9 @@ pub trait Buffer {
             Variant::Int8 => Box::new(Int8::marshall(data, nullable, is_null)),
             Variant::Float4 => Box::new(Float4::marshall(data, nullable, is_null)),
             Variant::Float8 => Box::new(Float8::marshall(data, nullable, is_null)),
-            Variant::ByteString(max_size, varchar) => Box::new(ByteString::marshall(data, nullable, is_null, max_size, varchar)),
+            Variant::ByteString(max_size, varchar) => Box::new(ByteString::marshall(
+                data, nullable, is_null, max_size, varchar,
+            )),
             Variant::IPv4 => Box::new(IPv4::marshall(data, nullable, is_null)),
         }
     }

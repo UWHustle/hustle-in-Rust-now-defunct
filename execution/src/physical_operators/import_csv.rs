@@ -28,7 +28,12 @@ impl Operator for ImportCsv {
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let mut reader = match csv::Reader::from_path(&self.file_name) {
             Ok(val) => val,
-            Err(_err) => return Err(String::from(format!("unable to open file '{}'", self.file_name))),
+            Err(_err) => {
+                return Err(String::from(format!(
+                    "unable to open file '{}'",
+                    self.file_name
+                )))
+            }
         };
         let record_count = reader.records().count() + 1;
         reader.seek(csv::Position::new()).unwrap();

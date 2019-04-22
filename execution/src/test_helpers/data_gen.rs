@@ -74,7 +74,9 @@ pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relat
 
 pub fn generate_data(relation: Relation, record_count: usize, random: bool) {
     let test_relation_generator = TestRelation::new(relation.clone(), record_count, random);
-    test_relation_generator.execute(&StorageManager::new()).unwrap();
+    test_relation_generator
+        .execute(&StorageManager::new())
+        .unwrap();
 }
 
 pub fn export_csv(csv_file: String, relation: Relation) {

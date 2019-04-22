@@ -14,8 +14,8 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
 use storage::storage_manager;
-use type_system::operators::*;
 use type_system::data_type::DataType;
+use type_system::operators::*;
 use type_system::Value;
 
 extern crate storage;
@@ -31,9 +31,11 @@ pub struct ImmediateRelation<'a> {
 }
 
 impl<'a> ImmediateRelation<'a> {
-    pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Result<Self, String>  {
+    pub fn new(col_names: Vec<&str>, col_type_names: Vec<&str>) -> Result<Self, String> {
         if col_names.len() != col_type_names.len() {
-            return Err(String::from("number of types does not match number of columns"));
+            return Err(String::from(
+                "number of types does not match number of columns",
+            ));
         }
         let mut columns: Vec<Column> = vec![];
         for i in 0..col_names.len() {
@@ -103,7 +105,7 @@ impl<'a> ImmediateRelation<'a> {
             Some(data) => {
                 self.storage_manager.put(self.relation.get_name(), &data);
                 Ok(())
-            },
+            }
             None => Err(format!("relation {} not found in storage manager", name)),
         }
     }
@@ -132,10 +134,12 @@ impl<'a> ImmediateRelation<'a> {
         &self,
         agg_col_name: &str,
         group_by_col_names: Vec<&str>,
-        agg_name: &str) -> Result<Self, String>
-    {
+        agg_name: &str,
+    ) -> Result<Self, String> {
         let agg_col = self.relation.column_from_name(agg_col_name)?;
-        let group_by_cols = self.relation.columns_from_names(group_by_col_names.clone())?;
+        let group_by_cols = self
+            .relation
+            .columns_from_names(group_by_col_names.clone())?;
 
         let mut project_col_names = group_by_col_names.clone();
         project_col_names.push(agg_col_name);

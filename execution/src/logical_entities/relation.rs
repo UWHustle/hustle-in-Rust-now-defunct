@@ -13,7 +13,7 @@ impl Relation {
     pub fn new(name: &str, schema: Schema) -> Self {
         Self {
             name: String::from(name),
-            schema
+            schema,
         }
     }
 

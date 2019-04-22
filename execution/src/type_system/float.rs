@@ -104,30 +104,19 @@ impl Value for Float4 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, f32::from(cast_value::<Int1>(other).value()))
-            }
-            Variant::Int2 => {
-                comp.apply(self.value, f32::from(cast_value::<Int2>(other).value()))
-            }
-            Variant::Int4 => {
-                comp.apply(self.value, cast_value::<Int4>(other).value() as f32)
-            }
-            Variant::Int8 => {
-                comp.apply(f64::from(self.value), cast_value::<Int8>(other).value() as f64)
-            }
-            Variant::Float4 => {
-                comp.apply(self.value, cast_value::<Float4>(other).value())
-            }
+            Variant::Int1 => comp.apply(self.value, f32::from(cast_value::<Int1>(other).value())),
+            Variant::Int2 => comp.apply(self.value, f32::from(cast_value::<Int2>(other).value())),
+            Variant::Int4 => comp.apply(self.value, cast_value::<Int4>(other).value() as f32),
+            Variant::Int8 => comp.apply(
+                f64::from(self.value),
+                cast_value::<Int8>(other).value() as f64,
+            ),
+            Variant::Float4 => comp.apply(self.value, cast_value::<Float4>(other).value()),
             Variant::Float8 => {
                 comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
-            Variant::IPv4 => {
-                comp.apply(self.value, cast_value::<IPv4>(other).value() as f32)
-            }
-            _ => {
-                panic!(incomparable(self.data_type(), other.data_type()))
-            }
+            Variant::IPv4 => comp.apply(self.value, cast_value::<IPv4>(other).value() as f32),
+            _ => panic!(incomparable(self.data_type(), other.data_type())),
         }
     }
 }
@@ -229,27 +218,15 @@ impl Value for Float8 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, f64::from(cast_value::<Int1>(other).value()))
-            }
-            Variant::Int2 => {
-                comp.apply(self.value, f64::from(cast_value::<Int2>(other).value()))
-            }
-            Variant::Int4 => {
-                comp.apply(self.value, f64::from(cast_value::<Int4>(other).value()))
-            }
-            Variant::Int8 => {
-                comp.apply(self.value, cast_value::<Int8>(other).value() as f64)
-            }
+            Variant::Int1 => comp.apply(self.value, f64::from(cast_value::<Int1>(other).value())),
+            Variant::Int2 => comp.apply(self.value, f64::from(cast_value::<Int2>(other).value())),
+            Variant::Int4 => comp.apply(self.value, f64::from(cast_value::<Int4>(other).value())),
+            Variant::Int8 => comp.apply(self.value, cast_value::<Int8>(other).value() as f64),
             Variant::Float4 => {
                 comp.apply(self.value, f64::from(cast_value::<Float4>(other).value()))
             }
-            Variant::Float8 => {
-                comp.apply(self.value, cast_value::<Float8>(other).value())
-            }
-            Variant::IPv4 => {
-                comp.apply(self.value, f64::from(cast_value::<IPv4>(other).value()))
-            }
+            Variant::Float8 => comp.apply(self.value, cast_value::<Float8>(other).value()),
+            Variant::IPv4 => comp.apply(self.value, f64::from(cast_value::<IPv4>(other).value())),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -308,7 +285,10 @@ mod test {
     fn float4_un_marshall() {
         let float4_value = Float4::from(13.7);
         let float4_buffer = float4_value.un_marshall();
-        assert_eq!(DataType::new(Variant::Float4, true), float4_buffer.data_type());
+        assert_eq!(
+            DataType::new(Variant::Float4, true),
+            float4_buffer.data_type()
+        );
 
         let data = float4_buffer.data();
         assert_eq!(0x33, data[0]);
@@ -335,7 +315,10 @@ mod test {
     fn float8_un_marshall() {
         let float8_value = Float8::from(12228.444);
         let float8_buffer = float8_value.un_marshall();
-        assert_eq!(DataType::new(Variant::Float8, true), float8_buffer.data_type());
+        assert_eq!(
+            DataType::new(Variant::Float8, true),
+            float8_buffer.data_type()
+        );
 
         let data = float8_buffer.data();
         assert_eq!(0xb6, data[0]);

@@ -57,7 +57,12 @@ impl DataType {
             "double" => Variant::Float8,
             "varchar" => Variant::ByteString(size_arg, true),
             "char" => Variant::ByteString(size_arg, false),
-            _ => return Err(String::from(format!("unknown type variant {}", variant_str))),
+            _ => {
+                return Err(String::from(format!(
+                    "unknown type variant {}",
+                    variant_str
+                )))
+            }
         };
 
         let nullable = lower.contains("null");
@@ -78,8 +83,8 @@ impl DataType {
                 } else {
                     String::from(format!("char({})", max_size))
                 }
-            },
-            Variant::IPv4 => String::from("ipv4")
+            }
+            Variant::IPv4 => String::from("ipv4"),
         }
     }
 
@@ -117,7 +122,12 @@ impl DataType {
             Variant::Float4 => Ok(Box::new(Float4::parse(string)?)),
             Variant::Float8 => Ok(Box::new(Float8::parse(string)?)),
             Variant::IPv4 => Ok(Box::new(IPv4::parse(string)?)),
-            Variant::ByteString(max_size, varchar) => Ok(Box::new(ByteString::new(string.as_bytes(), true, max_size, varchar))),
+            Variant::ByteString(max_size, varchar) => Ok(Box::new(ByteString::new(
+                string.as_bytes(),
+                true,
+                max_size,
+                varchar,
+            ))),
         }
     }
 
@@ -132,7 +142,9 @@ impl DataType {
             Variant::Int8 => Box::new(Int8::create_null()),
             Variant::Float4 => Box::new(Float4::create_null()),
             Variant::Float8 => Box::new(Float8::create_null()),
-            Variant::ByteString(max_size, varchar) => Box::new(ByteString::create_null(max_size, varchar)),
+            Variant::ByteString(max_size, varchar) => {
+                Box::new(ByteString::create_null(max_size, varchar))
+            }
             _ => panic!("Type {:?} cannot be null", self.variant),
         }
     }

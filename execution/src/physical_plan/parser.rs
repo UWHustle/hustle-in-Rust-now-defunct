@@ -16,8 +16,8 @@ use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
 use type_system;
-use type_system::operators::*;
 use type_system::data_type::*;
+use type_system::operators::*;
 
 extern crate serde_json;
 
@@ -88,7 +88,8 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
             .unwrap()["type"]
             .as_str()
             .unwrap(),
-    ).unwrap();
+    )
+    .unwrap();
     let agg_name = agg_json["function"].as_str().unwrap();
     let agg_op = Aggregate::from_str(
         project_node.get_output_relation(),
@@ -96,7 +97,8 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
         group_by_cols,
         agg_type,
         agg_name,
-    ).unwrap();
+    )
+    .unwrap();
     Node::new(Rc::new(agg_op), vec![Rc::new(project_node)])
 }
 
@@ -111,7 +113,9 @@ fn parse_insert_tuple(json: &serde_json::Value) -> Node {
 
 fn parse_connective_predicate(json: &serde_json::Value) -> Connective {
     let connective_type = ConnectiveType::from_str(json["json_name"].as_str().unwrap());
-    let json_terms = json["array"].as_array().expect("Unable to extract predicate terms");
+    let json_terms = json["array"]
+        .as_array()
+        .expect("Unable to extract predicate terms");
     let mut terms: Vec<Box<Predicate>> = vec![];
     for term in json_terms {
         terms.push(parse_predicate(term));
@@ -136,13 +140,9 @@ fn parse_predicate(json: &serde_json::Value) -> Box<Predicate> {
     match json_name {
         "Equal" | "Less" | "LessOrEqual" | "Greater" | "GreaterOrEqual" => {
             Box::new(parse_comparison_predicate(json))
-        },
-        "And" | "Or" => {
-            Box::new(parse_connective_predicate(json))
         }
-        _ => {
-            panic!("Unknown predicate type {}", json_name)
-        },
+        "And" | "Or" => Box::new(parse_connective_predicate(json)),
+        _ => panic!("Unknown predicate type {}", json_name),
     }
 }
 
@@ -153,7 +153,11 @@ fn parse_selection(json: &serde_json::Value) -> Node {
     let filter_predicate = &json["filter_predicate"];
     let project_op = match filter_predicate {
         serde_json::Value::Null => Project::pure_project(input.get_output_relation(), output_cols),
-        _ => Project::new(input.get_output_relation(), output_cols, parse_predicate(filter_predicate))
+        _ => Project::new(
+            input.get_output_relation(),
+            output_cols,
+            parse_predicate(filter_predicate),
+        ),
     };
     Node::new(Rc::new(project_op), vec![Rc::new(input)])
 }
@@ -165,7 +169,10 @@ fn parse_create_table(json: &serde_json::Value) -> Node {
 }
 
 fn parse_drop_table(json: &serde_json::Value) -> Node {
-    Node::new(Rc::new(DropTable::new(&json["relation"].as_str().unwrap())), vec![])
+    Node::new(
+        Rc::new(DropTable::new(&json["relation"].as_str().unwrap())),
+        vec![],
+    )
 }
 
 fn parse_table_reference(json: &serde_json::Value) -> Node {
@@ -188,7 +195,10 @@ fn parse_column(json: &serde_json::Value) -> Column {
     if name == "" {
         name = get_string(&json["alias"]);
     }
-    Column::new(name, DataType::from_str(&json["type"].as_str().unwrap()).unwrap())
+    Column::new(
+        name,
+        DataType::from_str(&json["type"].as_str().unwrap()).unwrap(),
+    )
 }
 
 fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {

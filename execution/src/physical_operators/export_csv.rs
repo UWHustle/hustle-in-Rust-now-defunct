@@ -29,11 +29,21 @@ impl Operator for ExportCsv {
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let data = match storage_manager.get(self.relation.get_name()) {
             Some(data) => data,
-            None => return Err(format!("relation {} not found in storage manager", self.relation.get_name())),
+            None => {
+                return Err(format!(
+                    "relation {} not found in storage manager",
+                    self.relation.get_name()
+                ))
+            }
         };
         let mut writer = match csv::Writer::from_path(&self.file_name) {
             Ok(val) => val,
-            Err(_err) => return Err(String::from(format!("unable to open file '{}'", self.file_name))),
+            Err(_err) => {
+                return Err(String::from(format!(
+                    "unable to open file '{}'",
+                    self.file_name
+                )))
+            }
         };
 
         let mut i = 0;

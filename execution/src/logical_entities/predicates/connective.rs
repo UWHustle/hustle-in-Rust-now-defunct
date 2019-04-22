@@ -43,10 +43,7 @@ pub struct Connective {
 }
 
 impl Connective {
-    pub fn new(
-        connective_type: ConnectiveType,
-        terms: Vec<Box<Predicate>>,
-    ) -> Self {
+    pub fn new(connective_type: ConnectiveType, terms: Vec<Box<Predicate>>) -> Self {
         Self {
             connective_type,
             terms,

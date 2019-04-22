@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use physical_operators::Operator;
 use logical_entities::relation::Relation;
+use physical_operators::Operator;
 
 extern crate storage;
 use self::storage::StorageManager;

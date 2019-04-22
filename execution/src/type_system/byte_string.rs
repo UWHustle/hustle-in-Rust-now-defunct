@@ -48,11 +48,17 @@ impl ByteString {
             value,
             nullable: true,
             is_null: true,
-            varchar
+            varchar,
         }
     }
 
-    pub fn marshall(data: &[u8], nullable: bool, is_null: bool, max_size: usize, varchar: bool) -> Self {
+    pub fn marshall(
+        data: &[u8],
+        nullable: bool,
+        is_null: bool,
+        max_size: usize,
+        varchar: bool,
+    ) -> Self {
         let mut output = Self::new(data, nullable, max_size, varchar);
         output.is_null = is_null;
         output
@@ -80,7 +86,7 @@ impl ByteString {
                     }
                 }
                 &self.value[0..end_idx]
-            },
+            }
             false => &self.value,
         }
     }
@@ -88,7 +94,10 @@ impl ByteString {
 
 impl Value for ByteString {
     fn data_type(&self) -> DataType {
-        DataType::new(Variant::ByteString(self.value.len(), self.varchar), self.nullable)
+        DataType::new(
+            Variant::ByteString(self.value.len(), self.varchar),
+            self.nullable,
+        )
     }
 
     fn is_null(&self) -> bool {
@@ -99,8 +108,9 @@ impl Value for ByteString {
         if self.is_null {
             String::new()
         } else {
-            String::from(std::str::from_utf8(self.trimmed_slice())
-                .expect("Cannot convert to UTF-8 string"))
+            String::from(
+                std::str::from_utf8(self.trimmed_slice()).expect("Cannot convert to UTF-8 string"),
+            )
         }
     }
 
@@ -112,9 +122,10 @@ impl Value for ByteString {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::ByteString(_, _) => {
-                comp.apply(self.trimmed_slice(), cast_value::<ByteString>(other).trimmed_slice())
-            }
+            Variant::ByteString(_, _) => comp.apply(
+                self.trimmed_slice(),
+                cast_value::<ByteString>(other).trimmed_slice(),
+            ),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }

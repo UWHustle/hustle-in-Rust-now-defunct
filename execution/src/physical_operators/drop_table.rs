@@ -10,7 +10,9 @@ pub struct DropTable {
 
 impl DropTable {
     pub fn new(name: &str) -> Self {
-        DropTable { name: String::from(name) }
+        DropTable {
+            name: String::from(name),
+        }
     }
 }
 
