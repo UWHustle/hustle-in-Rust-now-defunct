@@ -5,21 +5,18 @@ import numpy
 from os.path import *
 from sys import platform
 
-if platform == 'linux':
-    dy_lib_ext = '.so'
-elif platform == 'darwin':
-    dy_lib_ext = '.dylib'
-else:
-    raise OSError('unsupported platform ' + platform)
-
 lib_path = ctypes.util.find_library('execution')
 if lib_path is None:
+    if platform == 'darwin':
+        dylib_ext = '.dylib'
+    elif platform == 'linux':
+        dylib_ext = '.so'
+    else:
+        raise OSError('unsupported platform ' + platform)
     script_dir = dirname(realpath(__file__))
     lib_path = join(
-        script_dir, pardir, 'build', 'execution', 'libexecution' + dy_lib_ext)
+        script_dir, pardir, 'build', 'execution', 'libexecution' + dylib_ext)
 ffi = ctypes.cdll.LoadLibrary(lib_path)
-if ffi is None:
-    raise FileNotFoundError('unable to find Hustle dylib')
 
 
 class HustleConnection:

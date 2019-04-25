@@ -28,24 +28,7 @@ language: cpp
 cache: ccache
 
 compiler:
-#- gcc
 - clang
-
-env:
-#- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
-#- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
-#- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
-#- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=selection
-#
-#matrix:
-#  exclude:  # Due to time-out.
-#  - compiler: gcc
-#    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
-#  - compiler: gcc
-#    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
-
-python:
-  - "3.6"
 
 install:
 - export TEST_JOBS=2;
@@ -116,6 +99,3 @@ addons:
     - bison
     - python3
     - python3-pip
-
-cache:
-  apt: true
