@@ -33,7 +33,10 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
         relation.clone(),
         Column::new(column_name, DataType::new(Variant::Int4, true)),
     );
-    select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
+    select_operator
+        .execute(&StorageManager::new())
+        .parse::<u128>()
+        .unwrap()
 }
 
 fn hustle_sum(relation: Relation, agg_col: Column) -> Relation {
@@ -43,7 +46,7 @@ fn hustle_sum(relation: Relation, agg_col: Column) -> Relation {
         project_node.get_output_relation(),
         agg_col.clone(),
         vec![],
-        Box::new(Sum::new(agg_col.get_datatype())),
+        Box::new(Sum::new(agg_col.data_type())),
     );
     Node::new(Rc::new(agg_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())
 }

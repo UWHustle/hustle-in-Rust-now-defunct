@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use physical_operators::Operator;
 use logical_entities::relation::Relation;
+use physical_operators::Operator;
 
 extern crate storage;
 use self::storage::StorageManager;
@@ -27,6 +27,12 @@ impl Node {
         for node in &self.dependencies {
             node.execute(storage_manager);
         }
-        self.operator.execute(storage_manager)
+        match self.operator.execute(storage_manager) {
+            Ok(val) => val,
+            Err(string) => {
+                println!("Error: {}", string);
+                self.get_output_relation()
+            }
+        }
     }
 }

@@ -1,22 +1,22 @@
 pub mod borrowed_buffer;
+pub mod byte_string;
+pub mod data_type;
 pub mod float;
 pub mod integer;
 pub mod ip_address;
 pub mod operators;
 pub mod owned_buffer;
-pub mod data_type;
-pub mod byte_string;
 
 use std::any::Any;
 use std::fmt::Debug;
 
+use self::byte_string::*;
+use self::data_type::*;
 use self::float::*;
 use self::integer::*;
 use self::ip_address::*;
 use self::operators::*;
 use self::owned_buffer::*;
-use self::data_type::*;
-use self::byte_string::*;
 
 /* ============================================================================================== */
 
@@ -38,7 +38,9 @@ pub trait Buffer {
             Variant::Int8 => Box::new(Int8::marshall(data, nullable, is_null)),
             Variant::Float4 => Box::new(Float4::marshall(data, nullable, is_null)),
             Variant::Float8 => Box::new(Float8::marshall(data, nullable, is_null)),
-            Variant::ByteString(max_size, varchar) => Box::new(ByteString::marshall(data, nullable, is_null, max_size, varchar)),
+            Variant::ByteString(max_size, varchar) => Box::new(ByteString::marshall(
+                data, nullable, is_null, max_size, varchar,
+            )),
             Variant::IPv4 => Box::new(IPv4::marshall(data, nullable, is_null)),
         }
     }
@@ -63,7 +65,7 @@ pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
     /// Applies the specified comparator to compare `self` with `other`
     fn compare(&self, other: &Value, cmp: Comparator) -> bool;
 
-    /// By default returns self.type_id().size()
+    /// By default returns self.data_type().size()
     /// Should be overriden for types which don't have a constant size (i.e. strings)
     fn size(&self) -> usize {
         self.data_type().size()
@@ -144,8 +146,11 @@ fn incomparable(type_1: DataType, type_2: DataType) -> String {
 }
 
 /// Helper for "null value" message
-fn null_value(type_id: DataType) -> String {
-    format!("Attempting to retrieve value of null {:?}", type_id.variant)
+fn null_value(data_type: DataType) -> String {
+    format!(
+        "Attempting to retrieve value of null {:?}",
+        data_type.variant
+    )
 }
 
 /* ============================================================================================== */
@@ -220,6 +225,6 @@ pub fn force_numeric(value: &Value) -> &Numeric {
 }
 
 /// Helper for "not numeric" message
-fn not_numeric(type_id: DataType) -> String {
-    format!("Type {:?} is not numeric", type_id.variant)
+fn not_numeric(data_type: DataType) -> String {
+    format!("Type {:?} is not numeric", data_type.variant)
 }

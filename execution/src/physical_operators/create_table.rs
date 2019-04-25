@@ -18,9 +18,9 @@ impl Operator for CreateTable {
         self.relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         storage_manager.put(self.relation.get_name(), &vec![]);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

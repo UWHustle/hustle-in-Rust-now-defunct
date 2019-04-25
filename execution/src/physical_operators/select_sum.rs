@@ -22,14 +22,14 @@ impl SelectSum {
     pub fn execute(&self, storage_manager: &StorageManager) -> String {
         let data = storage_manager.get(self.relation.get_name()).unwrap();
 
-        let mut sum = self.column.get_datatype().create_zero();
+        let mut sum = self.column.data_type().create_zero();
         let mut i = 0;
         while i < data.len() {
             for column in self.relation.get_columns() {
-                let next_len = column.get_datatype().next_size(&data[i..]);
+                let next_len = column.data_type().next_size(&data[i..]);
                 if column.get_name() == self.column.get_name() {
                     let buffer =
-                        BorrowedBuffer::new(&data[i..i + next_len], column.get_datatype(), false);
+                        BorrowedBuffer::new(&data[i..i + next_len], column.data_type(), false);
                     sum = sum.add(force_numeric(&*buffer.marshall()));
                 }
                 i += next_len;

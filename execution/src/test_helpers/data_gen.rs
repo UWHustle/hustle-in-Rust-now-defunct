@@ -74,7 +74,9 @@ pub fn generate_relation_b_into_hustle_and_sqlite3(record_count: usize) -> Relat
 
 pub fn generate_data(relation: Relation, record_count: usize, random: bool) {
     let test_relation_generator = TestRelation::new(relation.clone(), record_count, random);
-    test_relation_generator.execute(&StorageManager::new());
+    test_relation_generator
+        .execute(&StorageManager::new())
+        .unwrap();
 }
 
 pub fn export_csv(csv_file: String, relation: Relation) {
@@ -82,12 +84,12 @@ pub fn export_csv(csv_file: String, relation: Relation) {
     Command::new("rm").arg(csv_file.clone()).output().unwrap();
 
     let export_csv = ExportCsv::new(csv_file.clone(), relation.clone());
-    export_csv.execute(&StorageManager::new());
+    export_csv.execute(&StorageManager::new()).unwrap();
 }
 
 pub fn import_csv_to_hustle(csv_file: String, relation: Relation) {
     let import_operator = ImportCsv::new(csv_file.clone(), relation.clone());
-    import_operator.execute(&StorageManager::new());
+    import_operator.execute(&StorageManager::new()).unwrap();
 }
 
 pub fn insert_into_hustle(count: u8, value: &Value, relation: Relation) {
@@ -99,6 +101,6 @@ pub fn insert_into_hustle(count: u8, value: &Value, relation: Relation) {
         ),
     );
     for _ in 0..count {
-        insert_operator.execute(&StorageManager::new());
+        insert_operator.execute(&StorageManager::new()).unwrap();
     }
 }

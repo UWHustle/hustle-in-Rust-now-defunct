@@ -38,8 +38,11 @@ impl IPv4 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<u32>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<u32>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
@@ -85,27 +88,21 @@ impl Value for IPv4 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, u32::from(cast_value::<Int1>(other).value()))
-            }
-            Variant::Int2 => {
-                comp.apply(i64::from(self.value), i64::from(cast_value::<Int2>(other).value()))
-            }
-            Variant::Int4 => {
-                comp.apply(i64::from(self.value), i64::from(cast_value::<Int4>(other).value()))
-            }
-            Variant::Int8 => {
-                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
-            }
-            Variant::Float4 => {
-                comp.apply(self.value as f32, cast_value::<Float4>(other).value())
-            }
+            Variant::Int1 => comp.apply(self.value, u32::from(cast_value::<Int1>(other).value())),
+            Variant::Int2 => comp.apply(
+                i64::from(self.value),
+                i64::from(cast_value::<Int2>(other).value()),
+            ),
+            Variant::Int4 => comp.apply(
+                i64::from(self.value),
+                i64::from(cast_value::<Int4>(other).value()),
+            ),
+            Variant::Int8 => comp.apply(i64::from(self.value), cast_value::<Int8>(other).value()),
+            Variant::Float4 => comp.apply(self.value as f32, cast_value::<Float4>(other).value()),
             Variant::Float8 => {
                 comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
-            Variant::IPv4 => {
-                comp.apply(self.value, cast_value::<IPv4>(other).value())
-            }
+            Variant::IPv4 => comp.apply(self.value, cast_value::<IPv4>(other).value()),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -120,7 +117,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn ipv4_type_id() {
+    fn ipv4_data_type() {
         let ipv4 = IPv4::from(88997);
         assert_eq!(DataType::new(Variant::IPv4, true), ipv4.data_type());
     }

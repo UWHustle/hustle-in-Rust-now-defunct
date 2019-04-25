@@ -28,21 +28,7 @@ language: cpp
 cache: ccache
 
 compiler:
-#- gcc
 - clang
-
-env:
-#- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
-#- BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
-#- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
-#- BUILD_TYPE=Release VECTOR_COPY_ELISION_LEVEL=selection
-#
-#matrix:
-#  exclude:  # Due to time-out.
-#  - compiler: gcc
-#    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=joinwithbinaryexpressions
-#  - compiler: gcc
-#    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
 
 install:
 - export TEST_JOBS=2;
@@ -57,6 +43,7 @@ install:
 - export DEBUG_FLAGS="-g0";
 - export RELEASE_FLAGS="-O0 -DNDEBUG";
 - export LINKER_FLAGS="-s"
+- sudo pip3 install -r requirements.txt
 
 before_script:
 - curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -85,12 +72,10 @@ script:
 - (cd build && make)
 - (cd build && ctest --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
 
-
 after_failure:
 - df -h
 - free -m
 - dmesg
-
 
 addons:
   apt:
@@ -112,6 +97,5 @@ addons:
     - cmake
     - flex
     - bison
-
-cache:
-  apt: true
+    - python3
+    - python3-pip

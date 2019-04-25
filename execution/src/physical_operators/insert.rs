@@ -21,7 +21,7 @@ impl Operator for Insert {
         self.relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let mut data: Vec<u8> = vec![];
         match storage_manager.get(self.relation.get_name()) {
             Some(value) => data = value.to_vec(),
@@ -38,6 +38,6 @@ impl Operator for Insert {
 
         storage_manager.put(self.relation.get_name(), &data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

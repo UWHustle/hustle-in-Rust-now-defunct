@@ -35,7 +35,7 @@ impl Operator for Join {
         )
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let rel_l = &self.relation_left;
         let rel_r = &self.relation_right;
         let rel_l_size = rel_l.get_total_size(storage_manager);
@@ -94,6 +94,6 @@ impl Operator for Join {
 
         storage_manager.put(self.get_target_relation().get_name(), &data_o);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

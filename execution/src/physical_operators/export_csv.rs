@@ -19,10 +19,6 @@ impl ExportCsv {
             relation,
         }
     }
-
-    pub fn get_file_name(&self) -> &String {
-        &self.file_name
-    }
 }
 
 impl Operator for ExportCsv {
@@ -30,20 +26,35 @@ impl Operator for ExportCsv {
         Relation::null()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
-        let data = storage_manager.get(self.relation.get_name()).unwrap();
-
-        let mut writer = csv::Writer::from_path(self.get_file_name()).unwrap();
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+        let data = match storage_manager.get(self.relation.get_name()) {
+            Some(data) => data,
+            None => {
+                return Err(format!(
+                    "relation {} not found in storage manager",
+                    self.relation.get_name()
+                ))
+            }
+        };
+        let mut writer = match csv::Writer::from_path(&self.file_name) {
+            Ok(val) => val,
+            Err(_err) => {
+                return Err(String::from(format!(
+                    "unable to open file '{}'",
+                    self.file_name
+                )))
+            }
+        };
 
         let mut i = 0;
         while i < data.len() {
             let mut r = Vec::new();
 
             for column in self.relation.get_columns() {
-                let type_id = column.get_datatype();
-                let value_length = type_id.size();
+                let data_type = column.data_type();
+                let value_length = data_type.size();
                 let buffer: BorrowedBuffer =
-                    BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
+                    BorrowedBuffer::new(&data[i..i + value_length], data_type.clone(), false);
                 r.push(buffer.marshall().to_string());
                 i += value_length;
             }
@@ -51,6 +62,6 @@ impl Operator for ExportCsv {
         }
         writer.flush().unwrap();
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }
