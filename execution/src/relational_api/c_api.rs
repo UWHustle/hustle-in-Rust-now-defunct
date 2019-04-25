@@ -21,11 +21,11 @@ pub unsafe extern "C" fn ffi_get_err_str_p(err_p: *const String) -> *const c_voi
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_new_relation(
+    err_p: *mut String,
     connection_p: *const HustleConnection,
     col_names_p: *const *const c_char,
     type_names_p: *const *const c_char,
     n_cols: u32,
-    err_p: *mut String,
 ) -> *const c_void {
     let col_names = decode_c_str_list(col_names_p, n_cols);
     let type_names = decode_c_str_list(type_names_p, n_cols);
@@ -125,48 +125,48 @@ pub unsafe extern "C" fn ffi_copy_buffer(
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_import_hustle(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     name_p: *const c_char,
-    err_p: *mut String,
 ) -> i32 {
     process_result_i((*relation_p).import_hustle(decode_c_str(name_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_export_hustle(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     name_p: *const c_char,
-    err_p: *mut String,
 ) -> i32 {
     process_result_i((*relation_p).export_hustle(decode_c_str(name_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_import_csv(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     filename_p: *const c_char,
-    err_p: *mut String,
 ) -> i32 {
     process_result_i((*relation_p).import_csv(decode_c_str(filename_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_export_csv(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     filename_p: *const c_char,
-    err_p: *mut String,
 ) -> i32 {
     process_result_i((*relation_p).export_csv(decode_c_str(filename_p)), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_aggregate(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     agg_col_name_p: *const c_char,
     group_by_col_names_p: *const *const c_char,
     n_group_by: u32,
     agg_func_p: *const c_char,
-    err_p: *mut String,
 ) -> *const c_void {
     let agg_col_name = decode_c_str(agg_col_name_p);
     let group_by_col_names = decode_c_str_list(group_by_col_names_p, n_group_by);
@@ -179,10 +179,10 @@ pub unsafe extern "C" fn ffi_aggregate(
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_insert(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     value_strings_p: *const *const c_char,
     n_values: u32,
-    err_p: *mut String,
 ) -> i32 {
     process_result_i(
         (*relation_p).insert(decode_c_str_list(value_strings_p, n_values)),
@@ -192,36 +192,36 @@ pub unsafe extern "C" fn ffi_insert(
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_join(
+    err_p: *mut String,
     relation1_p: *const ImmediateRelation,
     relation2_p: *const ImmediateRelation,
-    err_p: *mut String,
 ) -> *const c_void {
     process_result_p((*relation1_p).join(&*relation2_p), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_limit(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     limit: u32,
-    err_p: *mut String,
 ) -> *const c_void {
     process_result_p((*relation_p).limit(limit), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_print(
-    relation_p: *const ImmediateRelation,
     err_p: *mut String,
+    relation_p: *const ImmediateRelation,
 ) -> i32 {
     process_result_i((*relation_p).print(), err_p)
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_project(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     col_names_p: *const *const c_char,
     n_cols: u32,
-    err_p: *mut String,
 ) -> *const c_void {
     let col_names = decode_c_str_list(col_names_p, n_cols);
     process_result_p((*relation_p).project(col_names), err_p)
@@ -229,9 +229,9 @@ pub unsafe extern "C" fn ffi_project(
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_select(
+    err_p: *mut String,
     relation_p: *const ImmediateRelation,
     predicate_p: *const c_char,
-    err_p: *mut String,
 ) -> *const c_void {
     let predicate = decode_c_str(predicate_p);
     process_result_p((*relation_p).select(predicate), err_p)

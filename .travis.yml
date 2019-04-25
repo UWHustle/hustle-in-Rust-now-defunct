@@ -44,6 +44,9 @@ env:
 #  - compiler: gcc
 #    env: BUILD_TYPE=Debug VECTOR_COPY_ELISION_LEVEL=selection
 
+python:
+  - "3.6"
+
 install:
 - export TEST_JOBS=2;
 - if [ "$CC" = "gcc" ]; then
@@ -57,6 +60,7 @@ install:
 - export DEBUG_FLAGS="-g0";
 - export RELEASE_FLAGS="-O0 -DNDEBUG";
 - export LINKER_FLAGS="-s"
+- sudo pip3 install -r requirements.txt
 
 before_script:
 - curl https://sh.rustup.rs -sSf | sh -s -- -y
@@ -82,21 +86,13 @@ before_script:
   -D ENABLE_COMPARISON_INLINE_EXPANSION=OFF ..)
 
 script:
-- python --version
-- python3 --version
-- python3.6 --version
-- echo $PATH
 - (cd build && make)
 - (cd build && ctest --output-on-failure -E NetworkUtil_unittest -j$TEST_JOBS)
-
-python:
-- "3.6"
 
 after_failure:
 - df -h
 - free -m
 - dmesg
-
 
 addons:
   apt:
@@ -118,6 +114,8 @@ addons:
     - cmake
     - flex
     - bison
+    - python3
+    - python3-pip
 
 cache:
   apt: true

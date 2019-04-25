@@ -38,6 +38,6 @@ add_subdirectory(parser)
 add_subdirectory(cli)
 
 add_test(end_to_end_tests bash ${CMAKE_CURRENT_SOURCE_DIR}/full_stack_tests/script.sh)
-add_test(python_api_tests python3.6 ${CMAKE_CURRENT_SOURCE_DIR}/python/tests.py)
+add_test(python_api_tests python3 ${CMAKE_CURRENT_SOURCE_DIR}/python/tests.py)
 
 set_target_properties(cli PROPERTIES OUTPUT_NAME ${PROJECT_NAME} RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

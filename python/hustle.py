@@ -3,12 +3,20 @@ import ctypes.util
 from ctypes import c_void_p, c_uint32, c_ubyte, c_char_p, c_int
 import numpy
 from os.path import *
+from sys import platform
+
+if platform == 'linux':
+    dy_lib_ext = '.so'
+elif platform == 'darwin':
+    dy_lib_ext = '.dylib'
+else:
+    raise OSError('unsupported platform ' + platform)
 
 lib_path = ctypes.util.find_library('execution')
 if lib_path is None:
     script_dir = dirname(realpath(__file__))
     lib_path = join(
-        script_dir, pardir, 'build', 'execution', 'libexecution.dylib')
+        script_dir, pardir, 'build', 'execution', 'libexecution' + dy_lib_ext)
 ffi = ctypes.cdll.LoadLibrary(lib_path)
 if ffi is None:
     raise FileNotFoundError('unable to find Hustle dylib')
@@ -494,7 +502,7 @@ def _run_ffi_p(function, err_p, *args):
     is zero/null.
     """
     function.restype = c_void_p
-    output = c_void_p(function(*args, err_p))
+    output = c_void_p(function(err_p, *args))
     if output.value is None:
         raise RuntimeError(_get_err_str(err_p))
     return output
@@ -507,7 +515,7 @@ def _run_ffi_i(function, err_p, *args):
     An error is assumed to have occurred if the returned value is nonzero.
     """
     function.restype = c_int
-    code = c_int(function(*args, err_p))
+    code = c_int(function(err_p, *args))
     if code.value != 0:
         raise RuntimeError(_get_err_str(err_p))
 
