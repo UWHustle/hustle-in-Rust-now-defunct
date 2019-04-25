@@ -17,6 +17,14 @@ impl Schema {
     pub fn get_row_size(&self) -> usize {
         self.columns.iter().map(|s| s.get_size()).sum::<usize>()
     }
+
+    pub fn to_size_vec(&self) -> Vec<usize> {
+        let mut output: Vec<usize> = vec![];
+        for column in self.columns {
+            output.push(column.get_size());
+        }
+        output
+    }
 }
 
 #[cfg(test)]
