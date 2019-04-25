@@ -167,6 +167,11 @@ impl<'a> RecordBlock<'a> {
         self.block.update(left_bound, value);
     }
 
+    /// Returns the number of rows in the block.
+    pub fn len(&self) -> usize {
+        self.block.len() / self.row_size
+    }
+
     /// Returns the left and right bounds in the block for the specified `row` and `col`.
     fn bounds_for_row_col(&self, row: usize, col: usize) -> Option<(usize, usize)> {
         if row < self.n_rows && col < self.column_offsets.len() - 1 {
