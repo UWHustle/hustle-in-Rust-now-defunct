@@ -50,10 +50,6 @@ impl Relation {
         }
     }
 
-    pub fn get_n_rows(&self, storage_manager: &StorageManager) -> usize {
-        self.get_total_size(storage_manager) / self.get_row_size()
-    }
-
     pub fn column_from_name(&self, name: &str) -> Result<Column, String> {
         for column in self.get_columns() {
             if name == column.get_name() {
