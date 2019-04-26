@@ -106,16 +106,15 @@ impl Operator for Aggregate {
         }
 
         // A HashMap mapping group by values to aggregations for that grouping
-        let mut group_by: HashMap<Vec<BorrowedBuffer>, Box<AggregationTrait>> = HashMap::new();
+        let mut group_by: HashMap<Vec<&[u8]>, Box<AggregationTrait>> = HashMap::new();
 
         for in_block in in_record.blocks() {
             for row_i in 0..in_block.len() {
                 // Determine whether we've seen the current combination of group by values
                 let mut group_buffs = vec![];
                 for col_i in group_cols_i {
-                    let data = in_block.get_row_col(row_i, col_i).unwrap();
-                    let data_type = in_schema.get_columns()[col_i].data_type();
-                    group_buffs.push(BorrowedBuffer::new(data, data_type, false));
+                    // Caution: this just checks the slice and doesn't have logic for null handling
+                    group_buffs.push(in_block.get_row_col(row_i, col_i).unwrap());
                 }
                 if !group_by.contains_key(&group_buffs) {
                     let mut aggregation = self.aggregation.box_clone_aggregation();
@@ -142,7 +141,7 @@ impl Operator for Aggregate {
                     );
                 } else {
                     storage_manager
-                        .append(self.output_relation.get_name(), group_buffs[group_i].data());
+                        .append(self.output_relation.get_name(), group_buffs[group_i]);
                     group_i += 1;
                 }
             }

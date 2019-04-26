@@ -1,7 +1,6 @@
 use super::*;
 
 /// Value is stored in a buffer with another owner - we just have a reference
-#[derive(PartialEq, Eq, Hash)]
 pub struct BorrowedBuffer<'a> {
     data: &'a [u8],
     data_type: DataType,
