@@ -84,8 +84,8 @@ class HustlePythonTests(unittest.TestCase):
         self.test_relation.import_csv('U.csv')
         actual = self.test_relation.to_numpy()
         self.assertTrue(numpy.array_equal(expected, actual))
-        self.assertTrue(os.path.isfile('T.csv'))
-        self.assertTrue(os.path.getsize('T.csv') > 0)
+        self.assertTrue(os.path.isfile('U.csv'))
+        self.assertTrue(os.path.getsize('U.csv') > 0)
 
     def test_simple_aggregate(self):
         aggregate = self.test_relation.aggregate('a', [], 'avg')
