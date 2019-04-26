@@ -7,8 +7,8 @@ pub struct Column {
 }
 
 impl Column {
-    pub fn new(name: String, data_type: DataType) -> Self {
-        Column { name, data_type }
+    pub fn new(name: &str, data_type: DataType) -> Self {
+        Column { name: String::from(name), data_type }
     }
 
     pub fn get_name(&self) -> &str {

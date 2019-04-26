@@ -48,7 +48,7 @@ fn hustle_sum_group_by(relation: Relation) -> Relation {
     let aggregate_op = Aggregate::new(
         project_node.get_output_relation(),
         col.clone(),
-        vec![],
+        vec![col.clone()],
         Box::new(Sum::new(col.data_type())),
     );
     Node::new(Rc::new(aggregate_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())

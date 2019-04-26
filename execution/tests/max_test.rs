@@ -45,7 +45,7 @@ fn hustle_max(relation: Relation, agg_col: Column) -> Relation {
     let agg_op = Aggregate::new(
         project_node.get_output_relation(),
         agg_col.clone(),
-        vec![],
+        vec![agg_col.clone()],
         Box::new(Max::new(agg_col.data_type())),
     );
     Node::new(Rc::new(agg_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())

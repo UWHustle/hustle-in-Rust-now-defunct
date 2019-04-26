@@ -46,7 +46,7 @@ impl HustleConnection {
         let mut columns: Vec<Column> = vec![];
         for i in 0..col_names.len() {
             let data_type = DataType::from_str(col_type_names[i])?;
-            columns.push(Column::new(String::from(col_names[i]), data_type));
+            columns.push(Column::new(col_names[i], data_type));
         }
         let schema = Schema::new(columns);
         let name = self.storage_manager.put_anon(&vec![]);
@@ -140,20 +140,23 @@ impl<'a> ImmediateRelation<'a> {
         group_by_col_names: Vec<&str>,
         agg_name: &str,
     ) -> Result<Self, String> {
-        let agg_col = self.relation.column_from_name(agg_col_name)?;
+        let agg_col_in = self.relation.column_from_name(agg_col_name)?;
+        let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
+
         let group_by_cols = self
             .relation
             .columns_from_names(group_by_col_names.clone())?;
-
-        let mut project_col_names = group_by_col_names.clone();
-        project_col_names.push(agg_col_name);
-        let projected = self.project(project_col_names)?;
+        let mut output_col_names = vec![];
+        output_col_names.push(agg_out_name);
+        for col in group_by_cols {
+            output_col_names.push(col.get_name().to_string());
+        }
 
         let agg_op = Aggregate::from_str(
-            projected.relation.clone(),
-            agg_col.clone(),
-            group_by_cols,
-            agg_col.data_type(),
+            self.relation.clone(),
+            agg_col_in,
+            &agg_out_name,
+            output_col_names,
             agg_name,
         )?;
         let output = ImmediateRelation {
