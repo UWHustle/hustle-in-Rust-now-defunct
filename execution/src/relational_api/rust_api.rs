@@ -13,7 +13,6 @@ use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
-use storage::storage_manager;
 use type_system::data_type::DataType;
 use type_system::operators::*;
 use type_system::Value;
@@ -97,28 +96,67 @@ impl<'a> ImmediateRelation<'a> {
         }
     }
 
-    pub fn get_data(&self) -> Option<storage_manager::Value> {
-        self.storage_manager.get(self.relation.get_name())
+    pub fn get_data(&self) -> Option<Vec<u8>> {
+        let schema = self.relation.get_schema();
+        let record = self
+            .storage_manager
+            .get_with_schema(self.relation.get_name(), &schema.to_size_vec())?;
+
+        let mut output: Vec<u8> = vec![];
+        for block in record.blocks() {
+            for row_i in 0..block.len() {
+                for data in block.get_row(row_i).unwrap() {
+                    output.extend_from_slice(data);
+                }
+            }
+        }
+
+        Some(output)
     }
 
     /// Replaces current data in the relation with data from the Hustle file
+    ///
+    /// The schema is assumed to match that of the current ImmediateRelation
     /// TODO: Pull schema from the catalog
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
-        let import_relation = Relation::new(name, self.relation.get_schema().clone());
-        match self.storage_manager.get(import_relation.get_name()) {
-            Some(data) => {
-                self.storage_manager.put(self.relation.get_name(), &data);
-                Ok(())
+        let schema = self.relation.get_schema();
+        let import_record = match self
+            .storage_manager
+            .get_with_schema(name, &schema.to_size_vec())
+        {
+            Some(record) => record,
+            None => return Err(format!("relation {} not found in storage manager", name)),
+        };
+
+        self.storage_manager.delete(self.relation.get_name());
+        for block in import_record.blocks() {
+            for row_i in 0..block.len() {
+                for data in block.get_row(row_i).unwrap() {
+                    self.storage_manager.append(self.relation.get_name(), data);
+                }
             }
-            None => Err(format!("relation {} not found in storage manager", name)),
         }
+
+        Ok(())
     }
 
     pub fn export_hustle(&self, name: &str) -> Result<(), String> {
-        match self.storage_manager.get(self.relation.get_name()) {
-            Some(data) => Ok(self.storage_manager.put(name, &data)),
-            None => Err(format!("relation {} not found in storage manager", name)),
+        let schema = self.relation.get_schema();
+        let record = self
+            .storage_manager
+            .get_with_schema(self.relation.get_name(), &schema.to_size_vec())
+            .unwrap();
+
+        self.storage_manager.delete(name);
+        for block in record.blocks() {
+            for row_i in 0..block.len() {
+                for data in block.get_row(row_i).unwrap() {
+                    self.storage_manager.append(name, data);
+                }
+            }
         }
+
+        Ok(())
     }
 
     /// Replaces current data in the relation with data from the CSV file
