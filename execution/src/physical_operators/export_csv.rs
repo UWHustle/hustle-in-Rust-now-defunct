@@ -28,17 +28,10 @@ impl Operator for ExportCsv {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let schema = self.relation.get_schema();
-        let record = match storage_manager
+        let record = storage_manager
             .get_with_schema(self.relation.get_name(), &schema.to_size_vec())
-        {
-            Some(data) => data,
-            None => {
-                return Err(format!(
-                    "relation {} not found in storage manager",
-                    self.relation.get_name()
-                ));
-            }
-        };
+            .unwrap();
+
         let mut writer = match csv::Writer::from_path(&self.file_name) {
             Ok(val) => val,
             Err(_err) => {
