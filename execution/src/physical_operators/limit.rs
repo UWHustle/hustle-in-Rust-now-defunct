@@ -41,8 +41,7 @@ impl Operator for Limit {
                 if n_rows >= self.limit {
                     return Ok(self.get_target_relation());
                 }
-                for col_i in 0..in_schema.get_columns().len() {
-                    let data = in_block.get_row_col(row_i, col_i).unwrap();
+                for data in in_block.get_row(row_i).unwrap() {
                     storage_manager.append(self.output_relation.get_name(), data);
                 }
                 n_rows += 1;
