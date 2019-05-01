@@ -85,7 +85,8 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
         &agg_out_name,
         output_col_names,
         agg_name,
-    ).unwrap();
+    )
+    .unwrap();
     Node::new(Rc::new(agg_op), vec![Rc::new(input)])
 }
 
