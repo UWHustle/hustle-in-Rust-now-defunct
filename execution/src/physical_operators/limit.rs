@@ -30,9 +30,9 @@ impl Operator for Limit {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let in_schema = self.input_relation.get_schema();
+        let in_schema_sizes = self.input_relation.get_schema().to_size_vec();
         let in_record = storage_manager
-            .get_with_schema(self.input_relation.get_name(), &in_schema.to_size_vec())
+            .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
             .unwrap();
 
         let mut n_rows = 0;

@@ -20,7 +20,7 @@ impl Schema {
 
     pub fn to_size_vec(&self) -> Vec<usize> {
         let mut output: Vec<usize> = vec![];
-        for column in self.columns {
+        for column in &self.columns {
             output.push(column.get_size());
         }
         output

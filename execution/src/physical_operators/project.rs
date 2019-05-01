@@ -45,8 +45,9 @@ impl Operator for Project {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let in_schema = self.input_relation.get_schema();
+        let in_schema_sizes = in_schema.to_size_vec();
         let in_record = storage_manager
-            .get_with_schema(self.input_relation.get_name(), &in_schema.to_size_vec())
+            .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
             .unwrap();
         let out_schema = self.output_relation.get_schema();
 
@@ -56,7 +57,7 @@ impl Operator for Project {
             let i = in_schema
                 .get_columns()
                 .iter()
-                .position(|&x| &x == col)
+                .position(|x| x == col)
                 .unwrap();
             out_cols_i.push(i);
         }

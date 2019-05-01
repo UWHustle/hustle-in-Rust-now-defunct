@@ -34,12 +34,14 @@ impl Operator for Join {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let l_schema = self.relation_l.get_schema();
+        let l_schema_sizes = l_schema.to_size_vec();
         let l_record = storage_manager
-            .get_with_schema(self.relation_l.get_name(), &l_schema.to_size_vec())
+            .get_with_schema(self.relation_l.get_name(), &l_schema_sizes)
             .unwrap();
         let r_schema = self.relation_l.get_schema();
+        let r_schema_sizes = r_schema.to_size_vec();
         let r_record = storage_manager
-            .get_with_schema(self.relation_r.get_name(), &r_schema.to_size_vec())
+            .get_with_schema(self.relation_r.get_name(), &r_schema_sizes)
             .unwrap();
 
         // Simple Cartesian product

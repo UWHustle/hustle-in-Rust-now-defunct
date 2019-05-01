@@ -28,8 +28,9 @@ impl Operator for ExportCsv {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let schema = self.relation.get_schema();
+        let schema_sizes = schema.to_size_vec();
         let record = storage_manager
-            .get_with_schema(self.relation.get_name(), &schema.to_size_vec())
+            .get_with_schema(self.relation.get_name(), &schema_sizes)
             .unwrap();
 
         let mut writer = match csv::Writer::from_path(&self.file_name) {

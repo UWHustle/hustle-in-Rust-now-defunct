@@ -97,10 +97,10 @@ impl<'a> ImmediateRelation<'a> {
     }
 
     pub fn get_data(&self) -> Option<Vec<u8>> {
-        let schema = self.relation.get_schema();
+        let schema_sizes = self.relation.get_schema().to_size_vec();
         let record = self
             .storage_manager
-            .get_with_schema(self.relation.get_name(), &schema.to_size_vec())?;
+            .get_with_schema(self.relation.get_name(), &schema_sizes)?;
 
         let mut output: Vec<u8> = vec![];
         for block in record.blocks() {
@@ -119,11 +119,8 @@ impl<'a> ImmediateRelation<'a> {
     /// The schema is assumed to match that of the current ImmediateRelation
     /// TODO: Pull schema from the catalog
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
-        let schema = self.relation.get_schema();
-        let import_record = match self
-            .storage_manager
-            .get_with_schema(name, &schema.to_size_vec())
-        {
+        let schema_sizes = self.relation.get_schema().to_size_vec();
+        let import_record = match self.storage_manager.get_with_schema(name, &schema_sizes) {
             Some(record) => record,
             None => return Err(format!("relation {} not found in storage manager", name)),
         };
@@ -141,10 +138,10 @@ impl<'a> ImmediateRelation<'a> {
     }
 
     pub fn export_hustle(&self, name: &str) -> Result<(), String> {
-        let schema = self.relation.get_schema();
+        let schema_sizes = self.relation.get_schema().to_size_vec();
         let record = self
             .storage_manager
-            .get_with_schema(self.relation.get_name(), &schema.to_size_vec())
+            .get_with_schema(self.relation.get_name(), &schema_sizes)
             .unwrap();
 
         self.storage_manager.delete(name);
@@ -185,7 +182,7 @@ impl<'a> ImmediateRelation<'a> {
             .relation
             .columns_from_names(group_by_col_names.clone())?;
         let mut output_col_names = vec![];
-        output_col_names.push(agg_out_name);
+        output_col_names.push(agg_out_name.clone());
         for col in group_by_cols {
             output_col_names.push(col.get_name().to_string());
         }

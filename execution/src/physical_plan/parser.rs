@@ -77,7 +77,7 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
     let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
 
     let mut output_col_names = parse_column_names(&json["grouping_expressions"]);
-    output_col_names.push(agg_out_name);
+    output_col_names.push(agg_out_name.clone());
 
     let agg_op = Aggregate::from_str(
         input.get_output_relation(),
@@ -189,15 +189,15 @@ fn parse_column_names(json: &serde_json::Value) -> Vec<String> {
 
 fn parse_column(json: &serde_json::Value) -> Column {
     Column::new(
-        parse_column_name(json),
+        &parse_column_name(json),
         DataType::from_str(&json["type"].as_str().unwrap()).unwrap(),
     )
 }
 
-fn parse_column_name(json: &serde_json::Value) -> &str {
-    let mut name = &json["name"].as_str().unwrap();
+fn parse_column_name(json: &serde_json::Value) -> String {
+    let mut name = get_string(&json["name"]);
     if name.len() == 0 {
-        name = &json["alias"].as_str().unwrap();
+        name = get_string(&json["alias"]);
     }
     name
 }
