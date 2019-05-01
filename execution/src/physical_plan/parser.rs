@@ -218,15 +218,11 @@ fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
 
 fn parse_limit(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
-    let limit = get_int(&json["limit"]);
+    let limit = json.as_str().unwrap().parse::<usize>().unwrap();
     let limit_operator = Limit::new(input.get_output_relation(), limit);
     Node::new(Rc::new(limit_operator), vec![Rc::new(input)])
 }
 
 fn get_string(json: &serde_json::Value) -> String {
     json.as_str().unwrap().to_string()
-}
-
-fn get_int(json: &serde_json::Value) -> u32 {
-    json.as_str().unwrap().to_string().parse::<u32>().unwrap()
 }

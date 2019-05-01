@@ -188,7 +188,7 @@ impl<'a> ImmediateRelation<'a> {
         Ok(output)
     }
 
-    pub fn limit(&self, limit: u32) -> Result<Self, String> {
+    pub fn limit(&self, limit: usize) -> Result<Self, String> {
         let limit_op = Limit::new(self.relation.clone(), limit);
         let output = ImmediateRelation {
             relation: limit_op.execute(self.storage_manager)?,

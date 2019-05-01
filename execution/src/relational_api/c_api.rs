@@ -205,7 +205,7 @@ pub unsafe extern "C" fn ffi_limit(
     relation_p: *const ImmediateRelation,
     limit: u32,
 ) -> *const c_void {
-    process_result_p((*relation_p).limit(limit), err_p)
+    process_result_p((*relation_p).limit(limit as usize), err_p)
 }
 
 #[no_mangle]
