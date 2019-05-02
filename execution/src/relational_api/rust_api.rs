@@ -177,6 +177,8 @@ impl<'a> ImmediateRelation<'a> {
     ) -> Result<Self, String> {
         let agg_col_in = self.relation.column_from_name(agg_col_name)?;
         let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
+        let agg_out_type = agg_col_in.data_type();
+        let agg_col_out = Column::new(&agg_out_name, agg_out_type);
 
         let group_by_cols = self
             .relation
@@ -190,7 +192,7 @@ impl<'a> ImmediateRelation<'a> {
         let agg_op = Aggregate::from_str(
             self.relation.clone(),
             agg_col_in,
-            &agg_out_name,
+            agg_col_out,
             output_col_names,
             agg_name,
         )?;

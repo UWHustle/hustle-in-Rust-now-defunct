@@ -46,10 +46,14 @@ impl Operator for Project {
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let in_schema = self.input_relation.get_schema();
         let in_schema_sizes = in_schema.to_size_vec();
-        let in_record = storage_manager
+        let in_record = match storage_manager
             .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
-            .unwrap();
+        {
+            Some(record) => record,
+            None => return Ok(self.get_target_relation()),
+        };
         let out_schema = self.output_relation.get_schema();
+        storage_manager.delete(self.output_relation.get_name());
 
         // Indices of the output columns in the input relation
         let mut out_cols_i = vec![];

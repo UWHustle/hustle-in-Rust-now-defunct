@@ -27,14 +27,13 @@ impl Aggregate {
     pub fn new(
         input_relation: Relation,
         agg_col_in: Column,
-        agg_out_name: &str,
+        agg_col_out: Column,
         output_col_names: Vec<String>,
         aggregation: Box<AggregationTrait>,
     ) -> Self {
-        let agg_col_out = Column::new(agg_out_name, aggregation.output_type());
         let mut output_cols: Vec<Column> = vec![];
         for col_str in output_col_names {
-            if col_str == agg_out_name {
+            if col_str == agg_col_out.get_name() {
                 output_cols.push(agg_col_out.clone());
             } else {
                 for col in input_relation.get_columns() {
@@ -59,22 +58,22 @@ impl Aggregate {
     pub fn from_str(
         input_relation: Relation,
         agg_col_in: Column,
-        agg_out_name: &str,
+        agg_col_out: Column,
         output_col_names: Vec<String>,
         agg_name: &str,
     ) -> Result<Self, String> {
         let aggregation: Box<AggregationTrait> = match agg_name.to_lowercase().as_str() {
-            "avg" => Box::new(Avg::new(agg_col_in.data_type())),
-            "count" => Box::new(Count::new(agg_col_in.data_type())),
-            "max" => Box::new(Max::new(agg_col_in.data_type())),
-            "min" => Box::new(Min::new(agg_col_in.data_type())),
-            "sum" => Box::new(Sum::new(agg_col_in.data_type())),
+            "avg" => Box::new(Avg::new(agg_col_out.data_type())),
+            "count" => Box::new(Count::new(agg_col_out.data_type())),
+            "max" => Box::new(Max::new(agg_col_out.data_type())),
+            "min" => Box::new(Min::new(agg_col_out.data_type())),
+            "sum" => Box::new(Sum::new(agg_col_out.data_type())),
             _ => return Err(format!("Unknown aggregate function {}", agg_name)),
         };
         Ok(Self::new(
             input_relation,
             agg_col_in,
-            agg_out_name,
+            agg_col_out,
             output_col_names,
             aggregation,
         ))
@@ -93,6 +92,7 @@ impl Operator for Aggregate {
             .get_with_schema(self.input_relation.get_name(), &schema_sizes)
             .unwrap();
         let out_schema = self.output_relation.get_schema();
+        storage_manager.delete(self.output_relation.get_name());
 
         // Indices of the group by and aggregate columns in the input relation
         let mut group_cols_i = vec![];

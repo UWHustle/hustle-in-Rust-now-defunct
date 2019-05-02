@@ -22,17 +22,19 @@ impl Operator for Print {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let schema = self.relation.get_schema();
-        let schema_sizes = schema.to_size_vec();
-        let record = storage_manager
-            .get_with_schema(self.relation.get_name(), &schema_sizes)
-            .unwrap();
-
         let width = 5;
 
         for column in schema.get_columns() {
             print!("|{value:>width$}", value = column.get_name(), width = width);
         }
         println!("|");
+
+        let schema_sizes = schema.to_size_vec();
+        let record = match storage_manager.get_with_schema(self.relation.get_name(), &schema_sizes)
+        {
+            Some(record) => record,
+            None => return Ok(self.get_target_relation()),
+        };
 
         for block in record.blocks() {
             for row_i in 0..block.len() {
@@ -46,6 +48,7 @@ impl Operator for Print {
                         width = width
                     );
                 }
+                println!("|");
             }
         }
 

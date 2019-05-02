@@ -43,18 +43,22 @@ impl Operator for Join {
         let r_record = storage_manager
             .get_with_schema(self.relation_r.get_name(), &r_schema_sizes)
             .unwrap();
+        storage_manager.delete(self.output_relation.get_name());
 
         // Simple Cartesian product
         for l_block in l_record.blocks() {
             for l_row_i in 0..l_block.len() {
                 for r_block in r_record.blocks() {
                     for r_row_i in 0..r_block.len() {
+                        println!("Appending row to output...");
                         for col_i in 0..l_schema.get_columns().len() {
                             let data = l_block.get_row_col(l_row_i, col_i).unwrap();
+                            println!("Appending value...");
                             storage_manager.append(self.output_relation.get_name(), data);
                         }
                         for col_i in 0..r_schema.get_columns().len() {
                             let data = r_block.get_row_col(r_row_i, col_i).unwrap();
+                            println!("Appending value...");
                             storage_manager.append(self.output_relation.get_name(), data);
                         }
                     }

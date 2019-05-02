@@ -27,12 +27,13 @@ pub fn parse(string_plan: &str) -> Node {
     let json: serde_json::Value = serde_json::from_str(string_plan).unwrap();
     let root_node = parse_node(&json["plan"]);
 
-    // We only want to print for a selection
-    if &json["plan"]["json_name"] == "Selection" {
-        let print_op = Print::new(root_node.get_output_relation());
-        Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
-    } else {
-        root_node
+    let json_name = json["plan"]["json_name"].as_str().unwrap();
+    match json_name {
+        "Selection" | "HashJoin" | "NestedLoopsJoin" => {
+            let print_op = Print::new(root_node.get_output_relation());
+            Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
+        }
+        _ => root_node,
     }
 }
 
@@ -42,7 +43,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
         "TableReference" => parse_table_reference(json),
         "Selection" => parse_selection(json),
         "Aggregate" => parse_aggregate(json),
-        "HashJoin" => parse_hash_join(json),
+        "HashJoin" | "NestedLoopsJoin" => parse_join(json),
         "Limit" => parse_limit(json),
         "InsertTuple" => parse_insert_tuple(json),
         "CreateTable" => parse_create_table(json),
@@ -51,8 +52,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
     }
 }
 
-/// Always computes the cross join; unfortunately parser/optimizer require an "ON" clause
-fn parse_hash_join(json: &serde_json::Value) -> Node {
+fn parse_join(json: &serde_json::Value) -> Node {
     let left = parse_node(&json["left"]);
     let right = parse_node(&json["right"]);
 
@@ -71,18 +71,26 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
         .as_array()
         .unwrap()
         .get(0)
-        .unwrap()["aggregate_function"];
-    let agg_col_in = parse_column(&agg_json["array"].get(0).unwrap()["type"]);
-    let agg_name = agg_json["function"].as_str().unwrap();
-    let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
+        .unwrap();
 
+    let agg_col_in = parse_column(
+        &agg_json["aggregate_function"]["array"]
+            .as_array()
+            .unwrap()
+            .get(0)
+            .unwrap(),
+    );
+    let agg_name = agg_json["aggregate_function"]["function"].as_str().unwrap();
+    let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
+    let agg_out_type = DataType::from_str(&agg_json["type"].as_str().unwrap()).unwrap();
+    let agg_col_out = Column::new(&agg_out_name, agg_out_type);
     let mut output_col_names = parse_column_names(&json["grouping_expressions"]);
     output_col_names.push(agg_out_name.clone());
 
     let agg_op = Aggregate::from_str(
         input.get_output_relation(),
         agg_col_in,
-        &agg_out_name,
+        agg_col_out,
         output_col_names,
         agg_name,
     )
@@ -218,7 +226,7 @@ fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
 
 fn parse_limit(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
-    let limit = json.as_str().unwrap().parse::<usize>().unwrap();
+    let limit = json["limit"].as_str().unwrap().parse::<usize>().unwrap();
     let limit_operator = Limit::new(input.get_output_relation(), limit);
     Node::new(Rc::new(limit_operator), vec![Rc::new(input)])
 }
