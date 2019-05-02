@@ -35,8 +35,8 @@ mod tests {
 
     #[test]
     fn schema_create() {
-        let a = Column::new("a".to_string(), DataType::new(Variant::Int4, true));
-        let b = Column::new("b".to_string(), DataType::new(Variant::Int4, true));
+        let a = Column::new("a", DataType::new(Variant::Int4, true));
+        let b = Column::new("b", DataType::new(Variant::Int4, true));
         let schema = Schema::new(vec![a.clone(), b.clone()]);
 
         assert_eq!(

@@ -5,9 +5,9 @@ use execution::logical_entities::predicates::comparison::*;
 use execution::logical_entities::predicates::Predicate;
 use execution::logical_entities::relation::Relation;
 use execution::physical_operators::project::Project;
-use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_plan::node::Node;
 use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
+use execution::test_helpers::select_sum::SelectSum;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::data_type::*;
 use execution::type_system::integer::*;
@@ -31,7 +31,7 @@ fn sum_column_hustle(relation: Relation, column: Column) -> u128 {
 #[test]
 fn test_project_predicate() {
     let relation = generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, false);
-    let project_col = Column::new(String::from("a"), DataType::new(Variant::Int4, true));
+    let project_col = Column::new("a", DataType::new(Variant::Int4, true));
     let predicate = Comparison::new(
         project_col.clone(),
         Comparator::Less,

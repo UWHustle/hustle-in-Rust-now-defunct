@@ -35,8 +35,8 @@ mod tests {
     #[test]
     fn column_create() {
         let data_type = DataType::new(Variant::Int4, true);
-        let column = Column::new("test".to_string(), data_type.clone());
-        assert_eq!(column.get_name(), &"test".to_string());
+        let column = Column::new("test", data_type.clone());
+        assert_eq!(column.get_name(), "test");
         assert_eq!(column.get_size(), data_type.size());
     }
 }

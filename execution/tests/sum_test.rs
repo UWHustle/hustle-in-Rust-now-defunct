@@ -5,9 +5,9 @@ use execution::logical_entities::column::Column;
 use execution::logical_entities::relation::Relation;
 use execution::physical_operators::aggregate::Aggregate;
 use execution::physical_operators::project::Project;
-use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_plan::node::Node;
 use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
+use execution::test_helpers::select_sum::SelectSum;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
 use execution::type_system::data_type::*;
 
@@ -42,10 +42,12 @@ fn sum_column_hustle(relation: Relation, column_name: &str) -> u128 {
 fn hustle_sum(relation: Relation, agg_col: Column) -> Relation {
     let project_op = Project::pure_project(relation, vec![agg_col.clone()]);
     let project_node = Node::new(Rc::new(project_op), vec![]);
+    let agg_col_name = format!("SUM({})", agg_col.get_name());
     let agg_op = Aggregate::new(
         project_node.get_output_relation(),
         agg_col.clone(),
-        vec![agg_col.clone()],
+        &agg_col_name,
+        vec![agg_col_name.clone()],
         Box::new(Sum::new(agg_col.data_type())),
     );
     Node::new(Rc::new(agg_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())
