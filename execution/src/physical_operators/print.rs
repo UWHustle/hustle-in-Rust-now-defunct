@@ -30,11 +30,9 @@ impl Operator for Print {
         println!("|");
 
         let schema_sizes = schema.to_size_vec();
-        let record = match storage_manager.get_with_schema(self.relation.get_name(), &schema_sizes)
-        {
-            Some(record) => record,
-            None => return Ok(self.get_target_relation()),
-        };
+        let record = storage_manager
+            .get_with_schema(self.relation.get_name(), &schema_sizes)
+            .unwrap();
 
         for block in record.blocks() {
             for row_i in 0..block.len() {
