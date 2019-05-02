@@ -320,7 +320,7 @@ impl StorageManager {
         if value.is_empty() {
             self.buffer.write(&Self::key_for_block(key, 0), value);
         } else {
-            let block_count = (value.len()  - 1) / BLOCK_SIZE + 1;
+            let block_count = (value.len() - 1) / BLOCK_SIZE + 1;
             for block_index in 0..block_count {
                 let key_for_block = Self::key_for_block(key, block_index);
                 let value_offset = block_index * BLOCK_SIZE;
@@ -407,24 +407,26 @@ impl StorageManager {
 
         // Extend the tail block for the specified key with the value, if it exists.
         if let Some(block) = self.buffer.get(&Self::key_for_block(key, tail_block_index)) {
-            let n_rows = (BLOCK_SIZE - block.len()) / row_size;
 
-            if n_rows > 0 {
+            let available_size = BLOCK_SIZE - block.len();
+            if available_size >= row_size {
                 // The tail block can be extended with the value.
-                let next_offset = offset + n_rows * row_size;
-                block.append(&value[offset..next_offset]);
-                offset = next_offset;
+                let size = min(available_size - available_size % row_size, value.len());
+                block.append(&value[offset..offset + size]);
+                offset += size;
             }
 
             tail_block_index += 1;
         }
 
         // Continue to extend, breaking the value up into blocks if necessary.
-        let rows_per_block = BLOCK_SIZE / row_size;
+        let available_size = BLOCK_SIZE - BLOCK_SIZE % row_size;
         while offset < value.len() {
-            let size = min(rows_per_block, value.len() - offset);
+            let size = min(available_size, value.len() - offset);
             let value_block = &value[offset..offset + size];
             self.buffer.write(&Self::key_for_block(key, tail_block_index), value_block);
+            tail_block_index += 1;
+            offset += size;
         }
 
         self.record_guard.unlock(key);
