@@ -1,5 +1,6 @@
 extern crate storage;
 extern crate memmap;
+extern crate core;
 
 #[cfg(test)]
 #[allow(unused_must_use)]
@@ -125,5 +126,27 @@ mod storage_manager_tests {
         sm.append("key_append", b"bb");
         assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
         sm.delete("key_append");
+    }
+
+    #[test]
+    fn extend() {
+        let sm = StorageManager::new();
+        sm.extend("key_extend", b"abc", 1);
+        assert_eq!(&sm.get("key_extend").unwrap().get_block(0).unwrap()[0..3], b"abc");
+        sm.extend("key_extend", b"def", 1);
+        assert_eq!(&sm.get("key_extend").unwrap().get_block(0).unwrap()[0..6], b"abcdef");
+        sm.delete("key_extend");
+    }
+
+    #[test]
+    fn len() {
+        let sm = StorageManager::new();
+        sm.put("key_len", b"");
+        assert_eq!(sm.get("key_len").unwrap().len(), 0);
+        sm.append("key_len", b"a");
+        assert_eq!(sm.get("key_len").unwrap().len(), 1);
+        sm.extend("key_len", b"aa", 1);
+        assert_eq!(sm.get("key_len").unwrap().len(), 3);
+        sm.delete("key_len");
     }
 }
