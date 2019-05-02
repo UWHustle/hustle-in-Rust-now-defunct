@@ -44,6 +44,7 @@ impl Operator for Join {
             .get_with_schema(self.relation_r.get_name(), &r_schema_sizes)
             .unwrap();
         storage_manager.delete(self.output_relation.get_name());
+        storage_manager.put(self.output_relation.get_name(), &[]);
 
         // Simple Cartesian product
         for l_block in l_record.blocks() {

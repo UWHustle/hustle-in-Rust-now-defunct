@@ -35,6 +35,7 @@ impl Operator for Limit {
             .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
             .unwrap();
         storage_manager.delete(self.output_relation.get_name());
+        storage_manager.put(self.output_relation.get_name(), &[]);
 
         let mut n_rows = 0;
         for in_block in in_record.blocks() {

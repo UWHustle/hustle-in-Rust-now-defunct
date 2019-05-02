@@ -51,6 +51,7 @@ impl Operator for Project {
             .unwrap();
         let out_schema = self.output_relation.get_schema();
         storage_manager.delete(self.output_relation.get_name());
+        storage_manager.put(self.output_relation.get_name(), &[]);
 
         // Indices of the output columns in the input relation
         let mut out_cols_i = vec![];

@@ -86,7 +86,11 @@ impl<'a> ImmediateRelation<'a> {
     pub fn copy_slice(&self, buffer: &[u8]) {
         let mut data: Vec<u8> = vec![0; buffer.len()];
         data.clone_from_slice(buffer);
-        self.storage_manager.put(self.relation.get_name(), &data);
+        self.storage_manager.extend(
+            self.relation.get_name(),
+            &data,
+            self.relation.get_schema().get_row_size(),
+        );
     }
 
     pub fn get_data_size(&self) -> usize {
@@ -97,21 +101,7 @@ impl<'a> ImmediateRelation<'a> {
     }
 
     pub fn get_data(&self) -> Option<Vec<u8>> {
-        let schema_sizes = self.relation.get_schema().to_size_vec();
-        let record = self
-            .storage_manager
-            .get_with_schema(self.relation.get_name(), &schema_sizes)?;
-
-        let mut output: Vec<u8> = vec![];
-        for block in record.blocks() {
-            for row_i in 0..block.len() {
-                for data in block.get_row(row_i).unwrap() {
-                    output.extend_from_slice(data);
-                }
-            }
-        }
-
-        Some(output)
+        self.storage_manager.get_concat(self.relation.get_name())
     }
 
     /// Replaces current data in the relation with data from the Hustle file

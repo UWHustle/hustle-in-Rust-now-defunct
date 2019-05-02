@@ -19,7 +19,7 @@ impl Operator for CreateTable {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        storage_manager.put(self.relation.get_name(), &vec![]);
+        storage_manager.put(self.relation.get_name(), &[]);
 
         Ok(self.get_target_relation())
     }

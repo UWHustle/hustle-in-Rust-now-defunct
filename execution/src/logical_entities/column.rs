@@ -1,6 +1,6 @@
 use type_system::data_type::*;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Hash)]
 pub struct Column {
     name: String,
     data_type: DataType,
@@ -26,6 +26,15 @@ impl Column {
         self.data_type.clone()
     }
 }
+
+// Column names are case insensitive
+impl PartialEq for Column {
+    fn eq(&self, other: &Column) -> bool {
+        self.name.to_lowercase() == other.name.to_lowercase() && self.data_type == other.data_type
+    }
+}
+
+impl Eq for Column {}
 
 #[cfg(test)]
 mod tests {
