@@ -27,40 +27,35 @@ impl Operator for ExportCsv {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let data = match storage_manager.get(self.relation.get_name()) {
-            Some(data) => data,
-            None => {
-                return Err(format!(
-                    "relation {} not found in storage manager",
-                    self.relation.get_name()
-                ))
-            }
-        };
+        let schema = self.relation.get_schema();
+        let schema_sizes = schema.to_size_vec();
+        let record = storage_manager
+            .get_with_schema(self.relation.get_name(), &schema_sizes)
+            .unwrap();
+
         let mut writer = match csv::Writer::from_path(&self.file_name) {
             Ok(val) => val,
             Err(_err) => {
                 return Err(String::from(format!(
                     "unable to open file '{}'",
                     self.file_name
-                )))
+                )));
             }
         };
 
-        let mut i = 0;
-        while i < data.len() {
-            let mut r = Vec::new();
-
-            for column in self.relation.get_columns() {
-                let data_type = column.data_type();
-                let value_length = data_type.size();
-                let buffer: BorrowedBuffer =
-                    BorrowedBuffer::new(&data[i..i + value_length], data_type.clone(), false);
-                r.push(buffer.marshall().to_string());
-                i += value_length;
+        for block in record.blocks() {
+            for row_i in 0..block.len() {
+                let mut values: Vec<String> = vec![];
+                for col_i in 0..schema.get_columns().len() {
+                    let data = block.get_row_col(row_i, col_i).unwrap();
+                    let data_type = schema.get_columns()[col_i].data_type();
+                    let buff = BorrowedBuffer::new(&data, data_type, false);
+                    values.push(buff.marshall().to_string())
+                }
+                writer.write_record(&values).unwrap();
             }
-            writer.write_record(&r).unwrap();
+            writer.flush().unwrap()
         }
-        writer.flush().unwrap();
 
         Ok(self.get_target_relation())
     }

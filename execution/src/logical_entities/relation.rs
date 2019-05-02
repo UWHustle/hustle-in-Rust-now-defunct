@@ -50,10 +50,6 @@ impl Relation {
         }
     }
 
-    pub fn get_n_rows(&self, storage_manager: &StorageManager) -> usize {
-        self.get_total_size(storage_manager) / self.get_row_size()
-    }
-
     pub fn column_from_name(&self, name: &str) -> Result<Column, String> {
         for column in self.get_columns() {
             if name == column.get_name() {
@@ -81,8 +77,8 @@ mod tests {
 
     #[test]
     fn relation_create() {
-        let a = Column::new("a".to_string(), DataType::new(Variant::Int4, true));
-        let b = Column::new("b".to_string(), DataType::new(Variant::Int4, true));
+        let a = Column::new("a", DataType::new(Variant::Int4, true));
+        let b = Column::new("b", DataType::new(Variant::Int4, true));
         let schema = Schema::new(vec![a.clone(), b.clone()]);
         let relation = Relation::new("Test", schema.clone());
 

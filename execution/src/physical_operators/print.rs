@@ -5,8 +5,6 @@ use type_system::*;
 
 use super::storage::StorageManager;
 
-pub const CHUNK_SIZE: usize = 1024 * 1024;
-
 pub struct Print {
     relation: Relation,
 }
@@ -23,27 +21,35 @@ impl Operator for Print {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let data = storage_manager.get(self.relation.get_name()).unwrap();
-
-        let columns = self.relation.get_columns();
+        let schema = self.relation.get_schema();
         let width = 5;
-        for column in columns {
+
+        for column in schema.get_columns() {
             print!("|{value:>width$}", value = column.get_name(), width = width);
         }
         println!("|");
 
-        let mut i = 0;
-        while i < data.len() {
-            for column in columns {
-                let data_type = column.data_type();
-                let value_length = data_type.next_size(&data[i..]);
-                let buffer: BorrowedBuffer =
-                    BorrowedBuffer::new(&data[i..i + value_length], data_type.clone(), false);
-                let value_string = buffer.marshall().to_string();
-                print!("|{value:>width$}", value = value_string, width = width);
-                i += value_length;
+        let schema_sizes = schema.to_size_vec();
+        let record = match storage_manager.get_with_schema(self.relation.get_name(), &schema_sizes)
+        {
+            Some(record) => record,
+            None => return Ok(self.get_target_relation()),
+        };
+
+        for block in record.blocks() {
+            for row_i in 0..block.len() {
+                for col_i in 0..schema.get_columns().len() {
+                    let data = block.get_row_col(row_i, col_i).unwrap();
+                    let data_type = schema.get_columns()[col_i].data_type();
+                    let buff = BorrowedBuffer::new(&data, data_type, false);
+                    print!(
+                        "|{value:>width$}",
+                        value = buff.marshall().to_string(),
+                        width = width
+                    );
+                }
+                println!("|");
             }
-            println!("|");
         }
 
         Ok(self.get_target_relation())

@@ -9,7 +9,6 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::data_type::DataType;
 use type_system::*;
 
 use std::collections::HashMap;
@@ -19,57 +18,63 @@ use super::storage::StorageManager;
 pub struct Aggregate {
     input_relation: Relation,
     output_relation: Relation,
-    group_by_cols: Vec<Column>,
+    agg_col_in: Column,
+    agg_col_out: Column,
     aggregation: Box<AggregationTrait>,
 }
 
 impl Aggregate {
     pub fn new(
         input_relation: Relation,
-        agg_col: Column,
-        group_by_cols: Vec<Column>,
+        agg_col_in: Column,
+        agg_col_out: Column,
+        output_col_names: Vec<String>,
         aggregation: Box<AggregationTrait>,
     ) -> Self {
-        let agg_col_name = format!("{}({})", aggregation.get_name(), agg_col.get_name());
-        let mut output_cols = group_by_cols.clone();
-        output_cols.push(Column::new(agg_col_name, aggregation.output_type()));
-
+        let mut output_cols: Vec<Column> = vec![];
+        for col_str in output_col_names {
+            if col_str == agg_col_out.get_name() {
+                output_cols.push(agg_col_out.clone());
+            } else {
+                for col in input_relation.get_columns() {
+                    if col.get_name() == col_str {
+                        output_cols.push(Column::new(&col_str, col.data_type()));
+                        break;
+                    }
+                }
+            }
+        }
         let schema = Schema::new(output_cols);
         let output_relation = Relation::new(&format!("{}_agg", input_relation.get_name()), schema);
-
         Aggregate {
             input_relation,
             output_relation,
-            group_by_cols,
+            agg_col_in,
+            agg_col_out,
             aggregation,
         }
     }
 
     pub fn from_str(
         input_relation: Relation,
-        agg_col: Column,
-        group_by_cols: Vec<Column>,
-        agg_type: DataType,
+        agg_col_in: Column,
+        agg_col_out: Column,
+        output_col_names: Vec<String>,
         agg_name: &str,
     ) -> Result<Self, String> {
-        let lower = agg_name.to_lowercase();
-        let aggregation: Box<AggregationTrait> = match lower.as_str() {
-            "avg" => Box::new(Avg::new(agg_type)),
-            "count" => Box::new(Count::new(agg_type)),
-            "max" => Box::new(Max::new(agg_type)),
-            "min" => Box::new(Min::new(agg_type)),
-            "sum" => Box::new(Sum::new(agg_type)),
-            _ => {
-                return Err(String::from(format!(
-                    "Unknown aggregate function {}",
-                    agg_name
-                )))
-            }
+        let aggregation: Box<AggregationTrait> = match agg_name.to_lowercase().as_str() {
+            "avg" => Box::new(Avg::new(agg_col_out.data_type())),
+            "count" => Box::new(Count::new(agg_col_out.data_type())),
+            "max" => Box::new(Max::new(agg_col_out.data_type())),
+            "min" => Box::new(Min::new(agg_col_out.data_type())),
+            "sum" => Box::new(Sum::new(agg_col_out.data_type())),
+            _ => return Err(format!("Unknown aggregate function {}", agg_name)),
         };
         Ok(Self::new(
             input_relation,
-            agg_col,
-            group_by_cols,
+            agg_col_in,
+            agg_col_out,
+            output_col_names,
             aggregation,
         ))
     }
@@ -81,76 +86,76 @@ impl Operator for Aggregate {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let input_cols = self.input_relation.get_columns().to_vec();
-        let input_data = storage_manager.get(self.input_relation.get_name()).unwrap();
+        let in_schema = self.input_relation.get_schema();
+        let schema_sizes = in_schema.to_size_vec();
+        let in_record = storage_manager
+            .get_with_schema(self.input_relation.get_name(), &schema_sizes)
+            .unwrap();
+        let out_schema = self.output_relation.get_schema();
+        storage_manager.delete(self.output_relation.get_name());
 
-        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
-        let output_size =
-            self.output_relation.get_row_size() * self.input_relation.get_n_rows(storage_manager);
-        let mut output_data: Vec<u8> = vec![0; output_size];
-
-        //A HashMap mapping group by values to aggregations for that grouping
-        let mut group_by: HashMap<Vec<(String, Column)>, Box<AggregationTrait>> = HashMap::new();
-
-        let mut i = 0; // Current position in the input buffer
-        let mut j = 0; // Current position in the output buffer
-
-        // Loop over all the data
-        while i < input_data.len() {
-            let mut group_by_values: Vec<(String, Column)> = vec![];
-            let mut agg_values: Vec<(String, Column)> = vec![];
-
-            // Split data by the columns relevant to the aggregation vs columns to group by
-            for column in &input_cols {
-                let value_len = column.data_type().next_size(&input_data[i..]);
-                let buffer =
-                    BorrowedBuffer::new(&input_data[i..i + value_len], column.data_type(), false);
-                let value = (buffer.marshall().to_string(), column.clone());
-                if (&self.group_by_cols)
-                    .iter()
-                    .any(|c| c.get_name() == column.get_name())
-                {
-                    group_by_values.push(value);
-                } else {
-                    agg_values.push(value);
-                }
-                i += value_len;
+        // Indices of the group by and aggregate columns in the input relation
+        let mut group_cols_i = vec![];
+        let mut agg_col_i = 0;
+        for mut col in out_schema.get_columns() {
+            if col == &self.agg_col_out {
+                col = &self.agg_col_in;
             }
-
-            // Populate the GroupBy HashMap
-            if group_by.contains_key(&group_by_values) {
-                let agg_instance = group_by.get_mut(&group_by_values).unwrap();
-                for value in agg_values {
-                    agg_instance.consider_value(&*value.1.data_type().parse(&value.0)?);
-                }
+            let i = in_schema
+                .get_columns()
+                .iter()
+                .position(|x| x == col)
+                .unwrap();
+            if col == &self.agg_col_in {
+                agg_col_i = i;
             } else {
-                let mut agg_instance = self.aggregation.box_clone_aggregation();
-                agg_instance.initialize();
-                for value in agg_values {
-                    agg_instance.consider_value(&*value.1.data_type().parse(&value.0)?);
+                group_cols_i.push(i);
+            }
+        }
+
+        // A HashMap mapping group by values to aggregations for that grouping
+        let mut group_by: HashMap<Vec<Vec<u8>>, Box<AggregationTrait>> = HashMap::new();
+
+        for in_block in in_record.blocks() {
+            for row_i in 0..in_block.len() {
+                // Determine whether we've seen the current combination of group by values
+                let mut group_buffs = vec![];
+                for col_i in &group_cols_i {
+                    // Caution: this just checks the slice and doesn't have logic for null handling
+                    group_buffs.push(in_block.get_row_col(row_i, *col_i).unwrap().to_vec());
                 }
-                group_by.entry(group_by_values).or_insert(agg_instance);
+                if !group_by.contains_key(&group_buffs) {
+                    let mut aggregation = self.aggregation.box_clone_aggregation();
+                    aggregation.initialize();
+                    group_by.insert(group_buffs.clone(), aggregation);
+                }
+
+                // Consider the current value of the aggregate column
+                let data = in_block.get_row_col(row_i, agg_col_i).unwrap();
+                let data_type = self.agg_col_in.data_type();
+                let agg_value = BorrowedBuffer::new(data, data_type, false).marshall();
+                group_by
+                    .get_mut(&group_buffs)
+                    .unwrap()
+                    .consider_value(&*agg_value);
             }
         }
 
-        // Output a relation
-        for (group_by_values, agg_instance) in &group_by {
-            // Copy group by values
-            for (data, column) in group_by_values {
-                let data = column.data_type().parse(data)?.un_marshall();
-                output_data[j..j + data.data().len()].clone_from_slice(&data.data());
-                j += data.data().len();
+        // Write group by and aggregate values to the output schema
+        for (group_buffs, aggregation) in group_by {
+            let mut group_i = 0;
+            for col in out_schema.get_columns() {
+                if col == &self.agg_col_out {
+                    storage_manager.append(
+                        self.output_relation.get_name(),
+                        aggregation.output().un_marshall().data(),
+                    );
+                } else {
+                    storage_manager.append(self.output_relation.get_name(), &group_buffs[group_i]);
+                    group_i += 1;
+                }
             }
-
-            // Copy aggregated values
-            let output: &Value = &*agg_instance.output();
-            output_data[j..j + output.un_marshall().data().len()]
-                .clone_from_slice(&output.un_marshall().data());
-            j += output.un_marshall().data().len();
         }
-
-        output_data.resize(j, 0);
-        storage_manager.put(self.output_relation.get_name(), &output_data);
 
         Ok(self.get_target_relation())
     }

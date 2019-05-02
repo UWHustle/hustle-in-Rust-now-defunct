@@ -7,8 +7,11 @@ pub struct Column {
 }
 
 impl Column {
-    pub fn new(name: String, data_type: DataType) -> Self {
-        Column { name, data_type }
+    pub fn new(name: &str, data_type: DataType) -> Self {
+        Column {
+            name: String::from(name),
+            data_type,
+        }
     }
 
     pub fn get_name(&self) -> &str {
@@ -32,8 +35,8 @@ mod tests {
     #[test]
     fn column_create() {
         let data_type = DataType::new(Variant::Int4, true);
-        let column = Column::new("test".to_string(), data_type.clone());
-        assert_eq!(column.get_name(), &"test".to_string());
+        let column = Column::new("test", data_type.clone());
+        assert_eq!(column.get_name(), "test");
         assert_eq!(column.get_size(), data_type.size());
     }
 }

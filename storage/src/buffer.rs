@@ -54,7 +54,10 @@ impl Block {
         if offset_in_block + value.len() > BLOCK_SIZE {
             panic!("Value of size {} too large for block.", value.len());
         }
+        let mut len = vec![];
+        len.write_u32::<BigEndian>((self.len() + value.len()) as u32).unwrap();
         unsafe {
+            (*self.value)[..HEADER_SIZE].copy_from_slice(&len);
             (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
             (*self.value).flush().expect("Error flushing changes to storage.");
         }

@@ -8,7 +8,6 @@ pub mod join;
 pub mod limit;
 pub mod print;
 pub mod project;
-pub mod select_sum;
 pub mod table_reference;
 pub mod test_relation;
 
