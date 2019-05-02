@@ -35,6 +35,15 @@ mod buffer_tests {
     }
 
     #[test]
+    fn exists() {
+        let buffer = Buffer::with_capacity(10);
+        buffer.write("key_exists", b"value");
+        assert!(buffer.exists("key_exists"));
+        buffer.erase("key_exists");
+        assert!(!buffer.exists("key_exists"));
+    }
+
+    #[test]
     fn replacement() {
         let buffer = Buffer::with_capacity(3);
         buffer.write("key_replacement_1", b"value");
