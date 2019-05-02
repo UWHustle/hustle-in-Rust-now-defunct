@@ -364,28 +364,60 @@ impl StorageManager {
     /// ```
     pub fn append(&self, key: &str, value: &[u8]) {
         if value.len() > BLOCK_SIZE {
-            panic!("Value size {} is too large for a single block", value.len());
+            panic!("Value size {} is too large for a single block.", value.len());
         }
 
         self.record_guard.lock(key);
 
-        let mut tail_block_index = 0;
-        while self.buffer.exists(&Self::key_for_block(key, tail_block_index + 1)) {
-            tail_block_index += 1;
-        }
-
+        let tail_block_index = Self::tail_block_index(key, &self.buffer);
         let key_for_tail_block = Self::key_for_block(key, tail_block_index);
+
         if let Some(block) = self.buffer.get(&key_for_tail_block) {
-            if block.len() + value.len() > BLOCK_SIZE {
-                // The value will not fit in the tail block, so we create a new block at the end.
-                self.buffer.write(&Self::key_for_block(key, tail_block_index + 1), value);
-            } else {
+            if block.len() + value.len() <= BLOCK_SIZE {
                 // The value can be appended to the tail block.
                 block.append(value);
+            } else {
+                // The value will not fit in the tail block, so we create a new block at the end.
+                self.buffer.write(&Self::key_for_block(key, tail_block_index + 1), value);
             }
         } else {
             // The key-value pair does not exist. Create it and initialize it with the value.
             self.buffer.write(&key_for_tail_block, value);
+        }
+
+        self.record_guard.unlock(key);
+    }
+
+    pub fn extend(&self, key: &str, value: &[u8], row_size: usize) {
+        if row_size > BLOCK_SIZE {
+            panic!("Row size {} is too large for a single block.", row_size);
+        }
+
+        self.record_guard.lock(key);
+
+        let mut tail_block_index = Self::tail_block_index(key, &self.buffer);
+        let mut offset = 0;
+
+        // Extend the tail block for the specified key with the value, if it exists.
+        if let Some(block) = self.buffer.get(&Self::key_for_block(key, tail_block_index)) {
+            let n_rows = (BLOCK_SIZE - block.len()) / row_size;
+
+            if n_rows > 0 {
+                // The tail block can be extended with the value.
+                let next_offset = offset + n_rows * row_size;
+                block.append(&value[offset..next_offset]);
+                offset = next_offset;
+            }
+
+            tail_block_index += 1;
+        }
+
+        // Continue to extend, breaking the value up into blocks if necessary.
+        let rows_per_block = BLOCK_SIZE / row_size;
+        while offset < value.len() {
+            let size = min(rows_per_block, value.len() - offset);
+            let value_block = &value[offset..offset + size];
+            self.buffer.write(&Self::key_for_block(key, tail_block_index), value_block);
         }
 
         self.record_guard.unlock(key);
@@ -413,6 +445,18 @@ impl StorageManager {
             self.record_guard.unlock(key);
             None
         }
+    }
+
+    /// Returns a snapshot of the value associated with `key` as a contiguous vector of bytes.
+    pub fn get_concat(&self, key: &str) -> Option<Vec<u8>> {
+        let record = self.get(key);
+        record.map(|r| {
+            let mut value = vec![];
+            for block in r.blocks() {
+                value.extend_from_slice(&block[..block.len()]);
+            }
+            value
+        })
     }
 
     /// Gets the value associated with `key` from the buffer and returns a `StructuredRecord` with
@@ -472,5 +516,13 @@ impl StorageManager {
     /// Returns the key for the block at the specified `block_index`.
     fn key_for_block(key: &str, block_index: usize) -> String {
         format!("{}${}", key, block_index)
+    }
+
+    fn tail_block_index(key: &str, buffer: &Buffer) -> usize {
+        let mut tail_block_index = 0;
+        while buffer.exists(&Self::key_for_block(key, tail_block_index + 1)) {
+            tail_block_index += 1;
+        }
+        tail_block_index
     }
 }

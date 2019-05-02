@@ -47,7 +47,7 @@ impl Block {
         }
     }
 
-    /// Append the raw value to the `Block`. A `panic!` will occure if the `value` is too large to fit
+    /// Append the raw value to the `Block`. A `panic!` will occur if the `value` is too large to fit
     /// into the block.
     pub fn append(&self, value: &[u8]) {
         let offset_in_block = self.len() + HEADER_SIZE;
