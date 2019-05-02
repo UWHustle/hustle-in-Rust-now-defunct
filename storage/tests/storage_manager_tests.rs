@@ -28,9 +28,13 @@ mod storage_manager_tests {
     #[test]
     fn put_anon() {
         let sm = StorageManager::new();
-        let key = sm.put_anon(b"value");
-        assert_eq!(&sm.get(&key).unwrap().get_block(0).unwrap()[0..5], b"value");
-        sm.delete(&key);
+        let key_0 = sm.put_anon(b"value");
+        assert_eq!(&sm.get(&key_0).unwrap().get_block(0).unwrap()[0..5], b"value");
+        sm.delete(&key_0);
+
+        let key_1 = sm.put_anon(b"");
+        assert_eq!(sm.get(&key_1).unwrap().get_block(0).unwrap().len(), 0);
+        sm.delete(&key_1);
     }
 
     #[test]

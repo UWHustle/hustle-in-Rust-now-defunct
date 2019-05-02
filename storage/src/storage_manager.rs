@@ -311,16 +311,23 @@ impl StorageManager {
     /// assert_eq!(&sm.get("key_put").unwrap().get_block(0).unwrap()[0..5], b"value");
     /// sm.delete("key_put");
     /// ```
+    ///
+    /// TODO: If the length of value is smaller than the existing value, we need to remove the
+    /// blocks from the end.
     pub fn put(&self, key: &str, value: &[u8]) {
         self.record_guard.lock(key);
 
-        let block_count = (value.len()  - 1) / BLOCK_SIZE + 1;
-        for block_index in 0..block_count {
-            let key_for_block = Self::key_for_block(key, block_index);
-            let value_offset = block_index * BLOCK_SIZE;
-            let value_right_bound = value_offset + min(BLOCK_SIZE, value.len() - value_offset);
-            let value_for_block = &value[value_offset..value_right_bound];
-            self.buffer.write(&key_for_block, value_for_block);
+        if value.is_empty() {
+            self.buffer.write(&Self::key_for_block(key, 0), value);
+        } else {
+            let block_count = (value.len()  - 1) / BLOCK_SIZE + 1;
+            for block_index in 0..block_count {
+                let key_for_block = Self::key_for_block(key, block_index);
+                let value_offset = block_index * BLOCK_SIZE;
+                let value_right_bound = value_offset + min(BLOCK_SIZE, value.len() - value_offset);
+                let value_for_block = &value[value_offset..value_right_bound];
+                self.buffer.write(&key_for_block, value_for_block);
+            }
         }
 
         self.record_guard.unlock(key);
