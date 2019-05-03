@@ -38,7 +38,7 @@ impl Operator for Join {
         let l_record = storage_manager
             .get_with_schema(self.relation_l.get_name(), &l_schema_sizes)
             .unwrap();
-        let r_schema = self.relation_l.get_schema();
+        let r_schema = self.relation_r.get_schema();
         let r_schema_sizes = r_schema.to_size_vec();
         let r_record = storage_manager
             .get_with_schema(self.relation_r.get_name(), &r_schema_sizes)
