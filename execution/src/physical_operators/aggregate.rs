@@ -152,8 +152,8 @@ impl Operator for Aggregate {
                     aggregated_row.extend_from_slice(&group_buffs[group_i]);
                     group_i += 1;
                 }
-                storage_manager.append(self.output_relation.get_name(), &aggregated_row);
             }
+            storage_manager.append(self.output_relation.get_name(), &aggregated_row);
         }
 
         Ok(self.get_target_relation())
