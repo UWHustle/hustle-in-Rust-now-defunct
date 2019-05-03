@@ -1,5 +1,6 @@
-pub mod data_gen;
-pub mod select_sum;
+pub mod generate_data;
+pub mod hustle_queries;
 pub mod sqlite3;
+pub mod sum_column;
 
 extern crate storage;

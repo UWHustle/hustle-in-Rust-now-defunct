@@ -1,54 +1,23 @@
 extern crate execution;
 
-use execution::logical_entities::aggregations::max::Max;
-use execution::logical_entities::column::Column;
-use execution::logical_entities::relation::Relation;
-use execution::physical_operators::aggregate::Aggregate;
-use execution::physical_operators::project::Project;
-use execution::physical_plan::node::Node;
-use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
-use execution::test_helpers::select_sum::SelectSum;
-use execution::test_helpers::sqlite3::run_query_sqlite3;
-use execution::type_system::data_type::*;
-
-use std::rc::Rc;
-
-extern crate storage;
-use self::storage::StorageManager;
+use execution::physical_plan::global_sm;
+use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
+use execution::test_helpers::hustle_queries::hustle_agg;
+use execution::test_helpers::sqlite3::run_query_sqlite;
+use execution::type_system::data_type::{DataType, Variant};
 
 const RECORD_COUNT: usize = 10;
 
 #[test]
 fn test_max_aggregate() {
-    let relation = generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, true);
-    let agg_col = Column::new("a", DataType::new(Variant::Int4, true));
-    let agg_relation = hustle_max(relation.clone(), agg_col);
-    let hustle_calculation = sum_column_hustle(agg_relation.clone(), "MAX(a)");
-    let sqlite3_calculation = run_query_sqlite3("SELECT MAX(t.a) FROM t;", "MAX(t.a)");
-    assert_eq!(hustle_calculation, sqlite3_calculation);
-}
-
-fn sum_column_hustle(relation: Relation, column_name: &str) -> u128 {
-    let select_operator = SelectSum::new(
-        relation.clone(),
-        Column::new(column_name, DataType::new(Variant::Int4, true)),
+    let relation = generate_t_hustle_and_sqlite(global_sm::get(), RECORD_COUNT, true);
+    let hustle_value = hustle_agg(
+        global_sm::get(),
+        relation,
+        "a",
+        DataType::new(Variant::Int4, true),
+        "max",
     );
-    select_operator
-        .execute(&StorageManager::new())
-        .parse::<u128>()
-        .unwrap()
-}
-
-fn hustle_max(relation: Relation, agg_col: Column) -> Relation {
-    let project_op = Project::pure_project(relation, vec![agg_col.clone()]);
-    let project_node = Node::new(Rc::new(project_op), vec![]);
-    let agg_col_name = format!("MAX({})", agg_col.get_name());
-    let agg_op = Aggregate::new(
-        project_node.get_output_relation(),
-        agg_col.clone(),
-        &agg_col_name,
-        vec![agg_col_name.clone()],
-        Box::new(Max::new(agg_col.data_type())),
-    );
-    Node::new(Rc::new(agg_op), vec![Rc::new(project_node)]).execute(&StorageManager::new())
+    let sqlite_value = run_query_sqlite("SELECT MAX(t.a) FROM t;", "MAX(t.a)");
+    assert_eq!(hustle_value, sqlite_value);
 }
