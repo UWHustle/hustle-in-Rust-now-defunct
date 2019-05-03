@@ -144,16 +144,15 @@ impl Operator for Aggregate {
         // Write group by and aggregate values to the output schema
         for (group_buffs, aggregation) in group_by {
             let mut group_i = 0;
+            let mut aggregated_row = vec![];
             for col in out_schema.get_columns() {
                 if col == &self.agg_col_out {
-                    storage_manager.append(
-                        self.output_relation.get_name(),
-                        aggregation.output().un_marshall().data(),
-                    );
+                    aggregated_row.extend_from_slice(aggregation.output().un_marshall().data());
                 } else {
-                    storage_manager.append(self.output_relation.get_name(), &group_buffs[group_i]);
+                    aggregated_row.extend_from_slice(&group_buffs[group_i]);
                     group_i += 1;
                 }
+                storage_manager.append(self.output_relation.get_name(), &aggregated_row);
             }
         }
 

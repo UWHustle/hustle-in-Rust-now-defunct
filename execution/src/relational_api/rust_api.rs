@@ -107,7 +107,6 @@ impl<'a> ImmediateRelation<'a> {
     /// Replaces current data in the relation with data from the Hustle file
     ///
     /// The schema is assumed to match that of the current ImmediateRelation
-    /// TODO: Pull schema from the catalog
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
         let schema_sizes = self.relation.get_schema().to_size_vec();
         let import_record = match self.storage_manager.get_with_schema(name, &schema_sizes) {
@@ -118,9 +117,12 @@ impl<'a> ImmediateRelation<'a> {
         self.storage_manager.delete(self.relation.get_name());
         for block in import_record.blocks() {
             for row_i in 0..block.len() {
+                let mut hustle_row = vec![];
                 for data in block.get_row(row_i).unwrap() {
-                    self.storage_manager.append(self.relation.get_name(), data);
+                    hustle_row.extend_from_slice(data);
                 }
+                self.storage_manager
+                    .append(self.relation.get_name(), &hustle_row);
             }
         }
 
@@ -137,9 +139,11 @@ impl<'a> ImmediateRelation<'a> {
         self.storage_manager.delete(name);
         for block in record.blocks() {
             for row_i in 0..block.len() {
+                let mut hustle_row = vec![];
                 for data in block.get_row(row_i).unwrap() {
-                    self.storage_manager.append(name, data);
+                    hustle_row.extend_from_slice(data);
                 }
+                self.storage_manager.append(name, &hustle_row);
             }
         }
 

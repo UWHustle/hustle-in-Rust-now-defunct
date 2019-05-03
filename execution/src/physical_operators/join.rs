@@ -51,14 +51,16 @@ impl Operator for Join {
             for l_row_i in 0..l_block.len() {
                 for r_block in r_record.blocks() {
                     for r_row_i in 0..r_block.len() {
+                        let mut joined_row = vec![];
                         for col_i in 0..l_schema.get_columns().len() {
                             let data = l_block.get_row_col(l_row_i, col_i).unwrap();
-                            storage_manager.append(self.output_relation.get_name(), data);
+                            joined_row.extend_from_slice(data);
                         }
                         for col_i in 0..r_schema.get_columns().len() {
                             let data = r_block.get_row_col(r_row_i, col_i).unwrap();
-                            storage_manager.append(self.output_relation.get_name(), data);
+                            joined_row.extend_from_slice(data);
                         }
+                        storage_manager.append(self.output_relation.get_name(), &joined_row);
                     }
                 }
             }

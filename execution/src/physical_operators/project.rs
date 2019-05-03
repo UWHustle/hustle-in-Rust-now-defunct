@@ -82,10 +82,12 @@ impl Operator for Project {
                 }
 
                 // Remap values to the order they appear in the output schema
+                let mut projected_row = vec![];
                 for col_i in 0..out_schema.get_columns().len() {
                     let data = in_block.get_row_col(row_i, out_cols_i[col_i]).unwrap();
-                    storage_manager.append(self.output_relation.get_name(), data);
+                    projected_row.extend_from_slice(data);
                 }
+                storage_manager.append(self.output_relation.get_name(), &projected_row);
             }
         }
 
