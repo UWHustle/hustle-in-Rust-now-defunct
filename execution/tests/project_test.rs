@@ -9,9 +9,9 @@ use execution::physical_operators::select_sum::SelectSum;
 use execution::physical_plan::node::Node;
 use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
 use execution::test_helpers::sqlite3::run_query_sqlite3;
+use execution::type_system::data_type::*;
 use execution::type_system::integer::*;
 use execution::type_system::operators::*;
-use execution::type_system::data_type::*;
 
 use std::rc::Rc;
 
@@ -22,7 +22,10 @@ const RECORD_COUNT: usize = 10;
 
 fn sum_column_hustle(relation: Relation, column: Column) -> u128 {
     let select_operator = SelectSum::new(relation.clone(), column);
-    select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
+    select_operator
+        .execute(&StorageManager::new())
+        .parse::<u128>()
+        .unwrap()
 }
 
 #[test]

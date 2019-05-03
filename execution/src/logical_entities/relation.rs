@@ -13,7 +13,7 @@ impl Relation {
     pub fn new(name: &str, schema: Schema) -> Self {
         Self {
             name: String::from(name),
-            schema
+            schema,
         }
     }
 
@@ -54,21 +54,21 @@ impl Relation {
         self.get_total_size(storage_manager) / self.get_row_size()
     }
 
-    pub fn column_from_name(&self, name: &str) -> Column {
+    pub fn column_from_name(&self, name: &str) -> Result<Column, String> {
         for column in self.get_columns() {
             if name == column.get_name() {
-                return column.clone();
+                return Ok(column.clone());
             }
         }
-        panic!("Column {} not found", name);
+        Err(format!("column {} not found", name))
     }
 
-    pub fn columns_from_names(&self, col_names: Vec<&str>) -> Vec<Column> {
+    pub fn columns_from_names(&self, col_names: Vec<&str>) -> Result<Vec<Column>, String> {
         let mut columns: Vec<Column> = vec![];
         for name in col_names {
-            columns.push(self.column_from_name(name));
+            columns.push(self.column_from_name(name)?);
         }
-        columns
+        Ok(columns)
     }
 }
 

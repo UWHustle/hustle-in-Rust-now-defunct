@@ -22,7 +22,7 @@ impl Operator for Print {
         Relation::null()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let data = storage_manager.get(self.relation.get_name()).unwrap();
 
         let columns = self.relation.get_columns();
@@ -35,10 +35,10 @@ impl Operator for Print {
         let mut i = 0;
         while i < data.len() {
             for column in columns {
-                let type_id = column.get_datatype();
-                let value_length = type_id.next_size(&data[i..]);
+                let data_type = column.data_type();
+                let value_length = data_type.next_size(&data[i..]);
                 let buffer: BorrowedBuffer =
-                    BorrowedBuffer::new(&data[i..i + value_length], type_id.clone(), false);
+                    BorrowedBuffer::new(&data[i..i + value_length], data_type.clone(), false);
                 let value_string = buffer.marshall().to_string();
                 print!("|{value:>width$}", value = value_string, width = width);
                 i += value_length;
@@ -46,6 +46,6 @@ impl Operator for Print {
             println!("|");
         }
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

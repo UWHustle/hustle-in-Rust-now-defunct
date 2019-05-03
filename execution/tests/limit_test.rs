@@ -32,7 +32,10 @@ fn sum_column_hustle(relation: Relation, column_name: String) -> u128 {
         relation.clone(),
         Column::new(column_name, DataType::new(Variant::Int4, true)),
     );
-    select_operator.execute(&StorageManager::new()).parse::<u128>().unwrap()
+    select_operator
+        .execute(&StorageManager::new())
+        .parse::<u128>()
+        .unwrap()
 }
 
 fn hustle_limit(relation: Relation, limit: u32) -> Relation {

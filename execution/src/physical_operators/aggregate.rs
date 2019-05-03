@@ -50,8 +50,8 @@ impl Aggregate {
         agg_col: Column,
         group_by_cols: Vec<Column>,
         agg_type: DataType,
-        agg_name: &str) -> Self
-    {
+        agg_name: &str,
+    ) -> Result<Self, String> {
         let lower = agg_name.to_lowercase();
         let aggregation: Box<AggregationTrait> = match lower.as_str() {
             "avg" => Box::new(Avg::new(agg_type)),
@@ -59,9 +59,19 @@ impl Aggregate {
             "max" => Box::new(Max::new(agg_type)),
             "min" => Box::new(Min::new(agg_type)),
             "sum" => Box::new(Sum::new(agg_type)),
-            _ => panic!("Unknown aggregate function {}", agg_name),
+            _ => {
+                return Err(String::from(format!(
+                    "Unknown aggregate function {}",
+                    agg_name
+                )))
+            }
         };
-        Self::new(input_relation, agg_col, group_by_cols, aggregation)
+        Ok(Self::new(
+            input_relation,
+            agg_col,
+            group_by_cols,
+            aggregation,
+        ))
     }
 }
 
@@ -70,12 +80,13 @@ impl Operator for Aggregate {
         self.output_relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let input_cols = self.input_relation.get_columns().to_vec();
         let input_data = storage_manager.get(self.input_relation.get_name()).unwrap();
 
         // Future optimization: create uninitialized Vec (this may require unsafe Rust)
-        let output_size = self.output_relation.get_row_size() * self.input_relation.get_n_rows(storage_manager);
+        let output_size =
+            self.output_relation.get_row_size() * self.input_relation.get_n_rows(storage_manager);
         let mut output_data: Vec<u8> = vec![0; output_size];
 
         //A HashMap mapping group by values to aggregations for that grouping
@@ -91,12 +102,9 @@ impl Operator for Aggregate {
 
             // Split data by the columns relevant to the aggregation vs columns to group by
             for column in &input_cols {
-                let value_len = column.get_datatype().next_size(&input_data[i..]);
-                let buffer = BorrowedBuffer::new(
-                    &input_data[i..i + value_len],
-                    column.get_datatype(),
-                    false,
-                );
+                let value_len = column.data_type().next_size(&input_data[i..]);
+                let buffer =
+                    BorrowedBuffer::new(&input_data[i..i + value_len], column.data_type(), false);
                 let value = (buffer.marshall().to_string(), column.clone());
                 if (&self.group_by_cols)
                     .iter()
@@ -113,13 +121,13 @@ impl Operator for Aggregate {
             if group_by.contains_key(&group_by_values) {
                 let agg_instance = group_by.get_mut(&group_by_values).unwrap();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
+                    agg_instance.consider_value(&*value.1.data_type().parse(&value.0)?);
                 }
             } else {
                 let mut agg_instance = self.aggregation.box_clone_aggregation();
                 agg_instance.initialize();
                 for value in agg_values {
-                    agg_instance.consider_value(&*value.1.get_datatype().parse(&value.0));
+                    agg_instance.consider_value(&*value.1.data_type().parse(&value.0)?);
                 }
                 group_by.entry(group_by_values).or_insert(agg_instance);
             }
@@ -129,7 +137,7 @@ impl Operator for Aggregate {
         for (group_by_values, agg_instance) in &group_by {
             // Copy group by values
             for (data, column) in group_by_values {
-                let data = column.get_datatype().parse(data).un_marshall();
+                let data = column.data_type().parse(data)?.un_marshall();
                 output_data[j..j + data.data().len()].clone_from_slice(&data.data());
                 j += data.data().len();
             }
@@ -144,6 +152,6 @@ impl Operator for Aggregate {
         output_data.resize(j, 0);
         storage_manager.put(self.output_relation.get_name(), &output_data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

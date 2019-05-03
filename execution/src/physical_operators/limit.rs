@@ -36,7 +36,7 @@ impl Operator for Limit {
         self.output_relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let input_data = storage_manager.get(self.relation.get_name()).unwrap();
 
         // Future optimization: create uninitialized Vec (this may require unsafe Rust)
@@ -47,7 +47,7 @@ impl Operator for Limit {
         let mut records = 0;
         while i < input_data.len() && records < self.limit {
             for column in self.relation.get_columns() {
-                let value_length = column.get_datatype().next_size(&input_data[i..]);
+                let value_length = column.data_type().next_size(&input_data[i..]);
                 output_data[i..i + value_length].clone_from_slice(&input_data[i..i + value_length]);
                 i += value_length;
             }
@@ -57,6 +57,6 @@ impl Operator for Limit {
         output_data.resize(i, 0);
         storage_manager.put(self.output_relation.get_name(), &output_data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

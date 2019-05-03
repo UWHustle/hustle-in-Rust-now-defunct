@@ -40,7 +40,7 @@ impl Operator for Project {
         self.output_relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let input_data = storage_manager.get(self.relation.get_name()).unwrap();
 
         // Future optimization: create uninitialized Vec (this may require unsafe Rust)
@@ -56,13 +56,10 @@ impl Operator for Project {
             // Check whether the current row satisfies the predicate
             let mut values: Vec<Box<Value>> = vec![];
             for column in &input_cols {
-                let value_len = column.get_datatype().next_size(&input_data[k..]);
-                let value = BorrowedBuffer::new(
-                    &input_data[k..k + value_len],
-                    column.get_datatype(),
-                    false,
-                )
-                .marshall();
+                let value_len = column.data_type().next_size(&input_data[k..]);
+                let value =
+                    BorrowedBuffer::new(&input_data[k..k + value_len], column.data_type(), false)
+                        .marshall();
                 values.push(value);
                 k += value_len;
             }
@@ -75,7 +72,7 @@ impl Operator for Project {
                 let mut col_map = HashMap::new();
                 k = i;
                 for column in &input_cols {
-                    let value_len = column.get_datatype().next_size(&input_data[k..]);
+                    let value_len = column.data_type().next_size(&input_data[k..]);
                     col_map.insert(column, &input_data[k..k + value_len]);
                     k += value_len;
                 }
@@ -93,6 +90,6 @@ impl Operator for Project {
         output_data.resize(j, 0);
         storage_manager.put(self.output_relation.get_name(), &output_data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

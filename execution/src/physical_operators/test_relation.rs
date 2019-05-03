@@ -28,7 +28,7 @@ impl Operator for TestRelation {
         self.relation.clone()
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         // Future optimization: create uninitialized Vec (this may require unsafe Rust)
         let size = self.relation.get_row_size() * self.row_count;
         let mut data = vec![0; size];
@@ -41,7 +41,7 @@ impl Operator for TestRelation {
                 } else {
                     y.to_string()
                 };
-                let parsed = column.get_datatype().parse(&value);
+                let parsed = column.data_type().parse(&value)?;
                 let size = parsed.size();
                 data[n..n + size].clone_from_slice(&parsed.un_marshall().data());
                 n += size;
@@ -50,6 +50,6 @@ impl Operator for TestRelation {
 
         storage_manager.put(self.relation.get_name(), &data);
 
-        self.get_target_relation()
+        Ok(self.get_target_relation())
     }
 }

@@ -38,8 +38,11 @@ impl Int1 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<u8>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<u8>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
@@ -101,27 +104,20 @@ impl Value for Int1 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, cast_value::<Int1>(other).value())
-            }
-            Variant::Int2 => {
-                comp.apply(i16::from(self.value), cast_value::<Int2>(other).value())
-            }
-            Variant::Int4 => {
-                comp.apply(i32::from(self.value), cast_value::<Int4>(other).value())
-            }
-            Variant::Int8 => {
-                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
-            }
+            Variant::Int1 => comp.apply(self.value, cast_value::<Int1>(other).value()),
+            Variant::Int2 => comp.apply(i16::from(self.value), cast_value::<Int2>(other).value()),
+            Variant::Int4 => comp.apply(i32::from(self.value), cast_value::<Int4>(other).value()),
+            Variant::Int8 => comp.apply(i64::from(self.value), cast_value::<Int8>(other).value()),
             Variant::Float4 => {
                 comp.apply(f32::from(self.value), cast_value::<Float4>(other).value())
             }
             Variant::Float8 => {
                 comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
-            Variant::IPv4 => {
-                comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
-            }
+            Variant::IPv4 => comp.apply(
+                i64::from(self.value),
+                i64::from(cast_value::<IPv4>(other).value()),
+            ),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -158,8 +154,11 @@ impl Int2 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<i16>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<i16>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
@@ -221,27 +220,20 @@ impl Value for Int2 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, i16::from(cast_value::<Int1>(other).value()))
-            }
-            Variant::Int2 => {
-                comp.apply(self.value, cast_value::<Int2>(other).value())
-            }
-            Variant::Int4 => {
-                comp.apply(i32::from(self.value), cast_value::<Int4>(other).value())
-            }
-            Variant::Int8 => {
-                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
-            }
+            Variant::Int1 => comp.apply(self.value, i16::from(cast_value::<Int1>(other).value())),
+            Variant::Int2 => comp.apply(self.value, cast_value::<Int2>(other).value()),
+            Variant::Int4 => comp.apply(i32::from(self.value), cast_value::<Int4>(other).value()),
+            Variant::Int8 => comp.apply(i64::from(self.value), cast_value::<Int8>(other).value()),
             Variant::Float4 => {
                 comp.apply(f32::from(self.value), cast_value::<Float4>(other).value())
             }
             Variant::Float8 => {
                 comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
-            Variant::IPv4 => {
-                comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
-            }
+            Variant::IPv4 => comp.apply(
+                i64::from(self.value),
+                i64::from(cast_value::<IPv4>(other).value()),
+            ),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -280,8 +272,11 @@ impl Int4 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<i32>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<i32>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
@@ -343,27 +338,18 @@ impl Value for Int4 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, i32::from(cast_value::<Int1>(other).value()))
-            }
-            Variant::Int2 => {
-                comp.apply(self.value, i32::from(cast_value::<Int2>(other).value()))
-            }
-            Variant::Int4 => {
-                comp.apply(self.value, cast_value::<Int4>(other).value())
-            }
-            Variant::Int8 => {
-                comp.apply(i64::from(self.value), cast_value::<Int8>(other).value())
-            }
-            Variant::Float4 => {
-                comp.apply(self.value as f32, cast_value::<Float4>(other).value())
-            }
+            Variant::Int1 => comp.apply(self.value, i32::from(cast_value::<Int1>(other).value())),
+            Variant::Int2 => comp.apply(self.value, i32::from(cast_value::<Int2>(other).value())),
+            Variant::Int4 => comp.apply(self.value, cast_value::<Int4>(other).value()),
+            Variant::Int8 => comp.apply(i64::from(self.value), cast_value::<Int8>(other).value()),
+            Variant::Float4 => comp.apply(self.value as f32, cast_value::<Float4>(other).value()),
             Variant::Float8 => {
                 comp.apply(f64::from(self.value), cast_value::<Float8>(other).value())
             }
-            Variant::IPv4 => {
-                comp.apply(i64::from(self.value), i64::from(cast_value::<IPv4>(other).value()))
-            }
+            Variant::IPv4 => comp.apply(
+                i64::from(self.value),
+                i64::from(cast_value::<IPv4>(other).value()),
+            ),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -402,8 +388,11 @@ impl Int8 {
         }
     }
 
-    pub fn parse(string: &str) -> Self {
-        Self::from(string.parse::<i64>().expect("Parsing failed"))
+    pub fn parse(string: &str) -> Result<Self, String> {
+        match string.parse::<i64>() {
+            Ok(val) => Ok(Self::from(val)),
+            Err(err) => Err(err.to_string()),
+        }
     }
 
     pub fn marshall(data: &[u8], nullable: bool, is_null: bool) -> Self {
@@ -465,27 +454,16 @@ impl Value for Int8 {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::Int1 => {
-                comp.apply(self.value, i64::from(cast_value::<Int1>(other).value()))
-            }
-            Variant::Int2 => {
-                comp.apply(self.value, i64::from(cast_value::<Int2>(other).value()))
-            }
-            Variant::Int4 => {
-                comp.apply(self.value, i64::from(cast_value::<Int4>(other).value()))
-            }
-            Variant::Int8 => {
-                comp.apply(self.value, cast_value::<Int8>(other).value())
-            }
-            Variant::Float4 => {
-                comp.apply(self.value as f64, f64::from(cast_value::<Float4>(other).value()))
-            }
-            Variant::Float8 => {
-                comp.apply(self.value as f64, cast_value::<Float8>(other).value())
-            }
-            Variant::IPv4 => {
-                comp.apply(self.value, i64::from(cast_value::<IPv4>(other).value()))
-            }
+            Variant::Int1 => comp.apply(self.value, i64::from(cast_value::<Int1>(other).value())),
+            Variant::Int2 => comp.apply(self.value, i64::from(cast_value::<Int2>(other).value())),
+            Variant::Int4 => comp.apply(self.value, i64::from(cast_value::<Int4>(other).value())),
+            Variant::Int8 => comp.apply(self.value, cast_value::<Int8>(other).value()),
+            Variant::Float4 => comp.apply(
+                self.value as f64,
+                f64::from(cast_value::<Float4>(other).value()),
+            ),
+            Variant::Float8 => comp.apply(self.value as f64, cast_value::<Float8>(other).value()),
+            Variant::IPv4 => comp.apply(self.value, i64::from(cast_value::<IPv4>(other).value())),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -500,7 +478,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn int1_type_id() {
+    fn int1_data_type() {
         let int1 = Int1::from(11);
         assert_eq!(DataType::new(Variant::Int1, true), int1.data_type());
     }
@@ -559,7 +537,7 @@ mod test {
     }
 
     #[test]
-    fn int2_type_id() {
+    fn int2_data_type() {
         let int2 = Int2::from(56);
         assert_eq!(DataType::new(Variant::Int2, true), int2.data_type());
     }
@@ -619,7 +597,7 @@ mod test {
     }
 
     #[test]
-    fn int4_type_id() {
+    fn int4_data_type() {
         let int4 = Int4::from(2611);
         assert_eq!(DataType::new(Variant::Int4, true), int4.data_type());
     }
@@ -680,7 +658,7 @@ mod test {
     }
 
     #[test]
-    fn int8_type_id() {
+    fn int8_data_type() {
         let int8 = Int8::from(3483646);
         assert_eq!(DataType::new(Variant::Int8, true), int8.data_type());
     }

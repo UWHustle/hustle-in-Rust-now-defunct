@@ -17,14 +17,15 @@ impl ByteString {
     pub fn new(buffer: &[u8], nullable: bool, max_size: usize, varchar: bool) -> Self {
         let mut buffer_sub = buffer;
         if buffer.len() > max_size {
-            buffer_sub = &buffer[0..max_size - 1];
+            buffer_sub = &buffer[0..max_size];
         }
         let mut value: Vec<u8> = vec![0; buffer_sub.len()];
         value.clone_from_slice(buffer_sub);
-        value.resize(max_size, ' ' as u8);
-        if varchar && buffer.len() < value.len() {
-            value[buffer.len()] = '\0' as u8;
-        }
+        let pad_char = match varchar {
+            true => 0x00,
+            false => 0x20,
+        };
+        value.resize(max_size, pad_char);
         Self {
             value,
             nullable,
@@ -34,26 +35,30 @@ impl ByteString {
     }
 
     pub fn from(string: &str) -> Self {
-        println!("Calling from function...");
-        let output = Self::new(string.as_bytes(), true, string.len(), false);
-        println!("Done!");
-        output
+        Self::new(string.as_bytes(), true, string.len(), false)
     }
 
     pub fn create_null(max_size: usize, varchar: bool) -> Self {
-        let mut value: Vec<u8> = vec![0x20; max_size];
-        if varchar {
-            value[0] = 0x00;
-        }
+        let fill_char = match varchar {
+            true => 0x00,
+            false => 0x20,
+        };
+        let value: Vec<u8> = vec![fill_char; max_size];
         Self {
             value,
             nullable: true,
             is_null: true,
-            varchar
+            varchar,
         }
     }
 
-    pub fn marshall(data: &[u8], nullable: bool, is_null: bool, max_size: usize, varchar: bool) -> Self {
+    pub fn marshall(
+        data: &[u8],
+        nullable: bool,
+        is_null: bool,
+        max_size: usize,
+        varchar: bool,
+    ) -> Self {
         let mut output = Self::new(data, nullable, max_size, varchar);
         output.is_null = is_null;
         output
@@ -73,15 +78,15 @@ impl ByteString {
     fn trimmed_slice(&self) -> &[u8] {
         match self.varchar {
             true => {
-                let mut end_idx = self.value.len() - 1;
+                let mut end_idx = self.value.len();
                 for i in 0..self.value.len() {
-                    if self.value[i] == '\0' as u8 {
+                    if self.value[i] == 0x00 {
                         end_idx = i;
                         break;
                     }
                 }
                 &self.value[0..end_idx]
-            },
+            }
             false => &self.value,
         }
     }
@@ -89,7 +94,10 @@ impl ByteString {
 
 impl Value for ByteString {
     fn data_type(&self) -> DataType {
-        DataType::new(Variant::ByteString(self.value.len(), self.varchar), self.nullable)
+        DataType::new(
+            Variant::ByteString(self.value.len(), self.varchar),
+            self.nullable,
+        )
     }
 
     fn is_null(&self) -> bool {
@@ -100,8 +108,9 @@ impl Value for ByteString {
         if self.is_null {
             String::new()
         } else {
-            String::from(std::str::from_utf8(self.trimmed_slice())
-                .expect("Cannot convert to UTF-8 string"))
+            String::from(
+                std::str::from_utf8(self.trimmed_slice()).expect("Cannot convert to UTF-8 string"),
+            )
         }
     }
 
@@ -113,9 +122,10 @@ impl Value for ByteString {
 
     fn compare(&self, other: &Value, comp: Comparator) -> bool {
         match other.data_type().variant {
-            Variant::ByteString(_, _) => {
-                comp.apply(self.trimmed_slice(), cast_value::<ByteString>(other).trimmed_slice())
-            }
+            Variant::ByteString(_, _) => comp.apply(
+                self.trimmed_slice(),
+                cast_value::<ByteString>(other).trimmed_slice(),
+            ),
             _ => {
                 panic!(incomparable(self.data_type(), other.data_type()));
             }
@@ -159,7 +169,7 @@ mod test {
     }
 
     #[test]
-    fn utf8_string_type_id() {
+    fn utf8_string_data_type() {
         let utf8_string = ByteString::from("Chocolate donuts");
         assert_eq!(
             DataType::new(Variant::ByteString(16, false), true),

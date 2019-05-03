@@ -1,6 +1,6 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::integer::*;
 use type_system::data_type::*;
+use type_system::integer::*;
 use type_system::*;
 
 #[derive(Clone, Debug)]
@@ -39,6 +39,7 @@ impl AggregationTrait for Avg {
     }
 
     fn output_type(&self) -> DataType {
-        self.output().data_type()
+        let denom = Int4::from(1);
+        self.sum.divide(&denom).data_type()
     }
 }
