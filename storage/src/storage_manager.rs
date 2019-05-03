@@ -3,7 +3,7 @@ extern crate omap;
 
 use std::sync::Mutex;
 use std::mem;
-use buffer::{Block, Buffer, BLOCK_SIZE};
+use buffer::{Block, Buffer, BLOCK_SIZE, HEADER_SIZE};
 use record_guard::{MutexRecordGuard, RecordGuard};
 use std::cmp::min;
 use std::ops::Deref;
@@ -380,7 +380,7 @@ impl StorageManager {
         let key_for_tail_block = Self::key_for_block(key, tail_block_index);
 
         if let Some(block) = self.buffer.get(&key_for_tail_block) {
-            if block.len() + value.len() <= BLOCK_SIZE {
+            if block.len() + value.len() + HEADER_SIZE <= BLOCK_SIZE {
                 // The value can be appended to the tail block.
                 block.append(value);
             } else {
