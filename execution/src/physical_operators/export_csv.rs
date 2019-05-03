@@ -8,15 +8,15 @@ use super::storage::StorageManager;
 extern crate csv;
 
 pub struct ExportCsv {
-    file_name: String,
     relation: Relation,
+    filename: String,
 }
 
 impl ExportCsv {
-    pub fn new(file_name: String, relation: Relation) -> Self {
+    pub fn new(relation: Relation, filename: &str) -> Self {
         ExportCsv {
-            file_name,
             relation,
+            filename: String::from(filename),
         }
     }
 }
@@ -33,12 +33,12 @@ impl Operator for ExportCsv {
             .get_with_schema(self.relation.get_name(), &schema_sizes)
             .unwrap();
 
-        let mut writer = match csv::Writer::from_path(&self.file_name) {
+        let mut writer = match csv::Writer::from_path(&self.filename) {
             Ok(val) => val,
             Err(_err) => {
                 return Err(String::from(format!(
                     "unable to open file '{}'",
-                    self.file_name
+                    self.filename
                 )));
             }
         };

@@ -152,13 +152,13 @@ impl<'a> ImmediateRelation<'a> {
 
     /// Replaces current data in the relation with data from the CSV file
     pub fn import_csv(&self, filename: &str) -> Result<(), String> {
-        let import_csv_op = ImportCsv::new(String::from(filename), self.relation.clone());
+        let import_csv_op = ImportCsv::new(self.relation.clone(), filename);
         import_csv_op.execute(&self.storage_manager)?;
         Ok(())
     }
 
     pub fn export_csv(&self, filename: &str) -> Result<(), String> {
-        let export_csv_op = ExportCsv::new(String::from(filename), self.relation.clone());
+        let export_csv_op = ExportCsv::new(self.relation.clone(), filename);
         export_csv_op.execute(&self.storage_manager)?;
         Ok(())
     }
