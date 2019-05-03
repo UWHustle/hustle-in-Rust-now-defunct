@@ -5,6 +5,7 @@ sqlite.data
 hustle.data
 /.idea
 cmake-build-debug
-/build
+/build/*
+!/build/t$0.hsl
 Cargo.lock
 **/.DS_Store
