@@ -1,4 +1,4 @@
-use super::storage::StorageManager;
+use storage::StorageManager;
 
 static mut STORAGE_MANAGER: *const StorageManager = 0 as *const StorageManager;
 
