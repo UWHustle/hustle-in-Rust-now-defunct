@@ -101,16 +101,25 @@ class HustlePythonTests(unittest.TestCase):
         self.assertTrue(10.0 in array[:][0] or 10.0 in array[:][1])
 
     # TODO: Hustle doesn't guarantee unique column names
-    def test_join(self):
+    def test_cartesian(self):
         other_relation = connection.create_relation(['e'], ['int'])
         other_relation.insert(1)
         other_relation.insert(2)
         other_relation.insert(3)
         other_relation.insert(4)
-        array_join = self.test_relation.join(other_relation).to_numpy()
+        array_join = self.test_relation.join(other_relation, [], []).to_numpy()
         array_l = self.test_relation.to_numpy()
         array_r = other_relation.to_numpy()
         self.assertEqual(len(array_l) * len(array_r), len(array_join))
+
+    def test_equijoin(self):
+        other_relation = connection.create_relation(
+            ['e', 'f'], ['int', 'varchar(10)'])
+        other_relation.insert(1, 'some text')
+        other_relation.insert(11, 'more text')
+        array_join = self.test_relation.join(
+            other_relation, ['a'], ['e']).to_numpy()
+        self.assertEqual(2, len(array_join))
 
     def test_limit(self):
         array_limited = self.test_relation.limit(2).to_numpy()

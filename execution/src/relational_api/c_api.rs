@@ -194,8 +194,16 @@ pub unsafe extern "C" fn ffi_join(
     err_p: *mut String,
     relation1_p: *const ImmediateRelation,
     relation2_p: *const ImmediateRelation,
+    l_col_names_p: *const *const c_char,
+    r_col_names_p: *const *const c_char,
+    n_join_cols: u32,
 ) -> *const c_void {
-    process_result_p((*relation1_p).join(&*relation2_p, vec![], vec![]), err_p) // TODO: Add support for this in Python API
+    let l_col_names = decode_c_str_list(l_col_names_p, n_join_cols);
+    let r_col_names = decode_c_str_list(r_col_names_p, n_join_cols);
+    process_result_p(
+        (*relation1_p).join(&*relation2_p, l_col_names, r_col_names),
+        err_p,
+    )
 }
 
 #[no_mangle]
