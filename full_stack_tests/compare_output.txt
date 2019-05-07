@@ -171,3 +171,14 @@ Falling back on Quickstep parser/resolver...
 |1711154059|
 |-997799458|
 hustle> 
+SELECT a, b, c, d FROM t, s WHERE a = c;
+Hustle version 0.1.0
+hustle> 
+Resolver: unsupported predicate node type: 1
+Falling back on Quickstep parser/resolver...
+|    a|    b|    c|    d|
+|1624564129|-1790259619|1624564129|lorem|
+|-404176267|-2042823853|-404176267|ipsum|
+|-1640825942|-72531569|-1640825942|dolor|
+|-874138615|-2052430477|-874138615|  sit|
+hustle> 

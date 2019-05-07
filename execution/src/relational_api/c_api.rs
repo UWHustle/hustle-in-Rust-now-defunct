@@ -195,7 +195,7 @@ pub unsafe extern "C" fn ffi_join(
     relation1_p: *const ImmediateRelation,
     relation2_p: *const ImmediateRelation,
 ) -> *const c_void {
-    process_result_p((*relation1_p).join(&*relation2_p), err_p)
+    process_result_p((*relation1_p).join(&*relation2_p, vec![], vec![]), err_p) // TODO: Add support for this in Python API
 }
 
 #[no_mangle]
