@@ -53,8 +53,8 @@ void OptimizerWrapper::CreateDefaultCatalog() {
   std::vector<std::string> rel_names = {"t", "s"};
   std::vector<std::vector<std::tuple<std::string, quickstep::TypeID, std::size_t>>>
       rel_columns = {
-      {{"a", quickstep::kInt, 0}, {"b", quickstep::kInt, 0}},
-      {{"c", quickstep::kInt, 0}, {"d", quickstep::kVarChar, 10}}
+      {std::make_tuple("a", quickstep::kInt, 0), std::make_tuple("b", quickstep::kInt, 0)},
+      {std::make_tuple("c", quickstep::kInt, 0), std::make_tuple("d", quickstep::kVarChar, 10)}
   };
 
   for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
