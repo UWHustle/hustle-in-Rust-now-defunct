@@ -121,9 +121,9 @@ mod storage_manager_tests {
     fn append() {
         let sm = StorageManager::new();
         sm.delete("key_append");
-        sm.append("key_append", &[b"a"]);
+        sm.append("key_append", b"a");
         assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..1], b"a");
-        sm.append("key_append", &[b"bb"]);
+        sm.append("key_append", b"bb");
         assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
         sm.delete("key_append");
     }
@@ -143,7 +143,7 @@ mod storage_manager_tests {
         let sm = StorageManager::new();
         sm.put("key_len", b"");
         assert_eq!(sm.get("key_len").unwrap().len(), 0);
-        sm.append("key_len", &[b"a"]);
+        sm.append("key_len", b"a");
         assert_eq!(sm.get("key_len").unwrap().len(), 1);
         sm.extend("key_len", b"aa", 1);
         assert_eq!(sm.get("key_len").unwrap().len(), 3);
