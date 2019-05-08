@@ -363,14 +363,15 @@ impl StorageManager {
     /// ```
     /// use storage::StorageManager;
     /// let sm = StorageManager::new();
-    /// sm.append("key_append", b"a");
+    /// sm.append("key_append", &[b"a"]);
     /// assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..1], b"a");
-    /// sm.append("key_append", b"bb");
+    /// sm.append("key_append", &[b"bb"]);
     /// assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
     /// sm.delete("key_append");
     /// ```
-    pub fn append(&self, key: &str, value: &[u8]) {
-        if value.len() > BLOCK_SIZE {
+    pub fn append(&self, key: &str, value: &[&[u8]]) {
+        let value_len: usize = value.iter().map(|v| v.len()).sum();
+        if value_len > BLOCK_SIZE {
             panic!("Value size {} is too large for a single block.", value.len());
         }
 
@@ -379,17 +380,25 @@ impl StorageManager {
         let tail_block_index = Self::tail_block_index(key, &self.buffer);
         let key_for_tail_block = Self::key_for_block(key, tail_block_index);
 
-        if let Some(block) = self.buffer.get(&key_for_tail_block) {
-            if block.len() + value.len() <= BLOCK_SIZE {
+        if let Some(block) = self.buffer.get(&key_for_tail_block)
+            .and_then(|b| {
+                if b.len() + value_len > BLOCK_SIZE {
+                    // The value will not fit in the tail block, so we create a new block at the
+                    // end.
+                    let key_for_new_tail_block = Self::key_for_block(key, tail_block_index + 1);
+                    self.buffer.write(&key_for_new_tail_block, &[]);
+                    self.buffer.get(&key_for_new_tail_block)
+                } else {
+                    Some(b)
+                }
+            })
+            .or_else(|| {
+                // The key-value pair does not exist. Create it and initialize it with the value.
+                self.buffer.write(&key_for_tail_block, &[]);
+                self.buffer.get(&key_for_tail_block)
+            }) {
                 // The value can be appended to the tail block.
                 block.append(value);
-            } else {
-                // The value will not fit in the tail block, so we create a new block at the end.
-                self.buffer.write(&Self::key_for_block(key, tail_block_index + 1), value);
-            }
-        } else {
-            // The key-value pair does not exist. Create it and initialize it with the value.
-            self.buffer.write(&key_for_tail_block, value);
         }
 
         self.record_guard.unlock(key);
@@ -412,7 +421,7 @@ impl StorageManager {
             if available_size >= row_size {
                 // The tail block can be extended with the value.
                 let size = min(available_size - available_size % row_size, value.len());
-                block.append(&value[offset..offset + size]);
+                block.append(&[&value[offset..offset + size]]);
                 offset += size;
             }
 

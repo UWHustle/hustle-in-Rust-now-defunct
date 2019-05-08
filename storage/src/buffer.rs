@@ -49,16 +49,20 @@ impl Block {
 
     /// Append the raw value to the `Block`. A `panic!` will occur if the `value` is too large to fit
     /// into the block.
-    pub fn append(&self, value: &[u8]) {
-        let offset_in_block = self.len() + HEADER_SIZE;
-        if offset_in_block + value.len() > BLOCK_SIZE {
-            panic!("Value of size {} too large for block.", value.len());
+    pub fn append(&self, value: &[&[u8]]) {
+        let value_len: usize = value.iter().map(|v| v.len()).sum();
+        let mut offset_in_block = self.len() + HEADER_SIZE;
+        if offset_in_block + value_len > BLOCK_SIZE {
+            panic!("Value of size {} too large for block.", value_len);
         }
         let mut len = vec![];
-        len.write_u32::<BigEndian>((self.len() + value.len()) as u32).unwrap();
+        len.write_u32::<BigEndian>((self.len() + value_len) as u32).unwrap();
         unsafe {
             (*self.value)[..HEADER_SIZE].copy_from_slice(&len);
-            (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
+            for v in value {
+                (*self.value)[offset_in_block..offset_in_block + v.len()].copy_from_slice(v);
+                offset_in_block += v.len()
+            }
             (*self.value).flush().expect("Error flushing changes to storage.");
         }
     }
