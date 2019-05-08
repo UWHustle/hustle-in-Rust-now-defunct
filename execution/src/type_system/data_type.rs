@@ -53,7 +53,7 @@ impl DataType {
             "smallint" => Variant::Int2,
             "int" => Variant::Int4,
             "bigint" | "long" => Variant::Int8,
-            "real" => Variant::Float4,
+            "real" | "float" => Variant::Float4,
             "double" => Variant::Float8,
             "varchar" => Variant::ByteString(size_arg, true),
             "char" => Variant::ByteString(size_arg, false),

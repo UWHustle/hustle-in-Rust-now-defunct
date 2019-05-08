@@ -38,26 +38,29 @@ impl Operator for Join {
         let l_record = storage_manager
             .get_with_schema(self.relation_l.get_name(), &l_schema_sizes)
             .unwrap();
-        let r_schema = self.relation_l.get_schema();
+        let r_schema = self.relation_r.get_schema();
         let r_schema_sizes = r_schema.to_size_vec();
         let r_record = storage_manager
             .get_with_schema(self.relation_r.get_name(), &r_schema_sizes)
             .unwrap();
         storage_manager.delete(self.output_relation.get_name());
+        storage_manager.put(self.output_relation.get_name(), &[]);
 
         // Simple Cartesian product
         for l_block in l_record.blocks() {
             for l_row_i in 0..l_block.len() {
                 for r_block in r_record.blocks() {
                     for r_row_i in 0..r_block.len() {
+                        let mut joined_row = vec![];
                         for col_i in 0..l_schema.get_columns().len() {
                             let data = l_block.get_row_col(l_row_i, col_i).unwrap();
-                            storage_manager.append(self.output_relation.get_name(), data);
+                            joined_row.extend_from_slice(data);
                         }
                         for col_i in 0..r_schema.get_columns().len() {
                             let data = r_block.get_row_col(r_row_i, col_i).unwrap();
-                            storage_manager.append(self.output_relation.get_name(), data);
+                            joined_row.extend_from_slice(data);
                         }
+                        storage_manager.append(self.output_relation.get_name(), &joined_row);
                     }
                 }
             }

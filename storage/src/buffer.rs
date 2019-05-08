@@ -15,7 +15,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 use std::io::{Write};
 
 pub const BLOCK_SIZE: usize = 1000;
-const HEADER_SIZE: usize = 4;
+pub const HEADER_SIZE: usize = 4;
 
 /// The unit of storage and replacement in the cache. It is assumed that all `Block`s in the buffer
 /// are the same size, but this is not enforced in this module. Instead, it is enforced in the

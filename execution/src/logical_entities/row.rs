@@ -15,9 +15,11 @@ impl Row {
     pub fn get_schema(&self) -> &Schema {
         &self.schema
     }
+
     pub fn get_values(&self) -> &Vec<Box<Value>> {
         &self.values
     }
+
     pub fn get_size(&self) -> usize {
         let mut total_size = 0;
         for value in &self.values {
@@ -25,35 +27,12 @@ impl Row {
         }
         total_size
     }
-}
 
-/*
-use logical_entities::schema::ExtSchema;
-
-
-#[repr(C)]
-#[derive(Clone, PartialEq)]
-pub struct ExtRow {
-    values: [u64; 2 ],
-    schema: ExtSchema,
-}
-
-impl ExtRow {
-    pub fn to_row(&self) -> Row {
-        let values = self.values.iter().filter(|_value|{true}).map(|value|{*value as u64}).collect::<Vec<_>>();
-        let schema = self.schema.to_schema();
-
-        Row {
-            schema,values
+    pub fn to_string(&self) -> String {
+        let mut string_list = vec![];
+        for value in &self.values {
+            string_list.push(value.to_string());
         }
+        string_list.join(", ")
     }
-
-    pub fn from_row(row: Row) -> ExtRow {
-        let values = [1,2];
-        let schema = ExtSchema::from_schema(row.get_schema().clone());
-
-        ExtRow {
-            values,schema
-        }
-    }
-}*/
+}

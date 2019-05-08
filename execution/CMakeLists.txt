@@ -19,5 +19,3 @@ add_custom_target(
 add_test(NAME execution_tests
          COMMAND cargo test
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/scripts DESTINATION ${CMAKE_BINARY_DIR})

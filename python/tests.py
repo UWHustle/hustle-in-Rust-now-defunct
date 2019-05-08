@@ -3,11 +3,12 @@ import numpy
 import os
 import unittest
 
+connection = HustleConnection()
+
 
 class HustlePythonTests(unittest.TestCase):
     def setUp(self):
-        self.connection = HustleConnection()
-        self.test_relation = self.connection.create_relation(
+        self.test_relation = connection.create_relation(
             ['a', 'b', 'c', 'd'],
             ['int', 'bigint', 'real', 'varchar(10)'])
         self.test_relation.insert(1, 10000, 10.2, 'Hello, ')
@@ -15,7 +16,7 @@ class HustlePythonTests(unittest.TestCase):
         self.test_relation.insert(11, 55, 15.7, '.')
 
     def test_create_empty(self):
-        relation = self.connection.create_relation([], [])
+        relation = connection.create_relation([], [])
         self.assertEqual([], relation.get_col_names())
         self.assertEqual([], relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -23,7 +24,7 @@ class HustlePythonTests(unittest.TestCase):
     def test_create_single_attr(self):
         col_names = ['a']
         type_names = ['int']
-        relation = self.connection.create_relation(col_names, type_names)
+        relation = connection.create_relation(col_names, type_names)
         self.assertEqual(col_names, relation.get_col_names())
         self.assertEqual(type_names, relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -31,7 +32,7 @@ class HustlePythonTests(unittest.TestCase):
     def test_create(self):
         col_names = ['a', 'b']
         type_names = ['int', 'int']
-        relation = self.connection.create_relation(col_names, type_names)
+        relation = connection.create_relation(col_names, type_names)
         self.assertEqual(col_names, relation.get_col_names())
         self.assertEqual(type_names, relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -47,7 +48,7 @@ class HustlePythonTests(unittest.TestCase):
             'double',
             'varchar(10)',
             'char(10)']
-        relation = self.connection.create_relation(col_names, type_names)
+        relation = connection.create_relation(col_names, type_names)
         self.assertEqual(col_names, relation.get_col_names())
         self.assertEqual(type_names, relation.get_type_names())
         self.assertTrue(relation.get_name() is not None)
@@ -55,12 +56,12 @@ class HustlePythonTests(unittest.TestCase):
     def test_from_numpy(self):
         dtype = numpy.dtype([('a', 'int32'), ('b', 'S10')])
         array = numpy.zeros(5, dtype)
-        relation = self.connection.from_numpy(array)
+        relation = connection.from_numpy(array)
         self.assertEqual(['a', 'b'], relation.get_col_names())
         self.assertEqual(['int', 'varchar(10)'], relation.get_type_names())
 
     def test_to_numpy(self):
-        relation = self.connection.create_relation(
+        relation = connection.create_relation(
             ['a', 'b'], ['bigint', 'double'])
         relation.insert(55, 11.8)
         relation.insert(12, 13.3)
@@ -84,8 +85,8 @@ class HustlePythonTests(unittest.TestCase):
         self.test_relation.import_csv('U.csv')
         actual = self.test_relation.to_numpy()
         self.assertTrue(numpy.array_equal(expected, actual))
-        self.assertTrue(os.path.isfile('T.csv'))
-        self.assertTrue(os.path.getsize('T.csv') > 0)
+        self.assertTrue(os.path.isfile('U.csv'))
+        self.assertTrue(os.path.getsize('U.csv') > 0)
 
     def test_simple_aggregate(self):
         aggregate = self.test_relation.aggregate('a', [], 'avg')
@@ -101,7 +102,7 @@ class HustlePythonTests(unittest.TestCase):
 
     # TODO: Hustle doesn't guarantee unique column names
     def test_join(self):
-        other_relation = self.connection.create_relation(['e'], ['int'])
+        other_relation = connection.create_relation(['e'], ['int'])
         other_relation.insert(1)
         other_relation.insert(2)
         other_relation.insert(3)

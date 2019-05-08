@@ -4,7 +4,6 @@ use physical_operators::Operator;
 
 use super::storage::StorageManager;
 
-#[derive(Debug)]
 pub struct Limit {
     input_relation: Relation,
     output_relation: Relation,
@@ -35,6 +34,7 @@ impl Operator for Limit {
             .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
             .unwrap();
         storage_manager.delete(self.output_relation.get_name());
+        storage_manager.put(self.output_relation.get_name(), &[]);
 
         let mut n_rows = 0;
         for in_block in in_record.blocks() {
@@ -42,9 +42,11 @@ impl Operator for Limit {
                 if n_rows >= self.limit {
                     return Ok(self.get_target_relation());
                 }
+                let mut limited_row = vec![];
                 for data in in_block.get_row(row_i).unwrap() {
-                    storage_manager.append(self.output_relation.get_name(), data);
+                    limited_row.extend_from_slice(data);
                 }
+                storage_manager.append(self.output_relation.get_name(), &limited_row);
                 n_rows += 1;
             }
         }

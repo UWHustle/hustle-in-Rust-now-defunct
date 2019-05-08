@@ -9,7 +9,6 @@ pub mod limit;
 pub mod print;
 pub mod project;
 pub mod table_reference;
-pub mod test_relation;
 
 use logical_entities::relation::Relation;
 
