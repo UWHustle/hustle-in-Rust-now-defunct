@@ -7,15 +7,15 @@ use super::storage::StorageManager;
 extern crate csv;
 
 pub struct ImportCsv {
-    file_name: String,
     relation: Relation,
+    filename: String,
 }
 
 impl ImportCsv {
-    pub fn new(file_name: String, relation: Relation) -> Self {
+    pub fn new(relation: Relation, filename: &str) -> Self {
         ImportCsv {
-            file_name,
             relation,
+            filename: String::from(filename),
         }
     }
 }
@@ -26,37 +26,31 @@ impl Operator for ImportCsv {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let mut reader = match csv::Reader::from_path(&self.file_name) {
+        let schema = self.relation.get_schema();
+        storage_manager.delete(self.relation.get_name());
+
+        let mut reader = match csv::Reader::from_path(&self.filename) {
             Ok(val) => val,
             Err(_err) => {
                 return Err(String::from(format!(
                     "unable to open file '{}'",
-                    self.file_name
+                    self.filename
                 )))
             }
         };
-        let record_count = reader.records().count() + 1;
         reader.seek(csv::Position::new()).unwrap();
 
-        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
-        let size = self.relation.get_row_size() * record_count;
-        let mut data: Vec<u8> = vec![0; size];
-
-        let mut n: usize = 0;
         for result in reader.records() {
-            let record = result.unwrap();
-
-            for (i, column) in self.relation.get_columns().iter().enumerate() {
-                let a = record.get(i).unwrap().to_string();
-
-                let c = column.data_type().parse(&a)?;
-                let size = c.size();
-                data[n..n + size].clone_from_slice(c.un_marshall().data());
-                n += size;
+            let csv_row = result.unwrap();
+            let mut hustle_row = vec![];
+            for col_i in 0..schema.get_columns().len() {
+                let csv_str = csv_row.get(col_i).unwrap();
+                let data_type = schema.get_columns()[col_i].data_type();
+                let value = data_type.parse(csv_str).unwrap();
+                hustle_row.extend_from_slice(value.un_marshall().data());
             }
+            storage_manager.append(self.relation.get_name(), &hustle_row);
         }
-
-        storage_manager.put(self.relation.get_name(), &data);
 
         Ok(self.get_target_relation())
     }

@@ -1,16 +1,17 @@
 extern crate storage;
+extern crate memmap;
+extern crate core;
 
 #[cfg(test)]
 #[allow(unused_must_use)]
 mod storage_manager_tests {
     use storage::StorageManager;
-    use std::mem;
 
     #[test]
     fn get() {
         let sm = StorageManager::new();
         sm.put("key_get", b"value");
-        assert_eq!(&sm.get("key_get").unwrap()[0..5], b"value");
+        assert_eq!(&sm.get("key_get").unwrap().get_block(0).unwrap()[0..5], b"value");
         assert!(sm.get("nonexistent_key").is_none());
         sm.delete("key_get");
     }
@@ -19,69 +20,133 @@ mod storage_manager_tests {
     fn put() {
         let sm = StorageManager::new();
         sm.put("key_put", b"value");
-        assert_eq!(&sm.get("key_put").unwrap()[0..5], b"value");
+        assert_eq!(&sm.get("key_put").unwrap().get_block(0).unwrap()[0..5], b"value");
         sm.put("key_put", b"new_value");
-        assert_eq!(&sm.get("key_put").unwrap()[0..9], b"new_value");
+        assert_eq!(&sm.get("key_put").unwrap().get_block(0).unwrap()[0..9], b"new_value");
         sm.delete("key_put");
     }
 
     #[test]
     fn put_anon() {
         let sm = StorageManager::new();
-        let key = sm.put_anon(b"value");
-        assert_eq!(&sm.get(key.as_str()).unwrap()[0..5], b"value");
-        sm.delete(key.as_str());
+        let key_0 = sm.put_anon(b"value");
+        assert_eq!(&sm.get(&key_0).unwrap().get_block(0).unwrap()[0..5], b"value");
+        sm.delete(&key_0);
+
+        let key_1 = sm.put_anon(b"");
+        assert_eq!(sm.get(&key_1).unwrap().get_block(0).unwrap().len(), 0);
+        sm.delete(&key_1);
     }
 
     #[test]
     fn delete() {
         let sm = StorageManager::new();
         sm.put("key_delete", b"value");
-        assert_eq!(&sm.get("key_delete").unwrap()[0..5], b"value");
+        assert_eq!(&sm.get("key_delete").unwrap().get_block(0).unwrap()[0..5], b"value");
         sm.delete("key_delete");
         assert!(sm.get("key_delete").is_none());
     }
 
     #[test]
-    fn replacement() {
-        let sm = StorageManager::with_capacity(3);
-        sm.put("key_replacement_1", b"value");
-        sm.put("key_replacement_2", b"value");
-        sm.put("key_replacement_3", b"value");
-        sm.put("key_replacement_4", b"value");
+    fn col_iter() {
+        let sm = StorageManager::new();
+        sm.put("key_col_iter", b"abbcdd");
 
-        // Record 4 is most recently used so it should be in the sm.
-        // Record 1 is least recently used so it should have been replaced.
-        assert!(sm.is_cached("key_replacement_4"));
-        assert!(!sm.is_cached("key_replacement_1"));
-        sm.delete("key_replacement_1");
-        sm.delete("key_replacement_2");
-        sm.delete("key_replacement_3");
-        sm.delete("key_replacement_4");
+        {
+            let record = sm.get_with_schema("key_col_iter", &[1, 2]).unwrap();
+            let block = record.get_block(0).unwrap();
+
+            let mut col_iter = block.get_col(0).unwrap();
+            assert_eq!(&col_iter.next().unwrap(), &b"a");
+            assert_eq!(&col_iter.next().unwrap(), &b"c");
+            assert!(col_iter.next().is_none());
+        }
+
+        sm.delete("key_col_iter");
     }
 
     #[test]
-    fn reference() {
-        let sm = StorageManager::with_capacity(3);
+    fn row_iter() {
+        let sm = StorageManager::new();
+        sm.put("key_row_iter", b"abbcdd");
 
-        sm.put("key_reference_1", b"value");
-        let value = sm.get("key_reference_1");
+        {
+            let record = sm.get_with_schema("key_row_iter", &[1, 2]).unwrap();
+            let block = record.get_block(0).unwrap();
+            let mut row_iter = block.get_row(0).unwrap();
+            assert_eq!(&row_iter.next().unwrap(), &b"a");
+            assert_eq!(&row_iter.next().unwrap(), &b"bb");
+            assert!(row_iter.next().is_none());
+        }
 
-        sm.put("key_reference_2", b"value");
-        sm.put("key_reference_3", b"value");
-        sm.put("key_reference_4", b"value");
+        sm.delete("key_row_iter");
+    }
 
-        // We have a reference to the record 1 so it should not have been replaced.
-        assert!(sm.is_cached("key_reference_4"));
-        assert!(sm.is_cached("key_reference_1"));
+    #[test]
+    fn get_row_col() {
+        let sm = StorageManager::new();
+        sm.put("key_get_row_col", b"abbcdd");
 
-        // Instead record 2 is is least recently used without a reference.
-        assert!(sm.is_cached("key_reference_2"));
+        {
+            let record = sm.get_with_schema("key_get_row_col", &[1, 2]).unwrap();
+            let block = record.get_block(0).unwrap();
+            assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
+            assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
+            assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
+            assert_eq!(&block.get_row_col(1, 1).unwrap(), &b"dd");
+            assert!(block.get_row_col(0, 2).is_none());
+            assert!(block.get_row_col(2, 0).is_none());
+        }
 
-        mem::drop(value);
-        sm.delete("key_reference_1");
-        sm.delete("key_reference_2");
-        sm.delete("key_reference_3");
-        sm.delete("key_reference_4");
+        sm.delete("key_get_row_col");
+    }
+
+    #[test]
+    fn set_row_col() {
+        let sm = StorageManager::new();
+        sm.put("key_set_row_col", b"abbcdd");
+
+        {
+            let record = sm.get_with_schema("key_set_row_col", &[1, 2]).unwrap();
+            let block = record.get_block(0).unwrap();
+            block.set_row_col(0, 0, b"e");
+            block.set_row_col(1, 1, b"ff");
+            assert_eq!(&block[0..6], b"ebbcff");
+        }
+
+        sm.delete("key_set_row_col");
+    }
+
+    #[test]
+    fn append() {
+        let sm = StorageManager::new();
+        sm.delete("key_append");
+        sm.append("key_append", b"a");
+        assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..1], b"a");
+        sm.append("key_append", b"bb");
+        assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
+        sm.delete("key_append");
+    }
+
+    #[test]
+    fn extend() {
+        let sm = StorageManager::new();
+        sm.extend("key_extend", b"abc", 1);
+        assert_eq!(&sm.get("key_extend").unwrap().get_block(0).unwrap()[0..3], b"abc");
+        sm.extend("key_extend", b"def", 1);
+        assert_eq!(&sm.get("key_extend").unwrap().get_block(0).unwrap()[0..6], b"abcdef");
+        sm.delete("key_extend");
+    }
+
+    #[test]
+    fn len() {
+        let sm = StorageManager::new();
+        sm.put("key_len", b"");
+        assert_eq!(sm.get("key_len").unwrap().len(), 0);
+        sm.append("key_len", b"a");
+        assert_eq!(sm.get("key_len").unwrap().len(), 1);
+        sm.extend("key_len", b"aa", 1);
+        assert_eq!(sm.get("key_len").unwrap().len(), 3);
+        sm.delete("key_len");
     }
 }

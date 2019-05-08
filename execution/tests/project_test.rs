@@ -1,58 +1,25 @@
 extern crate execution;
 
-use execution::logical_entities::column::Column;
-use execution::logical_entities::predicates::comparison::*;
-use execution::logical_entities::predicates::Predicate;
-use execution::logical_entities::relation::Relation;
-use execution::physical_operators::project::Project;
-use execution::physical_operators::select_sum::SelectSum;
-use execution::physical_plan::node::Node;
-use execution::test_helpers::data_gen::generate_relation_t_into_hustle_and_sqlite3;
-use execution::test_helpers::sqlite3::run_query_sqlite3;
-use execution::type_system::data_type::*;
-use execution::type_system::integer::*;
-use execution::type_system::operators::*;
-
-use std::rc::Rc;
-
-extern crate storage;
-use self::storage::StorageManager;
+use execution::logical_entities::predicates::comparison::Comparison;
+use execution::physical_plan::global_sm;
+use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
+use execution::test_helpers::hustle_queries::hustle_predicate;
+use execution::test_helpers::sqlite3::run_query_sqlite;
+use execution::type_system::integer::Int4;
+use execution::type_system::operators::Comparator;
 
 const RECORD_COUNT: usize = 10;
 
-fn sum_column_hustle(relation: Relation, column: Column) -> u128 {
-    let select_operator = SelectSum::new(relation.clone(), column);
-    select_operator
-        .execute(&StorageManager::new())
-        .parse::<u128>()
-        .unwrap()
-}
-
 #[test]
 fn test_project_predicate() {
-    let relation = generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, false);
-    let project_col = Column::new(String::from("a"), DataType::new(Variant::Int4, true));
-    let predicate = Comparison::new(
-        project_col.clone(),
+    let relation = generate_t_hustle_and_sqlite(global_sm::get(), RECORD_COUNT, true);
+    let column = relation.column_from_name("a").unwrap();
+    let predicate = Box::new(Comparison::new(
+        column.clone(),
         Comparator::Less,
         Box::new(Int4::from(50)),
-    );
-    let predicated_relation = hustle_where(
-        relation.clone(),
-        vec![project_col.clone()],
-        Box::new(predicate),
-    );
-    let hustle_calculation = sum_column_hustle(predicated_relation.clone(), project_col);
-    let sqlite3_calculation =
-        run_query_sqlite3("SELECT SUM(t.a) FROM t WHERE t.a < 50;", "SUM(t.a)");
-    assert_eq!(hustle_calculation, sqlite3_calculation);
-}
-
-fn hustle_where(
-    relation: Relation,
-    projection: Vec<Column>,
-    predicate: Box<Predicate>,
-) -> Relation {
-    let project_op = Project::new(relation.clone(), projection, predicate);
-    Node::new(Rc::new(project_op), vec![]).execute(&StorageManager::new())
+    ));
+    let hustle_value = hustle_predicate(global_sm::get(), relation, "a", predicate);
+    let sqlite_value = run_query_sqlite("SELECT SUM(t.a) FROM t WHERE t.a < 50;", "SUM(t.a)");
+    assert_eq!(hustle_value, sqlite_value);
 }

@@ -2,7 +2,6 @@ use relational_api::rust_api::*;
 use std::ffi::*;
 use std::os::raw::c_char;
 use std::slice::from_raw_parts;
-use storage::storage_manager::Value;
 
 #[no_mangle]
 pub unsafe extern "C" fn ffi_get_connection_p() -> *const c_void {
@@ -68,12 +67,12 @@ pub unsafe extern "C" fn ffi_get_data_p(relation_p: *const ImmediateRelation) ->
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_get_slice_p(data_p: *const Value) -> *const c_void {
+pub unsafe extern "C" fn ffi_get_slice_p(data_p: *const Vec<u8>) -> *const c_void {
     (&**data_p).as_ptr() as *const c_void
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_get_slice_size(data_p: *const Value) -> u32 {
+pub unsafe extern "C" fn ffi_get_slice_size(data_p: *const Vec<u8>) -> u32 {
     (&**data_p).len() as u32
 }
 
@@ -110,7 +109,7 @@ pub unsafe extern "C" fn ffi_drop_c_str_vec(vec_p: *mut Vec<*mut c_char>) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ffi_drop_data(data_p: *mut Value) {
+pub unsafe extern "C" fn ffi_drop_data(data_p: *mut Vec<u8>) {
     Box::from_raw(data_p);
 }
 
@@ -205,7 +204,7 @@ pub unsafe extern "C" fn ffi_limit(
     relation_p: *const ImmediateRelation,
     limit: u32,
 ) -> *const c_void {
-    process_result_p((*relation_p).limit(limit), err_p)
+    process_result_p((*relation_p).limit(limit as usize), err_p)
 }
 
 #[no_mangle]

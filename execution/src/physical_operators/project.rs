@@ -8,23 +8,26 @@ use physical_operators::Operator;
 use type_system::borrowed_buffer::*;
 use type_system::*;
 
-use std::collections::HashMap;
-
 use super::storage::StorageManager;
 
 pub struct Project {
-    relation: Relation,
+    input_relation: Relation,
     output_relation: Relation,
     predicate: Box<Predicate>,
 }
 
 impl Project {
-    pub fn new(relation: Relation, output_cols: Vec<Column>, predicate: Box<Predicate>) -> Self {
+    pub fn new(
+        input_relation: Relation,
+        output_cols: Vec<Column>,
+        predicate: Box<Predicate>,
+    ) -> Self {
         let schema = Schema::new(output_cols);
-        let output_relation = Relation::new(&format!("{}_project", relation.get_name()), schema);
+        let output_relation =
+            Relation::new(&format!("{}_project", input_relation.get_name()), schema);
 
         Project {
-            relation,
+            input_relation,
             output_relation,
             predicate,
         }
@@ -41,54 +44,52 @@ impl Operator for Project {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let input_data = storage_manager.get(self.relation.get_name()).unwrap();
+        let in_schema = self.input_relation.get_schema();
+        let in_schema_sizes = in_schema.to_size_vec();
+        let in_record = storage_manager
+            .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
+            .unwrap();
+        let out_schema = self.output_relation.get_schema();
+        storage_manager.delete(self.output_relation.get_name());
+        storage_manager.put(self.output_relation.get_name(), &[]);
 
-        // Future optimization: create uninitialized Vec (this may require unsafe Rust)
-        let mut output_data: Vec<u8> = vec![0; self.relation.get_total_size(storage_manager)];
-
-        let mut i = 0; // Beginning of the current row in the input buffer
-        let mut k = 0; // Current position in the input buffer
-        let mut j = 0; // Current position in the output buffer
-
-        // Loop over all the data
-        let input_cols = self.relation.get_columns().to_vec();
-        while i < input_data.len() {
-            // Check whether the current row satisfies the predicate
-            let mut values: Vec<Box<Value>> = vec![];
-            for column in &input_cols {
-                let value_len = column.data_type().next_size(&input_data[k..]);
-                let value =
-                    BorrowedBuffer::new(&input_data[k..k + value_len], column.data_type(), false)
-                        .marshall();
-                values.push(value);
-                k += value_len;
-            }
-            let row = Row::new(self.relation.get_schema().clone(), values);
-            let filter = self.predicate.evaluate(&row);
-
-            // Filter columns if the predicate is true for this row
-            if filter {
-                // Place all values in the current row in a HashMap by column
-                let mut col_map = HashMap::new();
-                k = i;
-                for column in &input_cols {
-                    let value_len = column.data_type().next_size(&input_data[k..]);
-                    col_map.insert(column, &input_data[k..k + value_len]);
-                    k += value_len;
-                }
-
-                // Output values in the order of the output columns
-                for column in self.output_relation.get_columns() {
-                    let slice = col_map[column];
-                    output_data[j..j + slice.len()].clone_from_slice(slice);
-                    j += slice.len();
-                }
-            }
-            i = k;
+        // Indices of the output columns in the input relation
+        let mut out_cols_i = vec![];
+        for col in out_schema.get_columns() {
+            let i = in_schema
+                .get_columns()
+                .iter()
+                .position(|x| x == col)
+                .unwrap();
+            out_cols_i.push(i);
         }
 
-        output_data.resize(j, 0);
-        storage_manager.put(self.output_relation.get_name(), &output_data);
+        for in_block in in_record.blocks() {
+            for row_i in 0..in_block.len() {
+                // Assemble values in the current row (this is very inefficient!)
+                let mut values: Vec<Box<Value>> = vec![];
+                for col_i in 0..in_schema.get_columns().len() {
+                    let data = in_block.get_row_col(row_i, col_i).unwrap();
+                    let data_type = in_schema.get_columns()[col_i].data_type();
+                    let buff = BorrowedBuffer::new(&data, data_type, false);
+                    values.push(buff.marshall());
+                }
+
+                // Check whether the current row satisfies the predicate
+                let row = Row::new(in_schema.clone(), values);
+                if !self.predicate.evaluate(&row) {
+                    continue;
+                }
+
+                // Remap values to the order they appear in the output schema
+                let mut projected_row = vec![];
+                for col_i in 0..out_schema.get_columns().len() {
+                    let data = in_block.get_row_col(row_i, out_cols_i[col_i]).unwrap();
+                    projected_row.extend_from_slice(data);
+                }
+                storage_manager.append(self.output_relation.get_name(), &projected_row);
+            }
+        }
 
         Ok(self.get_target_relation())
     }

@@ -1,10 +1,9 @@
-use std::rc::Rc;
-
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
 
-extern crate storage;
-use self::storage::StorageManager;
+use std::rc::Rc;
+
+use storage::StorageManager;
 
 pub struct Node {
     operator: Rc<Operator>,

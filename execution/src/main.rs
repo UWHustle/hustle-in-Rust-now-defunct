@@ -1,3 +1,4 @@
+extern crate execution;
 extern crate serde_json;
 extern crate storage;
 
@@ -8,12 +9,11 @@ pub mod relational_api;
 pub mod test_helpers;
 pub mod type_system;
 
-use test_helpers::data_gen::*;
+use execution::physical_plan::global_sm;
+use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
 
-const RECORD_COUNT: usize = 30;
+const RECORD_COUNT: usize = 50;
 
 fn main() {
-    generate_relation_t_into_hustle_and_sqlite3(RECORD_COUNT, true);
-    generate_relation_a_into_hustle_and_sqlite3(RECORD_COUNT);
-    generate_relation_b_into_hustle_and_sqlite3(RECORD_COUNT);
+    generate_t_hustle_and_sqlite(global_sm::get(), RECORD_COUNT, true);
 }

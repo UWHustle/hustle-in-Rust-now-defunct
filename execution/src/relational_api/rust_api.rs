@@ -13,7 +13,6 @@ use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
-use storage::storage_manager;
 use type_system::data_type::DataType;
 use type_system::operators::*;
 use type_system::Value;
@@ -46,7 +45,7 @@ impl HustleConnection {
         let mut columns: Vec<Column> = vec![];
         for i in 0..col_names.len() {
             let data_type = DataType::from_str(col_type_names[i])?;
-            columns.push(Column::new(String::from(col_names[i]), data_type));
+            columns.push(Column::new(col_names[i], data_type));
         }
         let schema = Schema::new(columns);
         let name = self.storage_manager.put_anon(&vec![]);
@@ -87,7 +86,11 @@ impl<'a> ImmediateRelation<'a> {
     pub fn copy_slice(&self, buffer: &[u8]) {
         let mut data: Vec<u8> = vec![0; buffer.len()];
         data.clone_from_slice(buffer);
-        self.storage_manager.put(self.relation.get_name(), &data);
+        self.storage_manager.extend(
+            self.relation.get_name(),
+            &data,
+            self.relation.get_schema().get_row_size(),
+        );
     }
 
     pub fn get_data_size(&self) -> usize {
@@ -97,39 +100,65 @@ impl<'a> ImmediateRelation<'a> {
         }
     }
 
-    pub fn get_data(&self) -> Option<storage_manager::Value> {
-        self.storage_manager.get(self.relation.get_name())
+    pub fn get_data(&self) -> Option<Vec<u8>> {
+        self.storage_manager.get_concat(self.relation.get_name())
     }
 
     /// Replaces current data in the relation with data from the Hustle file
-    /// TODO: Pull schema from the catalog
+    ///
+    /// The schema is assumed to match that of the current ImmediateRelation
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
-        let import_relation = Relation::new(name, self.relation.get_schema().clone());
-        match self.storage_manager.get(import_relation.get_name()) {
-            Some(data) => {
-                self.storage_manager.put(self.relation.get_name(), &data);
-                Ok(())
+        let schema_sizes = self.relation.get_schema().to_size_vec();
+        let import_record = match self.storage_manager.get_with_schema(name, &schema_sizes) {
+            Some(record) => record,
+            None => return Err(format!("relation {} not found in storage manager", name)),
+        };
+
+        self.storage_manager.delete(self.relation.get_name());
+        for block in import_record.blocks() {
+            for row_i in 0..block.len() {
+                let mut hustle_row = vec![];
+                for data in block.get_row(row_i).unwrap() {
+                    hustle_row.extend_from_slice(data);
+                }
+                self.storage_manager
+                    .append(self.relation.get_name(), &hustle_row);
             }
-            None => Err(format!("relation {} not found in storage manager", name)),
         }
+
+        Ok(())
     }
 
     pub fn export_hustle(&self, name: &str) -> Result<(), String> {
-        match self.storage_manager.get(self.relation.get_name()) {
-            Some(data) => Ok(self.storage_manager.put(name, &data)),
-            None => Err(format!("relation {} not found in storage manager", name)),
+        let schema_sizes = self.relation.get_schema().to_size_vec();
+        let record = self
+            .storage_manager
+            .get_with_schema(self.relation.get_name(), &schema_sizes)
+            .unwrap();
+
+        self.storage_manager.delete(name);
+        for block in record.blocks() {
+            for row_i in 0..block.len() {
+                let mut hustle_row = vec![];
+                for data in block.get_row(row_i).unwrap() {
+                    hustle_row.extend_from_slice(data);
+                }
+                self.storage_manager.append(name, &hustle_row);
+            }
         }
+
+        Ok(())
     }
 
     /// Replaces current data in the relation with data from the CSV file
     pub fn import_csv(&self, filename: &str) -> Result<(), String> {
-        let import_csv_op = ImportCsv::new(String::from(filename), self.relation.clone());
+        let import_csv_op = ImportCsv::new(self.relation.clone(), filename);
         import_csv_op.execute(&self.storage_manager)?;
         Ok(())
     }
 
     pub fn export_csv(&self, filename: &str) -> Result<(), String> {
-        let export_csv_op = ExportCsv::new(String::from(filename), self.relation.clone());
+        let export_csv_op = ExportCsv::new(self.relation.clone(), filename);
         export_csv_op.execute(&self.storage_manager)?;
         Ok(())
     }
@@ -140,20 +169,25 @@ impl<'a> ImmediateRelation<'a> {
         group_by_col_names: Vec<&str>,
         agg_name: &str,
     ) -> Result<Self, String> {
-        let agg_col = self.relation.column_from_name(agg_col_name)?;
+        let agg_col_in = self.relation.column_from_name(agg_col_name)?;
+        let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
+        let agg_out_type = agg_col_in.data_type();
+        let agg_col_out = Column::new(&agg_out_name, agg_out_type);
+
         let group_by_cols = self
             .relation
             .columns_from_names(group_by_col_names.clone())?;
-
-        let mut project_col_names = group_by_col_names.clone();
-        project_col_names.push(agg_col_name);
-        let projected = self.project(project_col_names)?;
+        let mut output_col_names = vec![];
+        output_col_names.push(agg_out_name.clone());
+        for col in group_by_cols {
+            output_col_names.push(col.get_name().to_string());
+        }
 
         let agg_op = Aggregate::from_str(
-            projected.relation.clone(),
-            agg_col.clone(),
-            group_by_cols,
-            agg_col.data_type(),
+            self.relation.clone(),
+            agg_col_in,
+            agg_col_out,
+            output_col_names,
             agg_name,
         )?;
         let output = ImmediateRelation {
@@ -185,7 +219,7 @@ impl<'a> ImmediateRelation<'a> {
         Ok(output)
     }
 
-    pub fn limit(&self, limit: u32) -> Result<Self, String> {
+    pub fn limit(&self, limit: usize) -> Result<Self, String> {
         let limit_op = Limit::new(self.relation.clone(), limit);
         let output = ImmediateRelation {
             relation: limit_op.execute(self.storage_manager)?,
