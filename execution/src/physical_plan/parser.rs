@@ -9,6 +9,7 @@ use physical_operators::aggregate::Aggregate;
 use physical_operators::create_table::CreateTable;
 use physical_operators::drop_table::DropTable;
 use physical_operators::insert::Insert;
+use physical_operators::update::Update;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
@@ -46,6 +47,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
         "HashJoin" | "NestedLoopsJoin" => parse_join(json),
         "Limit" => parse_limit(json),
         "InsertTuple" => parse_insert_tuple(json),
+        "UpdateTable" => parse_update_table(json),
         "CreateTable" => parse_create_table(json),
         "DropTable" => parse_drop_table(json),
         _ => panic!("Optimizer tree node type {} not supported", json_name),
@@ -162,6 +164,15 @@ fn parse_create_table(json: &serde_json::Value) -> Node {
     let cols = parse_columns(&json["attributes"]);
     let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
     Node::new(Rc::new(CreateTable::new(relation)), vec![])
+}
+
+fn parse_update_table(json: &serde_json::Value) -> Node {
+    let input = parse_node(&json["input"]);
+    let predicate = json.get("predicate").map(|p| parse_predicate(p));
+    let cols = parse_columns(&json["attributes"]);
+    let assignments = parse_value_list(&json["assigned_values"]);
+    let update_op = Update::new(input.get_output_relation(), predicate, cols, assignments);
+    Node::new(Rc::new(update_op), vec![Rc::new(input)])
 }
 
 fn parse_drop_table(json: &serde_json::Value) -> Node {
