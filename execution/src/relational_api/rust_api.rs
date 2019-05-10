@@ -210,8 +210,24 @@ impl<'a> ImmediateRelation<'a> {
         Ok(())
     }
 
-    pub fn join(&self, other: &ImmediateRelation) -> Result<Self, String> {
-        let join_op = Join::new(self.relation.clone(), other.relation.clone());
+    pub fn join(
+        &self,
+        other: &ImmediateRelation,
+        l_col_names: Vec<&str>,
+        r_col_names: Vec<&str>,
+    ) -> Result<Self, String> {
+        if l_col_names.len() != r_col_names.len() {
+            return Err(String::from(
+                "must have an equal number of left and right join columns",
+            ));
+        }
+
+        let join_op = Join::new(
+            self.relation.clone(),
+            other.relation.clone(),
+            self.relation.columns_from_names(l_col_names)?,
+            other.relation.columns_from_names(r_col_names)?,
+        );
         let output = ImmediateRelation {
             relation: join_op.execute(&self.storage_manager)?,
             storage_manager: self.storage_manager,

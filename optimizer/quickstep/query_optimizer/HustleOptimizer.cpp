@@ -13,6 +13,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <tuple>
 
 namespace quickstep {
 
@@ -49,13 +50,11 @@ void OptimizerWrapper::CreateDefaultCatalog() {
   quickstep::CatalogDatabase *catalog_database =
       catalog_->getDatabaseByNameMutable("default_db");
 
-  std::vector<std::string> rel_names = {"t", "a", "b"};
-  std::vector<std::vector<std::pair<std::string, quickstep::TypeID>>>
+  std::vector<std::string> rel_names = {"t", "s"};
+  std::vector<std::vector<std::tuple<std::string, quickstep::TypeID, std::size_t>>>
       rel_columns = {
-      {{"a", quickstep::kInt}, {"b", quickstep::kInt}},
-      {{"w", quickstep::kInt}, {"x", quickstep::kInt}, {"y", quickstep::kInt},
-       {"z", quickstep::kInt}},
-      {{"w", quickstep::kInt}, {"x", quickstep::kInt}}
+      {std::make_tuple("a", quickstep::kInt, 0), std::make_tuple("b", quickstep::kInt, 0)},
+      {std::make_tuple("c", quickstep::kInt, 0), std::make_tuple("d", quickstep::kVarChar, 10)}
   };
 
   for (std::size_t rel_idx = 0; rel_idx < rel_names.size(); ++rel_idx) {
@@ -65,15 +64,25 @@ void OptimizerWrapper::CreateDefaultCatalog() {
                                        -1 /* id */,
                                        true /* temporary */));
 
-    const std::vector<std::pair<std::string, quickstep::TypeID>>
+    const std::vector<std::tuple<std::string, quickstep::TypeID, std::size_t>>
         &columns = rel_columns[rel_idx];
     int attr_id = -1;
     for (std::size_t col_idx = 0; col_idx < columns.size(); ++col_idx) {
-      relation->addAttribute(new quickstep::CatalogAttribute(
-          relation.get(),
-          columns[col_idx].first,
-          quickstep::TypeFactory::GetType(columns[col_idx].second),
-          ++attr_id));
+        if (std::get<2>(columns[col_idx]) == 0) {
+            relation->addAttribute(new quickstep::CatalogAttribute(
+                    relation.get(),
+                    std::get<0>(columns[col_idx]),
+                    quickstep::TypeFactory::GetType(std::get<1>(columns[col_idx])),
+                    ++attr_id));
+        }
+        else {
+            relation->addAttribute(new quickstep::CatalogAttribute(
+                    relation.get(),
+                    std::get<0>(columns[col_idx]),
+                    quickstep::TypeFactory::GetType(std::get<1>(columns[col_idx]), std::get<2>(columns[col_idx])),
+                    ++attr_id));
+        }
+
     }
     catalog_database->addRelation(relation.release());
   }
