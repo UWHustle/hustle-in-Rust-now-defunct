@@ -58,7 +58,24 @@ fn parse_join(json: &serde_json::Value) -> Node {
     let left = parse_node(&json["left"]);
     let right = parse_node(&json["right"]);
 
-    let join_op = Join::new(left.get_output_relation(), right.get_output_relation());
+    let join_op = match &json["left_join_attributes"] {
+        serde_json::Value::Null => Join::new(
+            left.get_output_relation(),
+            right.get_output_relation(),
+            vec![],
+            vec![],
+        ),
+        _ => {
+            let l_attributes = parse_columns(&json["left_join_attributes"]);
+            let r_attributes = parse_columns(&json["right_join_attributes"]);
+            Join::new(
+                left.get_output_relation(),
+                right.get_output_relation(),
+                l_attributes,
+                r_attributes,
+            )
+        }
+    };
     let join_node = Node::new(Rc::new(join_op), vec![Rc::new(left), Rc::new(right)]);
 
     let project_cols = parse_columns(&json["project_expressions"]);

@@ -311,18 +311,30 @@ class Relation:
             _encode_c_str_list(value_strings),
             self.n_cols)
 
-    def join(self, other):
+    def join(self, other, l_col_names, r_col_names):
         """
-        Performs a Cartesian product with another relation.
+        Performs an equijoin with another relation.
+
+        l_col_names and r_col_names must have the same length. A row is kept if
+        the value corresponding to l_col_names[i] equals the value
+        corresponding to r_col_names[i] for all i.
 
         :param other: The relation to multiply by this one
+        :param l_col_names: Names of join columns in the left relation
+        :param r_col_names: Names of join columns in the right relation
         :return: A new, joined relation
         """
+        if len(l_col_names) != len(r_col_names):
+            raise ValueError(
+                'number of left and right join columns must be equal')
         relation_p = _run_ffi_p(
             ffi.ffi_join,
             self.err_p,
             self.relation_p,
-            other.relation_p)
+            other.relation_p,
+            _encode_c_str_list(l_col_names),
+            _encode_c_str_list(r_col_names),
+            c_uint32(len(l_col_names)))
         return Relation(self.connection, relation_p, _get_err_p())
 
     def limit(self, limit):
