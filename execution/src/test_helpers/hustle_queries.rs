@@ -7,6 +7,8 @@ use physical_operators::project::Project;
 use physical_operators::*;
 use storage::StorageManager;
 use type_system::data_type::DataType;
+use type_system::Value;
+use physical_operators::update::Update;
 
 pub fn hustle_agg(
     storage_manager: &StorageManager,
@@ -45,5 +47,26 @@ pub fn hustle_predicate(
         storage_manager,
         project_op.execute(storage_manager).unwrap(),
         column.get_name(),
+    )
+}
+
+pub fn hustle_update(
+    storage_manager: &StorageManager,
+    relation: Relation,
+    predicate: Box<Predicate>,
+    col_name: &str,
+    assignment: Box<Value>
+) -> i64 {
+    let column = relation.column_from_name(col_name).unwrap();
+    let update_op = Update::new(
+        relation,
+        Some(predicate),
+        vec![column.clone()],
+        vec![assignment]);
+    let relation = update_op.execute(storage_manager).unwrap();
+    sum_column_hustle(
+        storage_manager,
+        relation,
+        column.get_name()
     )
 }
