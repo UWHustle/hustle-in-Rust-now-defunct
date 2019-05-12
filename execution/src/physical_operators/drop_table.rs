@@ -22,7 +22,9 @@ impl Operator for DropTable {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        storage_manager.delete(&self.name);
+        storage_manager
+            .relational_engine()
+            .drop(&self.name);
 
         Ok(self.get_target_relation())
     }

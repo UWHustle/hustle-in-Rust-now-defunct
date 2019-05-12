@@ -30,12 +30,13 @@ impl Operator for Print {
         println!("|");
 
         let schema_sizes = schema.to_size_vec();
-        let record = storage_manager
-            .get_with_schema(self.relation.get_name(), &schema_sizes)
+        let physical_relation = storage_manager
+            .relational_engine()
+            .get(self.relation.get_name())
             .unwrap();
 
-        for block in record.blocks() {
-            for row_i in 0..block.len() {
+        for block in physical_relation.blocks() {
+            for row_i in 0..block.get_n_rows() {
                 for col_i in 0..schema.get_columns().len() {
                     let data = block.get_row_col(row_i, col_i).unwrap();
                     let data_type = schema.get_columns()[col_i].data_type();

@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use memmap::Mmap;
 
 use buffer_manager::BufferManager;
-use storage_manager::TEMP_RECORD_PREFIX;
+use storage_manager::TEMP_PREFIX;
 
 pub struct KeyValueStorageEngine {
     buffer_manager: Rc<BufferManager>,
@@ -27,7 +27,7 @@ impl KeyValueStorageEngine {
     pub fn put_anon(&self, value: &[u8]) -> String {
         // Generate a unique key, prefixed with the reserved character.
         let mut anon_ctr = self.anon_ctr.lock().unwrap();
-        let key = format!("{}{}", TEMP_RECORD_PREFIX, *anon_ctr);
+        let key = format!("{}{}", TEMP_PREFIX, *anon_ctr);
         *anon_ctr = anon_ctr.wrapping_add(1);
         mem::drop(anon_ctr);
 

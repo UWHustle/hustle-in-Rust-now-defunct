@@ -43,13 +43,6 @@ impl Relation {
         self.schema.get_row_size()
     }
 
-    pub fn get_total_size(&self, storage_manager: &StorageManager) -> usize {
-        match storage_manager.get(self.get_name()) {
-            Some(value) => value.len(),
-            None => 0,
-        }
-    }
-
     pub fn column_from_name(&self, name: &str) -> Result<Column, String> {
         for column in self.get_columns() {
             if name == column.get_name() {

@@ -28,9 +28,9 @@ impl Operator for ExportCsv {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let schema = self.relation.get_schema();
-        let schema_sizes = schema.to_size_vec();
-        let record = storage_manager
-            .get_with_schema(self.relation.get_name(), &schema_sizes)
+        let physical_relation = storage_manager
+            .relational_engine()
+            .get(self.relation.get_name())
             .unwrap();
 
         let mut writer = match csv::Writer::from_path(&self.filename) {
@@ -43,8 +43,8 @@ impl Operator for ExportCsv {
             }
         };
 
-        for block in record.blocks() {
-            for row_i in 0..block.len() {
+        for block in physical_relation.blocks() {
+            for row_i in 0..block.get_n_rows() {
                 let mut values: Vec<String> = vec![];
                 for col_i in 0..schema.get_columns().len() {
                     let data = block.get_row_col(row_i, col_i).unwrap();

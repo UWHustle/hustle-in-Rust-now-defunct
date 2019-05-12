@@ -1,15 +1,21 @@
+use std::mem;
+use std::rc::Rc;
+use std::sync::Mutex;
+
 use buffer_manager::BufferManager;
 use physical_relation::PhysicalRelation;
-use std::rc::Rc;
+use storage_manager::TEMP_PREFIX;
 
 pub struct RelationalStorageEngine {
-    buffer_manager: Rc<BufferManager>
+    buffer_manager: Rc<BufferManager>,
+    anon_ctr: Mutex<u64>
 }
 
 impl RelationalStorageEngine {
     pub fn new(buffer_manager: Rc<BufferManager>) -> Self {
         RelationalStorageEngine {
-            buffer_manager
+            buffer_manager,
+            anon_ctr: Mutex::new(0)
         }
     }
 
@@ -17,6 +23,20 @@ impl RelationalStorageEngine {
         assert!(!self.exists(key), "Relation already exists");
         assert!(!schema.is_empty());
         PhysicalRelation::new(key, schema, self.buffer_manager.clone())
+    }
+
+    pub fn create_anon<'a>(&'a self, key: &'a mut String, schema: Vec<usize>) -> PhysicalRelation {
+        // Generate a unique key, prefixed with the reserved character.
+        let mut anon_ctr = self.anon_ctr.lock().unwrap();
+        let generated_key = format!("{}{}", TEMP_PREFIX, *anon_ctr);
+        *anon_ctr = anon_ctr.wrapping_add(1);
+        mem::drop(anon_ctr);
+
+        key.clear();
+        key.push_str(&generated_key);
+
+        // Create the relation.
+        self.create(key, schema)
     }
 
     pub fn get<'a>(&'a self, key: &'a str) -> Option<PhysicalRelation> {

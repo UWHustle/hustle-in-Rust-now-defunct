@@ -46,12 +46,17 @@ impl Operator for Project {
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let in_schema = self.input_relation.get_schema();
         let in_schema_sizes = in_schema.to_size_vec();
-        let in_record = storage_manager
-            .get_with_schema(self.input_relation.get_name(), &in_schema_sizes)
+        let in_physical_relation = storage_manager
+            .relational_engine()
+            .get(self.input_relation.get_name())
             .unwrap();
         let out_schema = self.output_relation.get_schema();
-        storage_manager.delete(self.output_relation.get_name());
-        storage_manager.put(self.output_relation.get_name(), &[]);
+
+        storage_manager.relational_engine().drop(self.output_relation.get_name());
+        let out_physical_relation = storage_manager.relational_engine().create(
+            self.output_relation.get_name(),
+            self.output_relation.get_schema().to_size_vec()
+        );
 
         // Indices of the output columns in the input relation
         let mut out_cols_i = vec![];
@@ -64,8 +69,8 @@ impl Operator for Project {
             out_cols_i.push(i);
         }
 
-        for in_block in in_record.blocks() {
-            for row_i in 0..in_block.len() {
+        for in_block in in_physical_relation.blocks() {
+            for row_i in 0..in_block.get_n_rows() {
                 // Assemble values in the current row (this is very inefficient!)
                 let mut values: Vec<Box<Value>> = vec![];
                 for col_i in 0..in_schema.get_columns().len() {
@@ -82,12 +87,11 @@ impl Operator for Project {
                 }
 
                 // Remap values to the order they appear in the output schema
-                let mut projected_row = vec![];
+                let mut row_builder = out_physical_relation.insert_row();
                 for col_i in 0..out_schema.get_columns().len() {
                     let data = in_block.get_row_col(row_i, out_cols_i[col_i]).unwrap();
-                    projected_row.extend_from_slice(data);
+                    row_builder.push(data);
                 }
-                storage_manager.append(self.output_relation.get_name(), &projected_row);
             }
         }
 

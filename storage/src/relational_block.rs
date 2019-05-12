@@ -193,6 +193,10 @@ impl RelationalBlock {
         self.header.get_n_rows()
     }
 
+    pub fn get_n_cols(&self) -> usize {
+        self.header.get_n_cols()
+    }
+
     pub fn get_row_size(&self) -> usize {
         self.header.get_row_size()
     }

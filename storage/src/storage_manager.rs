@@ -3,12 +3,12 @@ use relational_storage_engine::RelationalStorageEngine;
 use buffer_manager::BufferManager;
 use std::rc::Rc;
 
-pub const TEMP_RECORD_PREFIX: char = '$';
+pub const TEMP_PREFIX: char = '$';
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 
 pub struct StorageManager {
-    key_value: KeyValueStorageEngine,
-    relational: RelationalStorageEngine,
+    key_value_engine: KeyValueStorageEngine,
+    relational_engine: RelationalStorageEngine,
     buffer_manager: Rc<BufferManager>,
 }
 
@@ -20,9 +20,17 @@ impl StorageManager {
     pub fn with_buffer_capacity(buffer_capacity: usize) -> Self {
         let buffer_manager = Rc::new(BufferManager::with_capacity(buffer_capacity));
         StorageManager {
-            key_value: KeyValueStorageEngine::new(buffer_manager.clone()),
-            relational: RelationalStorageEngine::new(buffer_manager.clone()),
+            key_value_engine: KeyValueStorageEngine::new(buffer_manager.clone()),
+            relational_engine: RelationalStorageEngine::new(buffer_manager.clone()),
             buffer_manager
         }
+    }
+
+    pub fn relational_engine(&self) -> &RelationalStorageEngine {
+        &self.relational_engine
+    }
+
+    pub fn key_value_engine(&self) -> &KeyValueStorageEngine {
+        &self.key_value_engine
     }
 }

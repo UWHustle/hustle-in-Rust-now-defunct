@@ -87,12 +87,12 @@ impl Operator for Aggregate {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let in_schema = self.input_relation.get_schema();
-        let schema_sizes = in_schema.to_size_vec();
-        let in_record = storage_manager
-            .get_with_schema(self.input_relation.get_name(), &schema_sizes)
+        let in_physical_relation = storage_manager
+            .relational_engine()
+            .get(self.input_relation.get_name())
             .unwrap();
         let out_schema = self.output_relation.get_schema();
-        storage_manager.delete(self.output_relation.get_name());
+        storage_manager.relational_engine().drop(self.output_relation.get_name());
 
         // Indices of the group by and aggregate columns in the input relation
         let mut group_cols_i = vec![];
@@ -116,8 +116,8 @@ impl Operator for Aggregate {
         // A HashMap mapping group by values to aggregations for that grouping
         let mut group_by: HashMap<Vec<Vec<u8>>, Box<AggregationTrait>> = HashMap::new();
 
-        for in_block in in_record.blocks() {
-            for row_i in 0..in_block.len() {
+        for in_block in in_physical_relation.blocks() {
+            for row_i in 0..in_block.get_n_rows() {
                 // Determine whether we've seen the current combination of group by values
                 let mut group_buffs = vec![];
                 for col_i in &group_cols_i {
@@ -142,18 +142,21 @@ impl Operator for Aggregate {
         }
 
         // Write group by and aggregate values to the output schema
+        let out_physical_relation = storage_manager
+            .relational_engine()
+            .create(self.output_relation.get_name(), out_schema.to_size_vec());
+
         for (group_buffs, aggregation) in group_by {
             let mut group_i = 0;
-            let mut aggregated_row = vec![];
+            let mut row_builder = out_physical_relation.insert_row();
             for col in out_schema.get_columns() {
                 if col == &self.agg_col_out {
-                    aggregated_row.extend_from_slice(aggregation.output().un_marshall().data());
+                    row_builder.push(aggregation.output().un_marshall().data());
                 } else {
-                    aggregated_row.extend_from_slice(&group_buffs[group_i]);
+                    row_builder.push(&group_buffs[group_i]);
                     group_i += 1;
                 }
             }
-            storage_manager.append(self.output_relation.get_name(), &aggregated_row);
         }
 
         Ok(self.get_target_relation())

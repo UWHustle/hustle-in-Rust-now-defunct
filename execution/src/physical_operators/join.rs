@@ -47,18 +47,23 @@ impl Operator for Join {
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let l_schema = self.relation_l.get_schema();
         let l_columns = l_schema.get_columns();
-        let l_schema_sizes = l_schema.to_size_vec();
-        let l_record = storage_manager
-            .get_with_schema(self.relation_l.get_name(), &l_schema_sizes)
+        let l_physical_relation = storage_manager
+            .relational_engine()
+            .get(self.relation_l.get_name())
             .unwrap();
+
         let r_schema = self.relation_r.get_schema();
         let r_columns = r_schema.get_columns();
-        let r_schema_sizes = r_schema.to_size_vec();
-        let r_record = storage_manager
-            .get_with_schema(self.relation_r.get_name(), &r_schema_sizes)
+        let r_physical_relation = storage_manager
+            .relational_engine()
+            .get(self.relation_r.get_name())
             .unwrap();
-        storage_manager.delete(self.output_relation.get_name());
-        storage_manager.put(self.output_relation.get_name(), &[]);
+
+        storage_manager.relational_engine().drop(self.output_relation.get_name());
+        let out_physical_relation = storage_manager.relational_engine().create(
+            self.output_relation.get_name(),
+            self.output_relation.get_schema().to_size_vec()
+        );
 
         let mut l_cols_i = vec![];
         for col in &self.l_columns {
@@ -69,8 +74,8 @@ impl Operator for Join {
             r_cols_i.push(r_columns.iter().position(|x| x == col).unwrap());
         }
 
-        for l_block in l_record.blocks() {
-            for l_row_i in 0..l_block.len() {
+        for l_block in l_physical_relation.blocks() {
+            for l_row_i in 0..l_block.get_n_rows() {
                 let mut l_values = vec![];
                 for l_col_i in &l_cols_i {
                     let l_data = l_block.get_row_col(l_row_i, *l_col_i).unwrap();
@@ -79,8 +84,8 @@ impl Operator for Join {
                     l_values.push(l_buff.marshall());
                 }
 
-                for r_block in r_record.blocks() {
-                    for r_row_i in 0..r_block.len() {
+                for r_block in r_physical_relation.blocks() {
+                    for r_row_i in 0..r_block.get_n_rows() {
                         let mut r_values = vec![];
                         for r_col_i in &r_cols_i {
                             let r_data = r_block.get_row_col(r_row_i, *r_col_i).unwrap();
@@ -100,16 +105,15 @@ impl Operator for Join {
                             continue;
                         }
 
-                        let mut joined_row = vec![];
+                        let mut row_builder = out_physical_relation.insert_row();
                         for col_i in 0..l_columns.len() {
                             let data = l_block.get_row_col(l_row_i, col_i).unwrap();
-                            joined_row.extend_from_slice(data);
+                            row_builder.push(data);
                         }
                         for col_i in 0..r_columns.len() {
                             let data = r_block.get_row_col(r_row_i, col_i).unwrap();
-                            joined_row.extend_from_slice(data);
+                            row_builder.push(data);
                         }
-                        storage_manager.append(self.output_relation.get_name(), &joined_row);
                     }
                 }
             }
