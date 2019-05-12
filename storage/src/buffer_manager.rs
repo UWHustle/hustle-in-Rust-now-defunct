@@ -61,16 +61,6 @@ impl BufferManager {
 
     /// Writes the key-value pair directly to storage without loading it into the cache. If a value
     /// for `key` already exists, it is overwritten with the new `value`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use storage::Buffer;
-    /// let buffer = Buffer::with_capacity(10);
-    /// buffer.write("key_write", b"value");
-    /// assert_eq!(&buffer.get("key_write").unwrap()[0..5], b"value");
-    /// buffer.erase("key_write");
-    /// ```
     pub fn write_uncached(&self, key: &str, value: &[u8]) {
         let path = Self::file_path(key);
         fs::write(&path, value)
@@ -92,17 +82,6 @@ impl BufferManager {
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use storage::Buffer;
-    /// let buffer = Buffer::with_capacity(10);
-    /// buffer.write("key_get", b"value");
-    /// assert_eq!(&buffer.get("key_get").unwrap()[0..5], b"value");
-    /// assert!(buffer.get("nonexistent_key").is_none());
-    /// buffer.erase("key_get");
-    /// ```
     pub fn get(&self, key: &str) -> Option<RelationalBlock> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
@@ -127,17 +106,6 @@ impl BufferManager {
 
     /// Removes the block associated with the key from the cache and deletes the underlying file on
     /// storage.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use storage::Buffer;
-    /// let buffer = Buffer::with_capacity(10);
-    /// buffer.write("key_erase", b"value");
-    /// assert!(buffer.exists("key_erase"));
-    /// buffer.erase("key_erase");
-    /// assert!(!buffer.exists("key_erase"));
-    /// ```
     pub fn erase(&self, key: &str) {
         // Remove the block from the cache and cache directory
         if self.t1.write().unwrap().remove(key)
