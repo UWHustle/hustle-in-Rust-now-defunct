@@ -13,158 +13,18 @@ use std::fs::OpenOptions;
 use std::cmp::{max, min};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 use std::io::{Write};
-
-pub const BLOCK_SIZE: usize = 1000;
-pub const HEADER_SIZE: usize = 4;
-
-/// The unit of storage and replacement in the cache. It is assumed that all `Block`s in the buffer
-/// are the same size, but this is not enforced in this module. Instead, it is enforced in the
-/// `StorageManager` layer.
-pub struct Block {
-    value: *mut MmapMut,
-    rc: Arc<(Mutex<u64>, Condvar)>
-}
-
-impl Deref for Block {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        unsafe { &(*self.value)[HEADER_SIZE..] }
-    }
-}
-
-impl Block {
-    /// Update the raw value of the block at the specified `offset`. A `panic!` will occur if the
-    /// `offset` and `value` are out of range.
-    pub fn update(&self, offset: usize, value: &[u8]) {
-        if offset + value.len() > self.len() {
-            panic!("Offset {} and value len {} out of range.", offset, value.len());
-        }
-        let offset_in_block = offset + HEADER_SIZE;
-        unsafe {
-            (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
-            (*self.value).flush().expect("Error flushing changes to storage.");
-        }
-    }
-
-    /// Append the raw value to the `Block`. A `panic!` will occur if the `value` is too large to fit
-    /// into the block.
-    pub fn append(&self, value: &[u8]) {
-        let offset_in_block = self.len() + HEADER_SIZE;
-        if offset_in_block + value.len() > BLOCK_SIZE {
-            panic!("Value of size {} too large for block.", value.len());
-        }
-        let mut len = vec![];
-        len.write_u32::<BigEndian>((self.len() + value.len()) as u32).unwrap();
-        unsafe {
-            (*self.value)[..HEADER_SIZE].copy_from_slice(&len);
-            (*self.value)[offset_in_block..offset_in_block + value.len()].copy_from_slice(value);
-            (*self.value).flush().expect("Error flushing changes to storage.");
-        }
-    }
-
-    /// Returns the length of the `Block`.
-    pub fn len(&self) -> usize {
-        unsafe { (*self.value).as_ref().read_u32::<BigEndian>().unwrap() as usize }
-    }
-
-    /// Overwrites the entire `Block` with `value` and persists the changes to storage.
-    fn write(&self, value: &[u8]) {
-        let mut len = vec![];
-        len.write_u32::<BigEndian>(value.len() as u32).unwrap();
-        unsafe {
-            (*self.value)[..HEADER_SIZE].copy_from_slice(&len);
-            (*self.value)[HEADER_SIZE..HEADER_SIZE + value.len()].copy_from_slice(value);
-            (*self.value).flush().expect("Error flushing changes to storage.");
-        }
-    }
-
-    /// Loads the `Block` for the `key` from storage.
-    fn load(key: &str) -> Option<Block> {
-        let path = Self::file_path(key);
-        let file = OpenOptions::new().read(true).write(true).open(&path).ok()?;
-        file.set_len((HEADER_SIZE + BLOCK_SIZE) as u64).ok()?;
-        let mmap = unsafe { MmapMut::map_mut(&file).ok()? };
-        Some(Block {
-            value: Box::into_raw(Box::new(mmap)),
-            rc: Arc::new((Mutex::new(1), Condvar::new()))
-        })
-    }
-
-    /// Writes the `key` and `value` directly to storage without creating a `Block` in memory.
-    fn write_direct(key: &str, value: &[u8]) {
-        // Serialize the length of the value. This is the header of the block.
-        let mut len = vec![];
-        len.write_u32::<BigEndian>(value.len() as u32).unwrap();
-
-        // Write the data to storage.
-        let path = Self::file_path(key);
-        let mut file = OpenOptions::new().write(true).create(true).open(&path)
-            .expect("Error opening file.");
-        file.write(&len).expect("Error writing to file.");
-        file.write(value).expect("Error writing to file.");
-    }
-
-    /// Erases the `Block` for the `key` from storage.
-    fn erase(key: &str) {
-        let path = Self::file_path(key);
-        if path.exists() {
-            fs::remove_file(path).expect(format!("Error deleting {}.", key).as_str());
-        }
-    }
-
-    /// Returns true if the `Block` for the `key` exists.
-    fn exists(key: &str) -> bool {
-        Self::file_path(key).exists()
-    }
-
-    /// Returns the formatted file path.
-    fn file_path(key: &str) -> PathBuf {
-        let mut path = PathBuf::from(key);
-        path.set_extension("hsl");
-        path
-    }
-}
-
-impl Drop for Block {
-    fn drop(&mut self) {
-        // Decrement the reference count when Value is dropped.
-        let &(ref rc_lock, ref cvar) = &*self.rc;
-        let mut rc_guard = rc_lock.lock().unwrap();
-        *rc_guard -= 1;
-        cvar.notify_all();
-
-        if *rc_guard == 0 {
-            // This was the last reference to the Block.
-            // Convert the raw pointer back into a Box to release the memory.
-            unsafe { Box::from_raw(self.value) };
-        }
-    }
-}
-
-impl Clone for Block {
-    fn clone(&self) -> Self {
-        let mut rc_guard = self.rc.0.lock().unwrap();
-        *rc_guard += 1;
-        Block {
-            value: self.value,
-            rc: self.rc.clone()
-        }
-    }
-}
-
-unsafe impl Send for Block {}
-unsafe impl Sync for Block {}
+use relational_block::RelationalBlock;
+use memmap::Mmap;
 
 /// A wrapper around `Block` to keep track of information used by the cache.
-struct BufferBlock {
-    block: Block,
+struct CacheBlock {
+    block: RelationalBlock,
     reference: RwLock<bool>
 }
 
-impl BufferBlock {
-    fn new(block: Block) -> Self {
-        BufferBlock {
+impl CacheBlock {
+    fn new(block: RelationalBlock) -> Self {
+        CacheBlock {
             block,
             reference: RwLock::new(false)
         }
@@ -177,20 +37,20 @@ impl BufferBlock {
 /// Adaptive Replacement ([CAR](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.105.6057)).
 /// The `Buffer` itself is thread-safe. However, it does not guard against concurrent reads and
 /// writes to the same key-value. This must be handled by an external concurrency control module.
-pub struct Buffer {
+pub struct BufferManager {
     capacity: usize,
-    t1: RwLock<OrderedHashMap<String, BufferBlock>>,
-    t2: RwLock<OrderedHashMap<String, BufferBlock>>,
+    t1: RwLock<OrderedHashMap<String, CacheBlock>>,
+    t2: RwLock<OrderedHashMap<String, CacheBlock>>,
     b1: Mutex<OrderedHashMap<String, ()>>,
     b2: Mutex<OrderedHashMap<String, ()>>,
     p: Mutex<usize>
 }
 
-impl Buffer {
+impl BufferManager {
     /// Creates a new `Buffer` with the specified capacity. The `Buffer` will hold at maximum
     /// `capacity` pages in memory.
     pub fn with_capacity(capacity: usize) -> Self {
-        Buffer {
+        BufferManager {
             capacity,
             t1: RwLock::new(OrderedHashMap::new()),
             t2: RwLock::new(OrderedHashMap::new()),
@@ -200,9 +60,8 @@ impl Buffer {
         }
     }
 
-    /// Writes the key-value pair to storage and loads it into the cache. If a value for `key`
-    /// already exists, it is overwritten with the new `value`. The value is assumed to be the same
-    /// size as other values already written, but this is not enforced.
+    /// Writes the key-value pair directly to storage without loading it into the cache. If a value
+    /// for `key` already exists, it is overwritten with the new `value`.
     ///
     /// # Examples
     ///
@@ -213,19 +72,18 @@ impl Buffer {
     /// assert_eq!(&buffer.get("key_write").unwrap()[0..5], b"value");
     /// buffer.erase("key_write");
     /// ```
-    pub fn write(&self, key: &str, value: &[u8]) {
-        if let Some(block) = self.get(key) {
-            if value.len() > BLOCK_SIZE {
-                panic!("Value to be written is larger than the block size.")
-            }
+    pub fn write_uncached(&self, key: &str, value: &[u8]) {
+        let path = Self::file_path(key);
+        fs::write(&path, value);
+    }
 
-            // Update the existing value.
-            block.write(value);
-        } else {
-            // Write the new file directly to storage and load it into the cache.
-            Block::write_direct(key, value);
-            self.load(key);
-        }
+    pub fn get_uncached(&self, key: &str) -> Option<Mmap> {
+        let path = Self::file_path(key);
+        let file = OpenOptions::new()
+            .read(true)
+            .open(&path)
+            .ok()?;
+        unsafe { Mmap::map(&file).ok() }
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.
@@ -240,7 +98,7 @@ impl Buffer {
     /// assert!(buffer.get("nonexistent_key").is_none());
     /// buffer.erase("key_get");
     /// ```
-    pub fn get(&self, key: &str) -> Option<Block> {
+    pub fn get(&self, key: &str) -> Option<RelationalBlock> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
@@ -285,12 +143,14 @@ impl Buffer {
         }
 
         // Delete the file.
-        Block::erase(key);
+        let path = Self::file_path(key);
+        fs::remove_file(&path);
     }
 
     /// Returns true if the key-value pair exists, regardless of whether it is cached.
     pub fn exists(&self, key: &str) -> bool {
-        Block::exists(key)
+        let path = Self::file_path(key);
+        path.exists()
     }
 
     /// Returns true if the key-value pair exists and is cached.
@@ -299,10 +159,11 @@ impl Buffer {
     }
 
     /// Loads the file from storage into the cache.
-    fn load(&self, key: &str) -> Option<Block> {
+    fn load(&self, key: &str) -> Option<RelationalBlock> {
         // Load the file from storage
-        let block = Block::load(key)?;
-        let buffer_block = BufferBlock::new(block.clone());
+        let path = Self::file_path(key);
+        let block = RelationalBlock::try_from_file(&path)?;
+        let buffer_block = CacheBlock::new(block.clone());
 
         // Request write locks on all lists.
         let mut t1_write_guard = self.t1.write().unwrap();
@@ -367,8 +228,8 @@ impl Buffer {
 
     /// Removes the approximated least recently used page from the cache.
     fn replace(&self,
-               t1: &mut RwLockWriteGuard<OrderedHashMap<String, BufferBlock>>,
-               t2: &mut RwLockWriteGuard<OrderedHashMap<String, BufferBlock>>,
+               t1: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlock>>,
+               t2: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlock>>,
                b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
                b2: &mut MutexGuard<OrderedHashMap<String, ()>>,
                p: &MutexGuard<usize>) {
@@ -377,7 +238,7 @@ impl Buffer {
             let (t1_front_key, t1_front_block) = t1.pop_front().unwrap();
 
             if !*t1_front_block.reference.read().unwrap()
-                && *t1_front_block.block.rc.0.lock().unwrap() == 1 {
+                && *t1_front_block.block.get_reference_count().0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
                 // Replace this page and push the key to the MRU position of B1.
                 b1.push_back(t1_front_key, ());
@@ -392,7 +253,7 @@ impl Buffer {
             let (t2_front_key, t2_front_block) = t2.pop_front().unwrap();
 
             if !*t2_front_block.reference.read().unwrap()
-                && *t2_front_block.block.rc.0.lock().unwrap() == 1 {
+                && *t2_front_block.block.get_reference_count().0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
                 // Replace this page and push the key to the MRU position of B2.
                 b2.push_back(t2_front_key, ());
@@ -402,5 +263,11 @@ impl Buffer {
                 t2.push_back(t2_front_key, t2_front_block);
             }
         }
+    }
+
+    fn file_path(key: &str) -> PathBuf {
+        let name =  format!("{}.kv.hsl", key);
+        let mut path = PathBuf::from(name);
+        path
     }
 }
