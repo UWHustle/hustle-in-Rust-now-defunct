@@ -48,21 +48,46 @@ mod storage_manager_tests {
     }
 
     #[test]
+    fn insert() {
+        let sm = StorageManager::new();
+        let rl_engine = sm.relational_engine();
+        let pr = rl_engine.create("key_insert", vec![1, 2]);
+
+        {
+            let mut row_builder = pr.insert_row();
+            row_builder.push(b"a");
+            row_builder.push(b"bb");
+        }
+
+        {
+            let mut row_builder = pr.insert_row();
+            row_builder.push(b"c");
+            row_builder.push(b"dd");
+        }
+
+        let block = pr.get_block(0).unwrap();
+        assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
+        assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
+        assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
+        assert_eq!(&block.get_row_col(1, 1).unwrap(), &b"dd");
+
+        rl_engine.drop("key_insert");
+    }
+
+    #[test]
     fn get_row_col() {
         let sm = StorageManager::new();
         let rl_engine = sm.relational_engine();
         let pr = rl_engine.create("key_get_row_col", vec![1, 2]);
         pr.bulk_write(b"abbcdd");
 
-        {
-            let block = pr.get_block(0).unwrap();
-            assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
-            assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
-            assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
-            assert_eq!(&block.get_row_col(1, 1).unwrap(), &b"dd");
-            assert!(block.get_row_col(0, 2).is_none());
-            assert!(block.get_row_col(2, 0).is_none());
-        }
+        let block = pr.get_block(0).unwrap();
+        assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
+        assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
+        assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
+        assert_eq!(&block.get_row_col(1, 1).unwrap(), &b"dd");
+        assert!(block.get_row_col(0, 2).is_none());
+        assert!(block.get_row_col(2, 0).is_none());
 
         rl_engine.drop("key_get_row_col");
     }
@@ -74,12 +99,10 @@ mod storage_manager_tests {
         let pr = rl_engine.create("key_set_row_col", vec![1, 2]);
         pr.bulk_write(b"abbcdd");
 
-        {
-            let block = pr.get_block(0).unwrap();
-            block.set_row_col(0, 0, b"e");
-            block.set_row_col(1, 1, b"ff");
-            assert_eq!(&block.bulk_read()[0..6], b"ebbcff");
-        }
+        let block = pr.get_block(0).unwrap();
+        block.set_row_col(0, 0, b"e");
+        block.set_row_col(1, 1, b"ff");
+        assert_eq!(&block.bulk_read()[0..6], b"ebbcff");
 
         rl_engine.drop("key_set_row_col");
     }

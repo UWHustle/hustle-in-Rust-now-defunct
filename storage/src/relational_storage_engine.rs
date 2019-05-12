@@ -40,13 +40,7 @@ impl RelationalStorageEngine {
     }
 
     pub fn get<'a>(&'a self, key: &'a str) -> Option<PhysicalRelation> {
-        let key_for_first_block = Self::formatted_key_for_block(key, 0);
-        self.buffer_manager.get(&key_for_first_block)
-            .map(|block| {
-                let mut schema = vec![];
-                schema.extend_from_slice(block.get_schema());
-                PhysicalRelation::new(key, schema, self.buffer_manager.clone())
-            })
+        PhysicalRelation::try_from_block(key, self.buffer_manager.clone())
     }
 
     pub fn drop(&self, key: &str) {

@@ -21,6 +21,20 @@ impl<'a> PhysicalRelation<'a> {
         }
     }
 
+    pub fn try_from_block(key: &'a str, buffer_manager: Rc<BufferManager>) -> Option<Self> {
+        let key_for_first_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
+        buffer_manager.get(&key_for_first_block)
+            .map(|block| {
+                let mut schema = vec![];
+                schema.extend_from_slice(block.get_schema());
+                PhysicalRelation {
+                    key,
+                    schema,
+                    buffer_manager
+                }
+            })
+    }
+
     pub fn get_block(&self, block_index: usize) -> Option<RelationalBlock> {
         let key = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
         self.buffer_manager.get(&key)

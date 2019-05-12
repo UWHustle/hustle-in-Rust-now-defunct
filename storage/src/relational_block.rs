@@ -234,8 +234,10 @@ impl RelationalBlock {
     /// Returns a `RowBuilder` that can be used to construct a new row by pushing values.
     pub fn insert_row(&mut self) -> RowBuilder {
         assert!(self.get_n_rows() < self.header.get_row_capacity());
+
         let mut schema = vec![];
         schema.extend_from_slice(self.get_schema());
+
         let row_builder = RowBuilder::new(self.get_n_rows(), schema, self.clone());
         self.header.set_n_rows(self.header.get_n_rows() + 1);
         row_builder
@@ -289,7 +291,7 @@ impl RelationalBlock {
     /// Returns the offset in the block and the size for the specified `row` and `col`.
     fn position_of_row_col(&self, row: usize, col: usize) -> Option<(usize, usize)> {
         let schema = self.get_schema();
-        if row < self.get_n_rows() && col < self.get_n_rows() {
+        if row < self.get_n_rows() && col < self.get_n_cols() {
             let row_offset = self.get_row_size() * row;
             let col_offset: usize = schema.get(..col)?.iter().sum();
             let offset = row_offset + col_offset;

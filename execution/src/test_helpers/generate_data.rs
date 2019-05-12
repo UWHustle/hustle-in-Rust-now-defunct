@@ -68,6 +68,9 @@ pub fn generate_t_hustle_and_sqlite(
     record_count: usize,
     seed: bool,
 ) -> Relation {
+
+    storage_manager.relational_engine().drop("t");
+
     generate_int4_relation_hustle_and_sqlite3(
         storage_manager,
         "t",
