@@ -12,8 +12,8 @@ pub struct PhysicalRelation<'a> {
 
 impl<'a> PhysicalRelation<'a> {
     pub fn new(key: &'a str, schema: Vec<usize>, buffer_manager: Rc<BufferManager>) -> Self {
-        let key_for_new_block = RelationalStorageEngine::key_for_block(key, 0);
-        RelationalBlock::new(&key_for_new_block, &schema);
+        let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
+        RelationalBlock::new(&key_for_new_block, &schema, &buffer_manager);
         PhysicalRelation {
             key,
             schema,
@@ -21,8 +21,8 @@ impl<'a> PhysicalRelation<'a> {
         }
     }
 
-    fn get_block(&self, block_index: usize) -> Option<RelationalBlock> {
-        let key = RelationalStorageEngine::key_for_block(self.key, block_index);
+    pub fn get_block(&self, block_index: usize) -> Option<RelationalBlock> {
+        let key = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
         self.buffer_manager.get(&key)
     }
 
@@ -39,8 +39,11 @@ impl<'a> PhysicalRelation<'a> {
             block_index += 1
         }
 
-        let key_for_new_block = RelationalStorageEngine::key_for_block(self.key, block_index);
-        let mut block = RelationalBlock::new(&key_for_new_block, &self.schema);
+        let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
+        let mut block = RelationalBlock::new(
+            &key_for_new_block,
+            &self.schema,
+            &self.buffer_manager);
         block.insert_row()
     }
 
@@ -58,8 +61,9 @@ impl<'a> PhysicalRelation<'a> {
         while offset < value.len() {
             let ref mut block = self.get_block(block_index)
                 .unwrap_or_else(|| RelationalBlock::new(
-                    &RelationalStorageEngine::key_for_block(self.key, block_index),
-                    &self.schema
+                    &RelationalStorageEngine::formatted_key_for_block(self.key, block_index),
+                    &self.schema,
+                    &self.buffer_manager
                 ));
             let size = min(block.get_row_size() * block.get_row_capacity(), value.len() - offset);
             block.bulk_write(&value[offset..offset + size]);

@@ -1,9 +1,11 @@
 use std::{mem, slice};
 use std::fs::OpenOptions;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Condvar, Mutex};
 
 use memmap::MmapMut;
+
+use buffer_manager::BufferManager;
 
 const BLOCK_SIZE: usize = 1024;
 
@@ -137,16 +139,18 @@ pub struct RelationalBlock {
 impl RelationalBlock {
     /// Creates a new `RelationalBlock`, backed by a file on storage. If the file path for the
     /// specified `key` already exists, it will be overwritten.
-    pub fn new(key: &str, schema: &[usize]) -> Self {
-        let path = Self::file_path(key);
-        let file = OpenOptions::new()
+    pub fn new(key: &str, schema: &[usize], buffer_manager: &BufferManager) -> Self {
+        let mut options = OpenOptions::new();
+        options
             .read(true)
             .write(true)
-            .create(true)
-            .open(&path)
+            .create(true);
+
+        let file = buffer_manager.open_file(key, &options)
             .expect("Error opening file.");
 
-        file.set_len(BLOCK_SIZE as u64);
+        file.set_len(BLOCK_SIZE as u64)
+            .expect("Error setting length of file.");
 
         let mut mmap = unsafe {
             MmapMut::map_mut(&file)
@@ -252,6 +256,7 @@ impl RelationalBlock {
         assert!(value.len() <= self.header.get_row_size() * self.header.get_row_capacity());
         self.clear();
         let n_rows = value.len() / self.header.get_row_size();
+        self.header.set_n_rows(n_rows);
         let schema = self.header.get_schema();
         let mut offset = 0;
         for row_i in 0..n_rows {
@@ -293,13 +298,6 @@ impl RelationalBlock {
         } else {
             None
         }
-    }
-
-    /// Returns the formatted file path for the specified `key`.
-    fn file_path(key: &str) -> PathBuf {
-        let mut path = PathBuf::from(key);
-        path.set_extension("hsl");
-        path
     }
 }
 

@@ -21,7 +21,7 @@ impl KeyValueStorageEngine {
     }
 
     pub fn put(&self, key: &str, value: &[u8]) {
-        self.buffer_manager.write_uncached(key, value);
+        self.buffer_manager.write_uncached(&Self::formatted_key(key), value);
     }
 
     pub fn put_anon(&self, value: &[u8]) -> String {
@@ -36,7 +36,15 @@ impl KeyValueStorageEngine {
         key
     }
 
+    pub fn delete(&self, key: &str) {
+        self.buffer_manager.erase(&Self::formatted_key(key));
+    }
+
     pub fn get(&self, key: &str) -> Option<Mmap> {
-        self.buffer_manager.get_uncached(key)
+        self.buffer_manager.get_uncached(&Self::formatted_key(key))
+    }
+
+    fn formatted_key(key: &str) -> String {
+        format!("{}.kv", key)
     }
 }

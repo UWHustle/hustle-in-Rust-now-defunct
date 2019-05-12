@@ -40,7 +40,7 @@ impl RelationalStorageEngine {
     }
 
     pub fn get<'a>(&'a self, key: &'a str) -> Option<PhysicalRelation> {
-        let key_for_first_block = Self::key_for_block(key, 0);
+        let key_for_first_block = Self::formatted_key_for_block(key, 0);
         self.buffer_manager.get(&key_for_first_block)
             .map(|block| {
                 let mut schema = vec![];
@@ -51,20 +51,20 @@ impl RelationalStorageEngine {
 
     pub fn drop(&self, key: &str) {
         let mut block_index = 0;
-        let mut key_for_block = Self::key_for_block(key, block_index);
+        let mut key_for_block = Self::formatted_key_for_block(key, block_index);
         while self.buffer_manager.exists(&key_for_block) {
             self.buffer_manager.erase(&key_for_block);
             block_index += 1;
-            key_for_block = Self::key_for_block(key, block_index);
+            key_for_block = Self::formatted_key_for_block(key, block_index);
         }
     }
 
     pub fn exists(&self, key: &str) -> bool {
-        let key_for_first_block = Self::key_for_block(key, 0);
+        let key_for_first_block = Self::formatted_key_for_block(key, 0);
         self.buffer_manager.exists(&key_for_first_block)
     }
 
-    pub fn key_for_block(key: &str, block_index: usize) -> String {
+    pub fn formatted_key_for_block(key: &str, block_index: usize) -> String {
         format!("{}.{}", key, block_index)
     }
 }

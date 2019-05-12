@@ -10,86 +10,52 @@ mod storage_manager_tests {
     #[test]
     fn get() {
         let sm = StorageManager::new();
-        sm.put("key_get", b"value");
-        assert_eq!(&sm.get("key_get").unwrap().get_block(0).unwrap()[0..5], b"value");
-        assert!(sm.get("nonexistent_key").is_none());
-        sm.delete("key_get");
+        let kv_engine = sm.key_value_engine();
+        kv_engine.put("key_get", b"value");
+        assert_eq!(&kv_engine.get("key_get").unwrap()[0..5], b"value");
+        assert!(kv_engine.get("nonexistent_key").is_none());
+        kv_engine.delete("key_get");
     }
 
     #[test]
     fn put() {
         let sm = StorageManager::new();
-        sm.put("key_put", b"value");
-        assert_eq!(&sm.get("key_put").unwrap().get_block(0).unwrap()[0..5], b"value");
-        sm.put("key_put", b"new_value");
-        assert_eq!(&sm.get("key_put").unwrap().get_block(0).unwrap()[0..9], b"new_value");
-        sm.delete("key_put");
+        let kv_engine = sm.key_value_engine();
+        kv_engine.put("key_put", b"value");
+        assert_eq!(&kv_engine.get("key_put").unwrap()[0..5], b"value");
+        kv_engine.put("key_put", b"new_value");
+        assert_eq!(&kv_engine.get("key_put").unwrap()[0..9], b"new_value");
+        kv_engine.delete("key_put");
     }
 
     #[test]
     fn put_anon() {
         let sm = StorageManager::new();
-        let key_0 = sm.put_anon(b"value");
-        assert_eq!(&sm.get(&key_0).unwrap().get_block(0).unwrap()[0..5], b"value");
-        sm.delete(&key_0);
-
-        let key_1 = sm.put_anon(b"");
-        assert_eq!(sm.get(&key_1).unwrap().get_block(0).unwrap().len(), 0);
-        sm.delete(&key_1);
+        let kv_engine = sm.key_value_engine();
+        let key = kv_engine.put_anon(b"value");
+        assert_eq!(&kv_engine.get(&key).unwrap()[0..5], b"value");
+        kv_engine.delete(&key);
     }
 
     #[test]
     fn delete() {
         let sm = StorageManager::new();
-        sm.put("key_delete", b"value");
-        assert_eq!(&sm.get("key_delete").unwrap().get_block(0).unwrap()[0..5], b"value");
-        sm.delete("key_delete");
-        assert!(sm.get("key_delete").is_none());
-    }
-
-    #[test]
-    fn col_iter() {
-        let sm = StorageManager::new();
-        sm.put("key_col_iter", b"abbcdd");
-
-        {
-            let record = sm.get_with_schema("key_col_iter", &[1, 2]).unwrap();
-            let block = record.get_block(0).unwrap();
-
-            let mut col_iter = block.get_col(0).unwrap();
-            assert_eq!(&col_iter.next().unwrap(), &b"a");
-            assert_eq!(&col_iter.next().unwrap(), &b"c");
-            assert!(col_iter.next().is_none());
-        }
-
-        sm.delete("key_col_iter");
-    }
-
-    #[test]
-    fn row_iter() {
-        let sm = StorageManager::new();
-        sm.put("key_row_iter", b"abbcdd");
-
-        {
-            let record = sm.get_with_schema("key_row_iter", &[1, 2]).unwrap();
-            let block = record.get_block(0).unwrap();
-            let mut row_iter = block.get_row(0).unwrap();
-            assert_eq!(&row_iter.next().unwrap(), &b"a");
-            assert_eq!(&row_iter.next().unwrap(), &b"bb");
-            assert!(row_iter.next().is_none());
-        }
-
-        sm.delete("key_row_iter");
+        let kv_engine = sm.key_value_engine();
+        kv_engine.put("key_delete", b"value");
+        assert_eq!(&kv_engine.get("key_delete").unwrap()[0..5], b"value");
+        kv_engine.delete("key_delete");
+        assert!(kv_engine.get("key_delete").is_none());
     }
 
     #[test]
     fn get_row_col() {
         let sm = StorageManager::new();
-        sm.put("key_get_row_col", b"abbcdd");
+        let rl_engine = sm.relational_engine();
+        let pr = rl_engine.create("key_get_row_col", vec![1, 2]);
+        pr.bulk_write(b"abbcdd");
 
         {
-            let record = sm.get_with_schema("key_get_row_col", &[1, 2]).unwrap();
-            let block = record.get_block(0).unwrap();
+            let block = pr.get_block(0).unwrap();
             assert_eq!(&block.get_row_col(0, 0).unwrap(), &b"a");
             assert_eq!(&block.get_row_col(0, 1).unwrap(), &b"bb");
             assert_eq!(&block.get_row_col(1, 0).unwrap(), &b"c");
@@ -98,55 +64,39 @@ mod storage_manager_tests {
             assert!(block.get_row_col(2, 0).is_none());
         }
 
-        sm.delete("key_get_row_col");
+        rl_engine.drop("key_get_row_col");
     }
 
     #[test]
     fn set_row_col() {
         let sm = StorageManager::new();
-        sm.put("key_set_row_col", b"abbcdd");
+        let rl_engine = sm.relational_engine();
+        let pr = rl_engine.create("key_set_row_col", vec![1, 2]);
+        pr.bulk_write(b"abbcdd");
 
         {
-            let record = sm.get_with_schema("key_set_row_col", &[1, 2]).unwrap();
-            let block = record.get_block(0).unwrap();
+            let block = pr.get_block(0).unwrap();
             block.set_row_col(0, 0, b"e");
             block.set_row_col(1, 1, b"ff");
-            assert_eq!(&block[0..6], b"ebbcff");
+            assert_eq!(&block.bulk_read()[0..6], b"ebbcff");
         }
 
-        sm.delete("key_set_row_col");
-    }
-
-    #[test]
-    fn append() {
-        let sm = StorageManager::new();
-        sm.delete("key_append");
-        sm.append("key_append", b"a");
-        assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..1], b"a");
-        sm.append("key_append", b"bb");
-        assert_eq!(&sm.get("key_append").unwrap().get_block(0).unwrap()[0..3], b"abb");
-        sm.delete("key_append");
-    }
-
-    #[test]
-    fn extend() {
-        let sm = StorageManager::new();
-        sm.extend("key_extend", b"abc", 1);
-        assert_eq!(&sm.get("key_extend").unwrap().get_block(0).unwrap()[0..3], b"abc");
-        sm.extend("key_extend", b"def", 1);
-        assert_eq!(&sm.get("key_extend").unwrap().get_block(0).unwrap()[0..6], b"abcdef");
-        sm.delete("key_extend");
+        rl_engine.drop("key_set_row_col");
     }
 
     #[test]
     fn len() {
         let sm = StorageManager::new();
-        sm.put("key_len", b"");
-        assert_eq!(sm.get("key_len").unwrap().len(), 0);
-        sm.append("key_len", b"a");
-        assert_eq!(sm.get("key_len").unwrap().len(), 1);
-        sm.extend("key_len", b"aa", 1);
-        assert_eq!(sm.get("key_len").unwrap().len(), 3);
-        sm.delete("key_len");
+        let rl_engine = sm.relational_engine();
+        let pr = rl_engine.create("key_len", vec![1]);
+
+        assert_eq!(pr.get_block(0).unwrap().get_n_rows(), 0);
+
+        let mut row_builder = pr.insert_row();
+        row_builder.push(b"a");
+
+        assert_eq!(pr.get_block(0).unwrap().get_n_rows(), 1);
+
+        rl_engine.drop("key_len");
     }
 }

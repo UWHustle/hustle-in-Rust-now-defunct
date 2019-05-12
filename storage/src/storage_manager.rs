@@ -9,7 +9,6 @@ const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 pub struct StorageManager {
     key_value_engine: KeyValueStorageEngine,
     relational_engine: RelationalStorageEngine,
-    buffer_manager: Rc<BufferManager>,
 }
 
 impl StorageManager {
@@ -21,8 +20,7 @@ impl StorageManager {
         let buffer_manager = Rc::new(BufferManager::with_capacity(buffer_capacity));
         StorageManager {
             key_value_engine: KeyValueStorageEngine::new(buffer_manager.clone()),
-            relational_engine: RelationalStorageEngine::new(buffer_manager.clone()),
-            buffer_manager
+            relational_engine: RelationalStorageEngine::new(buffer_manager),
         }
     }
 

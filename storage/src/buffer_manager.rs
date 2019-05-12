@@ -4,7 +4,7 @@ extern crate omap;
 
 use std::cmp::{max, min};
 use std::fs;
-use std::fs::OpenOptions;
+use std::fs::{OpenOptions, File};
 use std::mem;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
@@ -73,7 +73,8 @@ impl BufferManager {
     /// ```
     pub fn write_uncached(&self, key: &str, value: &[u8]) {
         let path = Self::file_path(key);
-        fs::write(&path, value);
+        fs::write(&path, value)
+            .expect("Error writing file.");
     }
 
     pub fn get_uncached(&self, key: &str) -> Option<Mmap> {
@@ -83,6 +84,11 @@ impl BufferManager {
             .open(&path)
             .ok()?;
         unsafe { Mmap::map(&file).ok() }
+    }
+
+    pub fn open_file(&self, key: &str, options: &OpenOptions) -> Option<File> {
+        let path = Self::file_path(key);
+        options.open(&path).ok()
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.
@@ -143,7 +149,8 @@ impl BufferManager {
 
         // Delete the file.
         let path = Self::file_path(key);
-        fs::remove_file(&path);
+        fs::remove_file(&path)
+            .expect("Error removing file.");
     }
 
     /// Returns true if the key-value pair exists, regardless of whether it is cached.
@@ -265,7 +272,7 @@ impl BufferManager {
     }
 
     fn file_path(key: &str) -> PathBuf {
-        let name =  format!("{}.kv.hsl", key);
+        let name =  format!("{}.hsl", key);
         let path = PathBuf::from(name);
         path
     }
