@@ -146,7 +146,7 @@ impl RelationalBlock {
             .write(true)
             .create(true);
 
-        let file = buffer_manager.open_file(key, &options)
+        let file = buffer_manager.open(key, &options)
             .expect("Error opening file.");
 
         file.set_len(BLOCK_SIZE as u64)

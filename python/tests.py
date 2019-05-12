@@ -15,12 +15,6 @@ class HustlePythonTests(unittest.TestCase):
         self.test_relation.insert(9, 55, 11.3, 'world')
         self.test_relation.insert(11, 55, 15.7, '.')
 
-    def test_create_empty(self):
-        relation = connection.create_relation([], [])
-        self.assertEqual([], relation.get_col_names())
-        self.assertEqual([], relation.get_type_names())
-        self.assertTrue(relation.get_name() is not None)
-
     def test_create_single_attr(self):
         col_names = ['a']
         type_names = ['int']

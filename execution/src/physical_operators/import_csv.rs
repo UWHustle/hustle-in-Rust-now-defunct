@@ -44,8 +44,7 @@ impl Operator for ImportCsv {
 
         let physical_relation = storage_manager
             .relational_engine()
-            .get(self.relation.get_name())
-            .unwrap();
+            .create(self.relation.get_name(), schema.to_size_vec());
 
         for result in reader.records() {
             let csv_row = result.unwrap();

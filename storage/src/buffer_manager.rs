@@ -76,9 +76,18 @@ impl BufferManager {
         unsafe { Mmap::map(&file).ok() }
     }
 
-    pub fn open_file(&self, key: &str, options: &OpenOptions) -> Option<File> {
+    pub fn open(&self, key: &str, options: &OpenOptions) -> Option<File> {
         let path = Self::file_path(key);
         options.open(&path).ok()
+    }
+
+    pub fn copy(&self, from: &str, to: &str) {
+        let from_path = Self::file_path(from);
+        let to_path = Self::file_path(to);
+        debug_assert!(from_path.exists(), "File to copy does not exist.");
+        debug_assert!(from_path.is_file(), "File to copy is not a file.");
+        debug_assert!(!to_path.exists(), "Destination file already exists.");
+        fs::copy(from_path, to_path).expect("Error copying file.");
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.

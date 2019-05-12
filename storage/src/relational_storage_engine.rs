@@ -28,15 +28,20 @@ impl RelationalStorageEngine {
     pub fn create_anon<'a>(&'a self, key: &'a mut String, schema: Vec<usize>) -> PhysicalRelation {
         // Generate a unique key, prefixed with the reserved character.
         let mut anon_ctr = self.anon_ctr.lock().unwrap();
-        let generated_key = format!("{}{}", TEMP_PREFIX, *anon_ctr);
-        *anon_ctr = anon_ctr.wrapping_add(1);
+        let generated_key = loop {
+            let mut generated_key = format!("{}{}", TEMP_PREFIX, *anon_ctr);
+            *anon_ctr = anon_ctr.wrapping_add(1);
+            if !self.buffer_manager.exists(&Self::formatted_key_for_block(&generated_key, 0)) {
+                break generated_key
+            };
+        };
         mem::drop(anon_ctr);
 
         key.clear();
         key.push_str(&generated_key);
 
         // Create the relation.
-        self.create(key, schema)
+        self.create(key.as_str(), schema)
     }
 
     pub fn get<'a>(&'a self, key: &'a str) -> Option<PhysicalRelation> {
@@ -50,6 +55,18 @@ impl RelationalStorageEngine {
             self.buffer_manager.erase(&key_for_block);
             block_index += 1;
             key_for_block = Self::formatted_key_for_block(key, block_index);
+        }
+    }
+
+    pub fn copy(&self, from: &str, to: &str) {
+        let mut block_index = 0;
+        let mut key_for_from_block = Self::formatted_key_for_block(from, block_index);
+        let mut key_for_to_block = Self::formatted_key_for_block(to, block_index);
+        while self.buffer_manager.exists(&key_for_from_block) {
+            self.buffer_manager.copy(&key_for_from_block, &key_for_to_block);
+            block_index += 1;
+            key_for_from_block = Self::formatted_key_for_block(from, block_index);
+            key_for_to_block = Self::formatted_key_for_block(to, block_index);
         }
     }
 

@@ -105,41 +105,25 @@ impl<'a> ImmediateRelation<'a> {
     ///
     /// The schema is assumed to match that of the current ImmediateRelation
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
-        let import_relation = match self.storage_manager.relational_engine().get(name) {
-            Some(physical_relation) => physical_relation,
-            None => return Err(format!("relation {} not found in storage manager", name)),
-        };
+        self.storage_manager
+            .relational_engine()
+            .drop(self.relation.get_name());
 
-        self.storage_manager.relational_engine().drop(self.relation.get_name());
-        for block in import_relation.blocks() {
-            for row_i in 0..block.get_n_rows() {
-                let mut row_builder = import_relation.insert_row();
-                for col_i in 0..block.get_n_cols() {
-                    let data = block.get_row_col(row_i, col_i).unwrap();
-                    row_builder.push(data);
-                }
-            }
-        }
+        self.storage_manager
+            .relational_engine()
+            .copy(name, self.relation.get_name());
 
         Ok(())
     }
 
     pub fn export_hustle(&self, name: &str) -> Result<(), String> {
-        let physical_relation = self.storage_manager
+        self.storage_manager
             .relational_engine()
-            .get(self.relation.get_name())
-            .unwrap();
+            .drop(name);
 
-        self.storage_manager.relational_engine().drop(name);
-        for block in physical_relation.blocks() {
-            for row_i in 0..block.get_n_rows() {
-                let mut row_builder = physical_relation.insert_row();
-                for col_i in 0..block.get_n_cols() {
-                    let data = block.get_row_col(row_i, col_i).unwrap();
-                    row_builder.push(data);
-                }
-            }
-        }
+        self.storage_manager
+            .relational_engine()
+            .copy(self.relation.get_name(), name);
 
         Ok(())
     }
