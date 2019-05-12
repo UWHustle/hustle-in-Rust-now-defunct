@@ -1,6 +1,5 @@
 use buffer_manager::BufferManager;
 use physical_relation::PhysicalRelation;
-use std::path::PathBuf;
 use std::rc::Rc;
 
 pub struct RelationalStorageEngine {

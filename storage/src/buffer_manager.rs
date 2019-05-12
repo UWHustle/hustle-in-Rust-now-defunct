@@ -2,19 +2,18 @@ extern crate byteorder;
 extern crate memmap;
 extern crate omap;
 
-use self::byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use self::memmap::MmapMut;
-use self::omap::OrderedHashMap;
-use std::ops::Deref;
-use std::fs;
-use std::path::PathBuf;
-use std::mem;
-use std::fs::OpenOptions;
 use std::cmp::{max, min};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, RwLock, RwLockWriteGuard};
-use std::io::{Write};
-use relational_block::RelationalBlock;
+use std::fs;
+use std::fs::OpenOptions;
+use std::mem;
+use std::path::PathBuf;
+use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
+
 use memmap::Mmap;
+
+use relational_block::RelationalBlock;
+
+use self::omap::OrderedHashMap;
 
 /// A wrapper around `Block` to keep track of information used by the cache.
 struct CacheBlock {
@@ -267,7 +266,7 @@ impl BufferManager {
 
     fn file_path(key: &str) -> PathBuf {
         let name =  format!("{}.kv.hsl", key);
-        let mut path = PathBuf::from(name);
+        let path = PathBuf::from(name);
         path
     }
 }

@@ -1,10 +1,9 @@
-use std::sync::{Arc, Condvar, Mutex};
-use std::path::{PathBuf, Path};
+use std::{mem, slice};
 use std::fs::OpenOptions;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Condvar, Mutex};
+
 use memmap::MmapMut;
-use std::{mem, slice, fs, ptr};
-use std::ops::Deref;
-use std::io::Write;
 
 const BLOCK_SIZE: usize = 1024;
 
@@ -49,11 +48,11 @@ impl RelationalBlockHeader {
     }
 
     fn try_from_slice(source: &mut [u8]) -> Option<Self> {
-        let mut n_rows_raw = ptr::null_mut();
-        let mut n_cols_raw = ptr::null_mut();
-        let mut row_size_raw = ptr::null_mut();
-        let mut row_capacity_raw = ptr::null_mut();
-        let mut schema_raw = ptr::null_mut();
+        let n_rows_raw: *mut usize;
+        let n_cols_raw: *mut usize;
+        let row_size_raw: *mut usize;
+        let row_capacity_raw: *mut usize;
+        let schema_raw: *mut usize;
 
         let mut offset = 0;
         n_rows_raw = source
@@ -140,7 +139,7 @@ impl RelationalBlock {
     /// specified `key` already exists, it will be overwritten.
     pub fn new(key: &str, schema: &[usize]) -> Self {
         let path = Self::file_path(key);
-        let mut file = OpenOptions::new()
+        let file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
@@ -170,7 +169,7 @@ impl RelationalBlock {
     /// Loads a `RelationalBlock` from storage using the specified `path`. Returns an `Option`
     /// containing the `RelationalBlock` if it exists, otherwise `None`.
     pub fn try_from_file(path: &Path) -> Option<Self> {
-        let mut file = OpenOptions::new()
+        let file = OpenOptions::new()
             .read(true)
             .write(true)
             .open(&path)

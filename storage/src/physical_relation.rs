@@ -1,5 +1,4 @@
 use buffer_manager::BufferManager;
-use std::path::PathBuf;
 use relational_block::{RelationalBlock, RowBuilder};
 use relational_storage_engine::RelationalStorageEngine;
 use std::cmp::min;
