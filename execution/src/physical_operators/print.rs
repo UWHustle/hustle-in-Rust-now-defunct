@@ -29,7 +29,6 @@ impl Operator for Print {
         }
         println!("|");
 
-        let schema_sizes = schema.to_size_vec();
         let physical_relation = storage_manager
             .relational_engine()
             .get(self.relation.get_name())

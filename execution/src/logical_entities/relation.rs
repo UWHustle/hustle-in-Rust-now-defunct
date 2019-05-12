@@ -1,8 +1,6 @@
 use logical_entities::column::Column;
 use logical_entities::schema::Schema;
 
-use storage::StorageManager;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Relation {
     name: String,

@@ -45,7 +45,6 @@ impl Operator for Project {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let in_schema = self.input_relation.get_schema();
-        let in_schema_sizes = in_schema.to_size_vec();
         let in_physical_relation = storage_manager
             .relational_engine()
             .get(self.input_relation.get_name())

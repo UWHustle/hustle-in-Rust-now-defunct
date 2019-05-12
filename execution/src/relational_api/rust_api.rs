@@ -105,7 +105,6 @@ impl<'a> ImmediateRelation<'a> {
     ///
     /// The schema is assumed to match that of the current ImmediateRelation
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
-        let schema_sizes = self.relation.get_schema().to_size_vec();
         let import_relation = match self.storage_manager.relational_engine().get(name) {
             Some(physical_relation) => physical_relation,
             None => return Err(format!("relation {} not found in storage manager", name)),
@@ -126,7 +125,6 @@ impl<'a> ImmediateRelation<'a> {
     }
 
     pub fn export_hustle(&self, name: &str) -> Result<(), String> {
-        let schema_sizes = self.relation.get_schema().to_size_vec();
         let physical_relation = self.storage_manager
             .relational_engine()
             .get(self.relation.get_name())

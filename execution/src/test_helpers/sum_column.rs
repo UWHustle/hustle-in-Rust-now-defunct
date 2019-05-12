@@ -10,7 +10,6 @@ pub fn sum_column_hustle(
     column_name: &str,
 ) -> i64 {
     let schema = relation.get_schema();
-    let schema_sizes = schema.to_size_vec();
     let physical_relation = storage_manager
         .relational_engine()
         .get(relation.get_name())
