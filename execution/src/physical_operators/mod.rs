@@ -4,6 +4,7 @@ pub mod drop_table;
 pub mod export_csv;
 pub mod import_csv;
 pub mod insert;
+pub mod delete;
 pub mod update;
 pub mod join;
 pub mod limit;
