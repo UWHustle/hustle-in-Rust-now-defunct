@@ -19,7 +19,9 @@ impl Operator for CreateTable {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        storage_manager.put(self.relation.get_name(), &[]);
+        storage_manager
+            .relational_engine()
+            .create(self.relation.get_name(), self.relation.get_schema().to_size_vec());
 
         Ok(self.get_target_relation())
     }

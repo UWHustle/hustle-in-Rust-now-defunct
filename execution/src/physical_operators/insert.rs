@@ -22,12 +22,16 @@ impl Operator for Insert {
     }
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
-        let mut data: Vec<u8> = vec![];
+        let mut row_builder = storage_manager
+            .relational_engine()
+            .get(self.relation.get_name())
+            .unwrap()
+            .insert_row();
+
         for value in self.row.get_values() {
-            data.extend_from_slice(value.un_marshall().data());
+            row_builder.push(value.un_marshall().data());
         }
 
-        storage_manager.append(self.relation.get_name(), &data);
         Ok(self.get_target_relation())
     }
 }

@@ -10,9 +10,9 @@ pub fn sum_column_hustle(
     column_name: &str,
 ) -> i64 {
     let schema = relation.get_schema();
-    let schema_sizes = schema.to_size_vec();
-    let record = storage_manager
-        .get_with_schema(relation.get_name(), &schema_sizes)
+    let physical_relation = storage_manager
+        .relational_engine()
+        .get(relation.get_name())
         .unwrap();
 
     // Index of the specified column
@@ -24,8 +24,9 @@ pub fn sum_column_hustle(
         .unwrap();
 
     let mut sum: Box<Numeric> = Box::new(Int8::from(0));
-    for block in record.blocks() {
-        for data in block.get_col(col_i).unwrap() {
+    for block in physical_relation.blocks() {
+        for row_i in 0..block.get_n_rows() {
+            let data = block.get_row_col(row_i, col_i).unwrap();
             let data_type = column.data_type();
             let value = BorrowedBuffer::new(data, data_type, false).marshall();
             sum = sum.add(&*force_numeric(&*value));

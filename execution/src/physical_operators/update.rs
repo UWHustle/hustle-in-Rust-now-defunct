@@ -38,9 +38,9 @@ impl Operator for Update {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
         let schema = self.relation.get_schema();
-        let schema_sizes = schema.to_size_vec();
         let physical_relation = storage_manager
-            .get_with_schema(self.relation.get_name(), &schema_sizes)
+            .relational_engine()
+            .get(self.relation.get_name())
             .unwrap();
 
         // Indices of the columns in the relation.
@@ -55,7 +55,7 @@ impl Operator for Update {
         }
 
         for block in physical_relation.blocks() {
-            for row_i in 0..block.len() {
+            for row_i in 0..block.get_n_rows() {
                 // Assemble values in the current row (this is very inefficient!).
                 let mut values = vec![];
                 for col_i in 0..schema.get_columns().len() {

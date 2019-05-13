@@ -1,8 +1,11 @@
-extern crate core;
+extern crate memmap;
 
-pub mod buffer;
 pub mod storage_manager;
-mod record_guard;
 
-pub use buffer::Buffer;
+mod key_value_storage_engine;
+mod relational_storage_engine;
+mod buffer_manager;
+mod physical_relation;
+mod relational_block;
+
 pub use storage_manager::StorageManager;

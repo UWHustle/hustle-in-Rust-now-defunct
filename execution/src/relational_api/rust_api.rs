@@ -48,7 +48,8 @@ impl HustleConnection {
             columns.push(Column::new(col_names[i], data_type));
         }
         let schema = Schema::new(columns);
-        let name = self.storage_manager.put_anon(&vec![]);
+        let mut name = String::new();
+        self.storage_manager.relational_engine().create_anon(&mut name, schema.to_size_vec());
         let output = ImmediateRelation {
             relation: Relation::new(&name, schema),
             storage_manager: &self.storage_manager,
@@ -86,66 +87,43 @@ impl<'a> ImmediateRelation<'a> {
     pub fn copy_slice(&self, buffer: &[u8]) {
         let mut data: Vec<u8> = vec![0; buffer.len()];
         data.clone_from_slice(buffer);
-        self.storage_manager.extend(
-            self.relation.get_name(),
-            &data,
-            self.relation.get_schema().get_row_size(),
-        );
-    }
-
-    pub fn get_data_size(&self) -> usize {
-        match self.storage_manager.get(self.relation.get_name()) {
-            Some(value) => (&value).len(),
-            None => 0,
-        }
+        self.storage_manager
+            .relational_engine()
+            .get(self.relation.get_name())
+            .unwrap()
+            .bulk_write(&data);
     }
 
     pub fn get_data(&self) -> Option<Vec<u8>> {
-        self.storage_manager.get_concat(self.relation.get_name())
+        self.storage_manager
+            .relational_engine()
+            .get(self.relation.get_name())
+            .map(|physical_relation| physical_relation.bulk_read())
     }
 
     /// Replaces current data in the relation with data from the Hustle file
     ///
     /// The schema is assumed to match that of the current ImmediateRelation
     pub fn import_hustle(&self, name: &str) -> Result<(), String> {
-        let schema_sizes = self.relation.get_schema().to_size_vec();
-        let import_record = match self.storage_manager.get_with_schema(name, &schema_sizes) {
-            Some(record) => record,
-            None => return Err(format!("relation {} not found in storage manager", name)),
-        };
+        self.storage_manager
+            .relational_engine()
+            .drop(self.relation.get_name());
 
-        self.storage_manager.delete(self.relation.get_name());
-        for block in import_record.blocks() {
-            for row_i in 0..block.len() {
-                let mut hustle_row = vec![];
-                for data in block.get_row(row_i).unwrap() {
-                    hustle_row.extend_from_slice(data);
-                }
-                self.storage_manager
-                    .append(self.relation.get_name(), &hustle_row);
-            }
-        }
+        self.storage_manager
+            .relational_engine()
+            .copy(name, self.relation.get_name());
 
         Ok(())
     }
 
     pub fn export_hustle(&self, name: &str) -> Result<(), String> {
-        let schema_sizes = self.relation.get_schema().to_size_vec();
-        let record = self
-            .storage_manager
-            .get_with_schema(self.relation.get_name(), &schema_sizes)
-            .unwrap();
+        self.storage_manager
+            .relational_engine()
+            .drop(name);
 
-        self.storage_manager.delete(name);
-        for block in record.blocks() {
-            for row_i in 0..block.len() {
-                let mut hustle_row = vec![];
-                for data in block.get_row(row_i).unwrap() {
-                    hustle_row.extend_from_slice(data);
-                }
-                self.storage_manager.append(name, &hustle_row);
-            }
-        }
+        self.storage_manager
+            .relational_engine()
+            .copy(self.relation.get_name(), name);
 
         Ok(())
     }
@@ -290,6 +268,6 @@ impl<'a> ImmediateRelation<'a> {
 
 impl<'a> Drop for ImmediateRelation<'a> {
     fn drop(&mut self) {
-        self.storage_manager.delete(self.relation.get_name());
+        self.storage_manager.relational_engine().drop(self.relation.get_name());
     }
 }

@@ -1,8 +1,6 @@
 use logical_entities::column::Column;
 use logical_entities::schema::Schema;
 
-use storage::StorageManager;
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Relation {
     name: String,
@@ -41,13 +39,6 @@ impl Relation {
 
     pub fn get_row_size(&self) -> usize {
         self.schema.get_row_size()
-    }
-
-    pub fn get_total_size(&self, storage_manager: &StorageManager) -> usize {
-        match storage_manager.get(self.get_name()) {
-            Some(value) => value.len(),
-            None => 0,
-        }
     }
 
     pub fn column_from_name(&self, name: &str) -> Result<Column, String> {
