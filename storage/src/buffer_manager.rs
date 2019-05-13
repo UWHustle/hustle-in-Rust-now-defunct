@@ -67,6 +67,8 @@ impl BufferManager {
             .expect("Error writing file.");
     }
 
+    /// Memory-maps the value associated with the specified `key` and returns it if it exists,
+    /// without loading it into the cache.
     pub fn get_uncached(&self, key: &str) -> Option<Mmap> {
         let path = Self::file_path(key);
         let file = OpenOptions::new()
@@ -76,11 +78,13 @@ impl BufferManager {
         unsafe { Mmap::map(&file).ok() }
     }
 
+    /// Opens the file associated with the specified `key` with the given `options`.
     pub fn open(&self, key: &str, options: &OpenOptions) -> Option<File> {
         let path = Self::file_path(key);
         options.open(&path).ok()
     }
 
+    /// Copies the file associated with the key `from` to the destination `to`.
     pub fn copy(&self, from: &str, to: &str) {
         let from_path = Self::file_path(from);
         let to_path = Self::file_path(to);

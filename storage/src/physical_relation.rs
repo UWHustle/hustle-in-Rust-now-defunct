@@ -4,6 +4,7 @@ use relational_storage_engine::RelationalStorageEngine;
 use std::cmp::min;
 use std::rc::Rc;
 
+/// A physical relation backed by one or more blocks on storage.
 pub struct PhysicalRelation<'a> {
     key: &'a str,
     schema: Vec<usize>,
@@ -21,6 +22,7 @@ impl<'a> PhysicalRelation<'a> {
         }
     }
 
+    /// Creates a new `PhysicalRelation` from an existing block, if it exists.
     pub fn try_from_block(key: &'a str, buffer_manager: Rc<BufferManager>) -> Option<Self> {
         let key_for_first_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
         buffer_manager.get(&key_for_first_block)
@@ -35,15 +37,19 @@ impl<'a> PhysicalRelation<'a> {
             })
     }
 
+    /// Gets the `RelationalBlock` at the specified `block_index`.
     pub fn get_block(&self, block_index: usize) -> Option<RelationalBlock> {
         let key = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
         self.buffer_manager.get(&key)
     }
 
+    /// Returns an iterator over the blocks of the `PhyscialRelation`.
     pub fn blocks(&self) -> RelationalBlockIter {
         RelationalBlockIter::new(self)
     }
 
+    /// Returns a `RowBuilder` that is used to insert a row into the `PhysicalRelation`. The row is
+    /// inserted into the first block that has free space.
     pub fn insert_row(&self) -> RowBuilder {
         let mut block_index = 0;
         for mut block in self.blocks() {
@@ -61,6 +67,8 @@ impl<'a> PhysicalRelation<'a> {
         block.insert_row()
     }
 
+    /// Returns the entire data of the `PhysicalRelation`, concatenated into a vector of bytes in
+    /// row-major format.
     pub fn bulk_read(&self) -> Vec<u8> {
         let mut result = vec![];
         for block in self.blocks() {
@@ -69,6 +77,8 @@ impl<'a> PhysicalRelation<'a> {
         result
     }
 
+    /// Overwrites the entire `PhysicalRelation` with the `value`, which must be in row-major
+    /// format.
     pub fn bulk_write(&self, value: &[u8]) {
         let mut block_index = 0;
         let mut offset = 0;

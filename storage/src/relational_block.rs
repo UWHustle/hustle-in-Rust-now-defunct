@@ -197,10 +197,12 @@ impl RelationalBlock {
         self.header.get_n_rows()
     }
 
+    /// Returns the number of columns in the `RelationalBlock`.
     pub fn get_n_cols(&self) -> usize {
         self.header.get_n_cols()
     }
 
+    /// Returns the size of one row.
     pub fn get_row_size(&self) -> usize {
         self.header.get_row_size()
     }
@@ -243,6 +245,8 @@ impl RelationalBlock {
         row_builder
     }
 
+    /// Returns the entire data of the `RelationalBlock`, concatenated into a vector of bytes in
+    /// row-major format.
     pub fn bulk_read(&self) -> Vec<u8> {
         let mut result = vec![];
         for row_i in 0..self.header.get_n_rows() {
@@ -254,6 +258,7 @@ impl RelationalBlock {
         result
     }
 
+    /// Overwrites the entire `RelationalBlock` with the `value`, which must be in row-major format.
     pub fn bulk_write(&mut self, value: &[u8]) {
         assert!(value.len() <= self.header.get_row_size() * self.header.get_row_capacity());
         self.clear();
@@ -270,6 +275,7 @@ impl RelationalBlock {
         }
     }
 
+    /// Clears all the rows from the `RelationalBlock`, but does not remove it from storage.
     pub fn clear(&self) {
         self.header.set_n_rows(0);
     }
@@ -326,6 +332,7 @@ impl Drop for RelationalBlock {
     }
 }
 
+/// A utility for constructing a row in a `RelationalBlock`.
 pub struct RowBuilder {
     row: usize,
     col: usize,
@@ -343,6 +350,8 @@ impl RowBuilder {
         }
     }
 
+    /// Push a new cell into the row. A `panic!` will occur if the row is already full or the value
+    /// is the wrong size for the schema.
     pub fn push(&mut self, value: &[u8]) {
         assert!(self.col < self.schema.len());
         assert_eq!(value.len(), self.schema[self.col]);
