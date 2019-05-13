@@ -23,6 +23,7 @@ use type_system::operators::*;
 extern crate serde_json;
 
 use std::rc::Rc;
+use physical_operators::delete::Delete;
 
 pub fn parse(string_plan: &str) -> Node {
     let json: serde_json::Value = serde_json::from_str(string_plan).unwrap();
@@ -47,6 +48,7 @@ fn parse_node(json: &serde_json::Value) -> Node {
         "HashJoin" | "NestedLoopsJoin" => parse_join(json),
         "Limit" => parse_limit(json),
         "InsertTuple" => parse_insert_tuple(json),
+        "DeleteTuples" => parse_delete_tuples(json),
         "UpdateTable" => parse_update_table(json),
         "CreateTable" => parse_create_table(json),
         "DropTable" => parse_drop_table(json),
@@ -124,6 +126,13 @@ fn parse_insert_tuple(json: &serde_json::Value) -> Node {
     let row = Row::new(relation.get_schema().clone(), values);
     let insert_op = Insert::new(relation, row);
     Node::new(Rc::new(insert_op), vec![Rc::new(input)])
+}
+
+fn parse_delete_tuples(json: &serde_json::Value) -> Node {
+    let input = parse_node(&json["input"]);
+    let predicate = json.get("predicate").map(|p| parse_predicate(p));
+    let delete_op = Delete::new(input.get_output_relation(), predicate);
+    Node::new(Rc::new(delete_op), vec![Rc::new(input)])
 }
 
 fn parse_connective_predicate(json: &serde_json::Value) -> Connective {

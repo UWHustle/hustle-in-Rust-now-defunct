@@ -1,4 +1,4 @@
-use std::{mem, slice};
+use std::{mem, slice, ptr};
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::sync::{Arc, Condvar, Mutex};
@@ -10,7 +10,7 @@ use buffer_manager::BufferManager;
 const BLOCK_SIZE: usize = 1024;
 
 #[derive(Clone)]
-pub struct RelationalBlockHeader {
+struct Header {
     n_rows: *mut usize,
     n_cols: *mut usize,
     row_size: *mut usize,
@@ -18,7 +18,7 @@ pub struct RelationalBlockHeader {
     schema: *mut usize
 }
 
-impl RelationalBlockHeader {
+impl Header {
     fn new(schema: &[usize], destination: &mut [u8]) -> Self {
         // Blocks must have a schema.
         debug_assert!(!schema.is_empty());
@@ -81,7 +81,7 @@ impl RelationalBlockHeader {
             .get_mut(offset..)?
             .as_mut_ptr() as *mut usize;
 
-        Some(RelationalBlockHeader {
+        Some(Header {
             n_rows: n_rows_raw,
             n_cols: n_cols_raw,
             row_size: row_size_raw,
@@ -130,7 +130,7 @@ impl RelationalBlockHeader {
 /// The unit of storage and replacement in the cache. A `RelationalBlock` is a horizontal partition
 /// of a `PhysicalRelation`.
 pub struct RelationalBlock {
-    header: RelationalBlockHeader,
+    header: Header,
     data: *mut u8,
     mmap: Arc<MmapMut>,
     rc: Arc<(Mutex<u64>, Condvar)>
@@ -157,7 +157,7 @@ impl RelationalBlock {
                 .expect("Error memory-mapping file.")
         };
 
-        let header = RelationalBlockHeader::new(schema, &mut mmap);
+        let header = Header::new(schema, &mut mmap);
         let header_size = header.size();
         header.set_row_capacity((BLOCK_SIZE - header_size) / header.get_row_size());
         let data = mmap[header_size..].as_mut_ptr();
@@ -181,7 +181,7 @@ impl RelationalBlock {
         file.set_len(BLOCK_SIZE as u64).ok()?;
 
         let mut mmap = unsafe { MmapMut::map_mut(&file).ok()? };
-        let header = RelationalBlockHeader::try_from_slice(&mut mmap)?;
+        let header = Header::try_from_slice(&mut mmap)?;
         let data = mmap[header.size()..].as_mut_ptr();
 
         Some(RelationalBlock {
@@ -243,6 +243,25 @@ impl RelationalBlock {
         let row_builder = RowBuilder::new(self.get_n_rows(), schema, self.clone());
         self.header.set_n_rows(self.header.get_n_rows() + 1);
         row_builder
+    }
+
+    /// Deletes the specified `row`. To maintain packing, the last row of the block is moved from
+    /// the end to the deleted position.
+    pub fn delete_row(&mut self, row: usize) {
+        let (deleted_offset, _) = self.position_of_row_col(row, 0)
+            .expect(format!("Row {} out of bounds.", row).as_str());
+
+        let (last_offset, _) = self.position_of_row_col(self.get_n_rows() - 1, 0).unwrap();
+
+        let row_size = self.header.get_row_size();
+
+        unsafe {
+            ptr::copy(self.data.offset(last_offset as isize),
+                           self.data.offset(deleted_offset as isize),
+                           row_size);
+        }
+
+        self.header.set_n_rows(self.header.get_n_rows() - 1);
     }
 
     /// Returns the entire data of the `RelationalBlock`, concatenated into a vector of bytes in

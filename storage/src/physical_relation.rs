@@ -67,6 +67,24 @@ impl<'a> PhysicalRelation<'a> {
         block.insert_row()
     }
 
+    /// Deletes all rows in the `PhysicalRelation`, but maintains the relation itself by keeping
+    /// the first block on storage.
+    pub fn clear(&self) {
+
+        let first_block = self.get_block(0)
+            .expect("Could not find block 0 for relation.");
+        first_block.clear();
+
+        let mut block_index = 1;
+        let mut key_for_block = RelationalStorageEngine::formatted_key_for_block(
+            self.key, block_index);
+        while self.buffer_manager.exists(&key_for_block) {
+            self.buffer_manager.erase(&key_for_block);
+            block_index += 1;
+            key_for_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
+        }
+    }
+
     /// Returns the entire data of the `PhysicalRelation`, concatenated into a vector of bytes in
     /// row-major format.
     pub fn bulk_read(&self) -> Vec<u8> {
