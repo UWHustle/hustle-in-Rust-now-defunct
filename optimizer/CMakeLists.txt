@@ -1,11 +1,16 @@
-add_subdirectory(quickstep)
-add_library(optimizer optimizer_wrapper.hpp optimizer_wrapper.cpp)
+cmake_minimum_required(VERSION 3.12)
 
-target_link_libraries(optimizer
-        ${EXECUTION}
+set(CMAKE_CXX_STANDARD 14)
+
+add_subdirectory(quickstep)
+add_executable(optimizer optimizer_wrapper.cpp optimizer_wrapper.h)
+
+target_link_libraries(
+        optimizer
         hustle_optimizer
         quickstep_queryoptimizer_tests_TestDatabaseLoader
-        quickstep_parser_SqlParserWrapper
-        )
+        quickstep_parser_SqlParserWrapper)
 
-add_dependencies(optimizer execution hustle_optimizer)
+add_dependencies(optimizer hustle_optimizer)
+
+install(TARGETS optimizer DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})

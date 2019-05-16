@@ -19,7 +19,7 @@
 add_library(quickstep_queryoptimizer_resolver_NameResolver NameResolver.cpp NameResolver.hpp)
 add_library(quickstep_queryoptimizer_resolver_Resolver Resolver.cpp Resolver.hpp)
 
-add_library(resolver HustleResolver.h HustleResolver.cpp)
+#add_library(resolver HustleResolver.h HustleResolver.cpp)
 
 # Link dependencies:
 target_link_libraries(quickstep_queryoptimizer_resolver_NameResolver
@@ -142,8 +142,8 @@ target_link_libraries(quickstep_queryoptimizer_resolver_Resolver
                       quickstep_utility_SqlError
                       quickstep_utility_StringUtil)
 
-target_link_libraries(resolver
-                      quickstep_catalog_Catalog_proto)
+#target_link_libraries(resolver
+#                      quickstep_catalog_Catalog_proto)
 
 # Module all-in-one library:
 add_library(quickstep_queryoptimizer_resolver ../../empty_src.cpp QueryResolverModule.hpp)

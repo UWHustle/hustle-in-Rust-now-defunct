@@ -28,7 +28,7 @@
 #include "query_optimizer/Validator.hpp"
 #include "query_optimizer/logical/Logical.hpp"
 #include "query_optimizer/resolver/Resolver.hpp"
-#include "query_optimizer/resolver/HustleResolver.h"
+//#include "query_optimizer/resolver/HustleResolver.h"
 #include "query_optimizer/rules/CollapseProject.hpp"
 #include "query_optimizer/rules/GenerateJoins.hpp"
 #include "query_optimizer/rules/PushDownFilter.hpp"
@@ -64,18 +64,18 @@ L::LogicalPtr LogicalGenerator::generatePlan(
     return logical_plan_;
 }
 
-L::LogicalPtr LogicalGenerator::hustleGeneratePlan(
-        const CatalogDatabase &catalog_database,
-        std::shared_ptr<ParseNode> syntax_tree) {
-    HustleResolver resolver(catalog_database, optimizer_context_);
-    logical_plan_ = resolver.resolve(syntax_tree);
-    DVLOG(4) << "Initial logical plan:\n" << logical_plan_->toString();
-
-    optimizePlan();
-    DVLOG(4) << "Optimized logical plan:\n" << logical_plan_->toString();
-
-    return logical_plan_;
-}
+//L::LogicalPtr LogicalGenerator::hustleGeneratePlan(
+//        const CatalogDatabase &catalog_database,
+//        std::shared_ptr<ParseNode> syntax_tree) {
+//    HustleResolver resolver(catalog_database, optimizer_context_);
+//    logical_plan_ = resolver.resolve(syntax_tree);
+//    DVLOG(4) << "Initial logical plan:\n" << logical_plan_->toString();
+//
+//    optimizePlan();
+//    DVLOG(4) << "Optimized logical plan:\n" << logical_plan_->toString();
+//
+//    return logical_plan_;
+//}
 
 void LogicalGenerator::optimizePlan() {
   std::vector<std::unique_ptr<Rule<L::Logical>>> rules;

@@ -88,8 +88,7 @@ void OptimizerWrapper::CreateDefaultCatalog() {
   }
 }
 
-std::string OptimizerWrapper::hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
-                                              const std::string &sql) {
+std::string OptimizerWrapper::hustle_optimize(const std::string &sql) {
   quickstep::optimizer::OptimizerContext optimizer_context;
   catalog_.reset();
 
@@ -109,12 +108,8 @@ std::string OptimizerWrapper::hustle_optimize(const std::shared_ptr<ParseNode> &
 
   quickstep::optimizer::physical::PhysicalPtr pplan;
   try {
-    quickstep::optimizer::logical::LogicalPtr lplan;
-    // If the sql is empty the parser/resolver of Hustle is used.
-    if (sql.empty()) {
-      lplan = logical_generator.hustleGeneratePlan(
-          *catalog_database, syntax_tree);
-    } else {  // Parse the query using the quickstep parser
+        quickstep::optimizer::logical::LogicalPtr lplan;
+        // Parse the query using the quickstep parser
       quickstep::SqlParserWrapper sql_parser_;
       auto query = new std::string(sql);
       sql_parser_.feedNextBuffer(query);
@@ -128,7 +123,6 @@ std::string OptimizerWrapper::hustle_optimize(const std::shared_ptr<ParseNode> &
       // Convert the query to the logical plan using quickstep's optimizer
       lplan = logical_generator.generatePlan(
           catalog_database, parse_statement, true /* husteMode */);
-    }
 
 //    std::cout<< "Logical Plan: " << lplan->jsonString() << std::endl;
 //    std::cout << " --------------------- " << std::endl;
