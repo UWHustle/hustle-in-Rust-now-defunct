@@ -2,6 +2,7 @@
 #define QUICKSTEP_HUSTLEOPTIMIZER_H
 #include <iostream>
 #include <memory>
+#include "parser/ParseNode.h"
 
 namespace quickstep {
 class Catalog;
@@ -61,13 +62,14 @@ class CatalogNotProtoE : public std::exception {
   std::string message_;
 };
 
-constexpr char kCatalogPath[] = "../test-data/hustlecatalog.pb.bin";
+constexpr char kCatalogPath[] = "test-data/hustlecatalog.pb.bin";
 
 class OptimizerWrapper {
  public:
   OptimizerWrapper(){}
 
-  std::string hustle_optimize(const std::string &sql = std::string());
+  std::string hustle_optimize(const std::shared_ptr<ParseNode> &syntax_tree,
+                              const std::string &sql = std::string());
 
  private:
   void readCatalog();

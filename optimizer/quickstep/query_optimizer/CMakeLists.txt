@@ -199,7 +199,7 @@ target_link_libraries(hustle_optimizer
 #                      quickstep_utility_lipfilter_LIPFilter
 #                      quickstep_utility_lipfilter_LIPFilter_proto)
 target_link_libraries(quickstep_queryoptimizer_LogicalGenerator
-#                      resolver
+                      resolver
                       glog
                       quickstep_parser_ParseStatement
                       quickstep_queryoptimizer_OptimizerContext

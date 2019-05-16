@@ -1,28 +1,22 @@
 #include <iostream>
-#include <memory>
-#include <string>
+#include "./optimizer_wrapper.hpp"
 #include "quickstep/query_optimizer/HustleOptimizer.hpp"
-
 using namespace std;
 
-int optimizer(char *sql) {
-    std::unique_ptr<quickstep::OptimizerWrapper> optmizer =
-            std::make_unique<quickstep::OptimizerWrapper>();
 
-    std::string sql_string(sql);
+extern "C" void execute_plan(char*);
 
-    std::string pplan = optmizer->hustle_optimize(sql_string);
-    if (pplan.size() == 0) { return -1; } // Quickstep optimizer failed
+int optimizer(const shared_ptr<ParseNode> &syntax_tree, const string &sql) {
+  std::unique_ptr<quickstep::OptimizerWrapper> optmizer =
+      std::make_unique<quickstep::OptimizerWrapper>();
 
-    char *pplan_char = new char[pplan.size() + 1];
-    std::copy(pplan.begin(), pplan.end(), pplan_char);
-    pplan_char[pplan.size()] = '\0';
-    std::cout << pplan_char << std::endl;
-    return 0;
-}
+  std::string pplan = optmizer->hustle_optimize(syntax_tree, sql);
+  if (pplan.size() == 0) { return -1; } // Quickstep optimizer failed
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) return 1;
-    optimizer(argv[1]);
-    return 0;
+  char *pplan_char = new char[pplan.size() + 1];
+  std::copy(pplan.begin(), pplan.end(), pplan_char);
+  pplan_char[pplan.size()] = '\0';
+//  std::cout << pplan_char << std::endl;
+  execute_plan(pplan_char);
+  return 0;
 }
