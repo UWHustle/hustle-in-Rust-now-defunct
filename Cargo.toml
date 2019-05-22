@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "cli",
+    "optimizer",
+    "execution",
+    "storage",
+    "catalog",
+]
