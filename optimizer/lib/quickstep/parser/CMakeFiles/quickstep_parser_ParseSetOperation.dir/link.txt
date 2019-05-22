@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_parser_ParseSetOperation.a  CMakeFiles/quickstep_parser_ParseSetOperation.dir/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_parser_ParseSetOperation.a

@@ -1,4 +1,3 @@
-extern crate byteorder;
 extern crate memmap;
 extern crate omap;
 

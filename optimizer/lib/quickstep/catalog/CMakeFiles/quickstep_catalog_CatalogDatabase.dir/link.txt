@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_catalog_CatalogDatabase.a  CMakeFiles/quickstep_catalog_CatalogDatabase.dir/CatalogDatabase.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_catalog_CatalogDatabase.a

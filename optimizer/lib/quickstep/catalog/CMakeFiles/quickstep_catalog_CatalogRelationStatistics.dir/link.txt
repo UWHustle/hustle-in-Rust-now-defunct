@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_catalog_CatalogRelationStatistics.a  CMakeFiles/quickstep_catalog_CatalogRelationStatistics.dir/CatalogRelationStatistics.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_catalog_CatalogRelationStatistics.a

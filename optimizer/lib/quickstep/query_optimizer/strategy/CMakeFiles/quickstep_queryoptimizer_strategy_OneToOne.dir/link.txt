@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_queryoptimizer_strategy_OneToOne.a  CMakeFiles/quickstep_queryoptimizer_strategy_OneToOne.dir/OneToOne.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_queryoptimizer_strategy_OneToOne.a

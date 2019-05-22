@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_HashTableKeyManager.a  CMakeFiles/quickstep_storage_HashTableKeyManager.dir/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_HashTableKeyManager.a

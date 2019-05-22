@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_queryoptimizer_Validator.a  CMakeFiles/quickstep_queryoptimizer_Validator.dir/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_queryoptimizer_Validator.a

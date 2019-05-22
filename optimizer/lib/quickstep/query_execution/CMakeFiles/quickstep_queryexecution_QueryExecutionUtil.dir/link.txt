@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_queryexecution_QueryExecutionUtil.a  CMakeFiles/quickstep_queryexecution_QueryExecutionUtil.dir/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_queryexecution_QueryExecutionUtil.a

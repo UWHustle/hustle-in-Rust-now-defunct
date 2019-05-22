@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_AggregationOperationState.a  CMakeFiles/quickstep_storage_AggregationOperationState.dir/AggregationOperationState.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_AggregationOperationState.a

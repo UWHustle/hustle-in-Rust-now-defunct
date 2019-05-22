@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_expressions_predicate_ConjunctionPredicate.a  CMakeFiles/quickstep_expressions_predicate_ConjunctionPredicate.dir/ConjunctionPredicate.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_expressions_predicate_ConjunctionPredicate.a

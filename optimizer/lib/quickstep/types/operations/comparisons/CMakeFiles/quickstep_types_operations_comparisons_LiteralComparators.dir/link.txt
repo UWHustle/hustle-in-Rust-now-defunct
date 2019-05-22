@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_types_operations_comparisons_LiteralComparators.a  CMakeFiles/quickstep_types_operations_comparisons_LiteralComparators.dir/__/__/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_types_operations_comparisons_LiteralComparators.a

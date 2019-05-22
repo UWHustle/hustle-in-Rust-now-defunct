@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_threading_ThreadIDBasedMap.a  CMakeFiles/quickstep_threading_ThreadIDBasedMap.dir/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_threading_ThreadIDBasedMap.a

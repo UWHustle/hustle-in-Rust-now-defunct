@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_BasicColumnStoreTupleStorageSubBlock.a  CMakeFiles/quickstep_storage_BasicColumnStoreTupleStorageSubBlock.dir/BasicColumnStoreTupleStorageSubBlock.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_BasicColumnStoreTupleStorageSubBlock.a

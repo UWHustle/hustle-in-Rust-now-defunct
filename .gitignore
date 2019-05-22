@@ -12,3 +12,5 @@ Cargo.lock
 **/.DS_Store
 *.hsl
 /venv
+*.pb.bin
+commandhistory.txt

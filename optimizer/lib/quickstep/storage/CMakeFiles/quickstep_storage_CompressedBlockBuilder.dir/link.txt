@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_CompressedBlockBuilder.a  CMakeFiles/quickstep_storage_CompressedBlockBuilder.dir/CompressedBlockBuilder.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_CompressedBlockBuilder.a

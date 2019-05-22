@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_utility_BarrieredReadWriteConcurrentBitVector.a  CMakeFiles/quickstep_utility_BarrieredReadWriteConcurrentBitVector.dir/__/empty_src.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_utility_BarrieredReadWriteConcurrentBitVector.a

@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_relationaloperators_SortMergeRunOperator_proto.a  CMakeFiles/quickstep_relationaloperators_SortMergeRunOperator_proto.dir/SortMergeRunOperator.pb.cc.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_relationaloperators_SortMergeRunOperator_proto.a

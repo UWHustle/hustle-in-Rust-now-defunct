@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_ThreadPrivateCompactKeyHashTable.a  CMakeFiles/quickstep_storage_ThreadPrivateCompactKeyHashTable.dir/ThreadPrivateCompactKeyHashTable.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_ThreadPrivateCompactKeyHashTable.a

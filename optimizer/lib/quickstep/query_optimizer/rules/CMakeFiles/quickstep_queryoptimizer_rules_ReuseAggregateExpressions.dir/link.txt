@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_queryoptimizer_rules_ReuseAggregateExpressions.a  CMakeFiles/quickstep_queryoptimizer_rules_ReuseAggregateExpressions.dir/ReuseAggregateExpressions.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_queryoptimizer_rules_ReuseAggregateExpressions.a

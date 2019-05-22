@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_utility_PrimeNumber.a  CMakeFiles/quickstep_utility_PrimeNumber.dir/PrimeNumber.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_utility_PrimeNumber.a

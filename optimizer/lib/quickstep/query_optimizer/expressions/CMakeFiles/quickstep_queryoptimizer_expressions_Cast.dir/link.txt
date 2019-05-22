@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_queryoptimizer_expressions_Cast.a  CMakeFiles/quickstep_queryoptimizer_expressions_Cast.dir/Cast.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_queryoptimizer_expressions_Cast.a

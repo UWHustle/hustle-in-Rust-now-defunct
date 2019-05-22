@@ -1,7 +1,7 @@
 use key_value_storage_engine::KeyValueStorageEngine;
 use relational_storage_engine::RelationalStorageEngine;
 use buffer_manager::BufferManager;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub const TEMP_PREFIX: char = '$';
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
@@ -19,7 +19,7 @@ impl StorageManager {
     }
 
     pub fn with_buffer_capacity(buffer_capacity: usize) -> Self {
-        let buffer_manager = Rc::new(BufferManager::with_capacity(buffer_capacity));
+        let buffer_manager = Arc::new(BufferManager::with_capacity(buffer_capacity));
         StorageManager {
             key_value_engine: KeyValueStorageEngine::new(buffer_manager.clone()),
             relational_engine: RelationalStorageEngine::new(buffer_manager),

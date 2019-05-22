@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_SubBlockTypeRegistry.a  CMakeFiles/quickstep_storage_SubBlockTypeRegistry.dir/SubBlockTypeRegistry.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_SubBlockTypeRegistry.a

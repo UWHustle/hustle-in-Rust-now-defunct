@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_parser_ParseIndexProperties.a  CMakeFiles/quickstep_parser_ParseIndexProperties.dir/ParseIndexProperties.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_parser_ParseIndexProperties.a

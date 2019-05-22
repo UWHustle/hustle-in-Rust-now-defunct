@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libtmb.a  CMakeFiles/tmb.dir/src/message_bus.cc.o CMakeFiles/tmb.dir/src/heap_receiver_message_queue.cc.o CMakeFiles/tmb.dir/src/memory_based_message_bus.cc.o CMakeFiles/tmb.dir/src/tree_receiver_message_queue.cc.o CMakeFiles/tmb.dir/src/pure_memory_message_bus.cc.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libtmb.a

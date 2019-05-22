@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_utility_lipfilter_LIPFilter_proto.a  CMakeFiles/quickstep_utility_lipfilter_LIPFilter_proto.dir/LIPFilter.pb.cc.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_utility_lipfilter_LIPFilter_proto.a

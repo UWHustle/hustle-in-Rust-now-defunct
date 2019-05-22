@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_types_operations_comparisons_LessOrEqualComparison.a  CMakeFiles/quickstep_types_operations_comparisons_LessOrEqualComparison.dir/LessOrEqualComparison.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_types_operations_comparisons_LessOrEqualComparison.a

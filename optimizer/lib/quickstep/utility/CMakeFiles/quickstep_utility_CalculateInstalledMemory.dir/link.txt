@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_utility_CalculateInstalledMemory.a  CMakeFiles/quickstep_utility_CalculateInstalledMemory.dir/CalculateInstalledMemory.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_utility_CalculateInstalledMemory.a

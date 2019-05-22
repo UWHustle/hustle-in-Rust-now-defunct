@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_expressions_aggregation_AggregationHandleMax.a  CMakeFiles/quickstep_expressions_aggregation_AggregationHandleMax.dir/AggregationHandleMax.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_expressions_aggregation_AggregationHandleMax.a

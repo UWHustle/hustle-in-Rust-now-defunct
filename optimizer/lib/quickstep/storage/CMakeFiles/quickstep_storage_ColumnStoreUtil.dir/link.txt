@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_storage_ColumnStoreUtil.a  CMakeFiles/quickstep_storage_ColumnStoreUtil.dir/ColumnStoreUtil.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_storage_ColumnStoreUtil.a

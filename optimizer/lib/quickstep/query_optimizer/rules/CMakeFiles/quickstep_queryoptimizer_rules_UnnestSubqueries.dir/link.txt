@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libquickstep_queryoptimizer_rules_UnnestSubqueries.a  CMakeFiles/quickstep_queryoptimizer_rules_UnnestSubqueries.dir/UnnestSubqueries.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libquickstep_queryoptimizer_rules_UnnestSubqueries.a
