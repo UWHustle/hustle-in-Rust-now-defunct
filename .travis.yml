@@ -53,7 +53,7 @@ before_script:
 - $CXX --version
 - $CLINKER --version
 - cmake --version
-- (cd optimizer/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../)
+- (cd optimizer/lib/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../..)
 
 script:
 - cargo build
