@@ -5,19 +5,35 @@ pub mod relational_api;
 pub mod test_helpers;
 pub mod type_system;
 
-use physical_plan::global_sm;
 use physical_plan::parser::parse;
+use storage::StorageManager;
+use logical_entities::relation::Relation;
 
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
 extern crate storage;
 
-#[no_mangle]
-pub extern "C" fn execute_plan(name: *const c_char) {
-    let plan_string = from_cstr(name);
-    let node = parse(plan_string.as_str());
-    node.execute(global_sm::get());
+pub struct ExecutionEngine {
+    storage_manager: StorageManager
+}
+
+impl ExecutionEngine {
+    pub fn new() -> Self {
+        ExecutionEngine {
+            storage_manager: StorageManager::new()
+        }
+    }
+
+    pub fn execute_plan(&self, plan_string: &str) -> Relation {
+        let node = parse(plan_string);
+        node.execute(&self.storage_manager);
+        node.get_output_relation()
+    }
+
+    pub fn get_storage_manager(&self) -> &StorageManager {
+        &self.storage_manager
+    }
 }
 
 #[allow(clippy::not_unsafe_ptr_arg_deref)]

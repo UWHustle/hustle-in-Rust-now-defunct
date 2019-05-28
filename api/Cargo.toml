@@ -1,0 +1,11 @@
+[package]
+name = "api"
+version = "0.1.0"
+authors = ["gaffneyk <kgaff33@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+serde_json = "1.0.39"
+optimizer = { path = "../optimizer" }
+execution = { path = "../execution" }
+storage = { path = "../storage" }

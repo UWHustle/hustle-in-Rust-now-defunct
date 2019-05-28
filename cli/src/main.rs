@@ -1,14 +1,14 @@
-extern crate optimizer;
-extern crate execution;
 extern crate rustyline;
 
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
+use api::connection::Connection;
 
 const COMMAND_HISTORY_FILE_NAME: &str = "commandhistory.txt";
 const PROMPT: &str = "hustle> ";
 
 fn main() {
+    let connection = Connection::new();
     let mut editor = Editor::<()>::new();
 
     if editor.load_history(COMMAND_HISTORY_FILE_NAME).is_err() {
@@ -20,11 +20,9 @@ fn main() {
         match readline {
             Ok(line) => {
                 editor.add_history_entry(line.as_str());
-                match optimizer::optimize(&line) {
-                    Ok(plan) => {
-                        execution::execute_plan(&plan);
-                    },
-                    Err(e) => println!("{}", e)
+                let mut statement = connection.prepare(&line);
+                if let Some(e) = statement.step().err() {
+                    println!("Error: {}", e);
                 }
             },
             Err(ReadlineError::Interrupted) => {
