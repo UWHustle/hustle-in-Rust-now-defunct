@@ -1,23 +1,21 @@
 use optimizer::optimize;
 use execution::ExecutionEngine;
-use execution::logical_entities::relation::Relation;
+use crate::result::HustleResult;
 
-pub struct Statement<'a> {
+pub struct HustleStatement<'a> {
     statement: Vec<String>,
     params: Vec<String>,
-    execution_engine: &'a ExecutionEngine,
-    result: Option<Relation>
+    execution_engine: &'a ExecutionEngine
 }
 
-impl<'a> Statement<'a> {
+impl<'a> HustleStatement<'a> {
     pub fn new(sql: &str, execution_engine: &'a ExecutionEngine) -> Self {
         let statement: Vec<String> = sql.split("?").map(|s| s.to_string()).collect();
         let params = (0..statement.len() - 1).map(|_| String::new()).collect();
-        Statement {
+        HustleStatement {
             statement,
             params,
             execution_engine,
-            result: None
         }
     }
 
@@ -30,25 +28,21 @@ impl<'a> Statement<'a> {
         }
     }
 
-    pub fn step(&mut self) -> Result<(), String> {
-        if self.result.is_none() {
-            if self.params.iter().any(|p| p.is_empty()) {
-                Err("Statement has unbound parameters".to_string())
-            } else {
-                let mut sql: String = self.statement.first()
-                    .map_or(Err("Sql is empty".to_string()), |r| Ok(r))?
-                    .clone();
-
-                for param in &self.params {
-                    sql.push_str(param.as_str())
-                }
-
-                let plan = optimize(&sql)?;
-                self.execution_engine.execute_plan(&plan);
-                Ok(())
-            }
+    pub fn execute(&mut self) -> Result<HustleResult, String> {
+        if self.params.iter().any(|p| p.is_empty()) {
+            Err("Statement has unbound parameters".to_string())
         } else {
-            Ok(())
+            let mut sql: String = self.statement.first()
+                .map_or(Err("Sql is empty".to_string()), |r| Ok(r))?
+                .clone();
+
+            for param in &self.params {
+                sql.push_str(param.as_str())
+            }
+
+            let plan = optimize(&sql)?;
+            let relation = self.execution_engine.execute_plan(&plan);
+            Ok(HustleResult::new(relation, self.execution_engine))
         }
     }
 }

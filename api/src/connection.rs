@@ -1,18 +1,18 @@
-use crate::statement::Statement;
+use crate::statement::HustleStatement;
 use execution::ExecutionEngine;
 
-pub struct Connection {
+pub struct HustleConnection {
     execution_engine: ExecutionEngine
 }
 
-impl Connection {
+impl HustleConnection {
     pub fn new() -> Self {
-        Connection {
+        HustleConnection {
             execution_engine: ExecutionEngine::new()
         }
     }
 
-    pub fn prepare(&self, sql: &str) -> Statement {
-        Statement::new(sql, &self.execution_engine)
+    pub fn prepare(&self, sql: &str) -> HustleStatement {
+        HustleStatement::new(sql, &self.execution_engine)
     }
 }
