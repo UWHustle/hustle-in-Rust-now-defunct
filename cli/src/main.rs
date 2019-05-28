@@ -21,8 +21,9 @@ fn main() {
             Ok(line) => {
                 editor.add_history_entry(line.as_str());
                 let mut statement = connection.prepare(&line);
-                if let Some(e) = statement.execute().err() {
-                    println!("Error: {}", e);
+                match statement.execute() {
+                    Ok(result) => println!("{}", result),
+                    Err(e) => println!("Error: {}", e)
                 }
             },
             Err(ReadlineError::Interrupted) => {

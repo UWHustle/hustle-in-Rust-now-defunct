@@ -12,7 +12,6 @@ use physical_operators::insert::Insert;
 use physical_operators::update::Update;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
-use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
@@ -27,16 +26,7 @@ use physical_operators::delete::Delete;
 
 pub fn parse(string_plan: &str) -> Node {
     let json: serde_json::Value = serde_json::from_str(string_plan).unwrap();
-    let root_node = parse_node(&json["plan"]);
-
-    let json_name = json["plan"]["json_name"].as_str().unwrap();
-    match json_name {
-        "Selection" | "HashJoin" | "NestedLoopsJoin" => {
-            let print_op = Print::new(root_node.get_output_relation());
-            Node::new(Rc::new(print_op), vec![Rc::new(root_node)])
-        }
-        _ => root_node,
-    }
+    parse_node(&json["plan"])
 }
 
 fn parse_node(json: &serde_json::Value) -> Node {
