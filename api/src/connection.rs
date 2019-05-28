@@ -15,8 +15,4 @@ impl Connection {
     pub fn prepare(&self, sql: &str) -> Statement {
         Statement::new(sql, &self.execution_engine)
     }
-
-    pub fn execution_engine(&self) -> &ExecutionEngine {
-        &self.execution_engine
-    }
 }
