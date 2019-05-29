@@ -1,3 +1,3 @@
 pub mod connection;
-mod statement;
-mod result;
+pub mod statement;
+pub mod result;
