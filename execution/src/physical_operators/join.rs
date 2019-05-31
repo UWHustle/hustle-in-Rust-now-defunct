@@ -40,11 +40,11 @@ impl Join {
 }
 
 impl Operator for Join {
-    fn get_target_relation(&self) -> Relation {
-        self.output_relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        Some(self.output_relation.clone())
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let l_schema = self.relation_l.get_schema();
         let l_columns = l_schema.get_columns();
         let l_physical_relation = storage_manager

@@ -2,7 +2,7 @@ extern crate rustyline;
 
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
-use api::connection::HustleConnection;
+use hustle_api::connection::HustleConnection;
 
 const COMMAND_HISTORY_FILE_NAME: &str = "commandhistory.txt";
 const PROMPT: &str = "hustle> ";
@@ -22,7 +22,9 @@ fn main() {
                 editor.add_history_entry(line.as_str());
                 let mut statement = connection.prepare(&line);
                 match statement.execute() {
-                    Ok(result) => println!("{}", result),
+                    Ok(result) => {
+                        result.map(|r| println!("{}", r));
+                    },
                     Err(e) => println!("Error: {}", e)
                 }
             },

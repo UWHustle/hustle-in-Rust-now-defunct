@@ -1,5 +1,4 @@
 use logical_entities::relation::Relation;
-use logical_entities::schema::Schema;
 use physical_operators::Operator;
 
 use super::storage::StorageManager;
@@ -17,11 +16,11 @@ impl DropTable {
 }
 
 impl Operator for DropTable {
-    fn get_target_relation(&self) -> Relation {
-        Relation::new(&self.name, Schema::new(vec![]))
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         storage_manager
             .relational_engine()
             .drop(&self.name);

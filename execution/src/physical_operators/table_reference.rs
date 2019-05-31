@@ -14,11 +14,11 @@ impl TableReference {
 }
 
 impl Operator for TableReference {
-    fn get_target_relation(&self) -> Relation {
-        self.relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        Some(self.relation.clone())
     }
 
-    fn execute(&self, _storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, _storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         Ok(self.get_target_relation())
     }
 }

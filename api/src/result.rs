@@ -3,6 +3,7 @@ use execution::logical_entities::relation::Relation;
 use execution::type_system::borrowed_buffer::BorrowedBuffer;
 use execution::type_system::Buffer;
 use std::fmt;
+use execution::type_system::integer::Int8;
 
 pub struct HustleResult<'a> {
     relation: Relation,
@@ -22,8 +23,8 @@ impl<'a> HustleResult<'a> {
             .get_storage_manager()
             .relational_engine()
             .get(&relation.get_name())
-            .expect("Error: Result relation does not exist")
-            .bulk_read();
+            .map(|r| r.bulk_read())
+            .unwrap_or(vec![]);
 
         HustleResult {
             relation,
@@ -48,9 +49,18 @@ impl<'a> HustleResult<'a> {
         return self.row_index * self.relation.get_row_size() < self.data.len()
     }
 
+    pub fn get_i64(&self, col: usize) -> Option<i64> {
+        self.get_col(col)
+            .map(|v| type_system::cast_value::<Int8>(v.as_ref()).value())
+    }
+
     pub fn get_col(&self, col: usize) -> Option<Box<type_system::Value>> {
         let column = self.relation.get_columns().get(col)?;
-        let offset = self.row_index * self.relation.get_row_size();
+        let column_offset: usize = self.relation.get_columns()[..col]
+            .iter()
+            .map(|c| c.get_size())
+            .sum();
+        let offset = self.row_index * self.relation.get_row_size() + column_offset;
         let data = self.data.get(offset..offset + column.get_size())?;
         let buff = BorrowedBuffer::new(data, column.data_type(), false);
         Some(buff.marshall())

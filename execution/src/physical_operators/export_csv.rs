@@ -22,11 +22,11 @@ impl ExportCsv {
 }
 
 impl Operator for ExportCsv {
-    fn get_target_relation(&self) -> Relation {
-        Relation::null()
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
         let physical_relation = storage_manager
             .relational_engine()

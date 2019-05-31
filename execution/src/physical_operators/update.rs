@@ -32,11 +32,11 @@ impl Update {
 }
 
 impl Operator for Update {
-    fn get_target_relation(&self) -> Relation {
-        self.relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
         let physical_relation = storage_manager
             .relational_engine()
