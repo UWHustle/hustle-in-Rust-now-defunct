@@ -25,7 +25,7 @@ impl ExecutionEngine {
         }
     }
 
-    pub fn execute_plan(&self, plan_string: &str) -> Relation {
+    pub fn execute_plan(&self, plan_string: &str) -> Option<Relation> {
         let node = parse(plan_string);
         node.execute(&self.storage_manager);
         node.get_output_relation()

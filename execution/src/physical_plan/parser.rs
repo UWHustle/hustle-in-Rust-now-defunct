@@ -52,8 +52,8 @@ fn parse_join(json: &serde_json::Value) -> Node {
 
     let join_op = match &json["left_join_attributes"] {
         serde_json::Value::Null => Join::new(
-            left.get_output_relation(),
-            right.get_output_relation(),
+            left.get_output_relation().unwrap(),
+            right.get_output_relation().unwrap(),
             vec![],
             vec![],
         ),
@@ -61,8 +61,8 @@ fn parse_join(json: &serde_json::Value) -> Node {
             let l_attributes = parse_columns(&json["left_join_attributes"]);
             let r_attributes = parse_columns(&json["right_join_attributes"]);
             Join::new(
-                left.get_output_relation(),
-                right.get_output_relation(),
+                left.get_output_relation().unwrap(),
+                right.get_output_relation().unwrap(),
                 l_attributes,
                 r_attributes,
             )
@@ -71,7 +71,9 @@ fn parse_join(json: &serde_json::Value) -> Node {
     let join_node = Node::new(Rc::new(join_op), vec![Rc::new(left), Rc::new(right)]);
 
     let project_cols = parse_columns(&json["project_expressions"]);
-    let project_op = Project::pure_project(join_node.get_output_relation(), project_cols);
+    let project_op = Project::pure_project(
+        join_node.get_output_relation().unwrap(),
+        project_cols);
     Node::new(Rc::new(project_op), vec![Rc::new(join_node)])
 }
 
@@ -99,7 +101,7 @@ fn parse_aggregate(json: &serde_json::Value) -> Node {
     output_col_names.push(agg_out_name.clone());
 
     let agg_op = Aggregate::from_str(
-        input.get_output_relation(),
+        input.get_output_relation().unwrap(),
         agg_col_in,
         agg_col_out,
         output_col_names,
@@ -113,15 +115,15 @@ fn parse_insert_tuple(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
     let relation = input.get_output_relation();
     let values = parse_value_list(&json["column_values"]);
-    let row = Row::new(relation.get_schema().clone(), values);
-    let insert_op = Insert::new(relation, row);
+    let row = Row::new(relation.as_ref().unwrap().get_schema().clone(), values);
+    let insert_op = Insert::new(relation.unwrap(), row);
     Node::new(Rc::new(insert_op), vec![Rc::new(input)])
 }
 
 fn parse_delete_tuples(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
     let predicate = json.get("predicate").map(|p| parse_predicate(p));
-    let delete_op = Delete::new(input.get_output_relation(), predicate);
+    let delete_op = Delete::new(input.get_output_relation().unwrap(), predicate);
     Node::new(Rc::new(delete_op), vec![Rc::new(input)])
 }
 
@@ -166,9 +168,10 @@ fn parse_selection(json: &serde_json::Value) -> Node {
 
     let filter_predicate = &json["filter_predicate"];
     let project_op = match filter_predicate {
-        serde_json::Value::Null => Project::pure_project(input.get_output_relation(), output_cols),
+        serde_json::Value::Null => Project::pure_project(input.get_output_relation().unwrap(),
+                                                         output_cols),
         _ => Project::new(
-            input.get_output_relation(),
+            input.get_output_relation().unwrap(),
             output_cols,
             parse_predicate(filter_predicate),
         ),
@@ -187,7 +190,8 @@ fn parse_update_table(json: &serde_json::Value) -> Node {
     let predicate = json.get("predicate").map(|p| parse_predicate(p));
     let cols = parse_columns(&json["attributes"]);
     let assignments = parse_value_list(&json["assigned_values"]);
-    let update_op = Update::new(input.get_output_relation(), predicate, cols, assignments);
+    let update_op = Update::new(input.get_output_relation().unwrap(), predicate,
+                                cols, assignments);
     Node::new(Rc::new(update_op), vec![Rc::new(input)])
 }
 
@@ -254,7 +258,7 @@ fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
 fn parse_limit(json: &serde_json::Value) -> Node {
     let input = parse_node(&json["input"]);
     let limit = json["limit"].as_str().unwrap().parse::<usize>().unwrap();
-    let limit_operator = Limit::new(input.get_output_relation(), limit);
+    let limit_operator = Limit::new(input.get_output_relation().unwrap(), limit);
     Node::new(Rc::new(limit_operator), vec![Rc::new(input)])
 }
 

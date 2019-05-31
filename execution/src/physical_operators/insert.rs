@@ -17,11 +17,11 @@ impl Insert {
 }
 
 impl Operator for Insert {
-    fn get_target_relation(&self) -> Relation {
-        self.relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let mut row_builder = storage_manager
             .relational_engine()
             .get(self.relation.get_name())

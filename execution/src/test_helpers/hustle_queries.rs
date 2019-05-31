@@ -30,7 +30,7 @@ pub fn hustle_agg(
     .unwrap();
     sum_column_hustle(
         storage_manager,
-        agg_op.execute(storage_manager).unwrap(),
+        agg_op.execute(storage_manager).unwrap().unwrap(),
         &agg_out_name,
     )
 }
@@ -45,7 +45,7 @@ pub fn hustle_predicate(
     let project_op = Project::new(relation, vec![column.clone()], predicate);
     sum_column_hustle(
         storage_manager,
-        project_op.execute(storage_manager).unwrap(),
+        project_op.execute(storage_manager).unwrap().unwrap(),
         column.get_name(),
     )
 }
@@ -66,7 +66,7 @@ pub fn hustle_update(
     let relation = update_op.execute(storage_manager).unwrap();
     sum_column_hustle(
         storage_manager,
-        relation,
+        relation.unwrap(),
         column.get_name()
     )
 }

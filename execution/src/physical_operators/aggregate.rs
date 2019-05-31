@@ -81,11 +81,11 @@ impl Aggregate {
 }
 
 impl Operator for Aggregate {
-    fn get_target_relation(&self) -> Relation {
-        self.output_relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        Some(self.output_relation.clone())
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let in_schema = self.input_relation.get_schema();
         let in_physical_relation = storage_manager
             .relational_engine()

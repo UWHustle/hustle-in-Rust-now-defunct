@@ -169,7 +169,7 @@ impl<'a> ImmediateRelation<'a> {
             agg_name,
         )?;
         let output = ImmediateRelation {
-            relation: agg_op.execute(&self.storage_manager)?,
+            relation: agg_op.execute(&self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
         };
         Ok(output)
@@ -207,7 +207,7 @@ impl<'a> ImmediateRelation<'a> {
             other.relation.columns_from_names(r_col_names)?,
         );
         let output = ImmediateRelation {
-            relation: join_op.execute(&self.storage_manager)?,
+            relation: join_op.execute(&self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
         };
         Ok(output)
@@ -216,7 +216,7 @@ impl<'a> ImmediateRelation<'a> {
     pub fn limit(&self, limit: usize) -> Result<Self, String> {
         let limit_op = Limit::new(self.relation.clone(), limit);
         let output = ImmediateRelation {
-            relation: limit_op.execute(self.storage_manager)?,
+            relation: limit_op.execute(self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
         };
         Ok(output)
@@ -232,7 +232,7 @@ impl<'a> ImmediateRelation<'a> {
         let columns = self.relation.columns_from_names(col_names)?;
         let project_op = Project::pure_project(self.relation.clone(), columns);
         let output = ImmediateRelation {
-            relation: project_op.execute(self.storage_manager)?,
+            relation: project_op.execute(self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
         };
         Ok(output)
@@ -246,7 +246,7 @@ impl<'a> ImmediateRelation<'a> {
             self.parse_predicate(predicate)?,
         );
         let output = ImmediateRelation {
-            relation: project_op.execute(self.storage_manager)?,
+            relation: project_op.execute(self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
         };
         Ok(output)
