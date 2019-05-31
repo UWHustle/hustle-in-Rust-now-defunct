@@ -9,4 +9,6 @@ autom4te.cache
 .DS_Store
 .idea
 *~
-third_party/src
+third_party/src/*
+!third_party/src/tmb
+!third_party/src/farmhash
