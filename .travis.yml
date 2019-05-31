@@ -56,7 +56,7 @@ before_script:
 - (cd optimizer/lib/quickstep/third_party && ./download_and_patch_prerequisites.sh && cd ../..)
 
 script:
-- travis_wait 60 cargo build
+- cargo build -vv
 - cargo test
 
 after_failure:
