@@ -1,3 +1,9 @@
-pub mod connection;
-pub mod statement;
-pub mod result;
+pub mod hustle;
+mod connection;
+mod statement;
+mod result;
+
+pub use hustle::Hustle;
+use connection::HustleConnection;
+use statement::HustleStatement;
+use result::HustleResult;

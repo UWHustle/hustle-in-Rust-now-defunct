@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 fn main() {
     let mut optimizer_src = cmake::Config::new("lib")
-        .build_arg("-j4")
+        .cxxflag("-O0")
         .build();
 
     optimizer_src.push("build");

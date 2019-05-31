@@ -4,6 +4,7 @@ members = [
     "api",
     "cli",
     "optimizer",
+    "concurrency",
     "execution",
     "storage",
     "catalog",

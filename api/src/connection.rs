@@ -1,14 +1,14 @@
 use crate::statement::HustleStatement;
 use execution::ExecutionEngine;
 
-pub struct HustleConnection {
-    execution_engine: ExecutionEngine
+pub struct HustleConnection<'a> {
+    execution_engine: &'a ExecutionEngine
 }
 
-impl HustleConnection {
-    pub fn new() -> Self {
+impl<'a> HustleConnection<'a> {
+    pub fn new(execution_engine: &'a ExecutionEngine) -> Self {
         HustleConnection {
-            execution_engine: ExecutionEngine::new()
+            execution_engine
         }
     }
 

@@ -2,13 +2,14 @@ extern crate rustyline;
 
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
-use hustle_api::connection::HustleConnection;
+use hustle_api::Hustle;
 
 const COMMAND_HISTORY_FILE_NAME: &str = "commandhistory.txt";
 const PROMPT: &str = "hustle> ";
 
 fn main() {
-    let connection = HustleConnection::new();
+    let hustle = Hustle::new();
+    let connection = hustle.connect();
     let mut editor = Editor::<()>::new();
 
     if editor.load_history(COMMAND_HISTORY_FILE_NAME).is_err() {
