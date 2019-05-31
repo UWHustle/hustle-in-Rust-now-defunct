@@ -59,11 +59,16 @@ pub fn hustle_update(
 ) -> i64 {
     let column = relation.column_from_name(col_name).unwrap();
     let update_op = Update::new(
-        relation,
+        relation.clone(),
         Some(predicate),
         vec![column.clone()],
         vec![assignment]);
-    let relation = update_op.execute(storage_manager).unwrap();
+    update_op.execute(storage_manager).unwrap();
+    let project_op = Project::pure_project(
+        relation,
+        vec![column.clone()]
+    );
+    let relation = project_op.execute(storage_manager).unwrap();
     sum_column_hustle(
         storage_manager,
         relation.unwrap(),
