@@ -21,7 +21,7 @@ fn main() {
         match readline {
             Ok(line) => {
                 editor.add_history_entry(line.as_str());
-                let mut statement = connection.prepare(&line);
+                let mut statement = connection.prepare_statement(&line);
                 match statement.execute() {
                     Ok(result) => {
                         result.map(|r| println!("{}", r));

@@ -5,5 +5,3 @@ mod result;
 
 pub use hustle::Hustle;
 use connection::HustleConnection;
-use statement::HustleStatement;
-use result::HustleResult;

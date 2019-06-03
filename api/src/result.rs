@@ -1,25 +1,27 @@
-use execution::{ExecutionEngine, type_system};
+use execution::type_system;
 use execution::logical_entities::relation::Relation;
 use execution::type_system::borrowed_buffer::BorrowedBuffer;
 use execution::type_system::Buffer;
 use std::fmt;
 use execution::type_system::integer::Int8;
+use crate::connection::HustleConnection;
 
 pub struct HustleResult<'a> {
     relation: Relation,
-    execution_engine: &'a ExecutionEngine,
     data: Vec<u8>,
     row_index: usize,
-    initialized: bool
+    initialized: bool,
+    connection: &'a HustleConnection<'a>
 }
 
 impl<'a> HustleResult<'a> {
-    pub fn new(relation: Relation, execution_engine: &'a ExecutionEngine) -> Self {
+    pub fn new(relation: Relation, connection: &'a HustleConnection<'a>) -> Self {
         // TODO: Read in rows with a generator instead of in bulk.
         // Due to some borrowing issues, it's easier to just read in all the rows of the relation
         // at once. For large tables, this could cause problems. This should be changed when
         // Rust generators become stable.
-        let data = execution_engine
+        let data = connection
+            .execution_engine()
             .get_storage_manager()
             .relational_engine()
             .get(&relation.get_name())
@@ -28,10 +30,10 @@ impl<'a> HustleResult<'a> {
 
         HustleResult {
             relation,
-            execution_engine,
             data,
             row_index: 0,
-            initialized: false
+            initialized: false,
+            connection
         }
     }
 
@@ -77,7 +79,8 @@ impl<'a> fmt::Display for HustleResult<'a> {
         }
         writeln!(f, "|")?;
 
-        let physical_relation = self.execution_engine
+        let physical_relation = self.connection
+            .execution_engine()
             .get_storage_manager()
             .relational_engine()
             .get(self.relation.get_name())

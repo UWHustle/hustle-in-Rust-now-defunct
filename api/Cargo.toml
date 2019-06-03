@@ -7,5 +7,6 @@ edition = "2018"
 [dependencies]
 serde_json = "1.0.39"
 optimizer = { path = "../optimizer" }
+concurrency = { path = "../concurrency" }
 execution = { path = "../execution" }
 storage = { path = "../storage" }

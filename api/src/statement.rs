@@ -1,21 +1,21 @@
 use optimizer::optimize;
-use execution::ExecutionEngine;
 use crate::result::HustleResult;
+use crate::connection::HustleConnection;
 
 pub struct HustleStatement<'a> {
     statement: Vec<String>,
     params: Vec<String>,
-    execution_engine: &'a ExecutionEngine
+    connection: &'a HustleConnection<'a>
 }
 
 impl<'a> HustleStatement<'a> {
-    pub fn new(sql: &str, execution_engine: &'a ExecutionEngine) -> Self {
+    pub fn new(sql: &str, connection: &'a HustleConnection<'a>) -> Self {
         let statement: Vec<String> = sql.split("?").map(|s| s.to_string()).collect();
         let params = (0..statement.len() - 1).map(|_| String::new()).collect();
         HustleStatement {
             statement,
             params,
-            execution_engine,
+            connection
         }
     }
 
@@ -41,8 +41,10 @@ impl<'a> HustleStatement<'a> {
             }
 
             let plan = optimize(&sql)?;
-            let result = self.execution_engine.execute_plan(&plan)
-                .map(|relation| HustleResult::new(relation, self.execution_engine));
+
+            let result = self.connection
+                .execution_engine().execute_plan(&plan)
+                .map(|relation| HustleResult::new(relation, self.connection));
 
             Ok(result)
         }
