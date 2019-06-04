@@ -6,3 +6,7 @@ edition = "2018"
 
 [dependencies]
 execution = { path = "../execution" }
+
+[dev-dependencies]
+hustle-api = { path = "../api" }
+crossbeam-utils = "0.6.5"

@@ -28,7 +28,7 @@ impl<'a> HustleStatement<'a> {
         }
     }
 
-    pub fn execute(&mut self) -> Result<Option<HustleResult>, String> {
+    pub fn execute(&self) -> Result<Option<HustleResult>, String> {
         if self.params.iter().any(|p| p.is_empty()) {
             Err("Statement has unbound parameters".to_string())
         } else {
@@ -43,7 +43,8 @@ impl<'a> HustleStatement<'a> {
             let plan = optimize(&sql)?;
 
             let result = self.connection
-                .execution_engine().execute_plan(&plan)
+                .transaction_manager_connection()
+                .execute_statement(plan)?
                 .map(|relation| HustleResult::new(relation, self.connection));
 
             Ok(result)

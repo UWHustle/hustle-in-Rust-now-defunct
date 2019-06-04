@@ -6,7 +6,7 @@ use execution::ExecutionEngine;
 use std::sync::mpsc::{self, Sender};
 
 pub struct TransactionManager {
-    transaction_sender: Sender<Arc<Transaction>>
+    transaction_sender: Mutex<Sender<Arc<Transaction>>>
 }
 
 impl TransactionManager {
@@ -27,12 +27,13 @@ impl TransactionManager {
         });
 
         TransactionManager {
-            transaction_sender
+            transaction_sender: Mutex::new(transaction_sender)
         }
     }
 
     pub fn connect(&self) -> TransactionManagerConnection {
-        TransactionManagerConnection::new(Sender::clone(&self.transaction_sender))
+        TransactionManagerConnection::new(
+            Sender::clone(&self.transaction_sender.lock().unwrap()))
     }
 }
 
@@ -52,7 +53,7 @@ impl TransactionManagerConnection {
     pub fn begin_transaction(&mut self) -> Result<(), String> {
         if self.current_transaction.is_none() {
             let transaction = Arc::new(Transaction::new());
-            self.current_transaction = Some(transaction.clone());
+            self.current_transaction.replace(transaction.clone());
             self.transaction_sender.send(transaction).map_err(|e| e.to_string())?;
             Ok(())
         } else {
@@ -60,15 +61,16 @@ impl TransactionManagerConnection {
         }
     }
 
-    pub fn execute_statement(&mut self, plan: String) -> Result<Option<Relation>, String> {
+    pub fn execute_statement(&self, plan: String) -> Result<Option<Relation>, String> {
         let statement = Arc::new(TransactionStatement::new(plan));
 
-        if let Some(transaction) = &self.current_transaction {
+        if let Some(ref transaction) = self.current_transaction {
             transaction.push_back_statement(statement.clone());
         } else {
-            self.begin_transaction()?;
-            self.current_transaction.as_ref().unwrap().push_back_statement(statement.clone());
-            self.commit_transaction()?;
+            let transaction = Arc::new(Transaction::new());
+            transaction.push_back_statement(statement.clone());
+            transaction.commit();
+            self.transaction_sender.send(transaction).map_err(|e| e.to_string())?;
         }
 
         statement.await_result()
@@ -96,7 +98,9 @@ impl Transaction {
     }
 
     fn push_back_statement(&self, statement: Arc<TransactionStatement>) {
-        self.statements.0.lock().unwrap().push_back(Some(statement));
+        let &(ref lock, ref cvar) = &self.statements;
+        lock.lock().unwrap().push_back(Some(statement));
+        cvar.notify_all();
     }
 
     fn pop_front_statement(&self) -> Option<Arc<TransactionStatement>> {
@@ -111,7 +115,9 @@ impl Transaction {
     }
 
     fn commit(&self) {
-        self.statements.0.lock().unwrap().push_back(None);
+        let &(ref lock, ref cvar) = &self.statements;
+        lock.lock().unwrap().push_back(None);
+        cvar.notify_all();
     }
 }
 
