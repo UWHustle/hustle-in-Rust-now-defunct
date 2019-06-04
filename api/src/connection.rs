@@ -3,7 +3,7 @@ use execution::ExecutionEngine;
 use concurrency::{TransactionManagerConnection, TransactionManager};
 
 pub struct HustleConnection<'a> {
-    transaction_manager_connection: TransactionManagerConnection<'a>,
+    transaction_manager_connection: TransactionManagerConnection,
     execution_engine: &'a ExecutionEngine
 }
 

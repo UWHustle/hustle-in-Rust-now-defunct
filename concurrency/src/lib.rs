@@ -1,76 +1,51 @@
 use std::sync::{Mutex, Arc, Condvar};
 use std::collections::VecDeque;
-use crossbeam_utils::thread;
+use std::thread;
 use execution::logical_entities::relation::Relation;
 use execution::ExecutionEngine;
+use std::sync::mpsc::{self, Sender};
 
 pub struct TransactionManager {
-    execution_engine: Arc<ExecutionEngine>,
-    input_queue: (Mutex<VecDeque<Arc<Transaction>>>, Condvar),
-    is_polling: Mutex<bool>
+    transaction_sender: Sender<Arc<Transaction>>
 }
 
 impl TransactionManager {
     pub fn new(execution_engine: Arc<ExecutionEngine>) -> Self {
+
+        // Spawn transaction processing thread.
+        let (transaction_sender, transaction_receiver) = mpsc::channel::<Arc<Transaction>>();
+        thread::spawn(move || {
+            loop {
+                if let Some(transaction) = transaction_receiver.recv().ok() {
+                    // Process the transaction.
+                    while let Some(statement) = transaction.pop_front_statement() {
+                        let result = execution_engine.execute_plan(&statement.plan);
+                        statement.set_result(Ok(result));
+                    }
+                }
+            }
+        });
+
         TransactionManager {
-            execution_engine,
-            input_queue: (Mutex::new(VecDeque::new()), Condvar::new()),
-            is_polling: Mutex::new(false)
+            transaction_sender
         }
     }
 
     pub fn connect(&self) -> TransactionManagerConnection {
-        let mut is_polling = self.is_polling.lock().unwrap();
-        if !*is_polling {
-            self.spawn_transaction_processing_thread();
-        }
-        *is_polling = true;
-
-        TransactionManagerConnection::new(self)
-    }
-
-    fn spawn_transaction_processing_thread(&self) {
-        thread::scope(|s| {
-            s.spawn(move |_| {
-                loop {
-                    let transaction = self.await_transaction();
-
-                    // Process the transaction.
-                    let statement = transaction.await_statement();
-                    let result = self.execution_engine.execute_plan(&statement.plan);
-                    statement.set_result(Ok(result));
-                }
-            });
-        }).unwrap();
-    }
-
-    fn await_transaction(&self) -> Arc<Transaction> {
-        let &(ref lock, ref cvar) = &self.input_queue;
-        let mut input_queue = lock.lock().unwrap();
-
-        // Continuously poll the input queue for new transactions.
-        loop {
-            if let Some(transaction) = input_queue.pop_front() {
-                // There is a transaction in the front of the input queue. Process it.
-                break transaction;
-            }
-
-            // The input queue is empty. Wait for a new transaction.
-            input_queue = cvar.wait(input_queue).unwrap();
-        }
+        TransactionManagerConnection::new(Sender::clone(&self.transaction_sender))
     }
 }
 
-pub struct TransactionManagerConnection<'a> {
+pub struct TransactionManagerConnection {
     current_transaction: Option<Arc<Transaction>>,
-    transaction_manager: &'a TransactionManager
+    transaction_sender: Sender<Arc<Transaction>>
 }
 
-impl<'a> TransactionManagerConnection<'a> {
-    fn new(transaction_manager: &'a TransactionManager) -> Self {
+impl TransactionManagerConnection {
+    fn new(transaction_sender: Sender<Arc<Transaction>>) -> Self {
         TransactionManagerConnection {
             current_transaction: None,
-            transaction_manager
+            transaction_sender
         }
     }
 
@@ -78,14 +53,7 @@ impl<'a> TransactionManagerConnection<'a> {
         if self.current_transaction.is_none() {
             let transaction = Arc::new(Transaction::new());
             self.current_transaction = Some(transaction.clone());
-
-            let (ref input_queue, ref cvar) = self.transaction_manager.input_queue;
-            input_queue
-                .lock()
-                .unwrap()
-                .push_back(transaction);
-            cvar.notify_one();
-
+            self.transaction_sender.send(transaction).map_err(|e| e.to_string())?;
             Ok(())
         } else {
             Err("Cannot begin a transaction within a transaction".to_string())
@@ -96,10 +64,10 @@ impl<'a> TransactionManagerConnection<'a> {
         let statement = Arc::new(TransactionStatement::new(plan));
 
         if let Some(transaction) = &self.current_transaction {
-            transaction.push_statement(statement.clone());
+            transaction.push_back_statement(statement.clone());
         } else {
             self.begin_transaction()?;
-            self.current_transaction.as_ref().unwrap().push_statement(statement.clone());
+            self.current_transaction.as_ref().unwrap().push_back_statement(statement.clone());
             self.commit_transaction()?;
         }
 
@@ -108,7 +76,7 @@ impl<'a> TransactionManagerConnection<'a> {
 
     pub fn commit_transaction(&mut self) -> Result<(), String> {
         if let Some(transaction) = self.current_transaction.take() {
-            *transaction.committed.lock().unwrap() = true;
+            transaction.commit();
             Ok(())
         } else {
             Err("Cannot commit when no transaction is active".to_string())
@@ -117,26 +85,22 @@ impl<'a> TransactionManagerConnection<'a> {
 }
 
 struct Transaction {
-    committed: Mutex<bool>,
-    statements: Arc<(Mutex<VecDeque<Arc<TransactionStatement>>>, Condvar)>
+    statements: (Mutex<VecDeque<Option<Arc<TransactionStatement>>>>, Condvar)
 }
 
 impl Transaction {
     fn new() -> Self {
         Transaction {
-            committed: Mutex::new(false),
-            statements: Arc::new((Mutex::new(VecDeque::new()), Condvar::new()))
+            statements: (Mutex::new(VecDeque::new()), Condvar::new())
         }
     }
 
-    fn push_statement(&self, statement: Arc<TransactionStatement>) {
-        let &(ref lock, ref cvar) = &*self.statements;
-        lock.lock().unwrap().push_back(statement);
-        cvar.notify_one();
+    fn push_back_statement(&self, statement: Arc<TransactionStatement>) {
+        self.statements.0.lock().unwrap().push_back(Some(statement));
     }
 
-    fn await_statement(&self) -> Arc<TransactionStatement> {
-        let &(ref lock, ref cvar) = &*self.statements;
+    fn pop_front_statement(&self) -> Option<Arc<TransactionStatement>> {
+        let &(ref lock, ref cvar) = &self.statements;
         let mut statements = lock.lock().unwrap();
         loop {
             if let Some(statement) = statements.pop_front() {
@@ -144,6 +108,10 @@ impl Transaction {
             }
             statements = cvar.wait(statements).unwrap();
         }
+    }
+
+    fn commit(&self) {
+        self.statements.0.lock().unwrap().push_back(None);
     }
 }
 

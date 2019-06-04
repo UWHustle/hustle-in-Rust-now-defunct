@@ -6,4 +6,3 @@ edition = "2018"
 
 [dependencies]
 execution = { path = "../execution" }
-crossbeam-utils = "0.6.5"
