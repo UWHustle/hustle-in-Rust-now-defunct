@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "server",
     "api",
     "cli",
     "optimizer",

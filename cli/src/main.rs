@@ -2,14 +2,14 @@ extern crate rustyline;
 
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
-use hustle_api::Hustle;
+use std::net::TcpStream;
+use server::message::Message;
 
 const COMMAND_HISTORY_FILE_NAME: &str = "commandhistory.txt";
 const PROMPT: &str = "hustle> ";
 
-fn main() {
-    let hustle = Hustle::new();
-    let connection = hustle.connect();
+fn main() -> Result<(), String> {
+    let mut stream = TcpStream::connect("127.0.0.1:8000").map_err(|e| e.to_string())?;
     let mut editor = Editor::<()>::new();
 
     if editor.load_history(COMMAND_HISTORY_FILE_NAME).is_err() {
@@ -20,14 +20,8 @@ fn main() {
         let readline = editor.readline(PROMPT);
         match readline {
             Ok(line) => {
-                editor.add_history_entry(line.as_str());
-                let statement = connection.prepare_statement(&line);
-                match statement.execute() {
-                    Ok(result) => {
-                        result.map(|r| println!("{}", r));
-                    },
-                    Err(e) => println!("Error: {}", e)
-                }
+                let message = Message::Execute { statement: line };
+                message.encode(&mut stream)?;
             },
             Err(ReadlineError::Interrupted) => {
                 println!("^C");
@@ -45,4 +39,6 @@ fn main() {
     }
 
     editor.save_history(COMMAND_HISTORY_FILE_NAME).unwrap();
+
+    Ok(())
 }
