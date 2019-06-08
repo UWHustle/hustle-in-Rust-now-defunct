@@ -1,154 +1,96 @@
-use std::sync::{Mutex, Arc, Condvar};
-use std::collections::VecDeque;
-use std::thread;
-use execution::logical_entities::relation::Relation;
-use execution::ExecutionEngine;
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::{Receiver, Sender};
+use std::collections::{VecDeque, HashMap};
+use message::Message;
 
 pub struct TransactionManager {
-    transaction_sender: Mutex<Sender<Arc<Transaction>>>
+    transaction_queue: VecDeque<u64>,
+    transaction_map: HashMap<u64, Transaction>
 }
 
 impl TransactionManager {
-    pub fn new(execution_engine: Arc<ExecutionEngine>) -> Self {
+    pub fn new() -> Self {
+        TransactionManager {
+            transaction_queue: VecDeque::new(),
+            transaction_map: HashMap::new()
+        }
+    }
 
-        // Spawn transaction processing thread.
-        let (transaction_sender, transaction_receiver) = mpsc::channel::<Arc<Transaction>>();
-        thread::spawn(move || {
-            loop {
-                if let Some(transaction) = transaction_receiver.recv().ok() {
-                    // Process the transaction.
-                    while let Some(statement) = transaction.pop_front_statement() {
-                        let result = execution_engine.execute_plan(&statement.plan);
-                        statement.set_result(Ok(result));
-                    }
+    pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+        loop {
+            let buf = input_rx.recv().unwrap();
+            let request = Message::deserialize(&buf).unwrap();
+
+            // Process the message contents.
+            match request {
+                Message::BeginTransaction { connection_id } => self.begin(connection_id),
+                Message::CommitTransaction { connection_id } => self.commit(connection_id),
+                Message::ExecutePlan { plan, connection_id } =>
+                    self.execute(plan, connection_id),
+                _ => panic!("Invalid message type sent to transaction manager")
+            };
+
+            // Serialize each transaction.
+            while let Some(connection_id) = self.transaction_queue.front() {
+                let transaction = self.transaction_map.get_mut(connection_id).unwrap();
+
+                // Send all the statements of the front transaction.
+                while let Some(plan) = transaction.statements.pop_front() {
+                    let response = Message::ExecutePlan {
+                        plan,
+                        connection_id: connection_id.clone()
+                    };
+                    output_tx.send(response.serialize().unwrap()).unwrap();
+                }
+
+                // If the front transaction is committed, move on to the next transaction. Else,
+                // continue to receive statements.
+                if transaction.committed {
+                    self.transaction_map.remove(&self.transaction_queue.pop_front().unwrap());
+                } else {
+                    break;
                 }
             }
-        });
-
-        TransactionManager {
-            transaction_sender: Mutex::new(transaction_sender)
         }
     }
 
-    pub fn connect(&self) -> TransactionManagerConnection {
-        TransactionManagerConnection::new(
-            Sender::clone(&self.transaction_sender.lock().unwrap()))
-    }
-}
-
-pub struct TransactionManagerConnection {
-    current_transaction: Option<Arc<Transaction>>,
-    transaction_sender: Sender<Arc<Transaction>>
-}
-
-impl TransactionManagerConnection {
-    fn new(transaction_sender: Sender<Arc<Transaction>>) -> Self {
-        TransactionManagerConnection {
-            current_transaction: None,
-            transaction_sender
-        }
-    }
-
-    pub fn begin_transaction(&mut self) -> Result<(), String> {
-        if self.current_transaction.is_none() {
-            let transaction = Arc::new(Transaction::new());
-            self.current_transaction.replace(transaction.clone());
-            self.transaction_sender.send(transaction).map_err(|e| e.to_string())?;
-            Ok(())
+    fn begin(&mut self, connection_id: u64) {
+        if self.transaction_map.contains_key(&connection_id) {
+            panic!("Cannot begin a transaction within a transaction");
         } else {
-            Err("Cannot begin a transaction within a transaction".to_string())
+            self.transaction_queue.push_back(connection_id);
+            self.transaction_map.insert(connection_id, Transaction::new());
         }
     }
 
-    pub fn execute_statement(&self, plan: String) -> Result<Option<Relation>, String> {
-        let statement = Arc::new(TransactionStatement::new(plan));
-
-        if let Some(ref transaction) = self.current_transaction {
-            transaction.push_back_statement(statement.clone());
-        } else {
-            let transaction = Arc::new(Transaction::new());
-            transaction.push_back_statement(statement.clone());
-            transaction.commit();
-            self.transaction_sender.send(transaction).map_err(|e| e.to_string())?;
-        }
-
-        statement.await_result()
+    fn commit(&mut self, connection_id: u64) {
+        self.transaction_map.get_mut(&connection_id)
+            .map(|transaction| transaction.committed = true)
+            .expect("Cannot commit when no transaction is active");
     }
 
-    pub fn commit_transaction(&mut self) -> Result<(), String> {
-        if let Some(transaction) = self.current_transaction.take() {
-            transaction.commit();
-            Ok(())
+    fn execute(&mut self, plan: String, connection_id: u64) {
+        if let Some(transaction) = self.transaction_map.get_mut(&connection_id) {
+            transaction.statements.push_back(plan);
         } else {
-            Err("Cannot commit when no transaction is active".to_string())
+            let mut transaction = Transaction::new();
+            transaction.statements.push_back(plan);
+            transaction.committed = true;
+            self.transaction_queue.push_back(connection_id);
+            self.transaction_map.insert(connection_id, transaction);
         }
     }
 }
 
-struct Transaction {
-    statements: (Mutex<VecDeque<Option<Arc<TransactionStatement>>>>, Condvar)
+pub struct Transaction {
+    statements: VecDeque<String>,
+    committed: bool
 }
 
 impl Transaction {
     fn new() -> Self {
         Transaction {
-            statements: (Mutex::new(VecDeque::new()), Condvar::new())
-        }
-    }
-
-    fn push_back_statement(&self, statement: Arc<TransactionStatement>) {
-        let &(ref lock, ref cvar) = &self.statements;
-        lock.lock().unwrap().push_back(Some(statement));
-        cvar.notify_all();
-    }
-
-    fn pop_front_statement(&self) -> Option<Arc<TransactionStatement>> {
-        let &(ref lock, ref cvar) = &self.statements;
-        let mut statements = lock.lock().unwrap();
-        loop {
-            if let Some(statement) = statements.pop_front() {
-                break statement;
-            }
-            statements = cvar.wait(statements).unwrap();
-        }
-    }
-
-    fn commit(&self) {
-        let &(ref lock, ref cvar) = &self.statements;
-        lock.lock().unwrap().push_back(None);
-        cvar.notify_all();
-    }
-}
-
-struct TransactionStatement {
-    plan: String,
-    result: Arc<(Mutex<Option<Result<Option<Relation>, String>>>, Condvar)>
-}
-
-impl TransactionStatement {
-    pub fn new(plan: String) -> Self {
-        TransactionStatement {
-            plan,
-            result: Arc::new((Mutex::new(None), Condvar::new()))
-        }
-    }
-
-    pub fn set_result(&self, result: Result<Option<Relation>, String>) {
-        let &(ref lock, ref cvar) = &*self.result;
-        let mut old_result = lock.lock().unwrap();
-        old_result.replace(result);
-        cvar.notify_one();
-    }
-
-    pub fn await_result(&self) -> Result<Option<Relation>, String> {
-        let &(ref lock, ref cvar) = &*self.result;
-        let mut result = lock.lock().unwrap();
-        loop {
-            if let Some(r) = result.take() {
-                break r;
-            }
-            result = cvar.wait(result).unwrap();
+            statements: VecDeque::new(),
+            committed: false
         }
     }
 }

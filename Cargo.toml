@@ -2,7 +2,7 @@
 
 members = [
     "server",
-    "api",
+    "message",
     "cli",
     "optimizer",
     "concurrency",

@@ -3,7 +3,7 @@ extern crate rustyline;
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 use std::net::TcpStream;
-use server::message::Message;
+use message::Message;
 
 const COMMAND_HISTORY_FILE_NAME: &str = "commandhistory.txt";
 const PROMPT: &str = "hustle> ";
@@ -20,8 +20,8 @@ fn main() -> Result<(), String> {
         let readline = editor.readline(PROMPT);
         match readline {
             Ok(line) => {
-                let message = Message::Execute { statement: line };
-                message.encode(&mut stream)?;
+                let message = Message::ExecuteSQL { sql: line };
+                message.send(&mut stream)?;
             },
             Err(ReadlineError::Interrupted) => {
                 println!("^C");

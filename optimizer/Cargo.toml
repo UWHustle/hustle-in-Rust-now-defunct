@@ -5,5 +5,8 @@ authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 build = "build.rs"
 
+[dependencies]
+message = { path = "../message" }
+
 [build-dependencies]
 cmake = "0.1.40"

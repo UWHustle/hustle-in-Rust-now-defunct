@@ -5,5 +5,5 @@ authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-server = { path = "../server" }
+message = { path = "../message" }
 rustyline = "4.1.0"
