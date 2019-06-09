@@ -1,10 +1,11 @@
 extern crate execution;
 extern crate storage;
+extern crate types;
 
 use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
 use execution::logical_entities::predicates::comparison::Comparison;
-use execution::type_system::operators::Comparator;
-use execution::type_system::integer::Int4;
+use types::operators::Comparator;
+use types::integer::Int4;
 use execution::test_helpers::hustle_queries::hustle_update;
 use execution::test_helpers::sqlite3::run_query_sqlite;
 use storage::StorageManager;

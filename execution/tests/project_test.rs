@@ -1,12 +1,13 @@
 extern crate execution;
 extern crate storage;
+extern crate types;
 
 use execution::logical_entities::predicates::comparison::Comparison;
 use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
 use execution::test_helpers::hustle_queries::hustle_predicate;
 use execution::test_helpers::sqlite3::run_query_sqlite;
-use execution::type_system::integer::Int4;
-use execution::type_system::operators::Comparator;
+use types::integer::Int4;
+use types::operators::Comparator;
 use storage::StorageManager;
 
 const RECORD_COUNT: usize = 10;
