@@ -31,8 +31,8 @@ impl HustleConnection {
                             rows.push(row);
                         }
                         _ => panic!("Invalid message type sent to client")
-                    }
-                }
+                    };
+                };
                 Ok(Some(HustleResult::new(schema, rows)))
             },
             Message::Error { reason, connection_id: _ } => Err(reason),

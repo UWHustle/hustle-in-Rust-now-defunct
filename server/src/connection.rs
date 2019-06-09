@@ -24,15 +24,17 @@ impl ServerConnection {
                 _ => panic!("Invalid message type sent to connection")
             };
 
-            // Pass on the message to the server.
+            // Pass on the message to Hustle.
             output_tx.send(response.serialize().unwrap()).unwrap();
 
-            // Wait for the server's response.
+            // Wait for the response.
             loop {
                 let result = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
                 result.send(&mut self.tcp_stream).unwrap();
-                if let Message::Success { connection_id: _ } = result {
-                    break;
+                match result {
+                    Message::Success { connection_id: _ } => break,
+                    Message::Error { reason: _, connection_id: _ } => break,
+                    _ => continue
                 }
             }
         }
