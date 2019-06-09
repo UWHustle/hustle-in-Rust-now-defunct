@@ -19,7 +19,12 @@ fn main() -> Result<(), String> {
         let readline = editor.readline(PROMPT);
         match readline {
             Ok(line) => {
-                connection.execute(line).map(|result| println!("{}", result));
+                match connection.execute(line) {
+                    Ok(result) => {
+                        result.map(|r| println!("{}", r));
+                    },
+                    Err(reason) => println!("{}", reason)
+                }
             },
             Err(ReadlineError::Interrupted) => {
                 println!("^C");

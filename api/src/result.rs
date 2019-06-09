@@ -17,6 +17,10 @@ impl HustleResult {
         }
     }
 
+    pub fn get_row(&self, row: usize) -> Option<HustleRow> {
+        self.rows.get(row).map(|r| HustleRow::new(&self.schema, r))
+    }
+
     pub fn rows(&self) -> Iter {
         Iter::new(&self.schema, self.rows.iter())
     }
@@ -82,7 +86,7 @@ impl<'a> HustleRow<'a> {
         }
     }
 
-    fn get_i64(&self, col: usize) -> Option<i64> {
+    pub fn get_i64(&self, col: usize) -> Option<i64> {
         self.get_col(col).map(|c| types::cast_value::<Int8>(c.as_ref()).value())
     }
 

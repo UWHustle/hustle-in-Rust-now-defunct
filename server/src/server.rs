@@ -42,8 +42,9 @@ impl Server {
 
         thread::scope(|s| {
             // Spawn optimizer thread.
+            let optimizer_error_tx = completed_tx.clone();
             s.spawn(move |_| {
-                optimizer.listen(optimizer_rx, transaction_tx);
+                optimizer.listen(optimizer_rx, transaction_tx, optimizer_error_tx);
             });
 
             // Spawn transaction manager thread.
@@ -63,7 +64,7 @@ impl Server {
                     let buf = completed_rx.recv().unwrap();
                     let request = Message::deserialize(&buf).unwrap();
 
-                    let on_success = |connection_id: &u64| {
+                    let send_to_client = |connection_id: &u64| {
                         // Pass on the message to the correct connection.
                         connections_clone
                             .read().unwrap()[connection_id]
@@ -73,9 +74,14 @@ impl Server {
                     };
 
                     match &request {
-                        Message::Schema { schema: _, connection_id } => on_success(connection_id),
-                        Message::ReturnRow { row: _, connection_id } => on_success(connection_id),
-                        Message::Success { connection_id } => on_success(connection_id),
+                        Message::Schema { schema: _, connection_id } =>
+                            send_to_client(connection_id),
+                        Message::ReturnRow { row: _, connection_id } =>
+                            send_to_client(connection_id),
+                        Message::Success { connection_id } =>
+                            send_to_client(connection_id),
+                        Message::Error { reason: _, connection_id } =>
+                            send_to_client(connection_id),
                         _ => panic!("Invalid message type sent to completed statement handler")
                     }
                 }

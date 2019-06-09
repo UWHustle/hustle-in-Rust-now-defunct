@@ -10,29 +10,50 @@ impl Optimizer {
         Optimizer
     }
 
-    pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+    pub fn listen(
+        &mut self,
+        input_rx: Receiver<Vec<u8>>,
+        success_tx: Sender<Vec<u8>>,
+        error_tx: Sender<Vec<u8>>
+    ) {
         loop {
             let buf = input_rx.recv().unwrap();
             let request = Message::deserialize(&buf).unwrap();
-            let response = match request {
-                Message::OptimizeSQL { mut sql, connection_id } => {
-                    sql.make_ascii_lowercase();
+            if let Message::OptimizeSQL { mut sql, connection_id } = request {
+                sql.make_ascii_lowercase();
 
-                    // TODO: Add parser, optimizer support for transactions.
-                    // Currently, the optimizer does not support transaction keywords, so we
-                    // check for them manually here.
-                    if sql.contains("begin") {
-                        Message::BeginTransaction { connection_id }
-                    } else if sql.contains("commit") {
-                        Message::CommitTransaction { connection_id }
-                    } else {
-                        let plan = self.optimize(&sql).unwrap();
-                        Message::ExecutePlan { plan, connection_id }
-                    }
-                },
-                _ => panic!("Invalid message type sent to optimizer")
-            };
-            output_tx.send(response.serialize().unwrap()).unwrap();
+                // TODO: Add parser, optimizer support for transactions.
+                // Currently, the optimizer does not support transaction keywords, so we
+                // check for them manually here.
+                if sql.contains("begin") {
+                    success_tx.send(Message::BeginTransaction {
+                        connection_id
+                    }.serialize().unwrap()).unwrap();
+
+                } else if sql.contains("commit") {
+                    success_tx.send(Message::CommitTransaction {
+                        connection_id
+                    }.serialize().unwrap()).unwrap();
+
+                } else {
+                    match self.optimize(&sql) {
+                        Ok(plan) =>
+                            success_tx.send(Message::ExecutePlan {
+                                plan,
+                                connection_id,
+                            }.serialize().unwrap()).unwrap(),
+                        Err(reason) =>
+                            error_tx.send(Message::Error {
+                                reason,
+                                connection_id,
+                            }.serialize().unwrap()).unwrap()
+                    };
+
+                }
+
+            } else {
+                panic!("Invalid message type sent to optimizer")
+            }
         }
     }
 

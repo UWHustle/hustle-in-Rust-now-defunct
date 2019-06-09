@@ -12,7 +12,8 @@ pub enum Message {
     ExecutePlan { plan: String, connection_id: u64 },
     Schema { schema: Vec<(String, DataType)>, connection_id: u64 },
     ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
-    Success { connection_id: u64 }
+    Success { connection_id: u64 },
+    Error { reason: String, connection_id: u64 },
 }
 
 impl Message {

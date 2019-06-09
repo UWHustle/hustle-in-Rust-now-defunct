@@ -14,13 +14,13 @@ impl HustleConnection {
         })
     }
 
-    pub fn execute(&mut self, sql: String) -> Option<HustleResult> {
+    pub fn execute(&mut self, sql: String) -> Result<Option<HustleResult>, String> {
         let request = Message::ExecuteSQL { sql };
         request.send(&mut self.tcp_stream).unwrap();
 
         let response = Message::receive(&mut self.tcp_stream).unwrap();
         match response {
-            Message::Success { connection_id: _ } => None,
+            Message::Success { connection_id: _ } => Ok(None),
             Message::Schema { schema, connection_id: _ } => {
                 let mut rows = vec![];
                 loop {
@@ -33,8 +33,9 @@ impl HustleConnection {
                         _ => panic!("Invalid message type sent to client")
                     }
                 }
-                Some(HustleResult::new(schema, rows))
+                Ok(Some(HustleResult::new(schema, rows)))
             },
+            Message::Error { reason, connection_id: _ } => Err(reason),
             _ => panic!("Invalid message type sent to client")
         }
 
