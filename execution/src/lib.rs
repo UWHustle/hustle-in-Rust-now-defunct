@@ -9,7 +9,7 @@ use storage::StorageManager;
 use logical_entities::relation::Relation;
 use std::sync::mpsc::{Receiver, Sender};
 use message::Message;
-use types::data_type;
+use types::data_type::DataType;
 
 extern crate storage;
 extern crate message;
@@ -38,34 +38,33 @@ impl ExecutionEngine {
             let request = Message::deserialize(&buf).unwrap();
             match request {
                 Message::ExecutePlan { plan, connection_id } => {
-                    self.execute_plan(&plan)
-                        .map(|relation| {
-                            let schema = relation.get_schema();
-                            let variants: Vec<data_type::Variant> = schema
-                                .get_columns().iter()
-                                .map(|c| c.data_type().variant)
-                                .collect();
+                    if let Some(relation) = self.execute_plan(&plan) {
+                        let schema = relation.get_schema();
+                        let data_types: Vec<DataType> = schema
+                            .get_columns().iter()
+                            .map(|c| c.data_type())
+                            .collect();
 
-                            let response = Message::Schema { schema: variants, connection_id };
-                            output_tx.send(response.serialize().unwrap()).unwrap();
+                        let response = Message::Schema { data_types, connection_id };
+                        output_tx.send(response.serialize().unwrap()).unwrap();
 
-                            let physical_relation = self.storage_manager
-                                .relational_engine()
-                                .get(relation.get_name())
-                                .unwrap();
+                        let physical_relation = self.storage_manager
+                            .relational_engine()
+                            .get(relation.get_name())
+                            .unwrap();
 
-                            for block in physical_relation.blocks() {
-                                for row_i in 0..block.get_n_rows() {
-                                    let mut row = vec![];
-                                    for col_i in 0..schema.get_columns().len() {
-                                        let data = block.get_row_col(row_i, col_i).unwrap();
-                                        row.push(data.to_owned());
-                                    }
-                                    let response = Message::ReturnRow { row, connection_id };
-                                    output_tx.send(response.serialize().unwrap()).unwrap();
+                        for block in physical_relation.blocks() {
+                            for row_i in 0..block.get_n_rows() {
+                                let mut row = vec![];
+                                for col_i in 0..schema.get_columns().len() {
+                                    let data = block.get_row_col(row_i, col_i).unwrap();
+                                    row.push(data.to_owned());
                                 }
+                                let response = Message::ReturnRow { row, connection_id };
+                                output_tx.send(response.serialize().unwrap()).unwrap();
                             }
-                        });
+                        }
+                    }
 
                     let response = Message::Success { connection_id };
                     output_tx.send(response.serialize().unwrap()).unwrap();

@@ -17,7 +17,7 @@ pub enum Variant {
 /* ============================================================================================== */
 
 /// A complete description of a type
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DataType {
     pub variant: Variant,
     pub nullable: bool,

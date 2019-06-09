@@ -1,6 +1,5 @@
 use std::net::TcpStream;
 use message::Message;
-use core::borrow::BorrowMut;
 use std::sync::mpsc::{Receiver, Sender};
 
 pub struct HustleConnection {
@@ -17,8 +16,8 @@ impl HustleConnection {
     }
 
     pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
-        while let Ok(request) = Message::receive(self.tcp_stream.borrow_mut()) {
-
+        loop {
+            let request = Message::receive(&mut self.tcp_stream).unwrap();
             let response = match request {
                 Message::ExecuteSQL { sql } =>
                     Message::OptimizeSQL { sql, connection_id: self.id},
@@ -29,13 +28,12 @@ impl HustleConnection {
             output_tx.send(response.serialize().unwrap()).unwrap();
 
             // Wait for the server's response.
-            let result = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
-
-            match result {
-                Message::ReturnRow { row, connection_id: _ } => {
-                    println!("returned row! {}", row.len());
-                },
-                _ => panic!("Invalid message sent to connection")
+            loop {
+                let result = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
+                result.send(&mut self.tcp_stream).unwrap();
+                if let Message::Success { connection_id: _ } = result {
+                    break;
+                }
             }
         }
     }
