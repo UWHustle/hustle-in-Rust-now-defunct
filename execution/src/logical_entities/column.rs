@@ -39,7 +39,7 @@ impl Eq for Column {}
 #[cfg(test)]
 mod tests {
     use logical_entities::column::Column;
-    use type_system::data_type::*;
+    use types::data_type::*;
 
     #[test]
     fn column_create() {
