@@ -62,15 +62,20 @@ impl HustleServer {
                 loop {
                     let buf = completed_rx.recv().unwrap();
                     let request = Message::deserialize(&buf).unwrap();
+
+                    let on_success = |connection_id: &u64| {
+                        // Pass on the message to the correct connection.
+                        connections_clone
+                            .read().unwrap()[connection_id]
+                            .lock().unwrap()
+                            .send(request.serialize().unwrap())
+                            .unwrap();
+                    };
+
                     match &request {
-                        Message::ReturnRow { row: _, connection_id } => {
-                            // Pass on the message to the correct connection.
-                            connections_clone
-                                .read().unwrap()[&connection_id]
-                                .lock().unwrap()
-                                .send(request.serialize().unwrap())
-                                .unwrap();
-                        },
+                        Message::Schema { schema: _, connection_id } => on_success(connection_id),
+                        Message::ReturnRow { row: _, connection_id } => on_success(connection_id),
+                        Message::Success { connection_id } => on_success(connection_id),
                         _ => panic!("Invalid message type sent to completed statement handler")
                     }
                 }

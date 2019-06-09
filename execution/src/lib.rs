@@ -9,6 +9,7 @@ use storage::StorageManager;
 use logical_entities::relation::Relation;
 use std::sync::mpsc::{Receiver, Sender};
 use message::Message;
+use types::data_type;
 
 extern crate storage;
 extern crate message;
@@ -40,6 +41,13 @@ impl ExecutionEngine {
                     self.execute_plan(&plan)
                         .map(|relation| {
                             let schema = relation.get_schema();
+                            let variants: Vec<data_type::Variant> = schema
+                                .get_columns().iter()
+                                .map(|c| c.data_type().variant)
+                                .collect();
+
+                            let response = Message::Schema { schema: variants, connection_id };
+                            output_tx.send(response.serialize().unwrap()).unwrap();
 
                             let physical_relation = self.storage_manager
                                 .relational_engine()
