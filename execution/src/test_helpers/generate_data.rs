@@ -7,9 +7,9 @@ use physical_operators::create_table::CreateTable;
 use physical_operators::insert::Insert;
 use physical_operators::Operator;
 use storage::StorageManager;
-use type_system::data_type::*;
-use type_system::integer::Int4;
-use type_system::*;
+use types::data_type::*;
+use types::integer::Int4;
+use types::*;
 
 extern crate rand;
 use self::rand::{random, Rng, SeedableRng, StdRng};

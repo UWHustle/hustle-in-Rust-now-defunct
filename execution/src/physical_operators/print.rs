@@ -1,7 +1,7 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::*;
+use types::borrowed_buffer::BorrowedBuffer;
+use types::*;
 
 use super::storage::StorageManager;
 

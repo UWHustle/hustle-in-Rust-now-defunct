@@ -1,4 +1,4 @@
-use type_system::data_type::*;
+use types::data_type::*;
 
 #[derive(Clone, Debug, Hash)]
 pub struct Column {

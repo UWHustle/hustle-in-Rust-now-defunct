@@ -20,8 +20,18 @@ fn main() -> Result<(), String> {
         let readline = editor.readline(PROMPT);
         match readline {
             Ok(line) => {
-                let message = Message::ExecuteSQL { sql: line };
-                message.send(&mut stream)?;
+                let request = Message::ExecuteSQL { sql: line };
+                request.send(&mut stream)?;
+
+                while let Ok(response) = Message::receive(&mut stream) {
+                    match response {
+                        Message::Success { connection_id: _ } => break,
+                        Message::ReturnRow { row, connection_id: _ } => {
+
+                        },
+                        _ => panic!("Invalid message sent to client")
+                    }
+                }
             },
             Err(ReadlineError::Interrupted) => {
                 println!("^C");

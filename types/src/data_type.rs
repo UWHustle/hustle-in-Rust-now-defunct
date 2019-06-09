@@ -1,7 +1,8 @@
 use super::*;
+use serde::{Serialize, Deserialize};
 
 /// An enumeration of all possible concrete types
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Variant {
     Int1,
     Int2,

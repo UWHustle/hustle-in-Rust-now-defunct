@@ -13,9 +13,9 @@ use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::Operator;
-use type_system::data_type::DataType;
-use type_system::operators::*;
-use type_system::Value;
+use types::data_type::DataType;
+use types::operators::*;
+use types::Value;
 
 extern crate storage;
 

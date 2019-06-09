@@ -1,7 +1,7 @@
 use logical_entities::aggregations::AggregationTrait;
-use type_system::data_type::*;
-use type_system::integer::*;
-use type_system::*;
+use types::data_type::*;
+use types::integer::*;
+use types::*;
 
 #[derive(Clone, Debug)]
 pub struct Count {

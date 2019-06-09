@@ -3,7 +3,6 @@ pub mod physical_operators;
 pub mod physical_plan;
 pub mod relational_api;
 pub mod test_helpers;
-pub mod type_system;
 
 use physical_plan::parser::parse;
 use storage::StorageManager;
@@ -13,6 +12,7 @@ use message::Message;
 
 extern crate storage;
 extern crate message;
+extern crate types;
 
 pub struct ExecutionEngine {
     storage_manager: StorageManager
@@ -59,7 +59,8 @@ impl ExecutionEngine {
                             }
                         });
 
-                    output_tx.send(Message::Success.serialize().unwrap()).unwrap();
+                    let response = Message::Success { connection_id };
+                    output_tx.send(response.serialize().unwrap()).unwrap();
                 },
                 _ => panic!("Invalid message type sent to execution engine")
             }

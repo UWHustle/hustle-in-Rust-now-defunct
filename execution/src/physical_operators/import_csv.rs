@@ -1,6 +1,6 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
-use type_system::*;
+use types::*;
 
 use super::storage::StorageManager;
 

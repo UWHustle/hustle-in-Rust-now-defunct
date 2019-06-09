@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 message = { path = "../message" }
+execution = { path = "../execution" }
 rustyline = "4.1.0"

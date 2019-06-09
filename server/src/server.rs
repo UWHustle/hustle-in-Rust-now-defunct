@@ -4,7 +4,6 @@ use crate::connection::HustleConnection;
 use std::net::{TcpListener, ToSocketAddrs};
 use std::io::Error;
 use crossbeam_utils::thread;
-use std::io;
 use std::sync::{mpsc, Arc, RwLock, Mutex};
 use optimizer::Optimizer;
 use std::collections::HashMap;
@@ -27,8 +26,10 @@ impl HustleServer {
             })
     }
 
-    pub fn listen(&mut self) -> io::Result<()> {
-        let connections: Arc<RwLock<HashMap<u64, Mutex<Sender<Vec<u8>>>>>> = Arc::new(RwLock::new(HashMap::new()));
+    pub fn listen(&mut self) {
+        let connections: Arc<RwLock<HashMap<u64, Mutex<Sender<Vec<u8>>>>>> = Arc::new(
+            RwLock::new(HashMap::new())
+        );
 
         let mut optimizer = Optimizer::new();
         let mut transaction_manager = TransactionManager::new();
@@ -101,8 +102,6 @@ impl HustleServer {
                 }
             }
         }).unwrap();
-
-        Ok(())
     }
 }
 

@@ -1,8 +1,8 @@
 use logical_entities::column::Column;
 use logical_entities::predicates::Predicate;
 use logical_entities::row::Row;
-use type_system::operators::Comparator;
-use type_system::*;
+use types::operators::Comparator;
+use types::*;
 
 pub struct Comparison {
     column: Column,

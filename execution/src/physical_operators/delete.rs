@@ -2,8 +2,8 @@ use logical_entities::relation::Relation;
 use logical_entities::predicates::Predicate;
 use physical_operators::Operator;
 use super::storage::StorageManager;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::Buffer;
+use types::borrowed_buffer::BorrowedBuffer;
+use types::Buffer;
 use logical_entities::row::Row;
 
 pub struct Delete {

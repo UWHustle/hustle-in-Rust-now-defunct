@@ -5,6 +5,7 @@ authors = ["Robert Claus <robertclaus@gmail.com>"]
 
 [dependencies]
 message = { path = "../message" }
+types = { path = "../types" }
 storage = { path = "../storage" }
 rand = "0.5.5"
 memmap = "0.6.2"

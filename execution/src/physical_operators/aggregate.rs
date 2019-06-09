@@ -8,8 +8,8 @@ use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::*;
+use types::borrowed_buffer::BorrowedBuffer;
+use types::*;
 
 use std::collections::HashMap;
 

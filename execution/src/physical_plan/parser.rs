@@ -15,9 +15,9 @@ use physical_operators::limit::Limit;
 use physical_operators::project::Project;
 use physical_operators::table_reference::TableReference;
 use physical_plan::node::Node;
-use type_system;
-use type_system::data_type::*;
-use type_system::operators::*;
+use types;
+use types::data_type::*;
+use types::operators::*;
 
 extern crate serde_json;
 
@@ -241,16 +241,16 @@ fn parse_column_name(json: &serde_json::Value) -> String {
     name
 }
 
-fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
+fn parse_value_list(json: &serde_json::Value) -> Vec<Box<types::Value>> {
     let json_values = json.as_array().expect("Unable to extract values");
-    let mut values: Vec<Box<type_system::Value>> = vec![];
+    let mut values: Vec<Box<types::Value>> = vec![];
     for value in json_values {
         values.push(parse_value(value));
     }
     values
 }
 
-fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
+fn parse_value(json: &serde_json::Value) -> Box<types::Value> {
     let data_type = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
     data_type.parse(&json["value"].as_str().unwrap()).unwrap()
 }
