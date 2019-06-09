@@ -21,7 +21,7 @@ impl HustleConnection {
         let response = Message::receive(&mut self.tcp_stream).unwrap();
         match response {
             Message::Success { connection_id: _ } => None,
-            Message::Schema { data_types, connection_id: _ } => {
+            Message::Schema { schema, connection_id: _ } => {
                 let mut rows = vec![];
                 loop {
                     let response = Message::receive(&mut self.tcp_stream).unwrap();
@@ -33,7 +33,7 @@ impl HustleConnection {
                         _ => panic!("Invalid message type sent to client")
                     }
                 }
-                Some(HustleResult::new(data_types, rows))
+                Some(HustleResult::new(schema, rows))
             },
             _ => panic!("Invalid message type sent to client")
         }

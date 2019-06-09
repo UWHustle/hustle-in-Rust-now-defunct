@@ -10,7 +10,7 @@ pub enum Message {
     BeginTransaction { connection_id: u64 },
     CommitTransaction { connection_id: u64 },
     ExecutePlan { plan: String, connection_id: u64 },
-    Schema { data_types: Vec<DataType>, connection_id: u64 },
+    Schema { schema: Vec<(String, DataType)>, connection_id: u64 },
     ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
     Success { connection_id: u64 }
 }

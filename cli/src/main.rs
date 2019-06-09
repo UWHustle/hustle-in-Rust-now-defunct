@@ -2,7 +2,6 @@ extern crate rustyline;
 
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
-use std::net::TcpStream;
 use hustle_api::HustleConnection;
 
 const COMMAND_HISTORY_FILE_NAME: &str = "commandhistory.txt";

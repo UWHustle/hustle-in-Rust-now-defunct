@@ -73,7 +73,7 @@ impl Server {
                     };
 
                     match &request {
-                        Message::Schema { data_types: _, connection_id } => on_success(connection_id),
+                        Message::Schema { schema: _, connection_id } => on_success(connection_id),
                         Message::ReturnRow { row: _, connection_id } => on_success(connection_id),
                         Message::Success { connection_id } => on_success(connection_id),
                         _ => panic!("Invalid message type sent to completed statement handler")

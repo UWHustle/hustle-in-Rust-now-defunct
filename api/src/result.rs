@@ -5,25 +5,30 @@ use types::Buffer;
 use types::integer::Int8;
 
 pub struct HustleResult {
-    data_types: Vec<DataType>,
+    schema: Vec<(String, DataType)>,
     rows: Vec<Vec<Vec<u8>>>,
 }
 
 impl HustleResult {
-    pub fn new(data_types: Vec<DataType>, rows: Vec<Vec<Vec<u8>>>) -> Self {
+    pub fn new(schema: Vec<(String, DataType)>, rows: Vec<Vec<Vec<u8>>>) -> Self {
         HustleResult {
-            data_types,
+            schema,
             rows,
         }
     }
 
     pub fn rows(&self) -> Iter {
-        Iter::new(&self.data_types, self.rows.iter())
+        Iter::new(&self.schema, self.rows.iter())
     }
 }
 
 impl fmt::Display for HustleResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        for (column_name, _) in &self.schema {
+            write!(f, "|{value:>width$}", value = column_name, width = 5)?;
+        }
+        writeln!(f, "|")?;
+
         for row in self.rows() {
             let mut col_i = 0;
             while let Some(value) = row.get_col(col_i) {
@@ -42,14 +47,14 @@ impl fmt::Display for HustleResult {
 }
 
 pub struct Iter<'a> {
-    data_types: &'a Vec<DataType>,
+    schema: &'a Vec<(String, DataType)>,
     row_iter: slice::Iter<'a, Vec<Vec<u8>>>
 }
 
 impl<'a> Iter<'a> {
-    fn new(data_types: &'a Vec<DataType>, row_iter: slice::Iter<'a, Vec<Vec<u8>>>) -> Self {
+    fn new(schema: &'a Vec<(String, DataType)>, row_iter: slice::Iter<'a, Vec<Vec<u8>>>) -> Self {
         Iter {
-            data_types,
+            schema,
             row_iter
         }
     }
@@ -60,19 +65,19 @@ impl<'a> Iterator for Iter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.row_iter.next()
-            .map(|row| HustleRow::new(self.data_types, row))
+            .map(|row| HustleRow::new(self.schema, row))
     }
 }
 
 pub struct HustleRow<'a> {
-    data_types: &'a Vec<DataType>,
+    schema: &'a Vec<(String, DataType)>,
     row: &'a Vec<Vec<u8>>
 }
 
 impl<'a> HustleRow<'a> {
-    fn new(data_types: &'a Vec<DataType>, row: &'a Vec<Vec<u8>>) -> Self {
+    fn new(schema: &'a Vec<(String, DataType)>, row: &'a Vec<Vec<u8>>) -> Self {
         HustleRow {
-            data_types,
+            schema,
             row
         }
     }
@@ -83,7 +88,7 @@ impl<'a> HustleRow<'a> {
 
     fn get_col(&self, col: usize) -> Option<Box<types::Value>> {
         self.row.get(col).and_then(|data| {
-            self.data_types.get(col).map(|data_type| {
+            self.schema.get(col).map(|(_, data_type)| {
                 let buff = BorrowedBuffer::new(data, data_type.clone(), false);
                 buff.marshall()
             })

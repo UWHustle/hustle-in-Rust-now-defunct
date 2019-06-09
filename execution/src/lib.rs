@@ -40,12 +40,12 @@ impl ExecutionEngine {
                 Message::ExecutePlan { plan, connection_id } => {
                     if let Some(relation) = self.execute_plan(&plan) {
                         let schema = relation.get_schema();
-                        let data_types: Vec<DataType> = schema
+                        let message_schema: Vec<(String, DataType)> = relation.get_schema()
                             .get_columns().iter()
-                            .map(|c| c.data_type())
+                            .map(|c| (c.get_name().to_owned(), c.data_type()))
                             .collect();
 
-                        let response = Message::Schema { data_types, connection_id };
+                        let response = Message::Schema { schema: message_schema, connection_id };
                         output_tx.send(response.serialize().unwrap()).unwrap();
 
                         let physical_relation = self.storage_manager
