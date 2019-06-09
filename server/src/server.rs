@@ -1,6 +1,6 @@
 use execution::ExecutionEngine;
 use concurrency::TransactionManager;
-use crate::connection::HustleConnection;
+use crate::connection::ServerConnection;
 use std::net::{TcpListener, ToSocketAddrs};
 use std::io::Error;
 use crossbeam_utils::thread;
@@ -10,16 +10,16 @@ use std::collections::HashMap;
 use message::Message;
 use std::sync::mpsc::Sender;
 
-pub struct HustleServer {
+pub struct Server {
     tcp_listener: TcpListener,
     connection_ctr: u64
 }
 
-impl HustleServer {
-    pub fn bind<A: ToSocketAddrs>(addr: A) -> Result<HustleServer, Error> {
+impl Server {
+    pub fn bind<A: ToSocketAddrs>(addr: A) -> Result<Server, Error> {
         TcpListener::bind(addr)
             .map(|tcp_listener| {
-                HustleServer {
+                Server {
                     tcp_listener,
                     connection_ctr: 0
                 }
@@ -97,7 +97,7 @@ impl HustleServer {
                         // Spawn a new connection thread.
                         let optimizer_tx = optimizer_tx.clone();
                         s.spawn(move |_| {
-                            HustleConnection::new(
+                            ServerConnection::new(
                                 connection_id,
                                 stream
                             ).listen(connection_rx, optimizer_tx);

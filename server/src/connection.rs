@@ -2,14 +2,14 @@ use std::net::TcpStream;
 use message::Message;
 use std::sync::mpsc::{Receiver, Sender};
 
-pub struct HustleConnection {
+pub struct ServerConnection {
     id: u64,
     tcp_stream: TcpStream,
 }
 
-impl HustleConnection {
+impl ServerConnection {
     pub fn new(id: u64, tcp_stream: TcpStream) -> Self {
-        HustleConnection {
+        ServerConnection {
             id,
             tcp_stream,
         }
