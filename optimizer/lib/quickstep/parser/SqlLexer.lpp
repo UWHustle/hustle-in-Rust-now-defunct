@@ -221,6 +221,7 @@ unsigned_numeric_literal {exact_numeric_literal}|{approximate_numeric_literal}
   "hash"             return TOKEN_HASH;
   "having"           return TOKEN_HAVING;
   "hour"             return TOKEN_HOUR;
+  "if"               return TOKEN_IF;
   "in"               return TOKEN_IN;
   "index"            return TOKEN_INDEX;
   "inner"            return TOKEN_INNER;

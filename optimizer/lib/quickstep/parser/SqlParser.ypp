@@ -296,6 +296,7 @@ void NotSupported(const YYLTYPE *location, yyscan_t yyscanner, const std::string
 %token TOKEN_HASH;
 %token TOKEN_HAVING;
 %token TOKEN_HOUR;
+%token TOKEN_IF;
 %token TOKEN_IN;
 %token TOKEN_INDEX;
 %token TOKEN_INNER;
@@ -749,9 +750,14 @@ create_index_statement:
   };
 
 drop_table_statement:
-  TOKEN_DROP TOKEN_TABLE any_name {
+  TOKEN_DROP TOKEN_TABLE any_name if_exists_op {
     $$ = new quickstep::ParseStatementDropTable(@1.first_line, @1.first_column, $3);
   };
+
+if_exists_op:
+  TOKEN_IF TOKEN_EXISTS
+| /* empty */
+  ;
 
 column_def:
   any_name data_type opt_column_constraint_def_list {
