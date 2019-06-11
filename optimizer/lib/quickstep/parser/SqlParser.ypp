@@ -750,7 +750,7 @@ create_index_statement:
   };
 
 drop_table_statement:
-  TOKEN_DROP TOKEN_TABLE any_name if_exists_op {
+  TOKEN_DROP TOKEN_TABLE if_exists_op any_name {
     $$ = new quickstep::ParseStatementDropTable(@1.first_line, @1.first_column, $3);
   };
 
