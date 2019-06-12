@@ -42,14 +42,15 @@ impl Server {
 
         thread::scope(|s| {
             // Spawn optimizer thread.
-            let optimizer_error_tx = completed_tx.clone();
+            let completed_tx_clone = completed_tx.clone();
             s.spawn(move |_| {
-                optimizer.listen(optimizer_rx, transaction_tx, optimizer_error_tx);
+                optimizer.listen(optimizer_rx, transaction_tx, completed_tx_clone);
             });
 
             // Spawn transaction manager thread.
+            let completed_tx_clone = completed_tx.clone();
             s.spawn(move |_| {
-                transaction_manager.listen(transaction_rx, execution_tx);
+                transaction_manager.listen(transaction_rx, execution_tx, completed_tx_clone);
             });
 
             // Spawn execution engine thread.

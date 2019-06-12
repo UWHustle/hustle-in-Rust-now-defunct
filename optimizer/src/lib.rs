@@ -13,8 +13,8 @@ impl Optimizer {
     pub fn listen(
         &mut self,
         input_rx: Receiver<Vec<u8>>,
-        success_tx: Sender<Vec<u8>>,
-        error_tx: Sender<Vec<u8>>
+        transaction_tx: Sender<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>
     ) {
         loop {
             let buf = input_rx.recv().unwrap();
@@ -26,24 +26,24 @@ impl Optimizer {
                 // Currently, the optimizer does not support transaction keywords, so we
                 // check for them manually here.
                 if sql.contains("begin") {
-                    success_tx.send(Message::BeginTransaction {
+                    transaction_tx.send(Message::BeginTransaction {
                         connection_id
                     }.serialize().unwrap()).unwrap();
 
                 } else if sql.contains("commit") {
-                    success_tx.send(Message::CommitTransaction {
+                    transaction_tx.send(Message::CommitTransaction {
                         connection_id
                     }.serialize().unwrap()).unwrap();
 
                 } else {
                     match self.optimize(&sql) {
                         Ok(plan) =>
-                            success_tx.send(Message::ExecutePlan {
+                            transaction_tx.send(Message::ExecutePlan {
                                 plan,
                                 connection_id,
                             }.serialize().unwrap()).unwrap(),
                         Err(reason) =>
-                            error_tx.send(Message::Error {
+                            completed_tx.send(Message::Error {
                                 reason,
                                 connection_id,
                             }.serialize().unwrap()).unwrap()
