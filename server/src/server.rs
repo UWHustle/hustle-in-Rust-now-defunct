@@ -43,8 +43,9 @@ impl Server {
         thread::scope(|s| {
             // Spawn optimizer thread.
             let completed_tx_clone = completed_tx.clone();
+            let transaction_tx_clone = transaction_tx.clone();
             s.spawn(move |_| {
-                optimizer.listen(optimizer_rx, transaction_tx, completed_tx_clone);
+                optimizer.listen(optimizer_rx, transaction_tx_clone, completed_tx_clone);
             });
 
             // Spawn transaction manager thread.
@@ -100,14 +101,16 @@ impl Server {
                         let (connection_tx, connection_rx) = mpsc::channel();
                         connections.write().unwrap()
                             .insert(connection_id, Mutex::new(connection_tx));
+                        // TODO: Drop the connection when the TCP stream closes.
 
                         // Spawn a new connection thread.
                         let optimizer_tx = optimizer_tx.clone();
+                        let transaction_tx = transaction_tx.clone();
                         s.spawn(move |_| {
                             ServerConnection::new(
                                 connection_id,
                                 stream
-                            ).listen(connection_rx, optimizer_tx);
+                            ).listen(connection_rx, optimizer_tx, transaction_tx);
                         });
                     },
                     Err(e) => panic!("{}", e)
@@ -116,4 +119,3 @@ impl Server {
         }).unwrap();
     }
 }
-

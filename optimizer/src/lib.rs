@@ -24,18 +24,18 @@ impl Optimizer {
             if let Message::OptimizeSQL { mut sql, connection_id } = request {
                 sql.make_ascii_lowercase();
 
-//                let mut history_entry = String::new();
-//                history_entry.push_str(&connection_id.to_string());
-//                history_entry.push('\t');
-//                history_entry.push_str(&sql);
-//                history_entry.push('\n');
-//
-//                let mut history_file = std::fs::OpenOptions::new()
-//                    .append(true)
-//                    .create(true)
-//                    .open("sqlhistory.txt")
-//                    .unwrap();
-//                history_file.write(history_entry.as_bytes()).unwrap();
+                let mut history_entry = String::new();
+                history_entry.push_str(&connection_id.to_string());
+                history_entry.push('\t');
+                history_entry.push_str(&sql);
+                history_entry.push('\n');
+
+                let mut history_file = std::fs::OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open("sqlhistory.txt")
+                    .unwrap();
+                history_file.write(history_entry.as_bytes()).unwrap();
 
                 // TODO: Add parser, optimizer support for transactions.
                 // Currently, the optimizer does not support transaction keywords, so we

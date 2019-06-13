@@ -33,6 +33,8 @@ impl TransactionManager {
                     self.commit(connection_id, &completed_tx),
                 Message::ExecutePlan { plan, connection_id } =>
                     self.execute(plan, connection_id),
+                Message::CloseConnection { connection_id } =>
+                    self.close(connection_id),
                 _ => panic!("Invalid message type sent to transaction manager")
             };
 
@@ -96,6 +98,14 @@ impl TransactionManager {
             transaction.committed = true;
             self.transaction_queue.push_back(connection_id);
             self.transaction_map.insert(connection_id, transaction);
+        }
+    }
+
+    fn close(&mut self, connection_id: u64) {
+        // TODO: Rollback transaction on connection close.
+        // We don't support transaction rollback so when a connection closes we just commit.
+        if let Some(transaction) = self.transaction_map.get_mut(&connection_id) {
+            transaction.committed = true;
         }
     }
 }

@@ -5,6 +5,7 @@ use types::data_type::DataType;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {
+    CloseConnection { connection_id: u64 },
     ExecuteSQL { sql: String },
     OptimizeSQL { sql: String, connection_id: u64 },
     BeginTransaction { connection_id: u64 },
