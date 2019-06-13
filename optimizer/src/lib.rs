@@ -2,6 +2,8 @@ use std::process::Command;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender};
 use message::Message;
+use serde_json::json;
+use std::io::Write;
 
 pub struct Optimizer;
 
@@ -22,6 +24,19 @@ impl Optimizer {
             if let Message::OptimizeSQL { mut sql, connection_id } = request {
                 sql.make_ascii_lowercase();
 
+//                let mut history_entry = String::new();
+//                history_entry.push_str(&connection_id.to_string());
+//                history_entry.push('\t');
+//                history_entry.push_str(&sql);
+//                history_entry.push('\n');
+//
+//                let mut history_file = std::fs::OpenOptions::new()
+//                    .append(true)
+//                    .create(true)
+//                    .open("sqlhistory.txt")
+//                    .unwrap();
+//                history_file.write(history_entry.as_bytes()).unwrap();
+
                 // TODO: Add parser, optimizer support for transactions.
                 // Currently, the optimizer does not support transaction keywords, so we
                 // check for them manually here.
@@ -35,6 +50,21 @@ impl Optimizer {
                         connection_id
                     }.serialize().unwrap()).unwrap();
 
+                // TODO: Add parser, optimizer support for if exists.
+                // Here we just bypass the optimizer's table name resolver.
+                } else if sql.contains("drop table if exists") {
+                    let plan = json!({
+                        "json_name": "TopLevelPlan",
+                        "plan": {
+                            "json_name": "DropTable",
+                            "relation": "t"
+                        },
+                        "output_attributes": []
+                    }).to_string();
+                    transaction_tx.send(Message::ExecutePlan {
+                        plan,
+                        connection_id
+                    }.serialize().unwrap()).unwrap();
                 } else {
                     match self.optimize(&sql) {
                         Ok(plan) =>
