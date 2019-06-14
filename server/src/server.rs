@@ -44,24 +44,24 @@ impl Server {
             // Spawn optimizer thread.
             let completed_tx_clone = completed_tx.clone();
             let transaction_tx_clone = transaction_tx.clone();
-            s.spawn(move |_| {
+            s.builder().name("optimizer".to_string()).spawn(move |_| {
                 optimizer.listen(optimizer_rx, transaction_tx_clone, completed_tx_clone);
-            });
+            }).unwrap();
 
             // Spawn transaction manager thread.
             let completed_tx_clone = completed_tx.clone();
-            s.spawn(move |_| {
+            s.builder().name("transaction".to_string()).spawn(move |_| {
                 transaction_manager.listen(transaction_rx, execution_tx, completed_tx_clone);
-            });
+            }).unwrap();
 
             // Spawn execution engine thread.
-            s.spawn(move |_| {
+            s.builder().name("execution".to_string()).spawn(move |_| {
                 execution_engine.listen(execution_rx, completed_tx);
-            });
+            }).unwrap();
 
             // Spawn completed statement thread.
             let connections_clone = connections.clone();
-            s.spawn(move |_| {
+            s.builder().name("completed".to_string()).spawn(move |_| {
                 loop {
                     let buf = completed_rx.recv().unwrap();
                     let request = Message::deserialize(&buf).unwrap();
@@ -87,7 +87,7 @@ impl Server {
                         _ => panic!("Invalid message type sent to completed statement handler")
                     }
                 }
-            });
+            }).unwrap();
 
             // Listen for new connections.
             for stream_result in self.tcp_listener.incoming() {
@@ -106,12 +106,12 @@ impl Server {
                         // Spawn a new connection thread.
                         let optimizer_tx = optimizer_tx.clone();
                         let transaction_tx = transaction_tx.clone();
-                        s.spawn(move |_| {
+                        s.builder().name(format!("connection_{}", connection_id)).spawn(move |_| {
                             ServerConnection::new(
                                 connection_id,
                                 stream
                             ).listen(connection_rx, optimizer_tx, transaction_tx);
-                        });
+                        }).unwrap();
                     },
                     Err(e) => panic!("{}", e)
                 }
