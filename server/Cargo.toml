@@ -9,6 +9,7 @@ message = { path = "../message" }
 concurrency = { path = "../concurrency" }
 optimizer = { path = "../optimizer" }
 execution = { path = "../execution" }
+profiler = { path = "../profiler" }
 crossbeam-utils = "0.6.5"
 byteorder = "1.3.1"
 serde = { version = "1.0.92", features = ["derive"] }

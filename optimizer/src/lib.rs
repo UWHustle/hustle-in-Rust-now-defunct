@@ -19,8 +19,10 @@ impl Optimizer {
         completed_tx: Sender<Vec<u8>>
     ) {
         loop {
-            let buf = input_rx.recv().unwrap();
-            let request = Message::deserialize(&buf).unwrap();
+            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
+
+            profiler::start("optimization");
+
             if let Message::OptimizeSQL { mut sql, connection_id } = request {
                 sql.make_ascii_lowercase();
 
@@ -78,9 +80,9 @@ impl Optimizer {
                                 connection_id,
                             }.serialize().unwrap()).unwrap()
                     };
-
                 }
 
+                profiler::end("optimization");
             } else {
                 panic!("Invalid message type sent to optimizer")
             }

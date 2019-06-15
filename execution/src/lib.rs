@@ -34,8 +34,10 @@ impl ExecutionEngine {
 
     pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
         loop {
-            let buf = input_rx.recv().unwrap();
-            let request = Message::deserialize(&buf).unwrap();
+            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
+
+            profiler::start("execution");
+
             match request {
                 Message::ExecutePlan { plan, connection_id } => {
                     if let Some(relation) = self.execute_plan(&plan) {
@@ -71,6 +73,8 @@ impl ExecutionEngine {
                 },
                 _ => panic!("Invalid message type sent to execution engine")
             }
+
+            profiler::end("execution");
         }
     }
 

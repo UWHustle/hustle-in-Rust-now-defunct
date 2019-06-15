@@ -21,8 +21,12 @@ impl ServerConnection {
         optimizer_tx: Sender<Vec<u8>>,
         transaction_tx: Sender<Vec<u8>>
     ) {
+        profiler::start("connection");
+
         loop {
             if let Ok(request) = Message::receive(&mut self.tcp_stream) {
+                profiler::start("statement");
+
                 if let Message::ExecuteSQL { sql } = request {
                     // Pass on the message to Hustle.
                     optimizer_tx.send(Message::OptimizeSQL {
@@ -43,6 +47,8 @@ impl ServerConnection {
                         _ => continue
                     }
                 }
+
+                profiler::end("statement");
             } else {
                 transaction_tx.send(Message::CloseConnection {
                     connection_id: self.id
@@ -50,5 +56,8 @@ impl ServerConnection {
                 break;
             }
         }
+
+        profiler::end("connection");
+        profiler::dump();
     }
 }

@@ -9,6 +9,6 @@ members = [
     "concurrency",
     "execution",
     "storage",
-    "catalog",
     "types",
+    "profiler"
 ]
