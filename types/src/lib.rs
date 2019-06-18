@@ -72,23 +72,23 @@ pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
     }
 
     fn equals(&self, other: &Value) -> bool {
-        self.compare(other, Comparator::Equal)
+        self.compare(other, Comparator::Eq)
     }
 
     fn less(&self, other: &Value) -> bool {
-        self.compare(other, Comparator::Less)
+        self.compare(other, Comparator::Lt)
     }
 
     fn less_eq(&self, other: &Value) -> bool {
-        self.compare(other, Comparator::LessEq)
+        self.compare(other, Comparator::Le)
     }
 
     fn greater(&self, other: &Value) -> bool {
-        self.compare(other, Comparator::Greater)
+        self.compare(other, Comparator::Gt)
     }
 
     fn greater_eq(&self, other: &Value) -> bool {
-        self.compare(other, Comparator::GreaterEq)
+        self.compare(other, Comparator::Ge)
     }
 }
 

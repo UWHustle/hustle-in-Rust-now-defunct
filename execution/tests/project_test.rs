@@ -19,7 +19,7 @@ fn test_project_predicate() {
     let column = relation.column_from_name("a").unwrap();
     let predicate = Box::new(Comparison::new(
         column.clone(),
-        Comparator::Less,
+        Comparator::Lt,
         Box::new(Int4::from(50)),
     ));
     let hustle_value = hustle_predicate(&storage_manager, relation, "a", predicate);

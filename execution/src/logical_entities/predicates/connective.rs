@@ -9,8 +9,8 @@ pub enum ConnectiveType {
 impl ConnectiveType {
     pub fn from_str(string: &str) -> Self {
         match string {
-            "And" => ConnectiveType::And,
-            "Or" => ConnectiveType::Or,
+            "and" => ConnectiveType::And,
+            "or" => ConnectiveType::Or,
             _ => panic!("Unknown connective {}", string),
         }
     }

@@ -19,7 +19,7 @@ fn test_update() {
     let column = relation.column_from_name("a").unwrap();
     let predicate = Box::new(Comparison::new(
         column.clone(),
-        Comparator::Less,
+        Comparator::Lt,
         Box::new(Int4::from(50))
     ));
     let assignment = Box::new(Int4::from(-100));

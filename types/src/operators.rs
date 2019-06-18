@@ -4,32 +4,32 @@ use std::ops::{Add, Div, Mul, Sub};
 /// LessEq and GreaterEq can be defined via a combination of Less/Greater and Equal
 #[derive(Clone)]
 pub enum Comparator {
-    Equal,
-    Less,
-    LessEq,
-    Greater,
-    GreaterEq,
+    Eq,
+    Lt,
+    Le,
+    Gt,
+    Ge,
 }
 
 impl Comparator {
     pub fn from_str(string: &str) -> Result<Self, String> {
         match string.to_lowercase().as_str() {
-            "=" | "equal" => Ok(Comparator::Equal),
-            "<" | "less" => Ok(Comparator::Less),
-            "<=" | "lessorequal" => Ok(Comparator::LessEq),
-            ">" | "greater" => Ok(Comparator::Greater),
-            ">=" | "greaterorequal" => Ok(Comparator::GreaterEq),
+            "=" | "equal" => Ok(Comparator::Eq),
+            "<" | "less" => Ok(Comparator::Lt),
+            "<=" | "lessorequal" => Ok(Comparator::Le),
+            ">" | "greater" => Ok(Comparator::Gt),
+            ">=" | "greaterorequal" => Ok(Comparator::Ge),
             _ => Err(format!("unknown comparison {}", string)),
         }
     }
 
     pub fn apply<T: PartialOrd>(&self, val_1: T, val_2: T) -> bool {
         match self {
-            Comparator::Equal => val_1 == val_2,
-            Comparator::Less => val_1 < val_2,
-            Comparator::LessEq => val_1 <= val_2,
-            Comparator::Greater => val_1 > val_2,
-            Comparator::GreaterEq => val_1 >= val_2,
+            Comparator::Eq => val_1 == val_2,
+            Comparator::Lt => val_1 < val_2,
+            Comparator::Le => val_1 <= val_2,
+            Comparator::Gt => val_1 > val_2,
+            Comparator::Ge => val_1 >= val_2,
         }
     }
 }

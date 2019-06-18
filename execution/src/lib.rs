@@ -8,7 +8,7 @@ use physical_plan::parser::parse;
 use storage::StorageManager;
 use logical_entities::relation::Relation;
 use std::sync::mpsc::{Receiver, Sender};
-use message::Message;
+use message::{Message, Plan};
 use types::data_type::DataType;
 
 extern crate storage;
@@ -26,8 +26,8 @@ impl ExecutionEngine {
         }
     }
 
-    pub fn execute_plan(&self, plan_string: &str) -> Option<Relation> {
-        let node = parse(plan_string);
+    pub fn execute_plan(&self, plan: Plan) -> Option<Relation> {
+        let node = parse(plan);
         node.execute(&self.storage_manager);
         node.get_output_relation()
     }
@@ -40,7 +40,7 @@ impl ExecutionEngine {
 
             match request {
                 Message::ExecutePlan { plan, connection_id } => {
-                    if let Some(relation) = self.execute_plan(&plan) {
+                    if let Some(relation) = self.execute_plan(plan) {
                         let schema = relation.get_schema();
                         let message_schema: Vec<(String, DataType)> = relation.get_schema()
                             .get_columns().iter()

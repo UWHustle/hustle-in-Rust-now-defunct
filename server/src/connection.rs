@@ -27,10 +27,10 @@ impl ServerConnection {
             if let Ok(request) = Message::receive(&mut self.tcp_stream) {
                 profiler::start("statement");
 
-                if let Message::ExecuteSQL { sql } = request {
+                if let Message::ExecuteSql { sql } = request {
                     // Pass on the message to Hustle.
-                    optimizer_tx.send(Message::OptimizeSQL {
-                        sql,
+                    optimizer_tx.send(Message::OptimizeAst {
+                        ast: sql,
                         connection_id: self.id
                     }.serialize().unwrap()).unwrap();
                 } else {
