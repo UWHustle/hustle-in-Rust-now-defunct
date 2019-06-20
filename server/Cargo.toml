@@ -7,9 +7,9 @@ edition = "2018"
 [dependencies]
 message = { path = "../message" }
 transaction = { path = "../transaction" }
-optimizer = { path = "../optimizer" }
+resolver = { path = "../resolver" }
 execution = { path = "../execution" }
-profiler = { path = "../profiler" }
+types = { path = "../types" }
 hustle-parser = { git = "https://github.com/UWHustle/hustle-parser" }
 crossbeam-utils = "0.6.5"
 byteorder = "1.3.1"

@@ -9,6 +9,7 @@ use storage::StorageManager;
 use types::data_type::DataType;
 use types::Value;
 use physical_operators::update::Update;
+use physical_operators::select::Select;
 
 pub fn hustle_agg(
     storage_manager: &StorageManager,
@@ -42,7 +43,11 @@ pub fn hustle_predicate(
     predicate: Box<Predicate>,
 ) -> i64 {
     let column = relation.column_from_name(col_name).unwrap();
-    let project_op = Project::new(relation, vec![column.clone()], predicate);
+    let select_op = Select::new(relation, predicate);
+    let project_op = Project::new(
+        select_op.execute(storage_manager).unwrap().unwrap(),
+        vec![column.clone()]
+    );
     sum_column_hustle(
         storage_manager,
         project_op.execute(storage_manager).unwrap().unwrap(),
@@ -64,7 +69,7 @@ pub fn hustle_update(
         vec![column.clone()],
         vec![assignment]);
     update_op.execute(storage_manager).unwrap();
-    let project_op = Project::pure_project(
+    let project_op = Project::new(
         relation,
         vec![column.clone()]
     );

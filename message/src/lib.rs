@@ -2,7 +2,6 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Serialize, Deserialize};
 use std::io::Cursor;
 use types::data_type::DataType;
-use types::operators::Comparator;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {
@@ -19,31 +18,85 @@ pub enum Message {
     Error { reason: String, connection_id: u64 },
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
-    Aggregate { input: Box<Plan>, aggregates: Vec<Plan>, groups: Vec<Plan> },
-    CreateTable { name: String, columns: Vec<Plan> },
-    Column { name: String, alias: Option<String>, column_type: String },
-    Function { function: Function, arguments: Vec<Plan>, output_type: String },
-    Literal { value: String, literal_type: String },
-    SelectProject { input: Box<Plan>, select: Option<Plan>, project: Vec<Plan>},
-    TableReference { name: String, columns: Vec<Plan> },
-}
-
-pub enum Function {
-    Eq, Lt, Le, Gt, Ge, And, Or
-}
-
-impl Function {
-    pub fn as_str(&self) -> &str {
-        match self {
-            Function::Eq => "=",
-            Function::Lt => "<",
-            Function::Le => "<=",
-            Function::Gt => ">",
-            Function::Ge => ">=",
-            Function::And => "and",
-            Function::Or => "or"
-        }
+    Aggregate {
+        table: Box<Plan>,
+        aggregates: Vec<Plan>,
+        groups: Vec<Plan>
+    },
+    ColumnDefinition {
+        name: String,
+        column_type: String
+    },
+    ColumnReference {
+        name: String,
+        column_type: String,
+        table: Option<String>,
+        alias: Option<String>
+    },
+    Comparison {
+        name: String,
+        left: Box<Plan>,
+        right: Box<Plan>
+    },
+    Connective {
+        name: String,
+        terms: Vec<Plan>
+    },
+    CreateTable {
+        name: String,
+        columns: Vec<Plan>
+    },
+    Delete {
+        from_table: Box<Plan>,
+        filter: Option<Box<Plan>>
+    },
+    DropTable {
+        table: Box<Plan>
+    },
+    Function {
+        name: String,
+        arguments: Vec<Plan>,
+        output_type: String
+    },
+    Insert {
+        into_table: Box<Plan>,
+        input: Box<Plan>
+    },
+    Join {
+        l_table: Box<Plan>,
+        r_table: Box<Plan>,
+        filter: Option<Box<Plan>>
+    },
+    Limit {
+        table: Box<Plan>,
+        limit: usize
+    },
+    Literal {
+        value: String,
+        literal_type: String
+    },
+    Project {
+        table: Box<Plan>,
+        projection: Vec<Plan>
+    },
+    Row {
+        values: Vec<Plan>
+    },
+    Select {
+        table: Box<Plan>,
+        filter: Box<Plan>
+    },
+    TableReference {
+        name: String,
+        columns: Vec<Plan>
+    },
+    Update {
+        table: Box<Plan>,
+        columns: Vec<Plan>,
+        assignments: Vec<Plan>,
+        filter: Option<Box<Plan>>
     }
 }
 

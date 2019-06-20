@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::collections::{VecDeque, HashMap};
-use message::Message;
+use message::{Message, Plan};
 
 pub struct TransactionManager {
     transaction_queue: VecDeque<u64>,
@@ -89,7 +89,7 @@ impl TransactionManager {
         completed_tx.send(response.serialize().unwrap()).unwrap();
     }
 
-    fn execute(&mut self, plan: String, connection_id: u64) {
+    fn execute(&mut self, plan: Plan, connection_id: u64) {
         if let Some(transaction) = self.transaction_map.get_mut(&connection_id) {
             transaction.statements.push_back(plan);
         } else {
@@ -111,7 +111,7 @@ impl TransactionManager {
 }
 
 pub struct Transaction {
-    statements: VecDeque<String>,
+    statements: VecDeque<Plan>,
     committed: bool
 }
 

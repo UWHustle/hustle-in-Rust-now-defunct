@@ -1,39 +1,37 @@
-use logical_entities::column::Column;
-use logical_entities::predicates::tautology::*;
-use logical_entities::predicates::*;
 use logical_entities::relation::Relation;
-use logical_entities::row::Row;
+use logical_entities::predicates::Predicate;
 use logical_entities::schema::Schema;
+use logical_entities::column::Column;
 use physical_operators::Operator;
-use types::borrowed_buffer::*;
-use types::*;
+use storage::StorageManager;
+use types::borrowed_buffer::BorrowedBuffer;
+use types::{Value, Buffer};
+use logical_entities::row::Row;
 
-use super::storage::StorageManager;
-use physical_operators::select::Select;
-
-pub struct Project {
+pub struct Select {
     input_relation: Relation,
     output_relation: Relation,
+    predicate: Box<Predicate>,
 }
 
-impl Project {
+impl Select {
     pub fn new(
         input_relation: Relation,
-        output_cols: Vec<Column>,
+        predicate: Box<Predicate>,
     ) -> Self {
-        let schema = Schema::new(output_cols);
         let output_relation = Relation::new(
-            &format!("{}_project", input_relation.get_name()),
-            schema
+            &format!("{}_select", input_relation.get_name()),
+            input_relation.get_schema().clone()
         );
-        Project {
+        Select {
             input_relation,
-            output_relation
+            output_relation,
+            predicate,
         }
     }
 }
 
-impl Operator for Project {
+impl Operator for Select {
     fn get_target_relation(&self) -> Option<Relation> {
         Some(self.output_relation.clone())
     }
@@ -72,6 +70,12 @@ impl Operator for Project {
                     let data_type = in_schema.get_columns()[col_i].data_type();
                     let buff = BorrowedBuffer::new(&data, data_type, false);
                     values.push(buff.marshall());
+                }
+
+                // Check whether the current row satisfies the predicate
+                let row = Row::new(in_schema.clone(), values);
+                if !self.predicate.evaluate(&row) {
+                    continue;
                 }
 
                 // Remap values to the order they appear in the output schema

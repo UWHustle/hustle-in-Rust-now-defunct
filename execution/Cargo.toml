@@ -7,7 +7,6 @@ authors = ["Robert Claus <robertclaus@gmail.com>"]
 message = { path = "../message" }
 types = { path = "../types" }
 storage = { path = "../storage" }
-profiler = { path = "../profiler" }
 rand = "0.5.5"
 memmap = "0.6.2"
 sqlite = "0.23.9"
