@@ -2,13 +2,15 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Serialize, Deserialize};
 use std::io::Cursor;
 use types::data_type::DataType;
+use std::sync::mpsc::{Receiver, Sender};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {
     CloseConnection { connection_id: u64 },
     ExecuteSql { sql: String },
     ParseSql { sql: String, connection_id: u64 },
-    OptimizeAst { ast: String, connection_id: u64 },
+    ResolveAst { ast: String, connection_id: u64 },
+    OptimizePlan { plan: Plan, connection_id: u64 },
     BeginTransaction { connection_id: u64 },
     CommitTransaction { connection_id: u64 },
     ExecutePlan { plan: Plan, connection_id: u64 },
@@ -125,4 +127,8 @@ impl Message {
         let mut cursor = Cursor::new(buf);
         Self::receive(&mut cursor)
     }
+}
+
+pub trait Listener {
+    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>);
 }

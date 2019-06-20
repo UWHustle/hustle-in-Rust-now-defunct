@@ -1,5 +1,5 @@
 use std::net::TcpStream;
-use message::Message;
+use message::{Message, Listener};
 use std::sync::mpsc::{Receiver, Sender};
 
 pub struct ServerConnection {
@@ -14,19 +14,16 @@ impl ServerConnection {
             tcp_stream,
         }
     }
+}
 
-    pub fn listen(
-        &mut self,
-        input_rx: Receiver<Vec<u8>>,
-        optimizer_tx: Sender<Vec<u8>>,
-        transaction_tx: Sender<Vec<u8>>
-    ) {
+impl Listener for ServerConnection {
+    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
         loop {
             if let Ok(request) = Message::receive(&mut self.tcp_stream) {
                 if let Message::ExecuteSql { sql } = request {
                     // Pass on the message to Hustle.
-                    optimizer_tx.send(Message::OptimizeAst {
-                        ast: sql,
+                    output_tx.send(Message::ParseSql {
+                        sql,
                         connection_id: self.id
                     }.serialize().unwrap()).unwrap();
                 } else {
@@ -44,7 +41,7 @@ impl ServerConnection {
                     }
                 }
             } else {
-                transaction_tx.send(Message::CloseConnection {
+                output_tx.send(Message::CloseConnection {
                     connection_id: self.id
                 }.serialize().unwrap()).unwrap();
                 break;

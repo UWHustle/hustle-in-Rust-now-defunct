@@ -5,6 +5,7 @@ members = [
     "cli",
     "execution",
     "message",
+    "parser",
     "resolver",
     "server",
     "storage",
