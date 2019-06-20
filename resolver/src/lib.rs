@@ -1,9 +1,14 @@
-use message::Plan;
+use message::{Plan, Listener};
 use serde_json as json;
+use std::sync::mpsc::{Receiver, Sender};
 
 pub struct Resolver;
 
 impl Resolver {
+    pub fn new() -> Self {
+        Resolver
+    }
+
     pub fn resolve(&self, ast: &str) -> Result<Plan, String> {
         serde_json::from_str(ast)
             .map_err(|e| e.to_string())
@@ -174,6 +179,12 @@ impl Resolver {
             None => None
         };
         Ok(Plan::Update { table, columns, assignments, filter })
+    }
+}
+
+impl Listener for Resolver {
+    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+        unimplemented!()
     }
 }
 

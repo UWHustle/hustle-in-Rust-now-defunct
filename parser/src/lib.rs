@@ -3,8 +3,7 @@ extern crate message;
 use std::ffi::CString;
 use std::os::raw::c_char;
 use std::sync::mpsc::{Receiver, Sender};
-
-use message::{Listener, Message};
+use self::message::{Listener, Message};
 
 extern {
     fn c_parse(sql: *const c_char) -> *mut c_char;

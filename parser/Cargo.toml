@@ -4,8 +4,10 @@ version = "0.1.0"
 authors = ["Matthew Dutson <dutson@wisc.edu>", "Kevin Gaffney <kgaff33@gmail.com>"]
 edition = "2018"
 
-[build-dependencies]
+[dependencies]
 message = { path = "../message" }
+
+[build-dependencies]
 cmake = "0.1.40"
 
 [dev-dependencies]
