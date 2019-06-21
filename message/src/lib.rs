@@ -27,11 +27,7 @@ pub enum Plan {
         aggregates: Vec<Plan>,
         groups: Vec<Plan>
     },
-    ColumnDefinition {
-        name: String,
-        column_type: String
-    },
-    ColumnReference {
+    Column {
         name: String,
         column_type: String,
         table: Option<String>,
@@ -90,7 +86,7 @@ pub enum Plan {
         table: Box<Plan>,
         filter: Box<Plan>
     },
-    TableReference {
+    Table {
         name: String,
         columns: Vec<Plan>
     },

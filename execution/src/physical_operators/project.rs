@@ -1,15 +1,11 @@
 use logical_entities::column::Column;
-use logical_entities::predicates::tautology::*;
-use logical_entities::predicates::*;
 use logical_entities::relation::Relation;
-use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 use types::borrowed_buffer::*;
 use types::*;
 
 use super::storage::StorageManager;
-use physical_operators::select::Select;
 
 pub struct Project {
     input_relation: Relation,

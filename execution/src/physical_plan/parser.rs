@@ -17,7 +17,6 @@ use physical_operators::drop_table::DropTable;
 use physical_operators::insert::Insert;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
-use physical_operators::project::Project;
 use physical_operators::select::Select;
 use physical_operators::table_reference::TableReference;
 use physical_operators::update::Update;
@@ -39,7 +38,7 @@ pub fn parse(plan: &Plan) -> Result<Node, String> {
         Plan::Join { l_table, r_table, filter } => parse_join(l_table, r_table, filter),
         Plan::Limit { table, limit } => parse_limit(table, limit.clone()),
         Plan::Select { table, filter } => parse_select(table, filter),
-        Plan::TableReference { name, columns } => parse_table_reference(name, columns),
+        Plan::Table { name, columns } => parse_table_reference(name, columns),
         Plan::Update { table, columns, assignments, filter } =>
             parse_update(table, columns, assignments, filter),
         _ => panic!("Unsupported plan type"),
@@ -221,7 +220,7 @@ fn parse_update(
 }
 
 fn parse_drop_table(table: &Plan) -> Result<Node, String> {
-    if let Plan::TableReference { name, columns } = table {
+    if let Plan::Table { name, columns } = table {
         Ok(Node::new(Rc::new(DropTable::new(&name)), vec![]))
     } else {
         Err("Invalid plan node (expected TableReference)".to_string())
@@ -239,7 +238,7 @@ fn parse_columns(columns: &Vec<Plan>) -> Result<Vec<Column>, String> {
 }
 
 fn parse_column(column: &Plan) -> Result<Column, String> {
-    if let Plan::ColumnReference { name, column_type, table, alias } = column {
+    if let Plan::Column { name, column_type, table, alias } = column {
         Ok(Column::new(
             alias.as_ref().map(|a| a.as_str()).unwrap_or(name),
             DataType::from_str(&column_type).unwrap(),
@@ -249,26 +248,8 @@ fn parse_column(column: &Plan) -> Result<Column, String> {
     }
 }
 
-fn parse_value_list(json: &serde_json::Value) -> Vec<Box<types::Value>> {
-    let json_values = json.as_array().expect("Unable to extract values");
-    let mut values: Vec<Box<types::Value>> = vec![];
-    for value in json_values {
-        values.push(parse_value(value));
-    }
-    values
-}
-
-fn parse_value(json: &serde_json::Value) -> Box<types::Value> {
-    let data_type = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
-    data_type.parse(&json["value"].as_str().unwrap()).unwrap()
-}
-
 fn parse_limit(table: &Plan, limit: usize) -> Result<Node, String> {
     let input = parse(table.into())?;
     let limit_operator = Limit::new(input.get_output_relation().unwrap(), limit);
     Ok(Node::new(Rc::new(limit_operator), vec![Rc::new(input)]))
-}
-
-fn get_string(json: &serde_json::Value) -> String {
-    json.as_str().unwrap().to_string()
 }

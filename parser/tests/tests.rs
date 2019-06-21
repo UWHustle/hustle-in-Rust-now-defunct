@@ -16,17 +16,17 @@ mod tests {
             "name": "t",
             "columns": [
                 {
-                    "type": "column_definition",
+                    "type": "column",
                     "name": "a",
                     "column_type": "INT1"
                 },
                 {
-                    "type": "column_definition",
+                    "type": "column",
                     "name": "b",
                     "column_type": "FLOAT4"
                 },
                 {
-                    "type": "column_definition",
+                    "type": "column",
                     "name": "c",
                     "column_type": "IPv4"
                 }
@@ -42,7 +42,7 @@ mod tests {
         let expected = json!({
             "type": "insert",
             "into_table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             },
             "input": {
@@ -73,12 +73,12 @@ mod tests {
         let expected = json!({
             "type": "select",
             "from_table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             },
             "projection": [
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "name": "a"
                 }
             ]
@@ -96,7 +96,7 @@ mod tests {
         let expected = json!({
             "type": "select",
             "from_table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             },
             "filter": {
@@ -112,7 +112,7 @@ mod tests {
                             "type": "operation",
                             "name": "lt",
                             "left": {
-                                "type": "column_reference",
+                                "type": "column",
                                 "name": "a"
                             },
                             "right": {
@@ -124,7 +124,7 @@ mod tests {
                             "type": "operation",
                             "name": "gt",
                             "left": {
-                                "type": "column_reference",
+                                "type": "column",
                                 "name": "a"
                             },
                             "right": {
@@ -137,7 +137,7 @@ mod tests {
                         "type": "operation",
                         "name": "ge",
                         "left": {
-                            "type": "column_reference",
+                            "type": "column",
                             "name": "b"
                         },
                         "right": {
@@ -150,7 +150,7 @@ mod tests {
                     "type": "operation",
                     "name": "le",
                     "left": {
-                        "type": "column_reference",
+                        "type": "column",
                         "name": "b"
                     },
                     "right": {
@@ -161,11 +161,11 @@ mod tests {
             },
             "projection": [
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "name": "a"
                 },
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "name": "b"
                 }
             ]
@@ -182,22 +182,22 @@ mod tests {
             "from_table": {
                 "type": "join",
                 "left": {
-                    "type": "table_reference",
+                    "type": "table",
                     "name": "t"
                 },
                 "right": {
-                    "type": "table_reference",
+                    "type": "table",
                     "name": "u"
                 }
             },
             "projection": [
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "t",
                     "name": "a"
                 },
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "u",
                     "name": "b"
                 }
@@ -215,11 +215,11 @@ mod tests {
             "from_table": {
                 "type": "join",
                 "left": {
-                    "type": "table_reference",
+                    "type": "table",
                     "name": "t"
                 },
                 "right": {
-                    "type": "table_reference",
+                    "type": "table",
                     "name": "u"
                 }
             },
@@ -227,24 +227,24 @@ mod tests {
                 "type": "operation",
                 "name": "eq",
                 "left": {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "t",
                     "name": "a"
                 },
                 "right": {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "u",
                     "name": "b"
                 }
             },
             "projection": [
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "t",
                     "name": "a"
                 },
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "u",
                     "name": "b"
                 }
@@ -262,23 +262,23 @@ mod tests {
             "from_table": {
                 "type": "join",
                 "left": {
-                    "type": "table_reference",
+                    "type": "table",
                     "name": "t"
                 },
                 "right": {
-                    "type": "table_reference",
+                    "type": "table",
                     "name": "u"
                 },
                 "filter": {
                     "type": "operation",
                     "name": "eq",
                     "left": {
-                        "type": "column_reference",
+                        "type": "column",
                         "table": "t",
                         "name": "a"
                     },
                     "right": {
-                        "type": "column_reference",
+                        "type": "column",
                         "table": "u",
                         "name": "b"
                     }
@@ -286,7 +286,7 @@ mod tests {
             },
             "projection": [
                 {
-                    "type": "column_reference",
+                    "type": "column",
                     "table": "t",
                     "name": "a"
                 }
@@ -302,14 +302,14 @@ mod tests {
         let expected = json!({
             "type": "update",
             "table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             },
             "assignments": [
                 {
                     "type": "assignment",
                     "column": {
-                        "type": "column_reference",
+                        "type": "column",
                         "name": "a"
                     },
                     "value": {
@@ -320,7 +320,7 @@ mod tests {
                 {
                     "type": "assignment",
                     "column": {
-                        "type": "column_reference",
+                        "type": "column",
                         "name": "b"
                     },
                     "value": {
@@ -340,14 +340,14 @@ mod tests {
         let expected = json!({
             "type": "update",
             "table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             },
             "filter": {
                 "type": "operation",
                 "name": "eq",
                 "left": {
-                    "type": "column_reference",
+                    "type": "column",
                     "name": "a"
                 },
                 "right": {
@@ -359,7 +359,7 @@ mod tests {
                 {
                     "type": "assignment",
                     "column": {
-                        "type": "column_reference",
+                        "type": "column",
                         "name": "a"
                     },
                     "value": {
@@ -379,14 +379,14 @@ mod tests {
         let expected = json!({
             "type": "delete",
             "from_table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             },
             "filter": {
                 "type": "operation",
                 "name": "eq",
                 "left": {
-                    "type": "column_reference",
+                    "type": "column",
                     "name": "a"
                 },
                 "right": {
@@ -405,7 +405,7 @@ mod tests {
         let expected = json!({
             "type": "drop_table",
             "table": {
-                "type": "table_reference",
+                "type": "table",
                 "name": "t"
             }
         });

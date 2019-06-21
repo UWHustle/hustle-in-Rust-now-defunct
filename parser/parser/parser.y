@@ -390,7 +390,7 @@ columnlist:
 
 columnname:
   nm typetoken {
-    $$ = parse_node_alloc("column_definition");
+    $$ = parse_node_alloc("column");
     parse_node_add_value($$, "name", $1);
     parse_node_add_value($$, "column_type", $2);
   }
@@ -632,7 +632,7 @@ stl_prefix:
 
 seltablist:
   stl_prefix nm dbnm as indexed_opt on_opt using_opt {
-    parse_node *reference_node = parse_node_alloc("table_reference");
+    parse_node *reference_node = parse_node_alloc("table");
     parse_node_add_value(reference_node, "name", $2);
 
     if ($1) {
@@ -658,11 +658,11 @@ dbnm:
 
 fullname:
   nm {
-    $$ = parse_node_alloc("table_reference");
+    $$ = parse_node_alloc("table");
     parse_node_add_value($$, "name", $1);
   }
 | nm DOT nm {
-    $$ = parse_node_alloc("table_reference");
+    $$ = parse_node_alloc("table");
     parse_node_add_value($$, "database", $1);
     parse_node_add_value($$, "name", $3);
   }
@@ -670,22 +670,22 @@ fullname:
 
 xfullname:
   nm {
-    $$ = parse_node_alloc("table_reference");
+    $$ = parse_node_alloc("table");
     parse_node_add_value($$, "name", $1);
   }
 | nm DOT nm {
-    $$ = parse_node_alloc("table_reference");
+    $$ = parse_node_alloc("table");
     parse_node_add_value($$, "database", $1);
     parse_node_add_value($$, "name", $3);
   }
 | nm DOT nm AS nm {
-    $$ = parse_node_alloc("table_reference");
+    $$ = parse_node_alloc("table");
     parse_node_add_value($$, "database", $1);
     parse_node_add_value($$, "name", $3);
     parse_node_add_value($$, "alias", $5);
   }
 | nm AS nm {
-    $$ = parse_node_alloc("table_reference");
+    $$ = parse_node_alloc("table");
     parse_node_add_value($$, "name", $1);
     parse_node_add_value($$, "alias", $3);
   }
@@ -763,7 +763,7 @@ setlist:
   setlist COMMA nm EQ expr {
     $$ = $1;
     parse_node *set_node = parse_node_alloc("assignment");
-    parse_node *column_node = parse_node_alloc("column_reference");
+    parse_node *column_node = parse_node_alloc("column");
     parse_node_add_value(column_node, "name", $3);
     parse_node_add_child(set_node, "column", column_node);
     parse_node_add_child(set_node, "value", $5);
@@ -773,7 +773,7 @@ setlist:
 | nm EQ expr {
     $$ = dynamic_array_alloc();
     parse_node *set_node = parse_node_alloc("assignment");
-    parse_node *column_node = parse_node_alloc("column_reference");
+    parse_node *column_node = parse_node_alloc("column");
     parse_node_add_value(column_node, "name", $1);
     parse_node_add_child(set_node, "column", column_node);
     parse_node_add_child(set_node, "value", $3);
@@ -802,13 +802,13 @@ idlist_opt:
 idlist:
   idlist COMMA nm {
     $$ = $1;
-    parse_node *reference_node = parse_node_alloc("column_reference");
+    parse_node *reference_node = parse_node_alloc("column");
     parse_node_add_value(reference_node, "name", $3);
     dynamic_array_push_back($$, reference_node);
   }
 | nm {
     $$ = dynamic_array_alloc();
-    parse_node *reference_node = parse_node_alloc("column_reference");
+    parse_node *reference_node = parse_node_alloc("column");
     parse_node_add_value(reference_node, "name", $1);
     dynamic_array_push_back($$, reference_node);
   }
@@ -818,12 +818,12 @@ expr:
   term { $$ = $1; }
 | LP expr RP { yyerror(NULL, scanner, "parentheses in expression not yet supported"); }
 | id {
-    $$ = parse_node_alloc("column_reference");
+    $$ = parse_node_alloc("column");
     parse_node_add_value($$, "name", $1);
   }
 | JOIN_KW { yyerror(NULL, scanner, "join keyword in expression not yet supported"); }
 | nm DOT nm {
-    $$ = parse_node_alloc("column_reference");
+    $$ = parse_node_alloc("column");
     parse_node_add_value($$, "table", $1);
     parse_node_add_value($$, "name", $3);
   }

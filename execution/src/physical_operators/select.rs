@@ -1,7 +1,5 @@
 use logical_entities::relation::Relation;
 use logical_entities::predicates::Predicate;
-use logical_entities::schema::Schema;
-use logical_entities::column::Column;
 use physical_operators::Operator;
 use storage::StorageManager;
 use types::borrowed_buffer::BorrowedBuffer;

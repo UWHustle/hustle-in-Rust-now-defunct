@@ -30,13 +30,17 @@ impl Resolver {
 
     fn resolve_create_table(&self, node: &json::Value) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "create_table");
-        let name = node["name"].to_string();
+        let name = node["name"].as_str().unwrap().to_owned();
         let columns = node["columns"].as_array()
             .unwrap()
             .iter()
-            .map(|column| Plan::ColumnDefinition {
-                name: column["name"].to_string(),
-                column_type: column["column_type"].to_string()
+            .map(|column| {
+                Plan::Column {
+                    name: column["name"].as_str().unwrap().to_owned(),
+                    column_type: column["column_type"].as_str().unwrap().to_owned(),
+                    table: None,
+                    alias: None
+                }
             })
             .collect();
         Ok(Plan::CreateTable { name, columns })
@@ -44,7 +48,7 @@ impl Resolver {
 
     fn resolve_delete(&self, node: &json::Value) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "delete");
-        let from_table = Box::new(self.resolve_table_reference(&node["from_table"])?);
+        let from_table = Box::new(self.resolve_table(&node["from_table"])?);
         let filter = match node.get("filter") {
             Some(f) => Some(Box::new(self.resolve_filter(f)?)),
             None => None
@@ -54,7 +58,7 @@ impl Resolver {
 
     fn resolve_drop_table(&self, node: &json::Value) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "drop_table");
-        let table = Box::new(self.resolve_table_reference(&node["table"])?);
+        let table = Box::new(self.resolve_table(&node["table"])?);
         Ok(Plan::DropTable { table })
     }
 
@@ -68,7 +72,7 @@ impl Resolver {
             .map(|value| self.resolve_literal(value))
             .collect();
         let row = Plan::Row { values: values? };
-        let into_table = Box::new(self.resolve_table_reference(&node["into_table"])?);
+        let into_table = Box::new(self.resolve_table(&node["into_table"])?);
         Ok(Plan::Insert { into_table, input: Box::new(row) })
     }
 
@@ -89,15 +93,15 @@ impl Resolver {
 
     fn resolve_input(&self, node: &json::Value) -> Result<Plan, String> {
         match node["type"].as_str().unwrap() {
-            "table_reference" => self.resolve_table_reference(node),
+            "table" => self.resolve_table(node),
             "join" => self.resolve_join(node),
             _ => Err("Input to node must be a table reference or join".to_string())
         }
     }
 
-    fn resolve_table_reference(&self, node: &json::Value) -> Result<Plan, String> {
-        debug_assert_eq!(node["type"].as_str().unwrap(), "table_reference");
-        Ok(Plan::TableReference { name: node["name"].to_string(), columns: vec![] })
+    fn resolve_table(&self, node: &json::Value) -> Result<Plan, String> {
+        debug_assert_eq!(node["type"].as_str().unwrap(), "table");
+        Ok(Plan::Table { name: node["name"].as_str().unwrap().to_owned(), columns: vec![] })
     }
 
     fn resolve_join(&self, node: &json::Value) -> Result<Plan, String> {
@@ -115,7 +119,7 @@ impl Resolver {
         let node_type = node["type"].as_str().unwrap();
         match node_type {
             "operation" => {
-                let name = node["name"].to_string();
+                let name = node["name"].as_str().unwrap().to_owned();
                 let left = self.resolve_filter(&node["left"])?;
                 let right = self.resolve_filter(&node["right"])?;
                 match name.as_str() {
@@ -131,26 +135,26 @@ impl Resolver {
                     _ => Err(format!("Unsupported operation type {}", name))
                 }
             }
-            "column_reference" => self.resolve_column_reference(node),
+            "column" => self.resolve_column(node),
             "literal" => self.resolve_literal(node),
             _ => Err(format!("Unsupported selection node type {}", node_type))
         }
     }
 
-    fn resolve_column_reference(&self, node: &json::Value) -> Result<Plan, String> {
-        debug_assert_eq!(node["type"].as_str().unwrap(), "column_reference");
-        Ok(Plan::ColumnReference {
-            name: node["name"].to_string(),
+    fn resolve_column(&self, node: &json::Value) -> Result<Plan, String> {
+        debug_assert_eq!(node["type"].as_str().unwrap(), "column");
+        Ok(Plan::Column {
+            name: node["name"].as_str().unwrap().to_owned(),
             column_type: String::new(),
             table: None,
-            alias: node.get("alias").map(|a| a.to_owned().to_string()),
+            alias: node.get("alias").map(|a| a.as_str().unwrap().to_owned()),
         })
     }
 
     fn resolve_literal(&self, node: &json::Value) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "literal");
         Ok(Plan::Literal {
-            value: node["value"].to_string(),
+            value: node["value"].as_str().unwrap().to_owned(),
             literal_type: String::new()
         })
     }
@@ -158,8 +162,8 @@ impl Resolver {
     fn resolve_projection(&self, nodes: &Vec<json::Value>) -> Result<Vec<Plan>, String> {
         nodes.iter()
             .map(|node| {
-                if node["type"] == "column_reference" {
-                    self.resolve_column_reference(node)
+                if node["type"] == "column" {
+                    self.resolve_column(node)
                 } else {
                     Err("Projection only on columns is supported".to_string())
                 }
@@ -168,11 +172,11 @@ impl Resolver {
     }
 
     fn resolve_update(&self, node: &json::Value) -> Result<Plan, String> {
-        let table = Box::new(self.resolve_table_reference(&node["table"])?);
+        let table = Box::new(self.resolve_table(&node["table"])?);
         let (mut columns, mut assignments) = (vec![], vec![]);
         for assignment_node in node["assignments"].as_array().unwrap() {
             debug_assert_eq!(assignment_node["type"].as_str().unwrap(), "assignment");
-            columns.push(self.resolve_column_reference(&assignment_node["column"])?);
+            columns.push(self.resolve_column(&assignment_node["column"])?);
             assignments.push(self.resolve_literal(&assignment_node["value"])?);
         }
         let filter = match node.get("filter") {
