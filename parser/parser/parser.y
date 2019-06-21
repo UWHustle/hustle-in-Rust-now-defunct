@@ -210,6 +210,8 @@ typedef void* yyscan_t;
   plus_num
   minus_num
   number
+  typename
+  typetoken
 %type <node>
   cmd
   expr
@@ -226,8 +228,6 @@ typedef void* yyscan_t;
   values
   xfullname
   fullname
-  typetoken
-  typename
 %type <list>
   exprlist
   groupby_opt
@@ -276,37 +276,37 @@ cmd:
 | createkw temp TABLE ifnotexists nm dbnm create_table_args {
     $$ = parse_node_alloc("create_table");
     parse_node_add_value($$, "name", $5);
-    parse_node_add_child_list($$, "attributes", $7);
+    parse_node_add_child_list($$, "columns", $7);
   }
 | DROP TABLE ifexists fullname {
     $$ = parse_node_alloc("drop_table");
-    parse_node_add_child($$, "name", $4);
+    parse_node_add_child($$, "table", $4);
   }
 | createkw temp VIEW ifnotexists nm dbnm eidlist_opt AS select { yyerror(NULL, scanner, "CREATE VIEW not yet supported"); }
 | DROP VIEW ifexists fullname { yyerror(NULL, scanner, "DROP VIEW not yet supported"); }
 | select { $$ = $1; }
 | with DELETE FROM xfullname indexed_opt where_opt orderby_opt limit_opt {
     $$ = parse_node_alloc("delete");
-    parse_node_add_child($$, "from", $4);
+    parse_node_add_child($$, "from_table", $4);
     if ($6) {
-      parse_node_add_child($$, "where", $6);
+      parse_node_add_child($$, "filter", $6);
     }
   }
 | with UPDATE orconf xfullname indexed_opt SET setlist where_opt orderby_opt limit_opt {
     $$ = parse_node_alloc("update");
-    parse_node_add_child($$, "relation", $4);
+    parse_node_add_child($$, "table", $4);
     parse_node_add_child_list($$, "assignments", $7);
     if ($8) {
-      parse_node_add_child($$, "where", $8);
+      parse_node_add_child($$, "filter", $8);
     }
   }
 | with insert_cmd INTO xfullname idlist_opt select upsert {
     $$ = parse_node_alloc("insert");
-    parse_node_add_child($$, "into", $4);
+    parse_node_add_child($$, "into_table", $4);
     if ($5) {
-      parse_node_add_child_list($$, "attributes", $5);
+      parse_node_add_child_list($$, "values", $5);
     }
-    parse_node_add_child($$, "source", $6);
+    parse_node_add_child($$, "input", $6);
   }
 | with insert_cmd INTO xfullname idlist_opt DEFAULT VALUES { yyerror(NULL, scanner, "INSERT DEFAULT VALUES not yet supported"); }
 | createkw uniqueflag INDEX ifnotexists nm dbnm ON nm LP sortlist RP where_opt { yyerror(NULL, scanner, "CREATE INDEX not yet supported"); }
@@ -390,9 +390,9 @@ columnlist:
 
 columnname:
   nm typetoken {
-    $$ = parse_node_alloc("attribute");
+    $$ = parse_node_alloc("column_definition");
     parse_node_add_value($$, "name", $1);
-    parse_node_add_child($$, "attribute_type", $2);
+    parse_node_add_value($$, "column_type", $2);
   }
 ;
 
@@ -407,13 +407,11 @@ typetoken:
     $$ = 0;
   }
 | typename {
-    $$ = parse_node_alloc("type");
-    parse_node_add_value($$, "name", $1);
+    $$ = $1;
   }
 | typename LP signed RP {
-    $$ = parse_node_alloc("type");
-    parse_node_add_value($$, "name", $1);
-    parse_node_add_value($$, "argument", $3);
+    $$ = malloc(strlen($1) + strlen($3) + 1);
+    sprintf($$, "%s(%s)", $1, $3);
   }
 | typename LP signed COMMA signed RP { yyerror(NULL, scanner, "complex type definitions not yet supported"); }
 ;
@@ -563,11 +561,11 @@ oneselect:
   SELECT distinct selcollist from where_opt groupby_opt having_opt orderby_opt limit_opt {
     $$ = parse_node_alloc("select");
 
-    parse_node_add_child_list($$, "select", $3);
-    parse_node_add_child($$, "from", $4);
+    parse_node_add_child_list($$, "projection", $3);
+    parse_node_add_child($$, "from_table", $4);
 
     if ($5) {
-      parse_node_add_child($$, "where", $5);
+      parse_node_add_child($$, "filter", $5);
     }
 
     if ($6) {
@@ -634,15 +632,15 @@ stl_prefix:
 
 seltablist:
   stl_prefix nm dbnm as indexed_opt on_opt using_opt {
-    parse_node *reference_node = parse_node_alloc("reference");
-    parse_node_add_value(reference_node, "relation", $2);
+    parse_node *reference_node = parse_node_alloc("table_reference");
+    parse_node_add_value(reference_node, "name", $2);
 
     if ($1) {
       $$ = parse_node_alloc("join");
       parse_node_add_child($$, "left", $1);
       parse_node_add_child($$, "right", reference_node);
       if ($6) {
-        parse_node_add_child($$, "predicate", $6);
+        parse_node_add_child($$, "filter", $6);
       }
     } else {
       $$ = reference_node;
@@ -660,35 +658,35 @@ dbnm:
 
 fullname:
   nm {
-    $$ = parse_node_alloc("reference");
-    parse_node_add_value($$, "relation", $1);
+    $$ = parse_node_alloc("table_reference");
+    parse_node_add_value($$, "name", $1);
   }
 | nm DOT nm {
-    $$ = parse_node_alloc("reference");
+    $$ = parse_node_alloc("table_reference");
     parse_node_add_value($$, "database", $1);
-    parse_node_add_value($$, "relation", $3);
+    parse_node_add_value($$, "name", $3);
   }
 ;
 
 xfullname:
   nm {
-    $$ = parse_node_alloc("reference");
-    parse_node_add_value($$, "relation", $1);
+    $$ = parse_node_alloc("table_reference");
+    parse_node_add_value($$, "name", $1);
   }
 | nm DOT nm {
-    $$ = parse_node_alloc("reference");
+    $$ = parse_node_alloc("table_reference");
     parse_node_add_value($$, "database", $1);
-    parse_node_add_value($$, "relation", $3);
+    parse_node_add_value($$, "name", $3);
   }
 | nm DOT nm AS nm {
-    $$ = parse_node_alloc("reference");
+    $$ = parse_node_alloc("table_reference");
     parse_node_add_value($$, "database", $1);
-    parse_node_add_value($$, "relation", $3);
+    parse_node_add_value($$, "name", $3);
     parse_node_add_value($$, "alias", $5);
   }
 | nm AS nm {
-    $$ = parse_node_alloc("reference");
-    parse_node_add_value($$, "relation", $1);
+    $$ = parse_node_alloc("table_reference");
+    parse_node_add_value($$, "name", $1);
     parse_node_add_value($$, "alias", $3);
   }
 ;
@@ -765,7 +763,9 @@ setlist:
   setlist COMMA nm EQ expr {
     $$ = $1;
     parse_node *set_node = parse_node_alloc("assignment");
-    parse_node_add_value(set_node, "attribute", $3);
+    parse_node *column_node = parse_node_alloc("column_reference");
+    parse_node_add_value(column_node, "name", $3);
+    parse_node_add_child(set_node, "column", column_node);
     parse_node_add_child(set_node, "value", $5);
     dynamic_array_push_back($$, set_node);
   }
@@ -773,7 +773,9 @@ setlist:
 | nm EQ expr {
     $$ = dynamic_array_alloc();
     parse_node *set_node = parse_node_alloc("assignment");
-    parse_node_add_value(set_node, "attribute", $1);
+    parse_node *column_node = parse_node_alloc("column_reference");
+    parse_node_add_value(column_node, "name", $1);
+    parse_node_add_child(set_node, "column", column_node);
     parse_node_add_child(set_node, "value", $3);
     dynamic_array_push_back($$, set_node);
   }
@@ -800,14 +802,14 @@ idlist_opt:
 idlist:
   idlist COMMA nm {
     $$ = $1;
-    parse_node *reference_node = parse_node_alloc("reference");
-    parse_node_add_value(reference_node, "attribute", $3);
+    parse_node *reference_node = parse_node_alloc("column_reference");
+    parse_node_add_value(reference_node, "name", $3);
     dynamic_array_push_back($$, reference_node);
   }
 | nm {
     $$ = dynamic_array_alloc();
-    parse_node *reference_node = parse_node_alloc("reference");
-    parse_node_add_value(reference_node, "attribute", $1);
+    parse_node *reference_node = parse_node_alloc("column_reference");
+    parse_node_add_value(reference_node, "name", $1);
     dynamic_array_push_back($$, reference_node);
   }
 ;
@@ -816,14 +818,14 @@ expr:
   term { $$ = $1; }
 | LP expr RP { yyerror(NULL, scanner, "parentheses in expression not yet supported"); }
 | id {
-    $$ = parse_node_alloc("reference");
-    parse_node_add_value($$, "attribute", $1);
+    $$ = parse_node_alloc("column_reference");
+    parse_node_add_value($$, "name", $1);
   }
 | JOIN_KW { yyerror(NULL, scanner, "join keyword in expression not yet supported"); }
 | nm DOT nm {
-    $$ = parse_node_alloc("reference");
-    parse_node_add_value($$, "relation", $1);
-    parse_node_add_value($$, "attribute", $3);
+    $$ = parse_node_alloc("column_reference");
+    parse_node_add_value($$, "table", $1);
+    parse_node_add_value($$, "name", $3);
   }
 | nm DOT nm DOT nm { yyerror(NULL, scanner, "nm.nm.nm in expression not yet supported"); }
 | VARIABLE { yyerror(NULL, scanner, "VARIABLE not yet supported"); }
@@ -839,39 +841,39 @@ expr:
 | id LP STAR RP over_clause { yyerror(NULL, scanner, "OVER not yet supported"); }
 | LP nexprlist COMMA expr RP { yyerror(NULL, scanner, "expression lists not yet supported"); }
 | expr AND expr {
-    $$ = parse_node_alloc("binary_operation");
-    parse_node_add_value($$, "operator", "and");
+    $$ = parse_node_alloc("operation");
+    parse_node_add_value($$, "name", "and");
     parse_node_add_child($$, "left", $1);
     parse_node_add_child($$, "right", $3);
   }
 | expr OR expr { yyerror(NULL, scanner, "OR in expression not yet supported"); }
 | expr LT expr {
-    $$ = parse_node_alloc("binary_operation");
-    parse_node_add_value($$, "operator", "lt");
+    $$ = parse_node_alloc("operation");
+    parse_node_add_value($$, "name", "lt");
     parse_node_add_child($$, "left", $1);
     parse_node_add_child($$, "right", $3);
   }
 | expr GT expr {
-    $$ = parse_node_alloc("binary_operation");
-    parse_node_add_value($$, "operator", "gt");
+    $$ = parse_node_alloc("operation");
+    parse_node_add_value($$, "name", "gt");
     parse_node_add_child($$, "left", $1);
     parse_node_add_child($$, "right", $3);
 }
 | expr GE expr {
-    $$ = parse_node_alloc("binary_operation");
-    parse_node_add_value($$, "operator", "ge");
+    $$ = parse_node_alloc("operation");
+    parse_node_add_value($$, "name", "ge");
     parse_node_add_child($$, "left", $1);
     parse_node_add_child($$, "right", $3);
 }
 | expr LE expr {
-    $$ = parse_node_alloc("binary_operation");
-    parse_node_add_value($$, "operator", "le");
+    $$ = parse_node_alloc("operation");
+    parse_node_add_value($$, "name", "le");
     parse_node_add_child($$, "left", $1);
     parse_node_add_child($$, "right", $3);
 }
 | expr EQ expr {
-    $$ = parse_node_alloc("binary_operation");
-    parse_node_add_value($$, "operator", "eq");
+    $$ = parse_node_alloc("operation");
+    parse_node_add_value($$, "name", "eq");
     parse_node_add_child($$, "left", $1);
     parse_node_add_child($$, "right", $3);
   }
@@ -909,27 +911,27 @@ expr:
 
 term:
   NULL {
-    $$ = parse_node_alloc("term");
+    $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
   }
 | FLOAT {
-    $$ = parse_node_alloc("term");
+    $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
   }
 | BLOB {
-    $$ = parse_node_alloc("term");
+    $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
   }
 | STRING {
-    $$ = parse_node_alloc("term");
+    $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
   }
 | INTEGER {
-    $$ = parse_node_alloc("term");
+    $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
   }
 | CTIME_KW {
-    $$ = parse_node_alloc("term");
+    $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
   }
 ;

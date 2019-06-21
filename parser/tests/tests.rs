@@ -14,30 +14,21 @@ mod tests {
         let expected = json!({
             "type": "create_table",
             "name": "t",
-            "attributes": [
+            "columns": [
                 {
-                    "type": "attribute",
+                    "type": "column_definition",
                     "name": "a",
-                    "attribute_type": {
-                        "type": "type",
-                        "name": "INT1"
-                    }
+                    "column_type": "INT1"
                 },
                 {
-                    "type": "attribute",
+                    "type": "column_definition",
                     "name": "b",
-                    "attribute_type": {
-                        "type": "type",
-                        "name": "FLOAT4"
-                    }
+                    "column_type": "FLOAT4"
                 },
                 {
-                    "type": "attribute",
+                    "type": "column_definition",
                     "name": "c",
-                    "attribute_type": {
-                        "type": "type",
-                        "name": "IPv4"
-                    }
+                    "column_type": "IPv4"
                 }
             ]
         });
@@ -50,23 +41,23 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "insert",
-            "into": {
-                "type": "reference",
-                "relation": "t"
+            "into_table": {
+                "type": "table_reference",
+                "name": "t"
             },
-            "source": {
+            "input": {
                 "type": "values",
                 "values": [
                     {
-                        "type": "term",
+                        "type": "literal",
                         "value": "1"
                     },
                     {
-                        "type": "term",
+                        "type": "literal",
                         "value": "2.3"
                     },
                     {
-                        "type": "term",
+                        "type": "literal",
                         "value": "'172.16.254.1'"
                     }
                 ]
@@ -81,14 +72,14 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
-            "from": {
-                "type": "reference",
-                "relation": "t"
+            "from_table": {
+                "type": "table_reference",
+                "name": "t"
             },
-            "select": [
+            "projection": [
                 {
-                    "type": "reference",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "name": "a"
                 }
             ]
         });
@@ -104,78 +95,78 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
-            "from": {
-                "type": "reference",
-                "relation": "t"
+            "from_table": {
+                "type": "table_reference",
+                "name": "t"
             },
-            "where": {
-                "type": "binary_operation",
-                "operator": "and",
+            "filter": {
+                "type": "operation",
+                "name": "and",
                 "left": {
-                    "type": "binary_operation",
-                    "operator": "and",
+                    "type": "operation",
+                    "name": "and",
                     "left": {
-                        "type": "binary_operation",
-                        "operator": "and",
+                        "type": "operation",
+                        "name": "and",
                         "left": {
-                            "type": "binary_operation",
-                            "operator": "lt",
+                            "type": "operation",
+                            "name": "lt",
                             "left": {
-                                "type": "reference",
-                                "attribute": "a"
+                                "type": "column_reference",
+                                "name": "a"
                             },
                             "right": {
-                                "type": "term",
+                                "type": "literal",
                                 "value": "3"
                             }
                         },
                         "right": {
-                            "type": "binary_operation",
-                            "operator": "gt",
+                            "type": "operation",
+                            "name": "gt",
                             "left": {
-                                "type": "reference",
-                                "attribute": "a"
+                                "type": "column_reference",
+                                "name": "a"
                             },
                             "right": {
-                                "type": "term",
+                                "type": "literal",
                                 "value": "1"
                             }
                         }
                     },
                     "right": {
-                        "type": "binary_operation",
-                        "operator": "ge",
+                        "type": "operation",
+                        "name": "ge",
                         "left": {
-                            "type": "reference",
-                            "attribute": "b"
+                            "type": "column_reference",
+                            "name": "b"
                         },
                         "right": {
-                            "type": "term",
+                            "type": "literal",
                             "value": "2"
                         }
                     }
                 },
                 "right": {
-                    "type": "binary_operation",
-                    "operator": "le",
+                    "type": "operation",
+                    "name": "le",
                     "left": {
-                        "type": "reference",
-                        "attribute": "b"
+                        "type": "column_reference",
+                        "name": "b"
                     },
                     "right": {
-                        "type": "term",
+                        "type": "literal",
                         "value": "4"
                     }
                 }
             },
-            "select": [
+            "projection": [
                 {
-                    "type": "reference",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "name": "a"
                 },
                 {
-                    "type": "reference",
-                    "attribute": "b"
+                    "type": "column_reference",
+                    "name": "b"
                 }
             ]
         });
@@ -188,27 +179,27 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
-            "from": {
+            "from_table": {
                 "type": "join",
                 "left": {
-                    "type": "reference",
-                    "relation": "t"
+                    "type": "table_reference",
+                    "name": "t"
                 },
                 "right": {
-                    "type": "reference",
-                    "relation": "u"
+                    "type": "table_reference",
+                    "name": "u"
                 }
             },
-            "select": [
+            "projection": [
                 {
-                    "type": "reference",
-                    "relation": "t",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "table": "t",
+                    "name": "a"
                 },
                 {
-                    "type": "reference",
-                    "relation": "u",
-                    "attribute": "b"
+                    "type": "column_reference",
+                    "table": "u",
+                    "name": "b"
                 }
             ]
         });
@@ -221,41 +212,41 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
-            "from": {
+            "from_table": {
                 "type": "join",
                 "left": {
-                    "type": "reference",
-                    "relation": "t"
+                    "type": "table_reference",
+                    "name": "t"
                 },
                 "right": {
-                    "type": "reference",
-                    "relation": "u"
+                    "type": "table_reference",
+                    "name": "u"
                 }
             },
-            "where": {
-                "type": "binary_operation",
-                "operator": "eq",
+            "filter": {
+                "type": "operation",
+                "name": "eq",
                 "left": {
-                    "type": "reference",
-                    "relation": "t",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "table": "t",
+                    "name": "a"
                 },
                 "right": {
-                    "type": "reference",
-                    "relation": "u",
-                    "attribute": "b"
+                    "type": "column_reference",
+                    "table": "u",
+                    "name": "b"
                 }
             },
-            "select": [
+            "projection": [
                 {
-                    "type": "reference",
-                    "relation": "t",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "table": "t",
+                    "name": "a"
                 },
                 {
-                    "type": "reference",
-                    "relation": "u",
-                    "attribute": "b"
+                    "type": "column_reference",
+                    "table": "u",
+                    "name": "b"
                 }
             ]
         });
@@ -268,36 +259,36 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
-            "from": {
+            "from_table": {
                 "type": "join",
                 "left": {
-                    "type": "reference",
-                    "relation": "t"
+                    "type": "table_reference",
+                    "name": "t"
                 },
                 "right": {
-                    "type": "reference",
-                    "relation": "u"
+                    "type": "table_reference",
+                    "name": "u"
                 },
-                "predicate": {
-                    "type": "binary_operation",
-                    "operator": "eq",
+                "filter": {
+                    "type": "operation",
+                    "name": "eq",
                     "left": {
-                        "type": "reference",
-                        "relation": "t",
-                        "attribute": "a"
+                        "type": "column_reference",
+                        "table": "t",
+                        "name": "a"
                     },
                     "right": {
-                        "type": "reference",
-                        "relation": "u",
-                        "attribute": "b"
+                        "type": "column_reference",
+                        "table": "u",
+                        "name": "b"
                     }
                 }
             },
-            "select": [
+            "projection": [
                 {
-                    "type": "reference",
-                    "relation": "t",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "table": "t",
+                    "name": "a"
                 }
             ]
         });
@@ -310,24 +301,30 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "update",
-            "relation": {
-                "type": "reference",
-                "relation": "t"
+            "table": {
+                "type": "table_reference",
+                "name": "t"
             },
             "assignments": [
                 {
                     "type": "assignment",
-                    "attribute": "a",
+                    "column": {
+                        "type": "column_reference",
+                        "name": "a"
+                    },
                     "value": {
-                        "type": "term",
+                        "type": "literal",
                         "value": "2"
                     }
                 },
                 {
                     "type": "assignment",
-                    "attribute": "b",
+                    "column": {
+                        "type": "column_reference",
+                        "name": "b"
+                    },
                     "value": {
-                        "type": "term",
+                        "type": "literal",
                         "value": "3"
                     }
                 }
@@ -342,28 +339,31 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "update",
-            "relation": {
-                "type": "reference",
-                "relation": "t"
+            "table": {
+                "type": "table_reference",
+                "name": "t"
             },
-            "where": {
-                "type": "binary_operation",
-                "operator": "eq",
+            "filter": {
+                "type": "operation",
+                "name": "eq",
                 "left": {
-                    "type": "reference",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "name": "a"
                 },
                 "right": {
-                    "type": "term",
+                    "type": "literal",
                     "value": "1"
                 }
             },
             "assignments": [
                 {
                     "type": "assignment",
-                    "attribute": "a",
+                    "column": {
+                        "type": "column_reference",
+                        "name": "a"
+                    },
                     "value": {
-                        "type": "term",
+                        "type": "literal",
                         "value": "2"
                     }
                 }
@@ -378,19 +378,19 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "delete",
-            "from": {
-                "type": "reference",
-                "relation": "t"
+            "from_table": {
+                "type": "table_reference",
+                "name": "t"
             },
-            "where": {
-                "type": "binary_operation",
-                "operator": "eq",
+            "filter": {
+                "type": "operation",
+                "name": "eq",
                 "left": {
-                    "type": "reference",
-                    "attribute": "a"
+                    "type": "column_reference",
+                    "name": "a"
                 },
                 "right": {
-                    "type": "term",
+                    "type": "literal",
                     "value": "1"
                 }
             }
@@ -404,9 +404,9 @@ mod tests {
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "drop_table",
-            "name": {
-                "type": "reference",
-                "relation": "t"
+            "table": {
+                "type": "table_reference",
+                "name": "t"
             }
         });
         assert_eq!(ast, expected);

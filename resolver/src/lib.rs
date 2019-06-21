@@ -74,7 +74,7 @@ impl Resolver {
 
     fn resolve_select(&self, node: &json::Value) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "select");
-        let mut table = self.resolve_input(&node["table"])?;
+        let mut table = self.resolve_input(&node["from_table"])?;
         if let Some(filter) = node.get("filter") {
             table = Plan::Select {
                 table: Box::new(table),
@@ -171,6 +171,7 @@ impl Resolver {
         let table = Box::new(self.resolve_table_reference(&node["table"])?);
         let (mut columns, mut assignments) = (vec![], vec![]);
         for assignment_node in node["assignments"].as_array().unwrap() {
+            debug_assert_eq!(assignment_node["type"].as_str().unwrap(), "assignment");
             columns.push(self.resolve_column_reference(&assignment_node["column"])?);
             assignments.push(self.resolve_literal(&assignment_node["value"])?);
         }
