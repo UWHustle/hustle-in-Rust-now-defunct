@@ -1,4 +1,4 @@
-use message::{Plan, Listener};
+use message::{Plan, Listener, Message};
 use serde_json as json;
 use std::sync::mpsc::{Receiver, Sender};
 
@@ -185,7 +185,19 @@ impl Resolver {
 
 impl Listener for Resolver {
     fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
-        unimplemented!()
+        loop {
+            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
+            let response = match request {
+                Message::ResolveAst { ast, connection_id } => {
+                    match self.resolve(&ast) {
+                        Ok(plan) => Message::ExecutePlan { plan, connection_id },
+                        Err(reason) => Message::Error { reason, connection_id }
+                    }
+                },
+                _ => request
+            };
+            output_tx.send(response.serialize().unwrap()).unwrap();
+        }
     }
 }
 

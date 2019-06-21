@@ -8,6 +8,7 @@
 
 %option reentrant noyywrap
 %option bison-bridge
+%option caseless
 
 %%
 ABORT           		{ return TK_ABORT; }
