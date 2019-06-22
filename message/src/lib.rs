@@ -99,16 +99,16 @@ pub enum Plan {
 pub struct Column {
     pub name: String,
     pub column_type: String,
-    pub table: Option<String>,
+    pub table: String,
     pub alias: Option<String>
 }
 
 impl Column {
-    pub fn new(name: String, column_type: String) -> Self {
+    pub fn new(name: String, column_type: String, table: String) -> Self {
         Column {
             name,
             column_type,
-            table: None,
+            table,
             alias: None
         }
     }

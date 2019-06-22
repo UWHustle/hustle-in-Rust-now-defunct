@@ -45,7 +45,8 @@ impl Resolver {
                 .map(|column| {
                     Column::new(
                         column["name"].as_str().unwrap().to_owned(),
-                    column["column_type"].as_str().unwrap().to_owned()
+                    column["column_type"].as_str().unwrap().to_owned(),
+                        name.clone()
                     )
                 })
                 .collect();
@@ -206,7 +207,7 @@ impl Resolver {
                 .ok_or(format!("Ambiguous column: {}", column_name))?;
 
             active_columns.iter()
-                .find(|c| c.name == column_name && c.table.as_ref().unwrap() == table_name)
+                .find(|c| c.name == column_name && c.table == table_name)
                 .map(|c| c.clone())
                 .ok_or(format!("Unrecognized column: {}", column_name))
 

@@ -637,8 +637,8 @@ seltablist:
 
     if ($1) {
       $$ = parse_node_alloc("join");
-      parse_node_add_child($$, "left", $1);
-      parse_node_add_child($$, "right", reference_node);
+      parse_node_add_child($$, "l_table", $1);
+      parse_node_add_child($$, "r_table", reference_node);
       if ($6) {
         parse_node_add_child($$, "filter", $6);
       }

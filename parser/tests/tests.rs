@@ -181,11 +181,11 @@ mod tests {
             "type": "select",
             "from_table": {
                 "type": "join",
-                "left": {
+                "l_table": {
                     "type": "table",
                     "name": "t"
                 },
-                "right": {
+                "r_table": {
                     "type": "table",
                     "name": "u"
                 }
@@ -214,11 +214,11 @@ mod tests {
             "type": "select",
             "from_table": {
                 "type": "join",
-                "left": {
+                "l_table": {
                     "type": "table",
                     "name": "t"
                 },
-                "right": {
+                "r_table": {
                     "type": "table",
                     "name": "u"
                 }
@@ -261,11 +261,11 @@ mod tests {
             "type": "select",
             "from_table": {
                 "type": "join",
-                "left": {
+                "l_table": {
                     "type": "table",
                     "name": "t"
                 },
-                "right": {
+                "r_table": {
                     "type": "table",
                     "name": "u"
                 },
