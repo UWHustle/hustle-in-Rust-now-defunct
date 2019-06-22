@@ -36,7 +36,7 @@ impl ExecutionEngine {
     pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
         loop {
             let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
-            match request {
+            let response = match request {
                 Message::ExecutePlan { plan, connection_id } => {
                     match self.execute_plan(plan) {
                         Ok(relation) => {
@@ -70,20 +70,18 @@ impl ExecutionEngine {
                                     }
                                 }
                             }
-
-                            let response = Message::Success { connection_id };
-                            output_tx.send(response.serialize().unwrap()).unwrap();
+                            Message::Success { connection_id }
                         },
 
                         Err(reason) => {
-                            let response = Message::Failure { reason, connection_id };
-                            output_tx.send(response.serialize().unwrap()).unwrap()
+                            Message::Failure { reason, connection_id }
                         }
                     }
 
                 },
-                _ => panic!("Invalid message type sent to execution engine")
-            }
+                _ => request
+            };
+            output_tx.send(response.serialize().unwrap()).unwrap();
         }
     }
 }

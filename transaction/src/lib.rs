@@ -79,7 +79,7 @@ impl Listener for TransactionManager {
                     self.execute(plan, connection_id),
                 Message::CloseConnection { connection_id } =>
                     self.close(connection_id),
-                _ => panic!("Invalid message type sent to transaction manager")
+                _ => output_tx.send(buf).unwrap()
             };
 
             // Serialize each transaction.
