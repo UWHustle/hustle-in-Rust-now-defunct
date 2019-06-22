@@ -177,7 +177,7 @@ impl Resolver {
                         name,
                         terms: vec![left, right],
                     }),
-                    "eq" | "lt" | "le" | "gt" | "ge" => Ok(Plan::Comparison {
+                    "eq" | "lt" | "le" | "gt" | "ge" => Ok(Plan::Comparative {
                         name,
                         left: Box::new(left),
                         right: Box::new(right),
@@ -226,7 +226,9 @@ impl Resolver {
     ) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "literal");
         // TODO: Infer type if no hint is given.
-        let literal_type = literal_type.ok_or("Could not infer literal type".to_string())?;
+        let literal_type = literal_type
+            .or(node.get("literal_type").map(|t| t.as_str().unwrap().to_owned()))
+            .ok_or("Could not infer literal type".to_string())?;
         Ok(Plan::Literal {
             value: node["value"].as_str().unwrap().to_owned(),
             literal_type

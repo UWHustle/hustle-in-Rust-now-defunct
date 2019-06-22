@@ -921,22 +921,27 @@ term:
 | FLOAT {
     $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
+    parse_node_add_value($$, "literal_type", "float");
   }
 | BLOB {
     $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
+    parse_node_add_value($$, "literal_type", "blob");
   }
 | STRING {
     $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
+    parse_node_add_value($$, "literal_type", "string");
   }
 | INTEGER {
     $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
+    parse_node_add_value($$, "literal_type", "int");
   }
 | CTIME_KW {
     $$ = parse_node_alloc("literal");
     parse_node_add_value($$, "value", $1);
+    parse_node_add_value($$, "literal_type", "time");
   }
 ;
 

@@ -385,11 +385,11 @@ class Relation:
         Where <col> is the column to test, <op> is the comparison operator, and
         <val> is the value to compare against. Allowed values of <op> are =, <
         <=, >, <=, or string variants (case insensitive):
-            equal
-            less
-            lessorequal
-            greater
-            greaterorequal
+            eq
+            lt
+            le
+            gt
+            ge
         <val> should be parseable to the type of <col>.
 
         :param predicate: The condition used for selection (see above)

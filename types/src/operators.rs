@@ -14,11 +14,11 @@ pub enum Comparator {
 impl Comparator {
     pub fn from_str(string: &str) -> Result<Self, String> {
         match string.to_lowercase().as_str() {
-            "=" | "equal" => Ok(Comparator::Eq),
-            "<" | "less" => Ok(Comparator::Lt),
-            "<=" | "lessorequal" => Ok(Comparator::Le),
-            ">" | "greater" => Ok(Comparator::Gt),
-            ">=" | "greaterorequal" => Ok(Comparator::Ge),
+            "=" | "eq" => Ok(Comparator::Eq),
+            "<" | "lt" => Ok(Comparator::Lt),
+            "<=" | "le" => Ok(Comparator::Le),
+            ">" | "gt" => Ok(Comparator::Gt),
+            ">=" | "ge" => Ok(Comparator::Ge),
             _ => Err(format!("unknown comparison {}", string)),
         }
     }

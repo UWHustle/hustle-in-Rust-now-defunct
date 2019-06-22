@@ -32,7 +32,7 @@ pub enum Plan {
     ColumnReference {
         column: Column
     },
-    Comparison {
+    Comparative {
         name: String,
         left: Box<Plan>,
         right: Box<Plan>

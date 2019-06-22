@@ -108,13 +108,10 @@ fn parse_connective(name: &str, arguments: &Vec<Plan>) -> Result<Connective, Str
     Ok(Connective::new(connective_type, terms?))
 }
 
-fn parse_comparative(name: &str, arguments: &Vec<Plan>) -> Result<Comparison, String> {
-    debug_assert_eq!(arguments.len(), 2, "Comparison predicate function must have two arguments");
-
-    let filter_col = parse_column_reference(&arguments[0])?;
-    let comp_value = parse_literal(&arguments[1])?;
+fn parse_comparative(name: &str, left: &Box<Plan>, right: &Box<Plan>) -> Result<Comparison, String> {
+    let filter_col = parse_column_reference(&left)?;
+    let comp_value = parse_literal(&right)?;
     let comparator = Comparator::from_str(name)?;
-
     Ok(Comparison::new(filter_col, comparator, comp_value))
 }
 
@@ -128,15 +125,12 @@ fn parse_literal(literal: &Plan) -> Result<Box<types::Value>, String> {
 }
 
 fn parse_filter(plan: &Plan) -> Result<Box<Predicate>, String> {
-    if let Plan::Function { name, arguments, output_type } = plan {
-        match name.as_str() {
-            "eq" | "lt" | "le" | "gt" | "ge" =>
-                Ok(Box::new(parse_comparative(name, arguments)?)),
-            "and" | "or" => Ok(Box::new(parse_connective(name, arguments)?)),
-            _ => Err(format!("Invalid function name {}", name))
-        }
-    } else {
-        Err("Invalid plan node (expected Function)".to_string())
+    match plan {
+        Plan::Comparative { name, left, right } =>
+            Ok(Box::new(parse_comparative(name, left, right)?)),
+        Plan::Connective { name, terms } =>
+            Ok(Box::new(parse_connective(name, terms)?)),
+        _ => Err("Invalid plan node (expected Comparative or Connective)".to_string())
     }
 }
 

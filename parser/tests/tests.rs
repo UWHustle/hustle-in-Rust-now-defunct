@@ -9,7 +9,7 @@ mod tests {
 
     #[test]
     fn create_table() {
-        let ast_string = parse("CREATE TABLE t (a INT1, b FLOAT4, c IPv4);");
+        let ast_string = parse("CREATE TABLE t (a INT1, b FLOAT4, c IPv4);").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "create_table",
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn insert() {
-        let ast_string = parse("INSERT INTO t VALUES (1, 2.3, '172.16.254.1');");
+        let ast_string = parse("INSERT INTO t VALUES (1, 2.3, '172.16.254.1');").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "insert",
@@ -50,15 +50,18 @@ mod tests {
                 "values": [
                     {
                         "type": "literal",
-                        "value": "1"
+                        "value": "1",
+                        "literal_type": "int"
                     },
                     {
                         "type": "literal",
-                        "value": "2.3"
+                        "value": "2.3",
+                        "literal_type": "float"
                     },
                     {
                         "type": "literal",
-                        "value": "'172.16.254.1'"
+                        "value": "'172.16.254.1'",
+                        "literal_type": "string"
                     }
                 ]
             }
@@ -68,7 +71,7 @@ mod tests {
 
     #[test]
     fn select() {
-        let ast_string = parse("SELECT a FROM t;");
+        let ast_string = parse("SELECT a FROM t;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
@@ -91,7 +94,7 @@ mod tests {
         let ast_string = parse(
             "SELECT a, b \
             FROM t \
-            WHERE a < 3 AND a > 1 AND b >= 2 AND b <= 4;");
+            WHERE a < 3 AND a > 1 AND b >= 2 AND b <= 4;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
@@ -117,7 +120,8 @@ mod tests {
                             },
                             "right": {
                                 "type": "literal",
-                                "value": "3"
+                                "value": "3",
+                                "literal_type": "int"
                             }
                         },
                         "right": {
@@ -129,7 +133,8 @@ mod tests {
                             },
                             "right": {
                                 "type": "literal",
-                                "value": "1"
+                                "value": "1",
+                                "literal_type": "int"
                             }
                         }
                     },
@@ -142,7 +147,8 @@ mod tests {
                         },
                         "right": {
                             "type": "literal",
-                            "value": "2"
+                            "value": "2",
+                            "literal_type": "int"
                         }
                     }
                 },
@@ -155,7 +161,8 @@ mod tests {
                     },
                     "right": {
                         "type": "literal",
-                        "value": "4"
+                        "value": "4",
+                        "literal_type": "int"
                     }
                 }
             },
@@ -175,7 +182,7 @@ mod tests {
 
     #[test]
     fn cartesian() {
-        let ast_string = parse("SELECT t.a, u.b FROM t, u;");
+        let ast_string = parse("SELECT t.a, u.b FROM t, u;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
@@ -208,7 +215,7 @@ mod tests {
 
     #[test]
     fn comma_join() {
-        let ast_string = parse("SELECT t.a, u.b FROM t, u WHERE t.a = u.b;");
+        let ast_string = parse("SELECT t.a, u.b FROM t, u WHERE t.a = u.b;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
@@ -255,7 +262,7 @@ mod tests {
 
     #[test]
     fn keyword_join() {
-        let ast_string = parse("SELECT t.a FROM t JOIN u ON t.a = u.b;");
+        let ast_string = parse("SELECT t.a FROM t JOIN u ON t.a = u.b;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "select",
@@ -297,7 +304,7 @@ mod tests {
 
     #[test]
     fn update() {
-        let ast_string = parse("UPDATE t SET a = 2, b = 3;");
+        let ast_string = parse("UPDATE t SET a = 2, b = 3;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "update",
@@ -314,7 +321,8 @@ mod tests {
                     },
                     "value": {
                         "type": "literal",
-                        "value": "2"
+                        "value": "2",
+                        "literal_type": "int"
                     }
                 },
                 {
@@ -325,7 +333,8 @@ mod tests {
                     },
                     "value": {
                         "type": "literal",
-                        "value": "3"
+                        "value": "3",
+                        "literal_type": "int"
                     }
                 }
             ]
@@ -335,7 +344,7 @@ mod tests {
 
     #[test]
     fn update_where() {
-        let ast_string = parse("UPDATE t SET a = 2 WHERE a = 1;");
+        let ast_string = parse("UPDATE t SET a = 2 WHERE a = 1;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "update",
@@ -352,7 +361,8 @@ mod tests {
                 },
                 "right": {
                     "type": "literal",
-                    "value": "1"
+                    "value": "1",
+                    "literal_type": "int"
                 }
             },
             "assignments": [
@@ -364,7 +374,8 @@ mod tests {
                     },
                     "value": {
                         "type": "literal",
-                        "value": "2"
+                        "value": "2",
+                        "literal_type": "int"
                     }
                 }
             ]
@@ -374,7 +385,7 @@ mod tests {
 
     #[test]
     fn delete() {
-        let ast_string = parse("DELETE FROM t WHERE a = 1;");
+        let ast_string = parse("DELETE FROM t WHERE a = 1;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "delete",
@@ -391,7 +402,8 @@ mod tests {
                 },
                 "right": {
                     "type": "literal",
-                    "value": "1"
+                    "value": "1",
+                    "literal_type": "int"
                 }
             }
         });
@@ -400,7 +412,7 @@ mod tests {
 
     #[test]
     fn drop_table() {
-        let ast_string = parse("DROP TABLE t;");
+        let ast_string = parse("DROP TABLE t;").unwrap();
         let ast: Value = serde_json::from_str(&ast_string).unwrap();
         let expected = json!({
             "type": "drop_table",
