@@ -80,11 +80,13 @@ impl Resolver {
         if input["type"] != "values" {
             return Err("Inserts of only literal values are supported".to_string());
         }
+        let into_table = self.resolve_table(&node["into_table"])?;
         let values: Result<Vec<Plan>, String> = input["values"].as_array().unwrap().iter()
-            .map(|value| self.resolve_literal(value))
+            .zip(into_table.columns.iter())
+            .map(|(value, column)|
+                self.resolve_literal(value, Some(column.column_type.clone())))
             .collect();
         let row = Plan::Row { values: values? };
-        let into_table = self.resolve_table(&node["into_table"])?;
         Ok(Plan::Insert { into_table, input: Box::new(row) })
     }
 
@@ -185,7 +187,7 @@ impl Resolver {
             "column" => Ok(Plan::ColumnReference {
                 column: self.resolve_column(node, active_columns, multi_table)?
             }),
-            "literal" => self.resolve_literal(node),
+            "literal" => self.resolve_literal(node, None),
             _ => Err(format!("Unsupported selection node type {}", node_type))
         }
     }
@@ -216,11 +218,17 @@ impl Resolver {
         }
     }
 
-    fn resolve_literal(&self, node: &json::Value) -> Result<Plan, String> {
+    fn resolve_literal(
+        &self,
+        node: &json::Value,
+        literal_type: Option<String>
+    ) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "literal");
+        // TODO: Infer type if no hint is given.
+        let literal_type = literal_type.ok_or("Could not infer literal type".to_string())?;
         Ok(Plan::Literal {
             value: node["value"].as_str().unwrap().to_owned(),
-            literal_type: String::new()
+            literal_type
         })
     }
 
@@ -250,12 +258,17 @@ impl Resolver {
         let (mut columns, mut assignments) = (vec![], vec![]);
         for assignment_node in node["assignments"].as_array().unwrap() {
             debug_assert_eq!(assignment_node["type"].as_str().unwrap(), "assignment");
-            columns.push(self.resolve_column(
+            let column = self.resolve_column(
                 &assignment_node["column"],
                 &active_columns,
                 &multi_table
-            )?);
-            assignments.push(self.resolve_literal(&assignment_node["value"])?);
+            )?;
+            let literal = self.resolve_literal(
+                &assignment_node["value"],
+                Some(column.column_type.clone())
+            )?;
+            columns.push(column);
+            assignments.push(literal);
         }
         let filter = match node.get("filter") {
             Some(f) => Some(Box::new(self.resolve_filter(f, &active_columns, &multi_table)?)),
