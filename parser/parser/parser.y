@@ -1,9 +1,10 @@
 %{
+#include "parse_context.h"
 #include "parse_node.h"
 #include "parser.h"
 #include "lexer.h"
 
-void yyerror(parse_node **s, yyscan_t scanner, char const *msg);
+void yyerror(parse_context *context, yyscan_t scanner, char const *msg);
 %}
 
 %output "parser.c"
@@ -20,7 +21,7 @@ typedef void* yyscan_t;
 
 %define api.pure full
 %lex-param   { yyscan_t scanner }
-%parse-param { parse_node **parse_tree }
+%parse-param { parse_context *context }
 %parse-param { yyscan_t scanner }
 
 %define api.token.prefix {TK_}
@@ -262,7 +263,7 @@ explain:
 ;
 
 cmdx:
-  cmd { *parse_tree = $1; }
+  cmd { context->ast = $1; }
 ;
 
 cmd:
@@ -562,7 +563,10 @@ oneselect:
     $$ = parse_node_alloc("select");
 
     parse_node_add_child_list($$, "projection", $3);
-    parse_node_add_child($$, "from_table", $4);
+
+    if ($4) {
+      parse_node_add_child($$, "from_table", $4);
+    }
 
     if ($5) {
       parse_node_add_child($$, "filter", $5);
@@ -615,7 +619,7 @@ as:
 ;
 
 from:
-  /* empty */ { $$ = 0; }
+  /* empty */ { yyerror(NULL, scanner, "Cannot have empty FROM list"); }
 | FROM seltablist {
     $$ = $2;
   }

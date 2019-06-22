@@ -1,22 +1,28 @@
 extern crate message;
 
-use std::ffi::CString;
-use std::os::raw::c_char;
+use std::ffi::{CString, CStr};
+use std::os::raw::{c_char, c_int};
 use std::sync::mpsc::{Receiver, Sender};
 use self::message::{Listener, Message};
+use std::ptr;
 
 extern {
-    fn c_parse(sql: *const c_char) -> *mut c_char;
+    fn c_parse(sql: *const c_char, result: &mut *const c_char) -> c_int;
 }
 
-pub fn parse(sql: &str) -> String {
+pub fn parse(sql: &str) -> Result<String, String> {
     let c_sql = CString::new(sql).expect("Invalid SQL");
+    let mut c_result = ptr::null();
     unsafe {
-        let c_ast_raw = c_parse(c_sql.as_ptr());
-        let c_ast = CString::from_raw(c_ast_raw);
-        c_ast.to_str()
-            .expect("Could not convert parse result to owned String")
-            .to_owned()
+        let code = c_parse(c_sql.as_ptr(), &mut c_result);
+        let result = CStr::from_ptr(c_result)
+            .to_str()
+            .map(|a| a.to_owned())
+            .map_err(|e| e.to_string())?;
+        match code {
+            0 => Ok(result),
+            _ => Err(result)
+        }
     }
 }
 
@@ -34,8 +40,10 @@ impl Listener for Parser {
             let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
             let response = match request {
                 Message::ParseSql { sql, connection_id } => {
-                    let ast = parse(&sql);
-                    Message::ResolveAst { ast, connection_id }
+                    match parse(&sql) {
+                        Ok(ast) => Message::ResolveAst { ast, connection_id },
+                        Err(reason) => Message::Failure { reason, connection_id }
+                    }
                 },
                 _ => request
             };

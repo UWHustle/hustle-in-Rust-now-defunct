@@ -1,5 +1,5 @@
 %{
-#include "parse_node.h"
+#include "parse_context.h"
 #include "parser.h"
 #include <stdio.h>
 %}
@@ -177,7 +177,6 @@ WITHOUT         		{ return TK_WITHOUT; }
 [ \t]
 %%
 
-void yyerror(parse_node **s, yyscan_t scanner, char const *msg) {
-  fprintf(stderr, "Error: %s\n", msg);
-  exit(1);
+void yyerror(parse_context *context, yyscan_t scanner, char const *msg) {
+  context->err = msg;
 }

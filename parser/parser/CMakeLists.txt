@@ -22,6 +22,7 @@ add_flex_bison_dependency(hustle_flex hustle_bison)
 add_library(
         hustle_parser STATIC
         parser_wrapper.h parser_wrapper.c
+        parse_context.h parse_context.c
         parse_node.h parse_node.c
         ${BISON_hustle_bison_OUTPUTS}
         ${FLEX_hustle_flex_OUTPUTS}
