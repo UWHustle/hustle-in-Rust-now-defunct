@@ -76,7 +76,7 @@ impl ExecutionEngine {
                         },
 
                         Err(reason) => {
-                            let response = Message::Error { reason, connection_id };
+                            let response = Message::Failure { reason, connection_id };
                             output_tx.send(response.serialize().unwrap()).unwrap()
                         }
                     }

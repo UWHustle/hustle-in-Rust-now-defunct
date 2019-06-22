@@ -3,6 +3,8 @@ use serde::{Serialize, Deserialize};
 use std::io::Cursor;
 use types::data_type::DataType;
 use std::sync::mpsc::{Receiver, Sender};
+use std::hash::{Hash, Hasher};
+use std::borrow::Borrow;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {
@@ -17,7 +19,7 @@ pub enum Message {
     Schema { schema: Vec<(String, DataType)>, connection_id: u64 },
     ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
     Success { connection_id: u64 },
-    Error { reason: String, connection_id: u64 },
+    Failure { reason: String, connection_id: u64 },
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -27,11 +29,8 @@ pub enum Plan {
         aggregates: Vec<Plan>,
         groups: Vec<Plan>
     },
-    Column {
-        name: String,
-        column_type: String,
-        table: Option<String>,
-        alias: Option<String>
+    ColumnReference {
+        column: Column
     },
     Comparison {
         name: String,
@@ -43,15 +42,14 @@ pub enum Plan {
         terms: Vec<Plan>
     },
     CreateTable {
-        name: String,
-        columns: Vec<Plan>
+        table: Table
     },
     Delete {
-        from_table: Box<Plan>,
+        from_table: Table,
         filter: Option<Box<Plan>>
     },
     DropTable {
-        table: Box<Plan>
+        table: Table
     },
     Function {
         name: String,
@@ -59,7 +57,7 @@ pub enum Plan {
         output_type: String
     },
     Insert {
-        into_table: Box<Plan>,
+        into_table: Table,
         input: Box<Plan>
     },
     Join {
@@ -86,15 +84,68 @@ pub enum Plan {
         table: Box<Plan>,
         filter: Box<Plan>
     },
-    Table {
-        name: String,
-        columns: Vec<Plan>
+    TableReference {
+        table: Table
     },
     Update {
-        table: Box<Plan>,
-        columns: Vec<Plan>,
+        table: Table,
+        columns: Vec<Column>,
         assignments: Vec<Plan>,
         filter: Option<Box<Plan>>
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct Column {
+    pub name: String,
+    pub column_type: String,
+    pub table: Option<String>,
+    pub alias: Option<String>
+}
+
+impl Column {
+    pub fn new(name: String, column_type: String) -> Self {
+        Column {
+            name,
+            column_type,
+            table: None,
+            alias: None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Table {
+    pub name: String,
+    pub columns: Vec<Column>
+}
+
+impl Table {
+    pub fn new(name: String, columns: Vec<Column>) -> Self {
+        Table {
+            name,
+            columns
+        }
+    }
+}
+
+impl Hash for Table {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
+impl PartialEq for Table {
+    fn eq(&self, other: &Self) -> bool {
+        self.name.eq(&other.name)
+    }
+}
+
+impl Eq for Table {}
+
+impl Borrow<str> for Table {
+    fn borrow(&self) -> &str {
+        self.name.borrow()
     }
 }
 

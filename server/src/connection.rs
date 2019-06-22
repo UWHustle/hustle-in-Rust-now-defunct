@@ -36,7 +36,7 @@ impl Listener for ServerConnection {
                     result.send(&mut self.tcp_stream).unwrap();
                     match result {
                         Message::Success { connection_id: _ } => break,
-                        Message::Error { reason: _, connection_id: _ } => break,
+                        Message::Failure { reason: _, connection_id: _ } => break,
                         _ => continue
                     }
                 }

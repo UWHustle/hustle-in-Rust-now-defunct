@@ -87,7 +87,7 @@ impl Server {
                             send_to_client(connection_id),
                         Message::Success { connection_id } =>
                             send_to_client(connection_id),
-                        Message::Error { reason: _, connection_id } =>
+                        Message::Failure { reason: _, connection_id } =>
                             send_to_client(connection_id),
                         _ => panic!("Invalid message type sent to completed statement handler")
                     }

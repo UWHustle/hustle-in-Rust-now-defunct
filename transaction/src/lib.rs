@@ -17,7 +17,7 @@ impl TransactionManager {
 
     fn begin(&mut self, connection_id: u64, output_tx: &Sender<Vec<u8>>) {
         let response = if self.transaction_map.contains_key(&connection_id) {
-            Message::Error {
+            Message::Failure {
                 reason: "Cannot begin a transaction within a transaction".to_string(),
                 connection_id
             }
@@ -34,7 +34,7 @@ impl TransactionManager {
             transaction.committed = true;
             Message::Success { connection_id }
         } else {
-            Message::Error {
+            Message::Failure {
                 reason: "Cannot commit when no transaction is active".to_string(),
                 connection_id
             }

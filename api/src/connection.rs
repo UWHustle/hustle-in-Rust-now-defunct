@@ -35,7 +35,7 @@ impl HustleConnection {
                 };
                 Ok(Some(HustleResult::new(schema, rows)))
             },
-            Message::Error { reason, connection_id: _ } => Err(reason),
+            Message::Failure { reason, connection_id: _ } => Err(reason),
             _ => panic!("Invalid message type sent to client")
         }
 
