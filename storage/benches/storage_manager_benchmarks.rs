@@ -5,10 +5,10 @@ extern crate criterion;
 extern crate memmap;
 extern crate rand;
 
-use storage::StorageManager;
+
 use criterion::{Criterion, Benchmark};
-use std::{thread, fs};
-use std::sync::Arc;
+use std::{fs};
+
 use std::path::Path;
 use std::fs::File;
 use memmap::Mmap;
