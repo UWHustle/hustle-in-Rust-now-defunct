@@ -36,12 +36,7 @@ impl Comparison {
         let all_columns = row.get_schema().get_columns();
         let column_i = all_columns.iter().position(|c| c == &self.l_operand)
             .expect(&format!("Predicate column {} not found", self.l_operand.get_name()));
-        for i in 0..all_columns.len() {
-            if all_columns[i] == self.l_operand {
-                return all_values[i].compare(&**value, self.comparator.clone());
-            }
-        }
-        panic!("Predicate column {} not found", self.l_operand.get_name());
+        all_values[column_i].compare(&**value, self.comparator.clone())
     }
 
     fn evaluate_column_column(&self, column: &Column, row: &Row) -> bool {

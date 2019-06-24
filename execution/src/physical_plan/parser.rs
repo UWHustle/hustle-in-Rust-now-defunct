@@ -10,7 +10,6 @@ use logical_entities::predicates::Predicate;
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use logical_entities::schema::Schema;
-use physical_operators::aggregate::Aggregate;
 use physical_operators::create_table::CreateTable;
 use physical_operators::delete::Delete;
 use physical_operators::drop_table::DropTable;
@@ -50,7 +49,7 @@ pub fn parse(plan: &Plan) -> Result<Node, String> {
 fn parse_join(
     l_table: &Plan,
     r_table: &Plan,
-    filter: &Option<Box<Plan>>
+    _filter: &Option<Box<Plan>>
 ) -> Result<Node, String> {
     let l_node = parse(l_table)?;
     let r_node = parse(r_table)?;
@@ -64,9 +63,9 @@ fn parse_join(
 }
 
 fn parse_aggregate(
-    table: &Plan,
-    aggregates: &Vec<Plan>,
-    groups: &Vec<Plan>
+    _table: &Plan,
+    _aggregates: &Vec<Plan>,
+    _groups: &Vec<Plan>
 ) -> Result<Node, String> {
     Err("Aggregate functions are not yet supported in the execution engine parser".to_string())
 }
