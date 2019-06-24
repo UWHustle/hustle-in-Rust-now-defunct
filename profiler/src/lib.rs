@@ -29,7 +29,9 @@ pub fn end(key: &'static str) {
 pub fn dump() {
     STARTS.lock().unwrap().clear();
     for span in SPANS.lock().unwrap().drain(..) {
-        println!("{}, {}, {}", span.key, span.start.as_millis(), span.end.as_millis());
+        let start = span.start.as_micros();
+        let end = span.end.as_micros();
+        println!("{}, {}, {}, {}", span.key, start, end, end - start);
     }
 }
 

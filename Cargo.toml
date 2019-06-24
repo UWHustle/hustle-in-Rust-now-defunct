@@ -6,6 +6,7 @@ members = [
     "execution",
     "message",
     "parser",
+    "profiler",
     "resolver",
     "server",
     "storage",
