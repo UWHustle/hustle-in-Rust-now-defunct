@@ -1,0 +1,15 @@
+[package]
+name = "hustle-parser"
+version = "0.1.0"
+authors = ["Matthew Dutson <dutson@wisc.edu>", "Kevin Gaffney <kgaff33@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+message = { path = "../message" }
+profiler = { path = "../profiler" }
+
+[build-dependencies]
+cmake = "0.1.40"
+
+[dev-dependencies]
+serde_json = "1.0.39"

@@ -18,11 +18,11 @@ impl Node {
         }
     }
 
-    pub fn get_output_relation(&self) -> Relation {
+    pub fn get_output_relation(&self) -> Option<Relation> {
         self.operator.get_target_relation()
     }
 
-    pub fn execute(&self, storage_manager: &StorageManager) -> Relation {
+    pub fn execute(&self, storage_manager: &StorageManager) -> Option<Relation> {
         for node in &self.dependencies {
             node.execute(storage_manager);
         }

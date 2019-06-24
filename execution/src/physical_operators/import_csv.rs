@@ -1,6 +1,6 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
-use type_system::*;
+use types::*;
 
 use super::storage::StorageManager;
 
@@ -21,11 +21,11 @@ impl ImportCsv {
 }
 
 impl Operator for ImportCsv {
-    fn get_target_relation(&self) -> Relation {
-        self.relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        Some(self.relation.clone())
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
         storage_manager
             .relational_engine()

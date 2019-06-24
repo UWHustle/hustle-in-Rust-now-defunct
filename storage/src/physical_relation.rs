@@ -2,17 +2,17 @@ use buffer_manager::BufferManager;
 use relational_block::{RelationalBlock, RowBuilder};
 use relational_storage_engine::RelationalStorageEngine;
 use std::cmp::min;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// A physical relation backed by one or more blocks on storage.
 pub struct PhysicalRelation<'a> {
     key: &'a str,
     schema: Vec<usize>,
-    buffer_manager: Rc<BufferManager>,
+    buffer_manager: Arc<BufferManager>,
 }
 
 impl<'a> PhysicalRelation<'a> {
-    pub fn new(key: &'a str, schema: Vec<usize>, buffer_manager: Rc<BufferManager>) -> Self {
+    pub fn new(key: &'a str, schema: Vec<usize>, buffer_manager: Arc<BufferManager>) -> Self {
         let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
         RelationalBlock::new(&key_for_new_block, &schema, &buffer_manager);
         PhysicalRelation {
@@ -23,7 +23,7 @@ impl<'a> PhysicalRelation<'a> {
     }
 
     /// Creates a new `PhysicalRelation` from an existing block, if it exists.
-    pub fn try_from_block(key: &'a str, buffer_manager: Rc<BufferManager>) -> Option<Self> {
+    pub fn try_from_block(key: &'a str, buffer_manager: Arc<BufferManager>) -> Option<Self> {
         let key_for_first_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
         buffer_manager.get(&key_for_first_block)
             .map(|block| {
@@ -44,8 +44,8 @@ impl<'a> PhysicalRelation<'a> {
     }
 
     /// Returns an iterator over the blocks of the `PhyscialRelation`.
-    pub fn blocks(&self) -> RelationalBlockIter {
-        RelationalBlockIter::new(self)
+    pub fn blocks(&self) -> BlockIter {
+        BlockIter::new(self)
     }
 
     /// Returns a `RowBuilder` that is used to insert a row into the `PhysicalRelation`. The row is
@@ -115,21 +115,21 @@ impl<'a> PhysicalRelation<'a> {
     }
 }
 
-pub struct RelationalBlockIter<'a> {
+pub struct BlockIter<'a> {
     relation: &'a PhysicalRelation<'a>,
     block_index: usize
 }
 
-impl<'a> RelationalBlockIter<'a> {
+impl<'a> BlockIter<'a> {
     fn new(relation: &'a PhysicalRelation) -> Self {
-        RelationalBlockIter {
+        BlockIter {
             relation,
             block_index: 0
         }
     }
 }
 
-impl<'a> Iterator for RelationalBlockIter<'a> {
+impl<'a> Iterator for BlockIter<'a> {
     type Item = RelationalBlock;
 
     fn next(&mut self) -> Option<RelationalBlock> {

@@ -3,8 +3,8 @@ use logical_entities::predicates::Predicate;
 use physical_operators::Operator;
 
 use super::storage::StorageManager;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::{Buffer, Value};
+use types::borrowed_buffer::BorrowedBuffer;
+use types::{Buffer, Value};
 use logical_entities::row::Row;
 use logical_entities::column::Column;
 
@@ -32,11 +32,11 @@ impl Update {
 }
 
 impl Operator for Update {
-    fn get_target_relation(&self) -> Relation {
-        self.relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
         let physical_relation = storage_manager
             .relational_engine()

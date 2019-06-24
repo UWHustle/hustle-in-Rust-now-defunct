@@ -1,0 +1,9 @@
+[package]
+name = "hustle-api"
+version = "0.1.0"
+authors = ["gaffneyk <kgaff33@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+message = { path = "../message" }
+types = { path = "../types" }

@@ -6,9 +6,10 @@ use physical_operators::aggregate::Aggregate;
 use physical_operators::project::Project;
 use physical_operators::*;
 use storage::StorageManager;
-use type_system::data_type::DataType;
-use type_system::Value;
+use types::data_type::DataType;
+use types::Value;
 use physical_operators::update::Update;
+use physical_operators::select::Select;
 
 pub fn hustle_agg(
     storage_manager: &StorageManager,
@@ -30,7 +31,7 @@ pub fn hustle_agg(
     .unwrap();
     sum_column_hustle(
         storage_manager,
-        agg_op.execute(storage_manager).unwrap(),
+        agg_op.execute(storage_manager).unwrap().unwrap(),
         &agg_out_name,
     )
 }
@@ -42,10 +43,14 @@ pub fn hustle_predicate(
     predicate: Box<Predicate>,
 ) -> i64 {
     let column = relation.column_from_name(col_name).unwrap();
-    let project_op = Project::new(relation, vec![column.clone()], predicate);
+    let select_op = Select::new(relation, predicate);
+    let project_op = Project::new(
+        select_op.execute(storage_manager).unwrap().unwrap(),
+        vec![column.clone()]
+    );
     sum_column_hustle(
         storage_manager,
-        project_op.execute(storage_manager).unwrap(),
+        project_op.execute(storage_manager).unwrap().unwrap(),
         column.get_name(),
     )
 }
@@ -59,14 +64,19 @@ pub fn hustle_update(
 ) -> i64 {
     let column = relation.column_from_name(col_name).unwrap();
     let update_op = Update::new(
-        relation,
+        relation.clone(),
         Some(predicate),
         vec![column.clone()],
         vec![assignment]);
-    let relation = update_op.execute(storage_manager).unwrap();
+    update_op.execute(storage_manager).unwrap();
+    let project_op = Project::new(
+        relation,
+        vec![column.clone()]
+    );
+    let relation = project_op.execute(storage_manager).unwrap();
     sum_column_hustle(
         storage_manager,
-        relation,
+        relation.unwrap(),
         column.get_name()
     )
 }

@@ -1,6 +1,5 @@
 use std::mem;
-use std::rc::Rc;
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
 
 use buffer_manager::BufferManager;
 use physical_relation::PhysicalRelation;
@@ -8,12 +7,12 @@ use storage_manager::TEMP_PREFIX;
 
 /// A storage engine for managing relational data.
 pub struct RelationalStorageEngine {
-    buffer_manager: Rc<BufferManager>,
+    buffer_manager: Arc<BufferManager>,
     anon_ctr: Mutex<u64>
 }
 
 impl RelationalStorageEngine {
-    pub fn new(buffer_manager: Rc<BufferManager>) -> Self {
+    pub fn new(buffer_manager: Arc<BufferManager>) -> Self {
         RelationalStorageEngine {
             buffer_manager,
             anon_ctr: Mutex::new(0)

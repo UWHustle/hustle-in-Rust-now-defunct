@@ -24,11 +24,11 @@ impl Limit {
 }
 
 impl Operator for Limit {
-    fn get_target_relation(&self) -> Relation {
-        self.output_relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        Some(self.output_relation.clone())
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let in_physical_relation = storage_manager
             .relational_engine()
             .get(self.input_relation.get_name())

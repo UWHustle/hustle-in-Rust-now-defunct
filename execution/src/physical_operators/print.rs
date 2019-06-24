@@ -1,7 +1,7 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::*;
+use types::borrowed_buffer::BorrowedBuffer;
+use types::*;
 
 use super::storage::StorageManager;
 
@@ -16,11 +16,11 @@ impl Print {
 }
 
 impl Operator for Print {
-    fn get_target_relation(&self) -> Relation {
-        Relation::null()
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
         let width = 5;
 

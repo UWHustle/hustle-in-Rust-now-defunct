@@ -1,0 +1,15 @@
+[workspace]
+
+members = [
+    "api",
+    "cli",
+    "execution",
+    "message",
+    "parser",
+    "profiler",
+    "resolver",
+    "server",
+    "storage",
+    "transaction",
+    "types"
+]

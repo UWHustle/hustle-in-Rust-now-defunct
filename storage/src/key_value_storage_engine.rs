@@ -1,6 +1,5 @@
 use std::mem;
-use std::rc::Rc;
-use std::sync::Mutex;
+use std::sync::{Mutex, Arc};
 
 use memmap::Mmap;
 
@@ -10,12 +9,12 @@ use storage_manager::TEMP_PREFIX;
 /// A storage engine for managing key-value pairs. Keys are strings and values are arbitrarily long
 /// slices of bytes.
 pub struct KeyValueStorageEngine {
-    buffer_manager: Rc<BufferManager>,
+    buffer_manager: Arc<BufferManager>,
     anon_ctr: Mutex<u64>
 }
 
 impl KeyValueStorageEngine {
-    pub fn new(buffer_manager: Rc<BufferManager>) -> Self {
+    pub fn new(buffer_manager: Arc<BufferManager>) -> Self {
         KeyValueStorageEngine {
             buffer_manager,
             anon_ctr: Mutex::new(0)

@@ -1,49 +1,40 @@
 use logical_entities::column::Column;
-use logical_entities::predicates::tautology::*;
-use logical_entities::predicates::*;
 use logical_entities::relation::Relation;
-use logical_entities::row::Row;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
-use type_system::borrowed_buffer::*;
-use type_system::*;
+use types::borrowed_buffer::*;
+use types::*;
 
 use super::storage::StorageManager;
 
 pub struct Project {
     input_relation: Relation,
     output_relation: Relation,
-    predicate: Box<Predicate>,
 }
 
 impl Project {
     pub fn new(
         input_relation: Relation,
         output_cols: Vec<Column>,
-        predicate: Box<Predicate>,
     ) -> Self {
         let schema = Schema::new(output_cols);
-        let output_relation =
-            Relation::new(&format!("{}_project", input_relation.get_name()), schema);
-
+        let output_relation = Relation::new(
+            &format!("{}_project", input_relation.get_name()),
+            schema
+        );
         Project {
             input_relation,
-            output_relation,
-            predicate,
+            output_relation
         }
-    }
-
-    pub fn pure_project(relation: Relation, output_cols: Vec<Column>) -> Self {
-        Self::new(relation, output_cols, Box::new(Tautology::new()))
     }
 }
 
 impl Operator for Project {
-    fn get_target_relation(&self) -> Relation {
-        self.output_relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        Some(self.output_relation.clone())
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let in_schema = self.input_relation.get_schema();
         let in_physical_relation = storage_manager
             .relational_engine()
@@ -77,12 +68,6 @@ impl Operator for Project {
                     let data_type = in_schema.get_columns()[col_i].data_type();
                     let buff = BorrowedBuffer::new(&data, data_type, false);
                     values.push(buff.marshall());
-                }
-
-                // Check whether the current row satisfies the predicate
-                let row = Row::new(in_schema.clone(), values);
-                if !self.predicate.evaluate(&row) {
-                    continue;
                 }
 
                 // Remap values to the order they appear in the output schema

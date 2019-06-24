@@ -2,8 +2,8 @@ use logical_entities::relation::Relation;
 use logical_entities::predicates::Predicate;
 use physical_operators::Operator;
 use super::storage::StorageManager;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::Buffer;
+use types::borrowed_buffer::BorrowedBuffer;
+use types::Buffer;
 use logical_entities::row::Row;
 
 pub struct Delete {
@@ -21,11 +21,11 @@ impl Delete {
 }
 
 impl Operator for Delete {
-    fn get_target_relation(&self) -> Relation {
-        self.relation.clone()
+    fn get_target_relation(&self) -> Option<Relation> {
+        None
     }
 
-    fn execute(&self, storage_manager: &StorageManager) -> Result<Relation, String> {
+    fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
         let physical_relation = storage_manager
             .relational_engine()
