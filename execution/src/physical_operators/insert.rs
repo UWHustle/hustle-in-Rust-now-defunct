@@ -1,7 +1,7 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use physical_operators::Operator;
-use type_system::*;
+use types::*;
 
 use super::storage::StorageManager;
 

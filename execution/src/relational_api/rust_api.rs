@@ -1,5 +1,5 @@
 use logical_entities::column::Column;
-use logical_entities::predicates::comparison::Comparison;
+use logical_entities::predicates::comparison::{Comparison, ComparisonOperand};
 use logical_entities::predicates::Predicate;
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
@@ -12,10 +12,11 @@ use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::print::Print;
 use physical_operators::project::Project;
+use physical_operators::select::Select;
 use physical_operators::Operator;
-use type_system::data_type::DataType;
-use type_system::operators::*;
-use type_system::Value;
+use types::data_type::DataType;
+use types::operators::*;
+use types::Value;
 
 extern crate storage;
 
@@ -230,7 +231,7 @@ impl<'a> ImmediateRelation<'a> {
 
     pub fn project(&self, col_names: Vec<&str>) -> Result<Self, String> {
         let columns = self.relation.columns_from_names(col_names)?;
-        let project_op = Project::pure_project(self.relation.clone(), columns);
+        let project_op = Project::new(self.relation.clone(), columns);
         let output = ImmediateRelation {
             relation: project_op.execute(self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
@@ -240,13 +241,12 @@ impl<'a> ImmediateRelation<'a> {
 
     /// Accepts predicate strings of the form "<column> <operator> <literal>"
     pub fn select(&self, predicate: &str) -> Result<Self, String> {
-        let project_op = Project::new(
+        let select_op = Select::new(
             self.relation.clone(),
-            self.relation.get_columns().clone(),
             self.parse_predicate(predicate)?,
         );
         let output = ImmediateRelation {
-            relation: project_op.execute(self.storage_manager)?.unwrap(),
+            relation: select_op.execute(self.storage_manager)?.unwrap(),
             storage_manager: self.storage_manager,
         };
         Ok(output)
@@ -261,7 +261,7 @@ impl<'a> ImmediateRelation<'a> {
         let column = self.relation.column_from_name(col_name)?;
         let comparator = Comparator::from_str(tokens[1])?;
         let value = column.data_type().parse(tokens[2])?;
-        let predicate = Comparison::new(column, comparator, value);
+        let predicate = Comparison::new(comparator, column, ComparisonOperand::Value(value));
         Ok(Box::new(predicate))
     }
 }

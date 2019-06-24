@@ -1,3 +1,8 @@
+extern crate message;
+extern crate serde_json;
+
+use std::rc::Rc;
+
 use logical_entities::column::Column;
 use logical_entities::predicates::comparison::*;
 use logical_entities::predicates::connective::*;
@@ -5,263 +10,223 @@ use logical_entities::predicates::Predicate;
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use logical_entities::schema::Schema;
-use physical_operators::aggregate::Aggregate;
 use physical_operators::create_table::CreateTable;
+use physical_operators::delete::Delete;
 use physical_operators::drop_table::DropTable;
 use physical_operators::insert::Insert;
-use physical_operators::update::Update;
 use physical_operators::join::Join;
 use physical_operators::limit::Limit;
 use physical_operators::project::Project;
+use physical_operators::select::Select;
 use physical_operators::table_reference::TableReference;
+use physical_operators::update::Update;
 use physical_plan::node::Node;
-use type_system;
-use type_system::data_type::*;
-use type_system::operators::*;
+use types;
+use types::data_type::*;
+use types::operators::*;
 
-extern crate serde_json;
+use self::message::{Plan, Table};
 
-use std::rc::Rc;
-use physical_operators::delete::Delete;
 
-pub fn parse(string_plan: &str) -> Node {
-    let json: serde_json::Value = serde_json::from_str(string_plan).unwrap();
-    parse_node(&json["plan"])
-}
-
-fn parse_node(json: &serde_json::Value) -> Node {
-    let json_name = json["json_name"].as_str().unwrap();
-    match json_name {
-        "TableReference" => parse_table_reference(json),
-        "Selection" => parse_selection(json),
-        "Aggregate" => parse_aggregate(json),
-        "HashJoin" | "NestedLoopsJoin" => parse_join(json),
-        "Limit" => parse_limit(json),
-        "InsertTuple" => parse_insert_tuple(json),
-        "DeleteTuples" => parse_delete_tuples(json),
-        "UpdateTable" => parse_update_table(json),
-        "CreateTable" => parse_create_table(json),
-        "DropTable" => parse_drop_table(json),
-        _ => panic!("Optimizer tree node type {} not supported", json_name),
+pub fn parse(plan: &Plan) -> Result<Node, String> {
+    match plan {
+        Plan::Aggregate { table, aggregates, groups } => parse_aggregate(table, aggregates, groups),
+        Plan::CreateTable { table } => parse_create_table(table),
+        Plan::Delete { from_table, filter } => parse_delete(from_table, filter),
+        Plan::DropTable { table } => parse_drop_table(table),
+        Plan::Insert { into_table, input } => parse_insert(into_table, input),
+        Plan::Join { l_table, r_table, filter } => parse_join(l_table, r_table, filter),
+        Plan::Limit { table, limit } => parse_limit(table, limit.clone()),
+        Plan::Project { table, projection } => parse_project(table, projection),
+        Plan::Select { table, filter } => parse_select(table, filter),
+        Plan::TableReference { table } => Ok(parse_table(table)),
+        Plan::Update { table, columns, assignments, filter } =>
+            parse_update(table, columns, assignments, filter),
+        _ => panic!("Unsupported plan type"),
     }
 }
 
-fn parse_join(json: &serde_json::Value) -> Node {
-    let left = parse_node(&json["left"]);
-    let right = parse_node(&json["right"]);
-
-    let join_op = match &json["left_join_attributes"] {
-        serde_json::Value::Null => Join::new(
-            left.get_output_relation().unwrap(),
-            right.get_output_relation().unwrap(),
-            vec![],
-            vec![],
-        ),
-        _ => {
-            let l_attributes = parse_columns(&json["left_join_attributes"]);
-            let r_attributes = parse_columns(&json["right_join_attributes"]);
-            Join::new(
-                left.get_output_relation().unwrap(),
-                right.get_output_relation().unwrap(),
-                l_attributes,
-                r_attributes,
-            )
-        }
-    };
-    let join_node = Node::new(Rc::new(join_op), vec![Rc::new(left), Rc::new(right)]);
-
-    let project_cols = parse_columns(&json["project_expressions"]);
-    let project_op = Project::pure_project(
-        join_node.get_output_relation().unwrap(),
-        project_cols);
-    Node::new(Rc::new(project_op), vec![Rc::new(join_node)])
-}
-
-fn parse_aggregate(json: &serde_json::Value) -> Node {
-    let input = parse_node(&json["input"]);
-
-    let agg_json = &json["aggregate_expressions"]
-        .as_array()
-        .unwrap()
-        .get(0)
-        .unwrap();
-
-    let agg_col_in = parse_column(
-        &agg_json["aggregate_function"]["array"]
-            .as_array()
-            .unwrap()
-            .get(0)
-            .unwrap(),
+fn parse_join(
+    l_table: &Plan,
+    r_table: &Plan,
+    _filter: &Option<Box<Plan>>
+) -> Result<Node, String> {
+    let l_node = parse(l_table)?;
+    let r_node = parse(r_table)?;
+    let join_op = Join::new(
+        l_node.get_output_relation().unwrap(),
+        r_node.get_output_relation().unwrap(),
+        vec![],
+        vec![],
     );
-    let agg_name = agg_json["aggregate_function"]["function"].as_str().unwrap();
-    let agg_out_name = format!("{}({})", agg_name, agg_col_in.get_name());
-    let agg_out_type = DataType::from_str(&agg_json["type"].as_str().unwrap()).unwrap();
-    let agg_col_out = Column::new(&agg_out_name, agg_out_type);
-    let mut output_col_names = parse_column_names(&json["grouping_expressions"]);
-    output_col_names.push(agg_out_name.clone());
-
-    let agg_op = Aggregate::from_str(
-        input.get_output_relation().unwrap(),
-        agg_col_in,
-        agg_col_out,
-        output_col_names,
-        agg_name,
-    )
-    .unwrap();
-    Node::new(Rc::new(agg_op), vec![Rc::new(input)])
+    Ok(Node::new(Rc::new(join_op), vec![Rc::new(l_node), Rc::new(r_node)]))
 }
 
-fn parse_insert_tuple(json: &serde_json::Value) -> Node {
-    let input = parse_node(&json["input"]);
-    let relation = input.get_output_relation();
-    let values = parse_value_list(&json["column_values"]);
+fn parse_aggregate(
+    _table: &Plan,
+    _aggregates: &Vec<Plan>,
+    _groups: &Vec<Plan>
+) -> Result<Node, String> {
+    Err("Aggregate functions are not yet supported in the execution engine parser".to_string())
+}
+
+fn parse_insert(into_table: &Table, input: &Plan) -> Result<Node, String> {
+    let into = parse_table(into_table.into());
+    let relation = into.get_output_relation();
+    let values = parse_row(input)?;
     let row = Row::new(relation.as_ref().unwrap().get_schema().clone(), values);
     let insert_op = Insert::new(relation.unwrap(), row);
-    Node::new(Rc::new(insert_op), vec![Rc::new(input)])
+    Ok(Node::new(Rc::new(insert_op), vec![Rc::new(into)]))
 }
 
-fn parse_delete_tuples(json: &serde_json::Value) -> Node {
-    let input = parse_node(&json["input"]);
-    let predicate = json.get("predicate").map(|p| parse_predicate(p));
-    let delete_op = Delete::new(input.get_output_relation().unwrap(), predicate);
-    Node::new(Rc::new(delete_op), vec![Rc::new(input)])
+fn parse_delete(from_table: &Table, filter: &Option<Box<Plan>>) -> Result<Node, String> {
+    let from = parse_table(from_table.into());
+    let filter = filter
+        .as_ref()
+        .map(|f| parse_filter(&f))
+        .transpose()?;
+    let delete_op = Delete::new(from.get_output_relation().unwrap(), filter);
+    Ok(Node::new(Rc::new(delete_op), vec![Rc::new(from)]))
 }
 
-fn parse_connective_predicate(json: &serde_json::Value) -> Connective {
-    let connective_type = ConnectiveType::from_str(json["json_name"].as_str().unwrap());
-    let json_terms = json["array"]
-        .as_array()
-        .expect("Unable to extract predicate terms");
-    let mut terms: Vec<Box<Predicate>> = vec![];
-    for term in json_terms {
-        terms.push(parse_predicate(term));
-    }
-    Connective::new(connective_type, terms)
-}
-
-fn parse_comparison_predicate(json: &serde_json::Value) -> Comparison {
-    let comp_value_str = get_string(&json["literal"]["value"]);
-    let comp_value_type = DataType::from_str(json["literal"]["type"].as_str().unwrap()).unwrap();
-    let comp_value = comp_value_type.parse(&comp_value_str).unwrap();
-
-    let comparator_str = json["json_name"].as_str().unwrap();
-    let comparator = Comparator::from_str(comparator_str).unwrap();
-    let filter_col = parse_column(&json["attribute_reference"]);
-    let predicate = Comparison::new(filter_col, comparator, comp_value);
-    predicate
-}
-
-fn parse_predicate(json: &serde_json::Value) -> Box<Predicate> {
-    let json_name = json["json_name"].as_str().unwrap();
-    match json_name {
-        "Equal" | "Less" | "LessOrEqual" | "Greater" | "GreaterOrEqual" => {
-            Box::new(parse_comparison_predicate(json))
-        }
-        "And" | "Or" => Box::new(parse_connective_predicate(json)),
-        _ => panic!("Unknown predicate type {}", json_name),
+fn parse_row(row: &Plan) -> Result<Vec<Box<types::Value>>, String> {
+    if let Plan::Row { values } = row {
+        values.into_iter()
+            .map(|literal| parse_literal(&literal))
+            .collect()
+    } else {
+        Err("Invalid plan node (expected Row)".to_string())
     }
 }
 
-fn parse_selection(json: &serde_json::Value) -> Node {
-    let input = parse_node(&json["input"]);
-    let output_cols = parse_columns(&json["project_expressions"]);
-
-    let filter_predicate = &json["filter_predicate"];
-    let project_op = match filter_predicate {
-        serde_json::Value::Null => Project::pure_project(input.get_output_relation().unwrap(),
-                                                         output_cols),
-        _ => Project::new(
-            input.get_output_relation().unwrap(),
-            output_cols,
-            parse_predicate(filter_predicate),
-        ),
-    };
-    Node::new(Rc::new(project_op), vec![Rc::new(input)])
+fn parse_connective(name: &str, arguments: &Vec<Plan>) -> Result<Connective, String> {
+    let connective_type = ConnectiveType::from_str(name);
+    let terms: Result<Vec<Box<Predicate>>, String> = arguments.into_iter()
+        .map(|t| parse_filter(&t))
+        .collect();
+    Ok(Connective::new(connective_type, terms?))
 }
 
-fn parse_create_table(json: &serde_json::Value) -> Node {
-    let cols = parse_columns(&json["attributes"]);
-    let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
-    Node::new(Rc::new(CreateTable::new(relation)), vec![])
+fn parse_comparative(name: &str, left: &Box<Plan>, right: &Box<Plan>) -> Result<Comparison, String> {
+    let comparator = Comparator::from_str(name)?;
+    let l_operand = parse_column_reference(&left)?;
+    match &**right {
+        Plan::Literal { value: _, literal_type: _ } => {
+            let r_operand = parse_literal(right)?;
+            Ok(Comparison::new(comparator, l_operand, ComparisonOperand::Value(r_operand)))
+        },
+        Plan::ColumnReference { column: c } => {
+            let r_operand = parse_column(c);
+            Ok(Comparison::new(comparator, l_operand, ComparisonOperand::Column(r_operand)))
+        },
+        _ => Err("Invalid plan node (expected Literal or ColumnReference".to_string())
+    }
 }
 
-fn parse_update_table(json: &serde_json::Value) -> Node {
-    let input = parse_node(&json["input"]);
-    let predicate = json.get("predicate").map(|p| parse_predicate(p));
-    let cols = parse_columns(&json["attributes"]);
-    let assignments = parse_value_list(&json["assigned_values"]);
-    let update_op = Update::new(input.get_output_relation().unwrap(), predicate,
-                                cols, assignments);
-    Node::new(Rc::new(update_op), vec![Rc::new(input)])
+fn parse_literal(literal: &Plan) -> Result<Box<types::Value>, String> {
+    if let Plan::Literal { value, literal_type } = literal {
+        let data_type = DataType::from_str(&literal_type).unwrap();
+        Ok(data_type.parse(&value).unwrap())
+    } else {
+        Err("Invalid plan node (expected Literal)".to_string())
+    }
 }
 
-fn parse_drop_table(json: &serde_json::Value) -> Node {
-    Node::new(
-        Rc::new(DropTable::new(&json["relation"].as_str().unwrap())),
-        vec![],
+fn parse_filter(plan: &Plan) -> Result<Box<Predicate>, String> {
+    match plan {
+        Plan::Comparative { name, left, right } =>
+            Ok(Box::new(parse_comparative(name, left, right)?)),
+        Plan::Connective { name, terms } =>
+            Ok(Box::new(parse_connective(name, terms)?)),
+        _ => Err("Invalid plan node (expected Comparative or Connective)".to_string())
+    }
+}
+
+fn parse_project(table: &Plan, projection: &Vec<Plan>) -> Result<Node, String> {
+    let input = parse(table.into())?;
+    let project_op = Project::new(
+        input.get_output_relation().unwrap(),
+        parse_column_references(projection)?
+    );
+    Ok(Node::new(Rc::new(project_op), vec![Rc::new(input)]))
+}
+
+fn parse_select(table: &Plan, filter: &Plan) -> Result<Node, String> {
+    let input = parse(table.into())?;
+    let select_op = Select::new(
+        input.get_output_relation().unwrap(),
+        parse_filter(filter)?
+    );
+    Ok(Node::new(Rc::new(select_op), vec![Rc::new(input)]))
+}
+
+fn parse_create_table(table: &Table) -> Result<Node, String> {
+    let cols = parse_columns(&table.columns);
+    let relation = Relation::new(&table.name, Schema::new(cols));
+    Ok(Node::new(Rc::new(CreateTable::new(relation)), vec![]))
+}
+
+fn parse_update(
+    table: &Table,
+    columns: &Vec<message::Column>,
+    assignments: &Vec<Plan>,
+    filter: &Option<Box<Plan>>,
+) -> Result<Node, String> {
+    let input = parse_table(table.into());
+    let columns = parse_columns(columns);
+    let assignments: Result<Vec<Box<types::Value>>, String> = assignments.into_iter()
+        .map(|assignment| parse_literal(assignment))
+        .collect();
+    let filter = filter
+        .as_ref()
+        .map(|f| parse_filter(&f))
+        .transpose()?;
+    let update_op = Update::new(
+        input.get_output_relation().unwrap(),
+        filter,
+        columns,
+        assignments?
+    );
+    Ok(Node::new(Rc::new(update_op), vec![Rc::new(input)]))
+}
+
+fn parse_drop_table(table: &Table) -> Result<Node, String> {
+    Ok(Node::new(Rc::new(DropTable::new(&table.name)), vec![]))
+}
+
+fn parse_column_references(column_references: &Vec<Plan>) -> Result<Vec<Column>, String> {
+    column_references.iter()
+        .map(|c| parse_column_reference(c))
+        .collect()
+}
+
+fn parse_column_reference(column_reference: &Plan) -> Result<Column, String> {
+    if let Plan::ColumnReference { column } = column_reference {
+        Ok(parse_column(column))
+    } else {
+        Err("Invalid plan node type (expected ColumnReference)".to_string())
+    }
+}
+
+fn parse_columns(columns: &Vec<message::Column>) -> Vec<Column> {
+    columns.into_iter().map(|c| parse_column(c)).collect()
+}
+
+fn parse_column(column: &message::Column) -> Column {
+    Column::new(
+        &column.name,
+        DataType::from_str(&column.column_type).unwrap(),
     )
 }
 
-fn parse_table_reference(json: &serde_json::Value) -> Node {
-    let cols = parse_columns(&json["array"]);
-    let relation = Relation::new(&json["relation"].as_str().unwrap(), Schema::new(cols));
+fn parse_table(table: &message::Table) -> Node {
+    let cols = parse_columns(&table.columns);
+    let relation = Relation::new(&table.name, Schema::new(cols));
     Node::new(Rc::new(TableReference::new(relation)), vec![])
 }
 
-fn parse_columns(json: &serde_json::Value) -> Vec<Column> {
-    let json_cols = json.as_array().expect("Unable to extract columns");
-    let mut columns: Vec<Column> = vec![];
-    for column in json_cols {
-        columns.push(parse_column(column));
-    }
-    columns
-}
-
-fn parse_column_names(json: &serde_json::Value) -> Vec<String> {
-    let json_cols = json.as_array().expect("Unable to extract columns");
-    let mut names: Vec<String> = vec![];
-    for column in json_cols {
-        names.push(parse_column_name(column).to_string());
-    }
-    names
-}
-
-fn parse_column(json: &serde_json::Value) -> Column {
-    Column::new(
-        &parse_column_name(json),
-        DataType::from_str(&json["type"].as_str().unwrap()).unwrap(),
-    )
-}
-
-fn parse_column_name(json: &serde_json::Value) -> String {
-    let mut name = get_string(&json["name"]);
-    if name.len() == 0 {
-        name = get_string(&json["alias"]);
-    }
-    name
-}
-
-fn parse_value_list(json: &serde_json::Value) -> Vec<Box<type_system::Value>> {
-    let json_values = json.as_array().expect("Unable to extract values");
-    let mut values: Vec<Box<type_system::Value>> = vec![];
-    for value in json_values {
-        values.push(parse_value(value));
-    }
-    values
-}
-
-fn parse_value(json: &serde_json::Value) -> Box<type_system::Value> {
-    let data_type = DataType::from_str(&json["type"].as_str().unwrap()).unwrap();
-    data_type.parse(&json["value"].as_str().unwrap()).unwrap()
-}
-
-fn parse_limit(json: &serde_json::Value) -> Node {
-    let input = parse_node(&json["input"]);
-    let limit = json["limit"].as_str().unwrap().parse::<usize>().unwrap();
+fn parse_limit(table: &Plan, limit: usize) -> Result<Node, String> {
+    let input = parse(table.into())?;
     let limit_operator = Limit::new(input.get_output_relation().unwrap(), limit);
-    Node::new(Rc::new(limit_operator), vec![Rc::new(input)])
-}
-
-fn get_string(json: &serde_json::Value) -> String {
-    json.as_str().unwrap().to_string()
+    Ok(Node::new(Rc::new(limit_operator), vec![Rc::new(input)]))
 }

@@ -1,5 +1,5 @@
 use logical_entities::schema::Schema;
-use type_system::*;
+use types::*;
 
 #[derive(Clone)]
 pub struct Row {

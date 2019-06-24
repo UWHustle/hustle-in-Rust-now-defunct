@@ -1,105 +1,101 @@
-use execution::{ExecutionEngine, type_system};
-use execution::logical_entities::relation::Relation;
-use execution::type_system::borrowed_buffer::BorrowedBuffer;
-use execution::type_system::Buffer;
-use std::fmt;
-use execution::type_system::integer::Int8;
+use types::data_type::DataType;
+use std::{slice, fmt};
+use types::borrowed_buffer::BorrowedBuffer;
+use types::Buffer;
+use types::integer::Int8;
 
-pub struct HustleResult<'a> {
-    relation: Relation,
-    execution_engine: &'a ExecutionEngine,
-    data: Vec<u8>,
-    row_index: usize,
-    initialized: bool
+pub struct HustleResult {
+    schema: Vec<(String, DataType)>,
+    rows: Vec<Vec<Vec<u8>>>,
 }
 
-impl<'a> HustleResult<'a> {
-    pub fn new(relation: Relation, execution_engine: &'a ExecutionEngine) -> Self {
-        // TODO: Read in rows with a generator instead of in bulk.
-        // Due to some borrowing issues, it's easier to just read in all the rows of the relation
-        // at once. For large tables, this could cause problems. This should be changed when
-        // Rust generators become stable.
-        let data = execution_engine
-            .get_storage_manager()
-            .relational_engine()
-            .get(&relation.get_name())
-            .map(|r| r.bulk_read())
-            .unwrap_or(vec![]);
-
+impl HustleResult {
+    pub fn new(schema: Vec<(String, DataType)>, rows: Vec<Vec<Vec<u8>>>) -> Self {
         HustleResult {
-            relation,
-            execution_engine,
-            data,
-            row_index: 0,
-            initialized: false
+            schema,
+            rows,
         }
     }
 
-    /// After the first time this function is called, the cursor will be at the first row in the
-    /// relation. Each subsequent call advances the cursor forward one row. Returns true if the
-    /// cursor is in bounds.
-    pub fn step(&mut self) -> bool {
-        if self.initialized {
-            self.row_index += 1;
-        } else {
-            self.row_index = 0;
-            self.initialized = true;
-        }
-
-        return self.row_index * self.relation.get_row_size() < self.data.len()
+    pub fn get_row(&self, row: usize) -> Option<HustleRow> {
+        self.rows.get(row).map(|r| HustleRow::new(&self.schema, r))
     }
 
-    pub fn get_i64(&self, col: usize) -> Option<i64> {
-        self.get_col(col)
-            .map(|v| type_system::cast_value::<Int8>(v.as_ref()).value())
-    }
-
-    pub fn get_col(&self, col: usize) -> Option<Box<type_system::Value>> {
-        let column = self.relation.get_columns().get(col)?;
-        let column_offset: usize = self.relation.get_columns()[..col]
-            .iter()
-            .map(|c| c.get_size())
-            .sum();
-        let offset = self.row_index * self.relation.get_row_size() + column_offset;
-        let data = self.data.get(offset..offset + column.get_size())?;
-        let buff = BorrowedBuffer::new(data, column.data_type(), false);
-        Some(buff.marshall())
+    pub fn rows(&self) -> Iter {
+        Iter::new(&self.schema, self.rows.iter())
     }
 }
 
-impl<'a> fmt::Display for HustleResult<'a> {
+impl fmt::Display for HustleResult {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let schema = self.relation.get_schema();
-        let width = 5;
-
-        for column in schema.get_columns() {
-            write!(f, "|{value:>width$}", value = column.get_name(), width = width)?;
+        for (column_name, _) in &self.schema {
+            write!(f, "|{value:>width$}", value = column_name, width = 5)?;
         }
         writeln!(f, "|")?;
 
-        let physical_relation = self.execution_engine
-            .get_storage_manager()
-            .relational_engine()
-            .get(self.relation.get_name())
-            .unwrap();
-
-        for block in physical_relation.blocks() {
-            for row_i in 0..block.get_n_rows() {
-                for col_i in 0..schema.get_columns().len() {
-                    let data = block.get_row_col(row_i, col_i).unwrap();
-                    let data_type = schema.get_columns()[col_i].data_type();
-                    let buff = BorrowedBuffer::new(&data, data_type, false);
-                    write!(
-                        f,
-                        "|{value:>width$}",
-                        value = buff.marshall().to_string(),
-                        width = width
-                    )?;
-                }
-                writeln!(f, "|")?;
+        for row in self.rows() {
+            let mut col_i = 0;
+            while let Some(value) = row.get_col(col_i) {
+                write!(
+                    f,
+                    "|{value:>width$}",
+                    value = value.to_string(),
+                    width = 5
+                )?;
+                col_i += 1;
             }
+            writeln!(f, "|")?;
         }
-
         Ok(())
+    }
+}
+
+pub struct Iter<'a> {
+    schema: &'a Vec<(String, DataType)>,
+    row_iter: slice::Iter<'a, Vec<Vec<u8>>>
+}
+
+impl<'a> Iter<'a> {
+    fn new(schema: &'a Vec<(String, DataType)>, row_iter: slice::Iter<'a, Vec<Vec<u8>>>) -> Self {
+        Iter {
+            schema,
+            row_iter
+        }
+    }
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = HustleRow<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.row_iter.next()
+            .map(|row| HustleRow::new(self.schema, row))
+    }
+}
+
+pub struct HustleRow<'a> {
+    schema: &'a Vec<(String, DataType)>,
+    row: &'a Vec<Vec<u8>>
+}
+
+impl<'a> HustleRow<'a> {
+    fn new(schema: &'a Vec<(String, DataType)>, row: &'a Vec<Vec<u8>>) -> Self {
+        HustleRow {
+            schema,
+            row
+        }
+    }
+
+    pub fn get_i64(&self, col: usize) -> Option<i64> {
+        self.get_col(col).map(|c| types::cast_value::<Int8>(c.as_ref()).value())
+    }
+
+    fn get_col(&self, col: usize) -> Option<Box<types::Value>> {
+        self.row.get(col).and_then(|data| {
+            self.schema.get(col).map(|(_, data_type)| {
+                let buff = BorrowedBuffer::new(data, data_type.clone(), false);
+                buff.marshall()
+            })
+        })
     }
 }

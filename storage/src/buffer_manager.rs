@@ -29,6 +29,9 @@ impl CacheBlock {
     }
 }
 
+unsafe impl Send for CacheBlock {}
+unsafe impl Sync for CacheBlock {}
+
 /// A buffer that reads and writes to storage and maintains a cache in memory. The `Buffer` is
 /// implemented as a key-value store, where the keys are strings and the values (pages) are
 /// uniformly sized arrays of bytes. The page replacement policy for the cache is Clock with

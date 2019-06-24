@@ -10,6 +10,7 @@ pub mod join;
 pub mod limit;
 pub mod print;
 pub mod project;
+pub mod select;
 pub mod table_reference;
 
 use logical_entities::relation::Relation;

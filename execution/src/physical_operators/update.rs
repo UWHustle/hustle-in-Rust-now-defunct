@@ -3,8 +3,8 @@ use logical_entities::predicates::Predicate;
 use physical_operators::Operator;
 
 use super::storage::StorageManager;
-use type_system::borrowed_buffer::BorrowedBuffer;
-use type_system::{Buffer, Value};
+use types::borrowed_buffer::BorrowedBuffer;
+use types::{Buffer, Value};
 use logical_entities::row::Row;
 use logical_entities::column::Column;
 

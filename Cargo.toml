@@ -3,8 +3,13 @@
 members = [
     "api",
     "cli",
-    "optimizer",
     "execution",
+    "message",
+    "parser",
+    "profiler",
+    "resolver",
+    "server",
     "storage",
-    "catalog",
+    "transaction",
+    "types"
 ]
