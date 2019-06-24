@@ -109,10 +109,19 @@ fn parse_connective(name: &str, arguments: &Vec<Plan>) -> Result<Connective, Str
 }
 
 fn parse_comparative(name: &str, left: &Box<Plan>, right: &Box<Plan>) -> Result<Comparison, String> {
-    let filter_col = parse_column_reference(&left)?;
-    let comp_value = parse_literal(&right)?;
     let comparator = Comparator::from_str(name)?;
-    Ok(Comparison::new(filter_col, comparator, comp_value))
+    let l_operand = parse_column_reference(&left)?;
+    match &**right {
+        Plan::Literal { value: _, literal_type: _ } => {
+            let r_operand = parse_literal(right)?;
+            Ok(Comparison::new(comparator, l_operand, ComparisonOperand::Value(r_operand)))
+        },
+        Plan::ColumnReference { column: c } => {
+            let r_operand = parse_column(c);
+            Ok(Comparison::new(comparator, l_operand, ComparisonOperand::Column(r_operand)))
+        },
+        _ => Err("Invalid plan node (expected Literal or ColumnReference".to_string())
+    }
 }
 
 fn parse_literal(literal: &Plan) -> Result<Box<types::Value>, String> {

@@ -4,31 +4,63 @@ use logical_entities::row::Row;
 use types::operators::Comparator;
 use types::*;
 
+pub enum ComparisonOperand {
+    Value(Box<Value>),
+    Column(Column),
+}
+
 pub struct Comparison {
-    column: Column,
     comparator: Comparator,
-    value: Box<Value>,
+    l_operand: Column,
+    r_operand: ComparisonOperand,
 }
 
 impl Comparison {
-    pub fn new(column: Column, comparator: Comparator, value: Box<Value>) -> Self {
+    pub fn new(
+        comparator: Comparator,
+        l_operand: Column,
+        r_operand: ComparisonOperand,
+    ) -> Self {
         Self {
-            column,
             comparator,
-            value,
+            l_operand,
+            r_operand,
         }
+    }
+}
+
+impl Comparison {
+    fn evaluate_column_value(&self, value: &Box<Value>, row: &Row) -> bool {
+        // TODO: Improve efficiency by using the index of the column to compare
+        let all_values = row.get_values();
+        let all_columns = row.get_schema().get_columns();
+        let column_i = all_columns.iter().position(|c| c == &self.l_operand)
+            .expect(&format!("Predicate column {} not found", self.l_operand.get_name()));
+        for i in 0..all_columns.len() {
+            if all_columns[i] == self.l_operand {
+                return all_values[i].compare(&**value, self.comparator.clone());
+            }
+        }
+        panic!("Predicate column {} not found", self.l_operand.get_name());
+    }
+
+    fn evaluate_column_column(&self, column: &Column, row: &Row) -> bool {
+        // TODO: Improve efficiency by using the index of the columns to compare
+        let all_values = row.get_values();
+        let all_columns = row.get_schema().get_columns();
+        let l_column_i = all_columns.iter().position(|c| c == &self.l_operand)
+            .expect(&format!("Predicate column {} not found", self.l_operand.get_name()));
+        let r_column_i = all_columns.iter().position(|c| c == column)
+            .expect(&format!("Predicate column {} not found", column.get_name()));
+        all_values[l_column_i].compare(&*all_values[r_column_i], self.comparator.clone())
     }
 }
 
 impl Predicate for Comparison {
     fn evaluate(&self, row: &Row) -> bool {
-        let all_values = row.get_values();
-        let all_columns = row.get_schema().get_columns();
-        for i in 0..all_columns.len() {
-            if all_columns[i] == self.column {
-                return all_values[i].compare(&*self.value, self.comparator.clone());
-            }
+        match &self.r_operand {
+            ComparisonOperand::Value(value) => self.evaluate_column_value(value, row),
+            ComparisonOperand::Column(column) => self.evaluate_column_column(column, row)
         }
-        panic!("Predicate column {} not found", self.column.get_name());
     }
 }
