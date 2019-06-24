@@ -1,3 +1,0 @@
-[submodule "optimizer/quickstep/third_party/src/protobuf"]
-	path = optimizer/quickstep/third_party/src/protobuf
-	url = https://github.com/google/protobuf.git
