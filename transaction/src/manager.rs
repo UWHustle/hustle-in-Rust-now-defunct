@@ -34,6 +34,8 @@ impl TransactionManager {
                     self.commit(connection_id, &execution_tx),
                 Message::TransactPlan { plan, connection_id } =>
                     self.execute(plan, connection_id),
+                Message::CompleteStatement { statement, connection_id } =>
+                    println!("complete statement"),
                 Message::CloseConnection { connection_id } =>
                     self.close(connection_id),
                 _ => completed_tx.send(buf).unwrap()
