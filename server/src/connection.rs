@@ -1,5 +1,5 @@
 use std::net::TcpStream;
-use message::{Message, Listener};
+use message::Message;
 use std::sync::mpsc::{Receiver, Sender};
 
 pub struct ServerConnection {
@@ -14,25 +14,30 @@ impl ServerConnection {
             tcp_stream,
         }
     }
-}
 
-impl Listener for ServerConnection {
-    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+    pub fn listen(
+        &mut self,
+        connection_rx: Receiver<Vec<u8>>,
+        parser_tx: Sender<Vec<u8>>,
+        transaction_tx: Sender<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>,
+    ) {
         loop {
             if let Ok(request) = Message::receive(&mut self.tcp_stream) {
-                if let Message::ExecuteSql { sql } = request {
-                    // Pass on the message to Hustle.
-                    output_tx.send(Message::ParseSql {
+                match request {
+                    Message::ExecuteSql { sql } => parser_tx.send(Message::ParseSql {
                         sql,
                         connection_id: self.id
-                    }.serialize().unwrap()).unwrap();
-                } else {
-                    panic!("Invalid message type sent to connection")
-                }
+                    }.serialize().unwrap()).unwrap(),
+                    _ => completed_tx.send(Message::Failure {
+                        reason: "Invalid message type sent to connection".to_owned(),
+                        connection_id: self.id
+                    }.serialize().unwrap()).unwrap()
+                };
 
                 // Wait for the response.
                 loop {
-                    let result = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
+                    let result = Message::deserialize(&connection_rx.recv().unwrap()).unwrap();
                     result.send(&mut self.tcp_stream).unwrap();
                     match result {
                         Message::Success { connection_id: _ } => break,
@@ -41,7 +46,7 @@ impl Listener for ServerConnection {
                     }
                 }
             } else {
-                output_tx.send(Message::CloseConnection {
+                transaction_tx.send(Message::CloseConnection {
                     connection_id: self.id
                 }.serialize().unwrap()).unwrap();
                 break;

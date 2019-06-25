@@ -6,7 +6,7 @@ use std::io::Error;
 use crossbeam_utils::thread;
 use std::sync::{mpsc, Arc, RwLock, Mutex};
 use std::collections::HashMap;
-use message::{Message, Listener};
+use message::Message;
 use std::sync::mpsc::Sender;
 use hustle_parser::Parser;
 use resolver::Resolver;
@@ -45,23 +45,28 @@ impl Server {
 
         thread::scope(|s| {
             // Spawn parser thread.
+            let completed_tx_clone = completed_tx.clone();
             s.builder().name("parser".to_string()).spawn(move |_| {
-                parser.listen(parser_rx, resolver_tx);
+                parser.listen(parser_rx, resolver_tx, completed_tx_clone);
             }).unwrap();
 
             // Spawn resolver thread.
+            let transaction_tx_clone = transaction_tx.clone();
+            let completed_tx_clone = completed_tx.clone();
             s.builder().name("resolver".to_string()).spawn(move |_| {
-                resolver.listen(resolver_rx, transaction_tx);
+                resolver.listen(resolver_rx, transaction_tx_clone, completed_tx_clone);
             }).unwrap();
 
             // Spawn transaction manager thread.
+            let completed_tx_clone = completed_tx.clone();
             s.builder().name("transaction".to_string()).spawn(move |_| {
-                transaction_manager.listen(transaction_rx, execution_tx);
+                transaction_manager.listen(transaction_rx, execution_tx, completed_tx_clone);
             }).unwrap();
 
             // Spawn execution engine thread.
+            let completed_tx_clone = completed_tx.clone();
             s.builder().name("execution".to_string()).spawn(move |_| {
-                execution_engine.listen(execution_rx, completed_tx);
+                execution_engine.listen(execution_rx, completed_tx_clone);
             }).unwrap();
 
             // Spawn completed statement thread.
@@ -110,11 +115,13 @@ impl Server {
 
                         // Spawn a new connection thread.
                         let parser_tx = parser_tx.clone();
+                        let transaction_tx = transaction_tx.clone();
+                        let completed_tx = completed_tx.clone();
                         s.builder().name(format!("connection_{}", connection_id)).spawn(move |_| {
                             ServerConnection::new(
                                 connection_id,
                                 stream
-                            ).listen(connection_rx, parser_tx);
+                            ).listen(connection_rx, parser_tx, transaction_tx, completed_tx);
                         }).unwrap();
                     },
                     Err(e) => panic!("{}", e)

@@ -1,4 +1,4 @@
-use message::{Plan, Listener, Message, Column, Table};
+use message::{Plan, Message, Column, Table};
 use serde_json as json;
 use std::sync::mpsc::{Receiver, Sender};
 use crate::catalog::Catalog;
@@ -11,6 +11,33 @@ impl Resolver {
     pub fn new() -> Self {
         Resolver {
             catalog: Catalog::try_from_file().unwrap_or(Catalog::new())
+        }
+    }
+
+    pub fn listen(
+        &mut self,
+        resolver_rx: Receiver<Vec<u8>>,
+        transaction_tx: Sender<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>,
+    ) {
+        loop {
+            let buf = resolver_rx.recv().unwrap();
+            let request = Message::deserialize(&buf).unwrap();
+            match request {
+                Message::ResolveAst { ast, connection_id } => {
+                    match self.resolve(&ast) {
+                        Ok(plan) => transaction_tx.send(Message::ExecutePlan {
+                            plan,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap(),
+                        Err(reason) => completed_tx.send(Message::Failure {
+                            reason,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap()
+                    }
+                },
+                _ => completed_tx.send(buf).unwrap()
+            };
         }
     }
 
@@ -278,23 +305,5 @@ impl Resolver {
             None => None
         };
         Ok(Plan::Update { table, columns, assignments, filter })
-    }
-}
-
-impl Listener for Resolver {
-    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
-        loop {
-            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
-            let response = match request {
-                Message::ResolveAst { ast, connection_id } => {
-                    match self.resolve(&ast) {
-                        Ok(plan) => Message::ExecutePlan { plan, connection_id },
-                        Err(reason) => Message::Failure { reason, connection_id }
-                    }
-                },
-                _ => request
-            };
-            output_tx.send(response.serialize().unwrap()).unwrap();
-        }
     }
 }

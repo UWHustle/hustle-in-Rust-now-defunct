@@ -33,9 +33,14 @@ impl ExecutionEngine {
         Ok(node.get_output_relation())
     }
 
-    pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+    pub fn listen(
+        &mut self,
+        execution_rx: Receiver<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>,
+    ) {
         loop {
-            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
+            let buf = execution_rx.recv().unwrap();
+            let request = Message::deserialize(&buf).unwrap();
             let response = match request {
                 Message::ExecutePlan { plan, connection_id } => {
                     match self.execute_plan(plan) {
@@ -51,7 +56,7 @@ impl ExecutionEngine {
                                     schema: message_schema,
                                     connection_id
                                 };
-                                output_tx.send(response.serialize().unwrap()).unwrap();
+                                completed_tx.send(response.serialize().unwrap()).unwrap();
 
                                 let physical_relation = self.storage_manager
                                     .relational_engine()
@@ -65,8 +70,10 @@ impl ExecutionEngine {
                                             let data = block.get_row_col(row_i, col_i).unwrap();
                                             row.push(data.to_owned());
                                         }
-                                        let response = Message::ReturnRow { row, connection_id };
-                                        output_tx.send(response.serialize().unwrap()).unwrap();
+                                        completed_tx.send(Message::ReturnRow {
+                                            row,
+                                            connection_id
+                                        }.serialize().unwrap()).unwrap();
                                     }
                                 }
                             }
@@ -81,7 +88,7 @@ impl ExecutionEngine {
                 },
                 _ => request
             };
-            output_tx.send(response.serialize().unwrap()).unwrap();
+            completed_tx.send(response.serialize().unwrap()).unwrap();
         }
     }
 }

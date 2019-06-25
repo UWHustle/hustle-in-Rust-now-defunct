@@ -2,7 +2,6 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Serialize, Deserialize};
 use std::io::Cursor;
 use types::data_type::DataType;
-use std::sync::mpsc::{Receiver, Sender};
 use std::hash::{Hash, Hasher};
 use std::borrow::Borrow;
 
@@ -174,8 +173,4 @@ impl Message {
         let mut cursor = Cursor::new(buf);
         Self::receive(&mut cursor)
     }
-}
-
-pub trait Listener {
-    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>);
 }
