@@ -27,8 +27,8 @@ impl ExecutionEngine {
         }
     }
 
-    pub fn execute_plan(&self, plan: Plan) -> Result<Option<Relation>, String> {
-        let node = parse(&plan)?;
+    pub fn execute_plan(&self, plan: &Plan) -> Result<Option<Relation>, String> {
+        let node = parse(plan)?;
         node.execute(&self.storage_manager);
         Ok(node.get_output_relation())
     }
@@ -36,6 +36,7 @@ impl ExecutionEngine {
     pub fn listen(
         &mut self,
         execution_rx: Receiver<Vec<u8>>,
+        transaction_tx: Sender<Vec<u8>>,
         completed_tx: Sender<Vec<u8>>,
     ) {
         loop {
@@ -43,7 +44,7 @@ impl ExecutionEngine {
             let request = Message::deserialize(&buf).unwrap();
             let response = match request {
                 Message::ExecuteStatement { statement, connection_id } => {
-                    match self.execute_plan(statement.plan) {
+                    match self.execute_plan(&statement.plan) {
                         Ok(relation) => {
                             if let Some(relation) = relation {
                                 let schema = relation.get_schema();
@@ -54,7 +55,7 @@ impl ExecutionEngine {
 
                                 let response = Message::Schema {
                                     schema: message_schema,
-                                    connection_id
+                                    connection_id,
                                 };
                                 completed_tx.send(response.serialize().unwrap()).unwrap();
 
@@ -69,26 +70,32 @@ impl ExecutionEngine {
                                         for col_i in 0..schema.get_columns().len() {
                                             let data = block.get_row_col(row_i, col_i).unwrap();
                                             row.push(data.to_owned());
-                                        }
+                                        };
                                         completed_tx.send(Message::ReturnRow {
                                             row,
-                                            connection_id
+                                            connection_id,
                                         }.serialize().unwrap()).unwrap();
-                                    }
-                                }
-                            }
-                            Message::Success { connection_id }
-                        },
-
-                        Err(reason) => {
-                            Message::Failure { reason, connection_id }
+                                    };
+                                };
+                            };
+                            completed_tx.send(Message::Success {
+                                connection_id
+                            }.serialize().unwrap()).unwrap();
                         }
-                    }
 
+                        Err(reason) => completed_tx.send(Message::Failure {
+                            reason,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap()
+                    };
+
+                    transaction_tx.send(Message::CompleteStatement {
+                        statement,
+                        connection_id
+                    }.serialize().unwrap()).unwrap();
                 },
-                _ => request
+                _ => completed_tx.send(buf).unwrap()
             };
-            completed_tx.send(response.serialize().unwrap()).unwrap();
         }
     }
 }

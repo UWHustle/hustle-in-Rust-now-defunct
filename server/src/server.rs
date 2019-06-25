@@ -64,9 +64,10 @@ impl Server {
             }).unwrap();
 
             // Spawn execution engine thread.
+            let transaction_tx_clone = transaction_tx.clone();
             let completed_tx_clone = completed_tx.clone();
             s.builder().name("execution".to_string()).spawn(move |_| {
-                execution_engine.listen(execution_rx, completed_tx_clone);
+                execution_engine.listen(execution_rx, transaction_tx_clone, completed_tx_clone);
             }).unwrap();
 
             // Spawn completed statement thread.
