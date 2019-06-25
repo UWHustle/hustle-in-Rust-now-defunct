@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::collections::{VecDeque, HashMap};
-use message::{Message, Plan};
+use message::{Message, Plan, Statement};
 use crate::Transaction;
 
 pub struct TransactionManager {
@@ -32,7 +32,7 @@ impl TransactionManager {
                     self.begin(connection_id, &execution_tx),
                 Message::CommitTransaction { connection_id } =>
                     self.commit(connection_id, &execution_tx),
-                Message::ExecutePlan { plan, connection_id } =>
+                Message::TransactPlan { plan, connection_id } =>
                     self.execute(plan, connection_id),
                 Message::CloseConnection { connection_id } =>
                     self.close(connection_id),
@@ -45,8 +45,8 @@ impl TransactionManager {
 
                 // Send all the statements of the front transaction.
                 while let Some(plan) = transaction.dequeue_plan() {
-                    execution_tx.send(Message::ExecutePlan {
-                        plan,
+                    execution_tx.send(Message::ExecuteStatement {
+                        statement: Statement::new(0, 0, plan),
                         connection_id: connection_id.clone()
                     }.serialize().unwrap()).unwrap();
                 }

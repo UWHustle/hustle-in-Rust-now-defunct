@@ -14,11 +14,30 @@ pub enum Message {
     OptimizePlan { plan: Plan, connection_id: u64 },
     BeginTransaction { connection_id: u64 },
     CommitTransaction { connection_id: u64 },
-    ExecutePlan { plan: Plan, connection_id: u64 },
+    TransactPlan { plan: Plan, connection_id: u64 },
+    ExecuteStatement { statement: Statement, connection_id: u64 },
+    CompleteStatement { statement: Statement, connection_id: u64 },
     Schema { schema: Vec<(String, DataType)>, connection_id: u64 },
     ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
     Success { connection_id: u64 },
     Failure { reason: String, connection_id: u64 },
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct Statement {
+    statement_id: u64,
+    transaction_id: u64,
+    pub plan: Plan,
+}
+
+impl Statement {
+    pub fn new(statement_id: u64, transaction_id: u64, plan: Plan) -> Self {
+        Statement {
+            statement_id,
+            transaction_id,
+            plan,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

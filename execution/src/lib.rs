@@ -42,8 +42,8 @@ impl ExecutionEngine {
             let buf = execution_rx.recv().unwrap();
             let request = Message::deserialize(&buf).unwrap();
             let response = match request {
-                Message::ExecutePlan { plan, connection_id } => {
-                    match self.execute_plan(plan) {
+                Message::ExecuteStatement { statement, connection_id } => {
+                    match self.execute_plan(statement.plan) {
                         Ok(relation) => {
                             if let Some(relation) = relation {
                                 let schema = relation.get_schema();
