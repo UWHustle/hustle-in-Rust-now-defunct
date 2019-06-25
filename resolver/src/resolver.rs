@@ -26,7 +26,7 @@ impl Resolver {
             match request {
                 Message::ResolveAst { ast, connection_id } => {
                     match self.resolve(&ast) {
-                        Ok(plan) => transaction_tx.send(Message::ExecutePlan {
+                        Ok(plan) => transaction_tx.send(Message::TransactPlan {
                             plan,
                             connection_id,
                         }.serialize().unwrap()).unwrap(),
