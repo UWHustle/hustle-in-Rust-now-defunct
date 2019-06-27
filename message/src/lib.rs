@@ -15,8 +15,8 @@ pub enum Message {
     BeginTransaction { connection_id: u64 },
     CommitTransaction { connection_id: u64 },
     TransactPlan { plan: Plan, connection_id: u64 },
-    ExecuteStatement { statement: Statement, connection_id: u64 },
-    CompleteStatement { statement: Statement, connection_id: u64 },
+    ExecuteStatement { statement: Statement },
+    CompleteStatement { statement: Statement },
     Schema { schema: Vec<(String, DataType)>, connection_id: u64 },
     ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
     Success { connection_id: u64 },
@@ -25,16 +25,18 @@ pub enum Message {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Statement {
-    statement_id: u64,
-    transaction_id: u64,
+    pub id: u64,
+    pub transaction_id: u64,
+    pub connection_id: u64,
     pub plan: Plan,
 }
 
 impl Statement {
-    pub fn new(statement_id: u64, transaction_id: u64, plan: Plan) -> Self {
+    pub fn new(id: u64, transaction_id: u64, connection_id: u64, plan: Plan) -> Self {
         Statement {
-            statement_id,
+            id,
             transaction_id,
+            connection_id,
             plan,
         }
     }

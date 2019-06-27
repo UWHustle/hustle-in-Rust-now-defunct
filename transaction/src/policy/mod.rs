@@ -1,11 +1,12 @@
 pub use zero_concurrency::ZeroConcurrencyPolicy;
-use message::Plan;
+use message::Statement;
+use crate::transaction::Transaction;
 
 mod zero_concurrency;
 
-trait Policy {
-    fn new_statement(&mut self, statement: Plan) -> Vec<Plan>;
-    fn complete_statement(&mut self, statement: Plan) -> Vec<Plan>;
+pub trait Policy {
+    fn begin_transaction(&mut self, transaction: Transaction);
+    fn commit_transaction(&mut self, transaction_id: u64) -> Vec<Statement>;
+    fn enqueue_statement(&mut self, transaction_id: u64, statement: Statement) -> Vec<Statement>;
+    fn complete_statement(&mut self, transaction_id: u64, statement: Statement) -> Vec<Statement>;
 }
-
-
