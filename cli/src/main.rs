@@ -19,6 +19,7 @@ fn main() -> Result<(), String> {
         let readline = editor.readline(PROMPT);
         match readline {
             Ok(line) => {
+                editor.add_history_entry(line.clone());
                 match connection.execute(line) {
                     Ok(result) => {
                         result.map(|r| println!("{}", r));
