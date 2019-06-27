@@ -42,8 +42,8 @@ impl ExecutionEngine {
         loop {
             let buf = execution_rx.recv().unwrap();
             let request = Message::deserialize(&buf).unwrap();
-            let response = match request {
-                Message::ExecuteStatement { statement, connection_id } => {
+            match request {
+                Message::ExecuteStatement { statement } => {
                     match self.execute_plan(&statement.plan) {
                         Ok(relation) => {
                             if let Some(relation) = relation {
@@ -55,7 +55,7 @@ impl ExecutionEngine {
 
                                 let response = Message::Schema {
                                     schema: message_schema,
-                                    connection_id,
+                                    connection_id: statement.connection_id,
                                 };
                                 completed_tx.send(response.serialize().unwrap()).unwrap();
 
@@ -73,25 +73,24 @@ impl ExecutionEngine {
                                         };
                                         completed_tx.send(Message::ReturnRow {
                                             row,
-                                            connection_id,
+                                            connection_id: statement.connection_id,
                                         }.serialize().unwrap()).unwrap();
                                     };
                                 };
                             };
                             completed_tx.send(Message::Success {
-                                connection_id
+                                connection_id: statement.connection_id
                             }.serialize().unwrap()).unwrap();
                         }
 
                         Err(reason) => completed_tx.send(Message::Failure {
                             reason,
-                            connection_id,
+                            connection_id: statement.connection_id,
                         }.serialize().unwrap()).unwrap()
                     };
 
                     transaction_tx.send(Message::CompleteStatement {
-                        statement,
-                        connection_id
+                        statement
                     }.serialize().unwrap()).unwrap();
                 },
                 _ => completed_tx.send(buf).unwrap()
