@@ -33,18 +33,37 @@ impl TransactionManager {
 
             // Process the message contents.
             match request {
-                Message::BeginTransaction { connection_id } =>
-                    self.begin_transaction(connection_id, &completed_tx),
-                Message::CommitTransaction { connection_id } =>
-                    self.commit_transaction(connection_id, &execution_tx, &completed_tx),
-                Message::TransactPlan { plan, connection_id } =>
-                    self.enqueue_statement(plan, connection_id, &execution_tx),
-                Message::CompleteStatement { statement } =>
-                    self.complete_statement(statement, &execution_tx),
-                Message::CloseConnection { connection_id } =>
-                    self.close(connection_id),
+                Message::TransactPlan { plan, connection_id } => self.transact_plan(
+                    plan,
+                    connection_id,
+                    &execution_tx,
+                    &completed_tx,
+                ),
+                Message::CompleteStatement { statement } => self.complete_statement(
+                    statement,
+                    &execution_tx,
+                ),
+                Message::CloseConnection { connection_id } => self.close(connection_id),
                 _ => completed_tx.send(buf).unwrap()
             };
+        }
+    }
+
+    fn transact_plan(
+        &mut self,
+        plan: Plan,
+        connection_id: u64,
+        execution_tx: &Sender<Vec<u8>>,
+        completed_tx: &Sender<Vec<u8>>,
+    ) {
+        match plan {
+            Plan::BeginTransaction => self.begin_transaction(connection_id, completed_tx),
+            Plan::CommitTransaction => self.commit_transaction(
+                connection_id,
+                execution_tx,
+                completed_tx
+            ),
+            _ => self.enqueue_statement(plan, connection_id, execution_tx),
         }
     }
 
@@ -55,7 +74,7 @@ impl TransactionManager {
                 connection_id
             }
         } else {
-            let transaction = Transaction::new(&mut self.transaction_ctr);
+            let transaction = Transaction::new(self.generate_transaction_id());
             self.transaction_ids.insert(connection_id, transaction.id);
             self.policy.begin_transaction(transaction);
             Message::Success { connection_id }
@@ -94,7 +113,7 @@ impl TransactionManager {
             let statements = self.policy.enqueue_statement(statement);
             self.execute_statements(statements, execution_tx);
         } else {
-            let transaction = Transaction::new(&mut self.transaction_ctr);
+            let transaction = Transaction::new(self.generate_transaction_id());
             let transaction_id = transaction.id;
             let statement = Statement::new(statement_id, transaction_id, connection_id, plan);
             self.policy.begin_transaction(transaction);
@@ -128,7 +147,13 @@ impl TransactionManager {
 
     fn generate_statement_id(&mut self) -> u64 {
         let id = self.statement_ctr;
-        self.statement_ctr.wrapping_add(1);
+        self.statement_ctr = self.statement_ctr.wrapping_add(1);
+        id
+    }
+
+    fn generate_transaction_id(&mut self) -> u64 {
+        let id = self.transaction_ctr;
+        self.transaction_ctr = self.transaction_ctr.wrapping_add(1);
         id
     }
 }

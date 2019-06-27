@@ -8,9 +8,7 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    pub fn new(ctr: &mut u64) -> Self {
-        let id = *ctr;
-        ctr.wrapping_add(1);
+    pub fn new(id: u64) -> Self {
         Transaction {
             id,
             committed: false,
