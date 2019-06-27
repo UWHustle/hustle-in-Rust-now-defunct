@@ -3,7 +3,7 @@
 extern crate hustle_parser;
 
 #[cfg(test)]
-mod tests {
+mod parser_tests {
     use hustle_parser::parse;
     use serde_json::{json, Value};
 
@@ -421,6 +421,22 @@ mod tests {
                 "name": "t"
             }
         });
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn begin_transaction() {
+        let ast_string = parse("BEGIN;").unwrap();
+        let ast: Value = serde_json::from_str(&ast_string).unwrap();
+        let expected = json!({ "type": "begin_transaction" });
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn commit_transaction() {
+        let ast_string = parse("COMMIT;").unwrap();
+        let ast: Value = serde_json::from_str(&ast_string).unwrap();
+        let expected = json!({ "type": "commit_transaction" });
         assert_eq!(ast, expected);
     }
 }
