@@ -50,6 +50,8 @@ impl Resolver {
     fn resolve_node(&mut self, node: &json::Value) -> Result<Plan, String> {
         let node_type = node["type"].as_str().unwrap();
         match node_type {
+            "begin_transaction" => self.resolve_begin_transaction(node),
+            "commit_transaction" => self.resolve_commit_transaction(node),
             "create_table" => self.resolve_create_table(node),
             "delete" => self.resolve_delete(node),
             "drop_table" => self.resolve_drop_table(node),
@@ -58,6 +60,16 @@ impl Resolver {
             "update" => self.resolve_update(node),
             _ => Err(format!("Unrecognized AST node type: {}", node_type))
         }
+    }
+
+    fn resolve_begin_transaction(&self, node: &json::Value) -> Result<Plan, String> {
+        debug_assert_eq!(node["type"].as_str().unwrap(), "begin_transaction");
+        Ok(Plan::BeginTransaction)
+    }
+
+    fn resolve_commit_transaction(&self, node: &json::Value) -> Result<Plan, String> {
+        debug_assert_eq!(node["type"].as_str().unwrap(), "commit_transaction");
+        Ok(Plan::CommitTransaction)
     }
 
     fn resolve_create_table(&mut self, node: &json::Value) -> Result<Plan, String> {

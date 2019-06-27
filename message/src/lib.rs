@@ -12,8 +12,6 @@ pub enum Message {
     ParseSql { sql: String, connection_id: u64 },
     ResolveAst { ast: String, connection_id: u64 },
     OptimizePlan { plan: Plan, connection_id: u64 },
-    BeginTransaction { connection_id: u64 },
-    CommitTransaction { connection_id: u64 },
     TransactPlan { plan: Plan, connection_id: u64 },
     ExecuteStatement { statement: Statement },
     CompleteStatement { statement: Statement },
@@ -49,9 +47,11 @@ pub enum Plan {
         aggregates: Vec<Plan>,
         groups: Vec<Plan>
     },
+    BeginTransaction,
     ColumnReference {
         column: Column
     },
+    CommitTransaction,
     Comparative {
         name: String,
         left: Box<Plan>,
