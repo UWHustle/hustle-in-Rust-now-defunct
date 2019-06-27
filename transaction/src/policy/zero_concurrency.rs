@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use crate::policy::Policy;
-use message::{Statement, Plan, Table};
+use message::Statement;
 use crate::transaction::Transaction;
 
 pub struct ZeroConcurrencyPolicy {
@@ -76,124 +76,130 @@ impl Policy for ZeroConcurrencyPolicy {
     }
 }
 
-#[test]
-fn single_connection_test() {
-    // Initialize the policy.
-    let mut policy = ZeroConcurrencyPolicy::new();
+#[cfg(test)]
+mod zero_concurrency_policy_tests {
+    use super::*;
+    use message::{Plan, Table};
 
-    assert!(!policy.running_statement);
-    assert!(policy.transaction_queue.is_empty());
+    #[test]
+    fn single_connection_test() {
+        // Initialize the policy.
+        let mut policy = ZeroConcurrencyPolicy::new();
 
-    // Begin a transaction.
-    let transaction = Transaction::new(&mut 0);
-    let transaction_id = transaction.id;
-    policy.begin_transaction(transaction);
+        assert!(!policy.running_statement);
+        assert!(policy.transaction_queue.is_empty());
 
-    assert_eq!(policy.transaction_queue.len(), 1);
+        // Begin a transaction.
+        let transaction = Transaction::new(&mut 0);
+        let transaction_id = transaction.id;
+        policy.begin_transaction(transaction);
 
-    // Enqueue the first statement in the transaction.
-    let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
-    let first_statement = Statement::new(0, transaction_id, 0, plan.clone());
-    let mut statements = policy.enqueue_statement(first_statement);
+        assert_eq!(policy.transaction_queue.len(), 1);
 
-    assert!(policy.running_statement);
-    assert_eq!(statements.get(0).map(|s| s.id), Some(0));
+        // Enqueue the first statement in the transaction.
+        let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
+        let first_statement = Statement::new(0, transaction_id, 0, plan.clone());
+        let mut statements = policy.enqueue_statement(first_statement);
 
-    // Enqueue the second statement in the transaction.
-    let completed_statement = statements.pop().unwrap();
-    let second_statement = Statement::new(1, transaction_id, 0, plan);
-    let statements = policy.enqueue_statement(second_statement);
+        assert!(policy.running_statement);
+        assert_eq!(statements.get(0).map(|s| s.id), Some(0));
 
-    assert!(statements.is_empty());
+        // Enqueue the second statement in the transaction.
+        let completed_statement = statements.pop().unwrap();
+        let second_statement = Statement::new(1, transaction_id, 0, plan);
+        let statements = policy.enqueue_statement(second_statement);
 
-    // Complete the first statement.
-    let mut statements = policy.complete_statement(completed_statement);
+        assert!(statements.is_empty());
 
-    assert_eq!(statements.get(0).map(|s| s.id), Some(1));
+        // Complete the first statement.
+        let mut statements = policy.complete_statement(completed_statement);
 
-    // Complete the second statement.
-    let completed_statement = statements.pop().unwrap();
-    let statements = policy.complete_statement(completed_statement);
+        assert_eq!(statements.get(0).map(|s| s.id), Some(1));
 
-    assert!(!policy.running_statement);
-    assert!(statements.is_empty());
+        // Complete the second statement.
+        let completed_statement = statements.pop().unwrap();
+        let statements = policy.complete_statement(completed_statement);
 
-    // Commit the transaction.
-    let statements = policy.commit_transaction(transaction_id);
+        assert!(!policy.running_statement);
+        assert!(statements.is_empty());
 
-    assert!(policy.transaction_queue.is_empty());
-    assert!(statements.is_empty());
-}
+        // Commit the transaction.
+        let statements = policy.commit_transaction(transaction_id);
 
-#[test]
-fn multiple_connection_test() {
-    // Initialize the policy.
-    let mut policy = ZeroConcurrencyPolicy::new();
+        assert!(policy.transaction_queue.is_empty());
+        assert!(statements.is_empty());
+    }
 
-    assert!(!policy.running_statement);
-    assert!(policy.transaction_queue.is_empty());
+    #[test]
+    fn multiple_connection_test() {
+        // Initialize the policy.
+        let mut policy = ZeroConcurrencyPolicy::new();
 
-    // Begin the first transaction.
-    let first_transaction = Transaction::new(&mut 0);
-    let first_transaction_id = first_transaction.id;
-    policy.begin_transaction(first_transaction);
+        assert!(!policy.running_statement);
+        assert!(policy.transaction_queue.is_empty());
 
-    assert_eq!(policy.transaction_queue.len(), 1);
+        // Begin the first transaction.
+        let first_transaction = Transaction::new(&mut 0);
+        let first_transaction_id = first_transaction.id;
+        policy.begin_transaction(first_transaction);
 
-    // Begin the second transaction.
-    let second_transaction = Transaction::new(&mut 1);
-    let second_transaction_id = second_transaction.id;
-    policy.begin_transaction(second_transaction);
+        assert_eq!(policy.transaction_queue.len(), 1);
 
-    assert_eq!(policy.transaction_queue.len(), 2);
+        // Begin the second transaction.
+        let second_transaction = Transaction::new(&mut 1);
+        let second_transaction_id = second_transaction.id;
+        policy.begin_transaction(second_transaction);
 
-    // Enqueue the first statement in the first transaction.
-    let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
-    let first_statement = Statement::new(0, first_transaction_id, 0, plan.clone());
-    let mut statements = policy.enqueue_statement(first_statement);
+        assert_eq!(policy.transaction_queue.len(), 2);
 
-    assert!(policy.running_statement);
-    assert_eq!(statements.get(0).map(|s| s.id), Some(0));
+        // Enqueue the first statement in the first transaction.
+        let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
+        let first_statement = Statement::new(0, first_transaction_id, 0, plan.clone());
+        let mut statements = policy.enqueue_statement(first_statement);
 
-    // Enqueue the second statement in the second transaction.
-    let completed_statement = statements.pop().unwrap();
-    let second_statement = Statement::new(1, second_transaction_id, 1, plan.clone());
-    let statements = policy.enqueue_statement(second_statement);
+        assert!(policy.running_statement);
+        assert_eq!(statements.get(0).map(|s| s.id), Some(0));
 
-    assert!(statements.is_empty());
+        // Enqueue the second statement in the second transaction.
+        let completed_statement = statements.pop().unwrap();
+        let second_statement = Statement::new(1, second_transaction_id, 1, plan.clone());
+        let statements = policy.enqueue_statement(second_statement);
 
-    // Enqueue the third statement in the first transaction.
-    let third_statement = Statement::new(2, first_transaction_id, 0, plan.clone());
-    let statements = policy.enqueue_statement(third_statement);
+        assert!(statements.is_empty());
 
-    assert!(statements.is_empty());
+        // Enqueue the third statement in the first transaction.
+        let third_statement = Statement::new(2, first_transaction_id, 0, plan.clone());
+        let statements = policy.enqueue_statement(third_statement);
 
-    // Complete the first statement.
-    let mut statements = policy.complete_statement(completed_statement);
+        assert!(statements.is_empty());
 
-    assert_eq!(statements.get(0).map(|s| s.id), Some(2));
+        // Complete the first statement.
+        let mut statements = policy.complete_statement(completed_statement);
 
-    // Complete the third statement.
-    let completed_statement = statements.pop().unwrap();
-    let statements = policy.complete_statement(completed_statement);
+        assert_eq!(statements.get(0).map(|s| s.id), Some(2));
 
-    assert!(statements.is_empty());
+        // Complete the third statement.
+        let completed_statement = statements.pop().unwrap();
+        let statements = policy.complete_statement(completed_statement);
 
-    // Commit the first transaction.
-    let mut statements = policy.commit_transaction(first_transaction_id);
+        assert!(statements.is_empty());
 
-    assert_eq!(policy.transaction_queue.len(), 1);
-    assert_eq!(statements.get(0).map(|s| s.id), Some(1));
+        // Commit the first transaction.
+        let mut statements = policy.commit_transaction(first_transaction_id);
 
-    // Complete the second statement.
-    let completed_statement = statements.pop().unwrap();
-    let statements = policy.complete_statement(completed_statement);
+        assert_eq!(policy.transaction_queue.len(), 1);
+        assert_eq!(statements.get(0).map(|s| s.id), Some(1));
 
-    assert!(!policy.running_statement);
-    assert!(statements.is_empty());
+        // Complete the second statement.
+        let completed_statement = statements.pop().unwrap();
+        let statements = policy.complete_statement(completed_statement);
 
-    let statements = policy.commit_transaction(second_transaction_id);
+        assert!(!policy.running_statement);
+        assert!(statements.is_empty());
 
-    assert!(policy.transaction_queue.is_empty());
-    assert!(statements.is_empty());
+        let statements = policy.commit_transaction(second_transaction_id);
+
+        assert!(policy.transaction_queue.is_empty());
+        assert!(statements.is_empty());
+    }
 }
