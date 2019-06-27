@@ -24,7 +24,7 @@ impl TransactionManager {
     pub fn listen(
         &mut self,
         transaction_rx: Receiver<Vec<u8>>,
-        _execution_tx: Sender<Vec<u8>>,
+        execution_tx: Sender<Vec<u8>>,
         completed_tx: Sender<Vec<u8>>,
     ) {
         loop {
@@ -36,11 +36,11 @@ impl TransactionManager {
                 Message::BeginTransaction { connection_id } =>
                     self.begin_transaction(connection_id, &completed_tx),
                 Message::CommitTransaction { connection_id } =>
-                    self.commit_transaction(connection_id, &completed_tx),
+                    self.commit_transaction(connection_id, &execution_tx, &completed_tx),
                 Message::TransactPlan { plan, connection_id } =>
-                    self.enqueue_statement(plan, connection_id),
-                Message::CompleteStatement { statement: _ } =>
-                    println!("complete statement"),
+                    self.enqueue_statement(plan, connection_id, &execution_tx),
+                Message::CompleteStatement { statement } =>
+                    self.complete_statement(statement, &execution_tx),
                 Message::CloseConnection { connection_id } =>
                     self.close(connection_id),
                 _ => completed_tx.send(buf).unwrap()
@@ -63,9 +63,15 @@ impl TransactionManager {
         completed_tx.send(response.serialize().unwrap()).unwrap();
     }
 
-    fn commit_transaction(&mut self, connection_id: u64, completed_tx: &Sender<Vec<u8>>) {
+    fn commit_transaction(
+        &mut self,
+        connection_id: u64,
+        execution_tx: &Sender<Vec<u8>>,
+        completed_tx: &Sender<Vec<u8>>,
+    ) {
         let response = if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
-            self.policy.commit_transaction(transaction_id);
+            let statements = self.policy.commit_transaction(transaction_id);
+            self.execute_statements(statements, execution_tx);
             Message::Success { connection_id }
         } else {
             Message::Failure {
@@ -76,24 +82,48 @@ impl TransactionManager {
         completed_tx.send(response.serialize().unwrap()).unwrap();
     }
 
-    fn enqueue_statement(&mut self, plan: Plan, connection_id: u64) {
+    fn enqueue_statement(
+        &mut self,
+        plan: Plan,
+        connection_id: u64,
+        execution_tx: &Sender<Vec<u8>>,
+    ) {
         let statement_id = self.generate_statement_id();
         if let Some(transaction_id) = self.transaction_ids.get(&connection_id) {
             let statement = Statement::new(statement_id, transaction_id.to_owned(), connection_id, plan);
-            self.policy.enqueue_statement(transaction_id.to_owned(), statement);
+            let statements = self.policy.enqueue_statement(statement);
+            self.execute_statements(statements, execution_tx);
         } else {
             let transaction = Transaction::new(&mut self.transaction_ctr);
             let transaction_id = transaction.id;
             let statement = Statement::new(statement_id, transaction_id, connection_id, plan);
             self.policy.begin_transaction(transaction);
-            self.policy.enqueue_statement(transaction_id, statement);
-            self.policy.commit_transaction(transaction_id);
+            let statements = self.policy.enqueue_statement(statement);
+            self.execute_statements(statements, execution_tx);
+            let statements = self.policy.commit_transaction(transaction_id);
+            self.execute_statements(statements, execution_tx);
         }
+    }
+
+    fn complete_statement(&mut self, statement: Statement, execution_tx: &Sender<Vec<u8>>) {
+        let statements = self.policy.complete_statement(statement);
+        self.execute_statements(statements, execution_tx)
     }
 
     fn close(&mut self, _connection_id: u64) {
         // TODO: Rollback transaction on connection close.
         // We don't support transaction rollback so when a connection closes we just commit.
+        for transaction_id in self.transaction_ids.values() {
+            self.policy.commit_transaction(transaction_id.to_owned());
+        }
+    }
+
+    fn execute_statements(&self, statements: Vec<Statement>, execution_tx: &Sender<Vec<u8>>) {
+        for statement in statements {
+            execution_tx.send(Message::ExecuteStatement {
+                statement
+            }.serialize().unwrap()).unwrap();
+        }
     }
 
     fn generate_statement_id(&mut self) -> u64 {

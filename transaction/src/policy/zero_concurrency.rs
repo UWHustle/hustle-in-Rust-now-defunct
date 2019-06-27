@@ -64,13 +64,13 @@ impl Policy for ZeroConcurrencyPolicy {
         self.admit_statements()
     }
 
-    fn enqueue_statement(&mut self, transaction_id: u64, statement: Statement) -> Vec<Statement> {
-        let transaction = self.find(transaction_id);
+    fn enqueue_statement(&mut self, statement: Statement) -> Vec<Statement> {
+        let transaction = self.find(statement.transaction_id);
         transaction.enqueue_statement(statement);
         self.admit_statements()
     }
 
-    fn complete_statement(&mut self, _transaction_id: u64, _statement: Statement) -> Vec<Statement> {
+    fn complete_statement(&mut self, _statement: Statement) -> Vec<Statement> {
         self.running_statement = false;
         self.admit_statements()
     }
@@ -94,7 +94,7 @@ fn single_connection_test() {
     // Enqueue the first statement in the transaction.
     let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
     let first_statement = Statement::new(0, transaction_id, 0, plan.clone());
-    let mut statements = policy.enqueue_statement(transaction_id, first_statement);
+    let mut statements = policy.enqueue_statement(first_statement);
 
     assert!(policy.running_statement);
     assert_eq!(statements.get(0).map(|s| s.id), Some(0));
@@ -102,18 +102,18 @@ fn single_connection_test() {
     // Enqueue the second statement in the transaction.
     let completed_statement = statements.pop().unwrap();
     let second_statement = Statement::new(1, transaction_id, 0, plan);
-    let statements = policy.enqueue_statement(transaction_id, second_statement);
+    let statements = policy.enqueue_statement(second_statement);
 
     assert!(statements.is_empty());
 
     // Complete the first statement.
-    let mut statements = policy.complete_statement(transaction_id, completed_statement);
+    let mut statements = policy.complete_statement(completed_statement);
 
     assert_eq!(statements.get(0).map(|s| s.id), Some(1));
 
     // Complete the second statement.
     let completed_statement = statements.pop().unwrap();
-    let statements = policy.complete_statement(transaction_id, completed_statement);
+    let statements = policy.complete_statement(completed_statement);
 
     assert!(!policy.running_statement);
     assert!(statements.is_empty());
@@ -150,7 +150,7 @@ fn multiple_connection_test() {
     // Enqueue the first statement in the first transaction.
     let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
     let first_statement = Statement::new(0, first_transaction_id, 0, plan.clone());
-    let mut statements = policy.enqueue_statement(first_transaction_id, first_statement);
+    let mut statements = policy.enqueue_statement(first_statement);
 
     assert!(policy.running_statement);
     assert_eq!(statements.get(0).map(|s| s.id), Some(0));
@@ -158,24 +158,24 @@ fn multiple_connection_test() {
     // Enqueue the second statement in the second transaction.
     let completed_statement = statements.pop().unwrap();
     let second_statement = Statement::new(1, second_transaction_id, 1, plan.clone());
-    let statements = policy.enqueue_statement(second_transaction_id, second_statement);
+    let statements = policy.enqueue_statement(second_statement);
 
     assert!(statements.is_empty());
 
     // Enqueue the third statement in the first transaction.
     let third_statement = Statement::new(2, first_transaction_id, 0, plan.clone());
-    let statements = policy.enqueue_statement(first_transaction_id, third_statement);
+    let statements = policy.enqueue_statement(third_statement);
 
     assert!(statements.is_empty());
 
     // Complete the first statement.
-    let mut statements = policy.complete_statement(first_transaction_id, completed_statement);
+    let mut statements = policy.complete_statement(completed_statement);
 
     assert_eq!(statements.get(0).map(|s| s.id), Some(2));
 
     // Complete the third statement.
     let completed_statement = statements.pop().unwrap();
-    let statements = policy.complete_statement(first_transaction_id, completed_statement);
+    let statements = policy.complete_statement(completed_statement);
 
     assert!(statements.is_empty());
 
@@ -187,7 +187,7 @@ fn multiple_connection_test() {
 
     // Complete the second statement.
     let completed_statement = statements.pop().unwrap();
-    let statements = policy.complete_statement(second_transaction_id, completed_statement);
+    let statements = policy.complete_statement(completed_statement);
 
     assert!(!policy.running_statement);
     assert!(statements.is_empty());
