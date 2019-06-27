@@ -90,7 +90,7 @@ mod zero_concurrency_policy_tests {
         assert!(policy.transaction_queue.is_empty());
 
         // Begin a transaction.
-        let transaction = Transaction::new(&mut 0);
+        let transaction = Transaction::new(0);
         let transaction_id = transaction.id;
         policy.begin_transaction(transaction);
 
@@ -139,14 +139,14 @@ mod zero_concurrency_policy_tests {
         assert!(policy.transaction_queue.is_empty());
 
         // Begin the first transaction.
-        let first_transaction = Transaction::new(&mut 0);
+        let first_transaction = Transaction::new(0);
         let first_transaction_id = first_transaction.id;
         policy.begin_transaction(first_transaction);
 
         assert_eq!(policy.transaction_queue.len(), 1);
 
         // Begin the second transaction.
-        let second_transaction = Transaction::new(&mut 1);
+        let second_transaction = Transaction::new(1);
         let second_transaction_id = second_transaction.id;
         policy.begin_transaction(second_transaction);
 
