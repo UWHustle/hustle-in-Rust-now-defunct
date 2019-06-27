@@ -42,7 +42,7 @@ impl Statement {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
     Aggregate {
         table: Box<Plan>,
