@@ -1,8 +1,11 @@
+pub use direct_predicate::DirectPredicatePolicy;
 pub use zero_concurrency::ZeroConcurrencyPolicy;
 use message::Statement;
+
 use crate::transaction::Transaction;
 
 mod zero_concurrency;
+mod direct_predicate;
 
 pub trait Policy {
     fn begin_transaction(&mut self, transaction: Transaction);

@@ -1,27 +1,18 @@
-use std::collections::VecDeque;
 use crate::policy::Policy;
 use message::Statement;
-use crate::transaction::Transaction;
+use crate::transaction::{Transaction, TransactionQueue};
 
 pub struct ZeroConcurrencyPolicy {
     running_statement: bool,
-    transaction_queue: VecDeque<Transaction>,
+    transaction_queue: TransactionQueue,
 }
 
 impl ZeroConcurrencyPolicy {
     pub fn new() -> Self {
         ZeroConcurrencyPolicy {
             running_statement: false,
-            transaction_queue: VecDeque::new(),
+            transaction_queue: TransactionQueue::new(),
         }
-    }
-
-    /// Returns the `Transaction` with the given `transaction_id`. A `panic!` will occur if it is
-    /// not found.
-    fn find(&mut self, transaction_id: u64) -> &mut Transaction {
-        self.transaction_queue.iter_mut()
-            .find(|t| t.id == transaction_id)
-            .expect(&format!("Transaction id {} not found in sidetrack queue", transaction_id))
     }
 
     /// Returns a vector of `Statement`s that can be safely admitted to the execution engine.
@@ -59,13 +50,16 @@ impl Policy for ZeroConcurrencyPolicy {
     }
 
     fn commit_transaction(&mut self, transaction_id: u64) -> Vec<Statement> {
-        let transaction = self.find(transaction_id);
+        let transaction = self.transaction_queue.get_mut(&transaction_id)
+            .expect(&format!("Transaction id {} not found in sidetrack queue", transaction_id));
         transaction.commit();
         self.admit_statements()
     }
 
     fn enqueue_statement(&mut self, statement: Statement) -> Vec<Statement> {
-        let transaction = self.find(statement.transaction_id);
+        let transaction_id = &statement.transaction_id;
+        let transaction = self.transaction_queue.get_mut(&transaction_id)
+            .expect(&format!("Transaction id {} not found in sidetrack queue", transaction_id));
         transaction.enqueue_statement(statement);
         self.admit_statements()
     }
