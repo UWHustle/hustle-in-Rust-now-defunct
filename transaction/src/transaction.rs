@@ -1,5 +1,5 @@
 use std::collections::{VecDeque, HashMap};
-use message::Statement;
+use crate::statement::Statement;
 
 pub struct Transaction {
     pub id: u64,
@@ -16,11 +16,11 @@ impl Transaction {
         }
     }
 
-    pub fn enqueue_statement(&mut self, statement: Statement) {
+    pub fn push_back(&mut self, statement: Statement) {
         self.statements.push_back(statement);
     }
 
-    pub fn dequeue_statement(&mut self) -> Option<Statement> {
+    pub fn pop_front(&mut self) -> Option<Statement> {
         self.statements.pop_front()
     }
 
@@ -37,6 +37,7 @@ pub struct TransactionQueue {
     deque: VecDeque<u64>,
     map: HashMap<u64, Transaction>,
 }
+
 
 impl TransactionQueue {
     pub fn new() -> Self {

@@ -1,9 +1,7 @@
-use types::Value;
 use types::operators::Comparator::{self, *};
-use AccessMode::*;
+use types::Value;
 
-#[derive(PartialEq)]
-pub enum AccessMode { Read, Write }
+use crate::lock::AccessMode::{self, *};
 
 pub struct ValueLock {
     access_mode: AccessMode,
@@ -57,7 +55,7 @@ impl ValueLock {
                             Lt => self_value.compare(&**other_value, Lt),
                             Gt | Ge => true,
                         }
-                    )
+                    ),
                 }
             }).unwrap_or(true)
         }
@@ -66,8 +64,9 @@ impl ValueLock {
 
 #[cfg(test)]
 mod value_lock_tests {
-    use super::*;
     use types::integer::Int1;
+
+    use super::*;
 
     #[test]
     fn read() {

@@ -1,72 +1,61 @@
-use crate::policy::Policy;
-use message::Statement;
-use crate::transaction::{Transaction, TransactionQueue};
+use message::Plan;
+
+use crate::{policy::{BasePolicy, Policy}, TransactionQueue};
 
 pub struct ZeroConcurrencyPolicy {
+    base_policy: BasePolicy,
     running_statement: bool,
-    transaction_queue: TransactionQueue,
 }
 
 impl ZeroConcurrencyPolicy {
     pub fn new() -> Self {
         ZeroConcurrencyPolicy {
+            base_policy: BasePolicy::new(),
             running_statement: false,
-            transaction_queue: TransactionQueue::new(),
         }
     }
 
     /// Returns a vector of `Statement`s that can be safely admitted to the execution engine.
-    fn admit_statements(&mut self) -> Vec<Statement> {
-        // Remove committed and empty statements from the queue.
-        while self.transaction_queue.front()
+    fn admit_statements(&mut self, callback: &Fn(Plan, u64)) {
+        // Remove committed and empty transactions from the queue.
+        while self.base_policy.transaction_queue.front()
             .map(|t| t.committed && t.is_empty())
             .unwrap_or(false)
         {
-            self.transaction_queue.pop_front();
+            self.base_policy.transaction_queue.pop_front();
         }
 
-        // Return statements that can be safely admitted to the execution engine.
-        if self.running_statement {
-            // There is currently a statement running. No statements can be executed at this time.
-            vec![]
-        } else {
-            if let Some(next_statement) = self.transaction_queue.front_mut()
-                .and_then(|t| t.dequeue_statement())
+        // Call the callback with statements that can be safely admitted to the execution engine.
+        if !self.running_statement {
+            if let Some(next_statement) = self.base_policy.transaction_queue.front_mut()
+                .and_then(|t| t.pop_front())
             {
-                // The front transaction has a statement to execute.
                 self.running_statement = true;
-                vec![next_statement]
-            } else {
-                // The front transaction has no statements to execute at this time.
-                vec![]
+                callback(next_statement.plan.clone(), next_statement.id)
             }
         }
     }
 }
 
 impl Policy for ZeroConcurrencyPolicy {
-    fn begin_transaction(&mut self, transaction: Transaction) {
-        self.transaction_queue.push_back(transaction);
+    fn begin_transaction(&mut self) -> u64 {
+        self.base_policy.begin_transaction()
     }
 
-    fn commit_transaction(&mut self, transaction_id: u64) -> Vec<Statement> {
-        let transaction = self.transaction_queue.get_mut(&transaction_id)
-            .expect(&format!("Transaction id {} not found in sidetrack queue", transaction_id));
-        transaction.commit();
-        self.admit_statements()
+    fn commit_transaction(&mut self, transaction_id: u64, callback: &Fn(Plan, u64)) {
+        self.base_policy.commit_transaction(transaction_id, callback);
+        self.admit_statements(callback);
     }
 
-    fn enqueue_statement(&mut self, statement: Statement) -> Vec<Statement> {
-        let transaction_id = &statement.transaction_id;
-        let transaction = self.transaction_queue.get_mut(&transaction_id)
-            .expect(&format!("Transaction id {} not found in sidetrack queue", transaction_id));
-        transaction.enqueue_statement(statement);
-        self.admit_statements()
+    fn enqueue_statement(&mut self, transaction_id: u64, plan: Plan, callback: &Fn(Plan, u64)) {
+        self.base_policy.enqueue_statement(transaction_id, plan, callback);
+        self.admit_statements(callback);
     }
 
-    fn complete_statement(&mut self, _statement: Statement) -> Vec<Statement> {
+    fn complete_statement(&mut self, statement_id: u64, callback: &Fn(Plan, u64)) {
+        self.base_policy.complete_statement(statement_id, callback);
         self.running_statement = false;
-        self.admit_statements()
+        self.admit_statements(callback);
     }
 }
 
@@ -74,6 +63,9 @@ impl Policy for ZeroConcurrencyPolicy {
 mod zero_concurrency_policy_tests {
     use super::*;
     use message::{Plan, Table};
+    use crate::{Transaction, Statement};
+    use std::collections::VecDeque;
+    use std::cell::RefCell;
 
     #[test]
     fn single_connection_test() {
@@ -81,47 +73,45 @@ mod zero_concurrency_policy_tests {
         let mut policy = ZeroConcurrencyPolicy::new();
 
         assert!(!policy.running_statement);
-        assert!(policy.transaction_queue.is_empty());
+        assert!(policy.base_policy.transaction_queue.is_empty());
 
         // Begin a transaction.
-        let transaction = Transaction::new(0);
-        let transaction_id = transaction.id;
-        policy.begin_transaction(transaction);
+        let transaction_id = policy.begin_transaction();
 
-        assert_eq!(policy.transaction_queue.len(), 1);
+        assert_eq!(policy.base_policy.transaction_queue.len(), 1);
 
         // Enqueue the first statement in the transaction.
         let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
-        let first_statement = Statement::new(0, transaction_id, 0, plan.clone());
-        let mut statements = policy.enqueue_statement(first_statement);
+        let admitted = RefCell::new(VecDeque::new());
+        let callback = |_, statement_id| admitted.borrow_mut().push_back(statement_id);
+        policy.enqueue_statement(transaction_id, plan.clone(), &callback);
 
         assert!(policy.running_statement);
-        assert_eq!(statements.get(0).map(|s| s.id), Some(0));
+        assert_eq!(admitted.borrow().front(), Some(&0));
 
         // Enqueue the second statement in the transaction.
-        let completed_statement = statements.pop().unwrap();
-        let second_statement = Statement::new(1, transaction_id, 0, plan);
-        let statements = policy.enqueue_statement(second_statement);
+        policy.enqueue_statement(transaction_id, plan, &callback);
 
-        assert!(statements.is_empty());
+        assert_eq!(admitted.borrow().len(), 1);
 
         // Complete the first statement.
-        let mut statements = policy.complete_statement(completed_statement);
+        let statement_id = admitted.borrow_mut().pop_front().unwrap();
+        policy.complete_statement(statement_id, &callback);
 
-        assert_eq!(statements.get(0).map(|s| s.id), Some(1));
+        assert_eq!(admitted.borrow().front(), Some(&1));
 
         // Complete the second statement.
-        let completed_statement = statements.pop().unwrap();
-        let statements = policy.complete_statement(completed_statement);
+        let statement_id = admitted.borrow_mut().pop_front().unwrap();
+        policy.complete_statement(statement_id, &callback);
 
         assert!(!policy.running_statement);
-        assert!(statements.is_empty());
+        assert!(admitted.borrow().is_empty());
 
         // Commit the transaction.
-        let statements = policy.commit_transaction(transaction_id);
+        policy.commit_transaction(transaction_id, &callback);
 
-        assert!(policy.transaction_queue.is_empty());
-        assert!(statements.is_empty());
+        assert!(policy.base_policy.transaction_queue.is_empty());
+        assert!(admitted.borrow().is_empty());
     }
 
     #[test]
@@ -130,70 +120,65 @@ mod zero_concurrency_policy_tests {
         let mut policy = ZeroConcurrencyPolicy::new();
 
         assert!(!policy.running_statement);
-        assert!(policy.transaction_queue.is_empty());
+        assert!(policy.base_policy.transaction_queue.is_empty());
 
         // Begin the first transaction.
-        let first_transaction = Transaction::new(0);
-        let first_transaction_id = first_transaction.id;
-        policy.begin_transaction(first_transaction);
+        let first_transaction_id = policy.begin_transaction();
 
-        assert_eq!(policy.transaction_queue.len(), 1);
+        assert_eq!(policy.base_policy.transaction_queue.len(), 1);
 
         // Begin the second transaction.
-        let second_transaction = Transaction::new(1);
-        let second_transaction_id = second_transaction.id;
-        policy.begin_transaction(second_transaction);
+        let second_transaction_id = policy.begin_transaction();
 
-        assert_eq!(policy.transaction_queue.len(), 2);
+        assert_eq!(policy.base_policy.transaction_queue.len(), 2);
 
         // Enqueue the first statement in the first transaction.
         let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
-        let first_statement = Statement::new(0, first_transaction_id, 0, plan.clone());
-        let mut statements = policy.enqueue_statement(first_statement);
+        let admitted = RefCell::new(VecDeque::new());
+        let callback = |_, statement_id| admitted.borrow_mut().push_back(statement_id);
+        policy.enqueue_statement(first_transaction_id, plan.clone(), &callback);
 
         assert!(policy.running_statement);
-        assert_eq!(statements.get(0).map(|s| s.id), Some(0));
+        assert_eq!(admitted.borrow().front(), Some(&0));
 
         // Enqueue the second statement in the second transaction.
-        let completed_statement = statements.pop().unwrap();
-        let second_statement = Statement::new(1, second_transaction_id, 1, plan.clone());
-        let statements = policy.enqueue_statement(second_statement);
+        policy.enqueue_statement(second_transaction_id, plan.clone(), &callback);
 
-        assert!(statements.is_empty());
+        assert_eq!(admitted.borrow().len(), 1);
 
         // Enqueue the third statement in the first transaction.
-        let third_statement = Statement::new(2, first_transaction_id, 0, plan.clone());
-        let statements = policy.enqueue_statement(third_statement);
+        policy.enqueue_statement(first_transaction_id, plan, &callback);
 
-        assert!(statements.is_empty());
+        assert_eq!(admitted.borrow().len(), 1);
 
         // Complete the first statement.
-        let mut statements = policy.complete_statement(completed_statement);
+        let statement_id = admitted.borrow_mut().pop_front().unwrap();
+        policy.complete_statement(statement_id, &callback);
 
-        assert_eq!(statements.get(0).map(|s| s.id), Some(2));
+        assert_eq!(admitted.borrow().front(), Some(&2));
 
         // Complete the third statement.
-        let completed_statement = statements.pop().unwrap();
-        let statements = policy.complete_statement(completed_statement);
+        let statement_id = admitted.borrow_mut().pop_front().unwrap();
+        policy.complete_statement(statement_id, &callback);
 
-        assert!(statements.is_empty());
+        assert!(admitted.borrow().is_empty());
 
         // Commit the first transaction.
-        let mut statements = policy.commit_transaction(first_transaction_id);
+        policy.commit_transaction(first_transaction_id, &callback);
 
-        assert_eq!(policy.transaction_queue.len(), 1);
-        assert_eq!(statements.get(0).map(|s| s.id), Some(1));
+        assert_eq!(policy.base_policy.transaction_queue.len(), 1);
+        assert_eq!(admitted.borrow().front(), Some(&1));
 
         // Complete the second statement.
-        let completed_statement = statements.pop().unwrap();
-        let statements = policy.complete_statement(completed_statement);
+        let statement_id = admitted.borrow_mut().pop_front().unwrap();
+        policy.complete_statement(statement_id, &callback);
 
         assert!(!policy.running_statement);
-        assert!(statements.is_empty());
+        assert!(admitted.borrow().is_empty());
 
-        let statements = policy.commit_transaction(second_transaction_id);
+        policy.commit_transaction(second_transaction_id, &callback);
 
-        assert!(policy.transaction_queue.is_empty());
-        assert!(statements.is_empty());
+        assert!(policy.base_policy.transaction_queue.is_empty());
+        assert!(admitted.borrow().is_empty());
     }
 }

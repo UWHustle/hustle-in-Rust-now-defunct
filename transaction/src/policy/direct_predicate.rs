@@ -1,38 +1,37 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 
-use message::Statement;
+use message::Plan;
 
-use crate::policy::Policy;
-use crate::transaction::Transaction;
+use crate::{lock::PredicateLock, policy::Policy, Transaction};
 
 pub struct DirectPredicatePolicy {
-    running_statements: VecDeque<Transaction>,
+    predicate_locks: HashSet<PredicateLock>,
     sidetracked_statements: VecDeque<Transaction>,
 }
 
 impl DirectPredicatePolicy {
     pub fn new() -> Self {
         DirectPredicatePolicy {
-            running_statements: VecDeque::new(),
+            predicate_locks: HashSet::new(),
             sidetracked_statements: VecDeque::new(),
         }
     }
 }
 
 impl Policy for DirectPredicatePolicy {
-    fn begin_transaction(&mut self, transaction: Transaction) {
+    fn begin_transaction(&mut self) -> u64 {
         unimplemented!()
     }
 
-    fn commit_transaction(&mut self, transaction_id: u64) -> Vec<Statement> {
+    fn commit_transaction(&mut self, transaction_id: u64, callback: &Fn(Plan, u64)) {
         unimplemented!()
     }
 
-    fn enqueue_statement(&mut self, statement: Statement) -> Vec<Statement> {
+    fn enqueue_statement(&mut self, transaction_id: u64, plan: Plan, callback: &Fn(Plan, u64)) {
         unimplemented!()
     }
 
-    fn complete_statement(&mut self, statement: Statement) -> Vec<Statement> {
+    fn complete_statement(&mut self, statement_id: u64, callback: &Fn(Plan, u64)) {
         unimplemented!()
     }
 }

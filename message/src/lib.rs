@@ -13,31 +13,12 @@ pub enum Message {
     ResolveAst { ast: String, connection_id: u64 },
     OptimizePlan { plan: Plan, connection_id: u64 },
     TransactPlan { plan: Plan, connection_id: u64 },
-    ExecuteStatement { statement: Statement },
-    CompleteStatement { statement: Statement },
+    ExecutePlan { plan: Plan, statement_id: u64, connection_id: u64 },
+    CompletePlan { statement_id: u64, connection_id: u64 },
     Schema { schema: Vec<(String, DataType)>, connection_id: u64 },
     ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
     Success { connection_id: u64 },
     Failure { reason: String, connection_id: u64 },
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct Statement {
-    pub id: u64,
-    pub transaction_id: u64,
-    pub connection_id: u64,
-    pub plan: Plan,
-}
-
-impl Statement {
-    pub fn new(id: u64, transaction_id: u64, connection_id: u64, plan: Plan) -> Self {
-        Statement {
-            id,
-            transaction_id,
-            connection_id,
-            plan,
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
