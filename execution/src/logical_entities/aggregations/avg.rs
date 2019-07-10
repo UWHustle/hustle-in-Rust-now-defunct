@@ -1,7 +1,7 @@
 use logical_entities::aggregations::AggregationTrait;
-use types::data_type::*;
-use types::integer::*;
-use types::*;
+use hustle_types::data_type::*;
+use hustle_types::integer::*;
+use hustle_types::*;
 
 #[derive(Clone, Debug)]
 pub struct Avg {

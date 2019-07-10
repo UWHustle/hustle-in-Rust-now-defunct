@@ -1,4 +1,4 @@
-use message::{Plan, Message, Column, Table};
+use hustle_common::{Plan, Message, Column, Table};
 use serde_json as json;
 use std::sync::mpsc::{Receiver, Sender};
 use crate::catalog::Catalog;

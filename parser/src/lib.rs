@@ -1,9 +1,9 @@
-extern crate message;
+extern crate hustle_common;
 
 use std::ffi::{CString, CStr};
 use std::os::raw::{c_char, c_int};
 use std::sync::mpsc::{Receiver, Sender};
-use self::message::Message;
+use self::hustle_common::Message;
 use std::ptr;
 
 extern {

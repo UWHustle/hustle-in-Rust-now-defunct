@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use message::Plan;
+use hustle_common::Plan;
 
 use crate::{policy::Policy, Statement};
 use crate::transaction::Transaction;

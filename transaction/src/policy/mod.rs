@@ -1,5 +1,5 @@
 pub use direct_predicate::DirectPredicatePolicy;
-use message::Plan;
+use hustle_common::Plan;
 pub use zero_concurrency::ZeroConcurrencyPolicy;
 
 mod zero_concurrency;

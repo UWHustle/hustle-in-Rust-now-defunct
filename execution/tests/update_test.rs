@@ -4,8 +4,8 @@ extern crate types;
 
 use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
 use execution::logical_entities::predicates::comparison::{Comparison, ComparisonOperand};
-use types::operators::Comparator;
-use types::integer::Int4;
+use hustle_types::operators::Comparator;
+use hustle_types::integer::Int4;
 use execution::test_helpers::hustle_queries::hustle_update;
 use execution::test_helpers::sqlite3::run_query_sqlite;
 use storage::StorageManager;

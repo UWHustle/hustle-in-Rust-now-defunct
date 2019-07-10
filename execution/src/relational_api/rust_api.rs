@@ -14,13 +14,13 @@ use physical_operators::print::Print;
 use physical_operators::project::Project;
 use physical_operators::select::Select;
 use physical_operators::Operator;
-use types::data_type::DataType;
-use types::operators::*;
-use types::Value;
+use hustle_types::data_type::DataType;
+use hustle_types::operators::*;
+use hustle_types::Value;
 
-extern crate storage;
+extern crate hustle_storage;
 
-use self::storage::StorageManager;
+use self::hustle_storage::StorageManager;
 
 pub struct HustleConnection {
     storage_manager: StorageManager,

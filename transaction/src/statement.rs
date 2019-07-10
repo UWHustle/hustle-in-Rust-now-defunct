@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 use std::hash::{Hash, Hasher};
 
-use message::Plan;
+use hustle_common::Plan;
 
 use crate::lock::{AccessMode, PredicateLock};
 

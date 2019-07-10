@@ -1,15 +1,15 @@
-use execution::ExecutionEngine;
-use transaction::TransactionManager;
+use hustle_execution::ExecutionEngine;
+use hustle_transaction::TransactionManager;
 use crate::connection::ServerConnection;
 use std::net::{TcpListener, ToSocketAddrs};
 use std::io::Error;
 use crossbeam_utils::thread;
 use std::sync::{mpsc, Arc, RwLock, Mutex};
 use std::collections::HashMap;
-use message::Message;
+use hustle_common::Message;
 use std::sync::mpsc::Sender;
 use hustle_parser::Parser;
-use resolver::Resolver;
+use hustle_resolver::Resolver;
 
 pub struct Server {
     tcp_listener: TcpListener,

@@ -1,5 +1,5 @@
-use types::data_type::*;
-use types::*;
+use hustle_types::data_type::*;
+use hustle_types::*;
 
 pub mod avg;
 pub mod count;

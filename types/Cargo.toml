@@ -1,5 +1,5 @@
 [package]
-name = "types"
+name = "hustle-types"
 version = "0.1.0"
 authors = ["Matt Dutson <dutson@wisc.edu>"]
 edition = "2018"

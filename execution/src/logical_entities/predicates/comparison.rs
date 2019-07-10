@@ -1,8 +1,8 @@
 use logical_entities::column::Column;
 use logical_entities::predicates::Predicate;
 use logical_entities::row::Row;
-use types::operators::Comparator;
-use types::*;
+use hustle_types::operators::Comparator;
+use hustle_types::*;
 
 pub enum ComparisonOperand {
     Value(Box<Value>),

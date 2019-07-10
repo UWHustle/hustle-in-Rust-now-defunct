@@ -4,16 +4,16 @@ pub mod physical_plan;
 pub mod relational_api;
 pub mod test_helpers;
 
-use storage::StorageManager;
+use hustle_storage::StorageManager;
 use logical_entities::relation::Relation;
 use physical_plan::parser::parse;
 use std::sync::mpsc::{Receiver, Sender};
-use message::{Message, Plan};
-use types::data_type::DataType;
+use hustle_common::{Message, Plan};
+use hustle_types::data_type::DataType;
 
-extern crate storage;
-extern crate message;
-extern crate types;
+extern crate hustle_storage;
+extern crate hustle_common;
+extern crate hustle_types;
 extern crate core;
 
 pub struct ExecutionEngine {

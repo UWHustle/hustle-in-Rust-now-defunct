@@ -15,8 +15,8 @@ pub mod table_reference;
 
 use logical_entities::relation::Relation;
 
-extern crate storage;
-use self::storage::StorageManager;
+extern crate hustle_storage;
+use self::hustle_storage::StorageManager;
 
 pub trait Operator {
     // Returns the information for what relation will be returned when execute is called.

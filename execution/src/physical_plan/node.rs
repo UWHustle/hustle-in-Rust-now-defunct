@@ -3,7 +3,7 @@ use physical_operators::Operator;
 
 use std::rc::Rc;
 
-use storage::StorageManager;
+use hustle_storage::StorageManager;
 
 pub struct Node {
     operator: Rc<Operator>,

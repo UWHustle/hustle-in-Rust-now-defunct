@@ -1,4 +1,4 @@
-use types::data_type::*;
+use hustle_types::data_type::*;
 
 #[derive(Clone, Debug, Hash)]
 pub struct Column {
@@ -39,7 +39,7 @@ impl Eq for Column {}
 #[cfg(test)]
 mod tests {
     use logical_entities::column::Column;
-    use types::data_type::*;
+    use hustle_types::data_type::*;
 
     #[test]
     fn column_create() {

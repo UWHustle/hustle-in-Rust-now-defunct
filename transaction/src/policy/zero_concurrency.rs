@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use message::Plan;
+use hustle_common::Plan;
 
 use crate::{policy::Policy, Statement, Transaction};
 
@@ -90,7 +90,7 @@ mod zero_concurrency_policy_tests {
     use std::cell::RefCell;
     use std::collections::VecDeque;
 
-    use message::{Plan, Table};
+    use hustle_common::{Plan, Table};
 
     use super::*;
 

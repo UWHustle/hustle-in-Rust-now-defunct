@@ -8,12 +8,12 @@ use logical_entities::column::Column;
 use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
-use types::borrowed_buffer::BorrowedBuffer;
-use types::*;
+use hustle_types::borrowed_buffer::BorrowedBuffer;
+use hustle_types::*;
 
 use std::collections::HashMap;
 
-use super::storage::StorageManager;
+use super::hustle_storage::StorageManager;
 
 pub struct Aggregate {
     input_relation: Relation,

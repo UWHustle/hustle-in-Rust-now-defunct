@@ -5,9 +5,9 @@ use logical_entities::relation::Relation;
 use physical_operators::aggregate::Aggregate;
 use physical_operators::project::Project;
 use physical_operators::*;
-use storage::StorageManager;
-use types::data_type::DataType;
-use types::Value;
+use hustle_storage::StorageManager;
+use hustle_types::data_type::DataType;
+use hustle_types::Value;
 use physical_operators::update::Update;
 use physical_operators::select::Select;
 

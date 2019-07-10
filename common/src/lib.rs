@@ -5,7 +5,7 @@ use std::io::Cursor;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
-use types::data_type::DataType;
+use hustle_types::data_type::DataType;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {

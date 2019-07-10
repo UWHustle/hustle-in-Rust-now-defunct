@@ -1,4 +1,4 @@
-extern crate message;
+extern crate hustle_common;
 extern crate serde_json;
 
 use std::rc::Rc;
@@ -21,11 +21,11 @@ use physical_operators::select::Select;
 use physical_operators::table_reference::TableReference;
 use physical_operators::update::Update;
 use physical_plan::node::Node;
-use types;
-use types::data_type::*;
-use types::operators::*;
+use hustle_types;
+use hustle_types::data_type::*;
+use hustle_types::operators::*;
 
-use self::message::{Plan, Table};
+use self::hustle_common::{Plan, Table};
 
 
 pub fn parse(plan: &Plan) -> Result<Node, String> {
@@ -89,7 +89,7 @@ fn parse_delete(from_table: &Table, filter: &Option<Box<Plan>>) -> Result<Node, 
     Ok(Node::new(Rc::new(delete_op), vec![Rc::new(from)]))
 }
 
-fn parse_row(row: &Plan) -> Result<Vec<Box<types::Value>>, String> {
+fn parse_row(row: &Plan) -> Result<Vec<Box<hustle_types::Value>>, String> {
     if let Plan::Row { values } = row {
         values.into_iter()
             .map(|literal| parse_literal(&literal))
@@ -123,7 +123,7 @@ fn parse_comparative(name: &str, left: &Box<Plan>, right: &Box<Plan>) -> Result<
     }
 }
 
-fn parse_literal(literal: &Plan) -> Result<Box<types::Value>, String> {
+fn parse_literal(literal: &Plan) -> Result<Box<hustle_types::Value>, String> {
     if let Plan::Literal { value, literal_type } = literal {
         let data_type = DataType::from_str(&literal_type).unwrap();
         Ok(data_type.parse(&value).unwrap())
@@ -168,13 +168,13 @@ fn parse_create_table(table: &Table) -> Result<Node, String> {
 
 fn parse_update(
     table: &Table,
-    columns: &Vec<message::Column>,
+    columns: &Vec<hustle_common::Column>,
     assignments: &Vec<Plan>,
     filter: &Option<Box<Plan>>,
 ) -> Result<Node, String> {
     let input = parse_table(table.into());
     let columns = parse_columns(columns);
-    let assignments: Result<Vec<Box<types::Value>>, String> = assignments.into_iter()
+    let assignments: Result<Vec<Box<hustle_types::Value>>, String> = assignments.into_iter()
         .map(|assignment| parse_literal(assignment))
         .collect();
     let filter = filter
@@ -208,18 +208,18 @@ fn parse_column_reference(column_reference: &Plan) -> Result<Column, String> {
     }
 }
 
-fn parse_columns(columns: &Vec<message::Column>) -> Vec<Column> {
+fn parse_columns(columns: &Vec<hustle_common::Column>) -> Vec<Column> {
     columns.into_iter().map(|c| parse_column(c)).collect()
 }
 
-fn parse_column(column: &message::Column) -> Column {
+fn parse_column(column: &hustle_common::Column) -> Column {
     Column::new(
         &column.name,
         DataType::from_str(&column.column_type).unwrap(),
     )
 }
 
-fn parse_table(table: &message::Table) -> Node {
+fn parse_table(table: &hustle_common::Table) -> Node {
     let cols = parse_columns(&table.columns);
     let relation = Relation::new(&table.name, Schema::new(cols));
     Node::new(Rc::new(TableReference::new(relation)), vec![])

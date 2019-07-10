@@ -1,11 +1,11 @@
 [package]
-name = "message"
+name = "hustle-common"
 version = "0.1.0"
 authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-types = { path = "../types" }
+hustle-types = { path = "../types" }
 byteorder = "1.3.1"
 serde = { version = "1.0.92", features = ["derive"] }
 serde_json = "1.0.39"

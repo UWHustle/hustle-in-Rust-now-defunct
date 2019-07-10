@@ -1,9 +1,9 @@
 use logical_entities::relation::Relation;
 use logical_entities::predicates::Predicate;
 use physical_operators::Operator;
-use storage::StorageManager;
-use types::borrowed_buffer::BorrowedBuffer;
-use types::{Value, Buffer};
+use hustle_storage::StorageManager;
+use hustle_types::borrowed_buffer::BorrowedBuffer;
+use hustle_types::{Value, Buffer};
 use logical_entities::row::Row;
 
 pub struct Select {

@@ -1,5 +1,5 @@
-use types::operators::Comparator::{self, *};
-use types::Value;
+use hustle_types::operators::Comparator::{self, *};
+use hustle_types::Value;
 
 use crate::lock::AccessMode::{self, *};
 
@@ -64,7 +64,7 @@ impl ValueLock {
 
 #[cfg(test)]
 mod value_lock_tests {
-    use types::integer::Int1;
+    use hustle_types::integer::Int1;
 
     use super::*;
 

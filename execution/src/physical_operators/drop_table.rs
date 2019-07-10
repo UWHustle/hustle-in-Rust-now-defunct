@@ -1,7 +1,7 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
 
-use super::storage::StorageManager;
+use super::hustle_storage::StorageManager;
 
 pub struct DropTable {
     name: String,

@@ -1,5 +1,5 @@
 use std::net::TcpStream;
-use message::Message;
+use hustle_common::Message;
 use std::sync::mpsc::{Receiver, Sender};
 
 pub struct ServerConnection {
