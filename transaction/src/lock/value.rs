@@ -5,13 +5,13 @@ use crate::lock::AccessMode::{self, *};
 
 pub struct ValueLock {
     access_mode: AccessMode,
-    domain: Option<(Comparator, Box<Value>)>,
+    domain: Option<(Comparator, Box<Value + Send>)>,
 }
 
 impl ValueLock {
     pub fn new(
         access_mode: AccessMode,
-        domain: Option<(Comparator, Box<Value>)>,
+        domain: Option<(Comparator, Box<Value + Send>)>,
     ) -> Self {
         ValueLock {
             access_mode,
@@ -191,7 +191,7 @@ mod value_lock_tests {
         ValueLock::new(
             access_mode,
             domain.take().map(|(cmp, value)|
-                (cmp, Box::new(Int1::new(value, false)) as Box<Value>)
+                (cmp, Box::new(Int1::new(value, false)) as Box<Value + Send>)
             )
         )
     }

@@ -1,6 +1,6 @@
 pub use crate::manager::TransactionManager;
 use crate::statement::Statement;
-use crate::transaction::{Transaction, TransactionQueue};
+use crate::transaction::Transaction;
 
 pub mod lock;
 pub mod policy;
