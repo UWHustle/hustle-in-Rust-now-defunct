@@ -1,9 +1,11 @@
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use serde::{Serialize, Deserialize};
-use std::io::Cursor;
-use types::data_type::DataType;
-use std::hash::{Hash, Hasher};
 use std::borrow::Borrow;
+use std::hash::{Hash, Hasher};
+use std::io::Cursor;
+
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use serde::{Deserialize, Serialize};
+
+use types::data_type::DataType;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {
@@ -21,36 +23,118 @@ pub enum Message {
     Failure { reason: String, connection_id: u64 },
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Ast {
+    BeginTransaction,
+    Column {
+        name: String,
+        table: Option<String>,
+    },
+    CommitTransaction,
+    CreateTable {
+        table: Table,
+        columns: Vec<AstColumnDefinition>,
+    },
+    Delete {
+        from_table: String,
+        filter: Option<AstExpression>,
+    },
+    DropTable {
+        table: String,
+    },
+    Insert {
+        into_table: String,
+        input: Vec<AstLiteral>,
+    },
+    Literal {
+        value: String,
+        literal_type: String,
+    },
+    Select {
+        from_table: String,
+        filter: Option<AstExpression>,
+        projection: Vec<AstColumnReference>
+    },
+    Update {
+        table: String,
+        assignments: Vec<AstAssignment>,
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstAssignment {
+    column: AstColumnReference,
+    value: AstLiteral,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstColumnDefinition {
+    name: String,
+    column_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstColumnReference {
+    name: String,
+    table: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum AstExpression {
+    Comparative {
+        name: String,
+        left: Box<AstExpression>,
+        right: Box<AstExpression>,
+    },
+    Connective {
+        name: String,
+        left: Box<AstExpression>,
+        right: Box<AstExpression>,
+    },
+    ColumnReference {
+        column_reference: AstColumnReference,
+    },
+    Literal {
+        literal: AstLiteral,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstLiteral {
+    value: String,
+    literal_type: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
     Aggregate {
         table: Box<Plan>,
         aggregates: Vec<Plan>,
-        groups: Vec<Plan>
+        groups: Vec<Plan>,
     },
     BeginTransaction,
     ColumnReference {
-        column: Column
+        column: Column,
     },
     CommitTransaction,
     Comparative {
         name: String,
         left: Box<Plan>,
-        right: Box<Plan>
+        right: Box<Plan>,
     },
     Connective {
         name: String,
-        terms: Vec<Plan>
+        terms: Vec<Plan>,
     },
     CreateTable {
-        table: Table
+        table: Table,
     },
     Delete {
         from_table: Table,
-        filter: Option<Box<Plan>>
+        filter: Option<Box<Plan>>,
     },
     DropTable {
-        table: Table
+        table: Table,
     },
     Function {
         name: String,
@@ -59,40 +143,40 @@ pub enum Plan {
     },
     Insert {
         into_table: Table,
-        input: Box<Plan>
+        input: Box<Plan>,
     },
     Join {
         l_table: Box<Plan>,
         r_table: Box<Plan>,
-        filter: Option<Box<Plan>>
+        filter: Option<Box<Plan>>,
     },
     Limit {
         table: Box<Plan>,
-        limit: usize
+        limit: usize,
     },
     Literal {
         value: String,
-        literal_type: String
+        literal_type: String,
     },
     Project {
         table: Box<Plan>,
-        projection: Vec<Plan>
+        projection: Vec<Plan>,
     },
     Row {
-        values: Vec<Plan>
+        values: Vec<Plan>,
     },
     Select {
         table: Box<Plan>,
-        filter: Box<Plan>
+        filter: Box<Plan>,
     },
     TableReference {
-        table: Table
+        table: Table,
     },
     Update {
         table: Table,
         columns: Vec<Column>,
         assignments: Vec<Plan>,
-        filter: Option<Box<Plan>>
+        filter: Option<Box<Plan>>,
     }
 }
 
@@ -101,7 +185,7 @@ pub struct Column {
     pub name: String,
     pub column_type: String,
     pub table: String,
-    pub alias: Option<String>
+    pub alias: Option<String>,
 }
 
 impl Column {
@@ -110,7 +194,7 @@ impl Column {
             name,
             column_type,
             table,
-            alias: None
+            alias: None,
         }
     }
 }
@@ -118,14 +202,14 @@ impl Column {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Table {
     pub name: String,
-    pub columns: Vec<Column>
+    pub columns: Vec<Column>,
 }
 
 impl Table {
     pub fn new(name: String, columns: Vec<Column>) -> Self {
         Table {
             name,
-            columns
+            columns,
         }
     }
 }
