@@ -1,6 +1,8 @@
-use std::sync::mpsc::{Receiver, Sender};
 use std::collections::HashMap;
+use std::sync::mpsc::{Receiver, Sender};
+
 use message::{Message, Plan};
+
 use crate::policy::{Policy, ZeroConcurrencyPolicy};
 
 pub struct TransactionManager {

@@ -1,7 +1,9 @@
-use message::Plan;
-use crate::lock::{PredicateLock, AccessMode};
-use std::hash::{Hash, Hasher};
 use std::borrow::Borrow;
+use std::hash::{Hash, Hasher};
+
+use message::Plan;
+
+use crate::lock::{AccessMode, PredicateLock};
 
 pub struct Statement {
     pub id: u64,

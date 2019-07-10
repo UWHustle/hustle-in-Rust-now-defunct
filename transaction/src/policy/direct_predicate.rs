@@ -1,7 +1,8 @@
+use std::collections::{HashMap, HashSet, VecDeque};
+
 use message::Plan;
 
 use crate::{policy::Policy, Statement};
-use std::collections::{HashSet, HashMap, VecDeque};
 use crate::transaction::Transaction;
 
 pub struct DirectPredicatePolicy {
