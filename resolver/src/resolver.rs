@@ -9,8 +9,12 @@ pub struct Resolver {
 
 impl Resolver {
     pub fn new() -> Self {
+        Resolver::with_catalog(Catalog::try_from_file().unwrap_or(Catalog::new()))
+    }
+
+    pub fn with_catalog(catalog: Catalog) -> Self {
         Resolver {
-            catalog: Catalog::try_from_file().unwrap_or(Catalog::new())
+            catalog
         }
     }
 

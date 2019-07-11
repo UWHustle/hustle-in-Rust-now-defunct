@@ -26,13 +26,9 @@ pub enum Message {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Ast {
     BeginTransaction,
-    Column {
-        name: String,
-        table: Option<String>,
-    },
     CommitTransaction,
     CreateTable {
-        table: Table,
+        table: String,
         columns: Vec<AstColumnDefinition>,
     },
     Delete {
@@ -46,10 +42,6 @@ pub enum Ast {
         into_table: String,
         input: Vec<AstLiteral>,
     },
-    Literal {
-        value: String,
-        literal_type: String,
-    },
     Select {
         from_table: String,
         filter: Option<AstExpression>,
@@ -59,24 +51,6 @@ pub enum Ast {
         table: String,
         assignments: Vec<AstAssignment>,
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AstAssignment {
-    column: AstColumnReference,
-    value: AstLiteral,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AstColumnDefinition {
-    name: String,
-    column_type: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AstColumnReference {
-    name: String,
-    table: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -97,6 +71,24 @@ pub enum AstExpression {
     Literal {
         literal: AstLiteral,
     },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstAssignment {
+    column: AstColumnReference,
+    value: AstLiteral,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstColumnDefinition {
+    name: String,
+    column_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AstColumnReference {
+    name: String,
+    table: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -177,7 +169,7 @@ pub enum Plan {
         columns: Vec<Column>,
         assignments: Vec<Plan>,
         filter: Option<Box<Plan>>,
-    }
+    },
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]

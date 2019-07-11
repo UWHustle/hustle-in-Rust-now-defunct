@@ -14,7 +14,7 @@ pub struct Statement {
 
 impl Statement {
     pub fn new(id: u64, transaction_id: u64, plan: Plan) -> Self {
-        let predicate_lock = Self::generate_lock(&plan);
+        let predicate_lock = PredicateLock::from_plan(&plan);
         Statement {
             id,
             transaction_id,
@@ -27,9 +27,8 @@ impl Statement {
         self.predicate_lock.conflicts(&other.predicate_lock)
     }
 
-    fn generate_lock(_plan: &Plan) -> PredicateLock {
-        // TODO: Implement this logic.
-        PredicateLock::new(AccessMode::Read, vec![])
+    pub fn access_mode(&self) -> &AccessMode {
+        self.predicate_lock.access_mode()
     }
 }
 

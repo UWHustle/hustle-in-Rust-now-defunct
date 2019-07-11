@@ -8,3 +8,7 @@ edition = "2018"
 hustle-common = { path = "../common" }
 hustle-types = { path = "../types" }
 crossbeam = "0.7.1"
+
+[dev-dependencies]
+hustle-parser = { path = "../parser" }
+hustle-resolver = { path = "../resolver" }

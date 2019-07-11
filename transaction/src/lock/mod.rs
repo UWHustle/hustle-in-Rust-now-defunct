@@ -4,5 +4,5 @@ use value::ValueLock;
 pub mod value;
 pub mod predicate;
 
-#[derive(PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AccessMode { Read, Write }

@@ -114,7 +114,7 @@ impl DataType {
         }
     }
 
-    pub fn parse(&self, string: &str) -> Result<Box<Value>, String> {
+    pub fn parse(&self, string: &str) -> Result<Box<Value + Send>, String> {
         match self.variant {
             Variant::Int1 => Ok(Box::new(Int1::parse(string)?)),
             Variant::Int2 => Ok(Box::new(Int2::parse(string)?)),
