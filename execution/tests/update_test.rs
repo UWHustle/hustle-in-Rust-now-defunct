@@ -1,14 +1,14 @@
-extern crate execution;
-extern crate storage;
-extern crate types;
+extern crate hustle_execution;
+extern crate hustle_storage;
+extern crate hustle_types;
 
-use execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
-use execution::logical_entities::predicates::comparison::{Comparison, ComparisonOperand};
+use hustle_execution::test_helpers::generate_data::generate_t_hustle_and_sqlite;
+use hustle_execution::logical_entities::predicates::comparison::{Comparison, ComparisonOperand};
 use hustle_types::operators::Comparator;
 use hustle_types::integer::Int4;
-use execution::test_helpers::hustle_queries::hustle_update;
-use execution::test_helpers::sqlite3::run_query_sqlite;
-use storage::StorageManager;
+use hustle_execution::test_helpers::hustle_queries::hustle_update;
+use hustle_execution::test_helpers::sqlite3::run_query_sqlite;
+use hustle_storage::StorageManager;
 
 const RECORD_COUNT: usize = 10;
 
