@@ -83,7 +83,7 @@ mod zero_concurrency_policy_tests {
     use super::*;
 
     #[test]
-    fn single_connection_test() {
+    fn single_connection() {
         // Initialize the policy.
         let mut policy = ZeroConcurrencyPolicy::new();
 
@@ -96,9 +96,9 @@ mod zero_concurrency_policy_tests {
         assert_eq!(policy.policy_helper.sidetracked.len(), 1);
 
         // Enqueue the first statement in the transaction.
-        let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
         let admitted = RefCell::new(VecDeque::new());
         let callback = |_, statement_id| admitted.borrow_mut().push_back(statement_id);
+        let plan = Plan::TableReference { table: Table::new("table".to_owned(), vec![]) };
         policy.enqueue_statement(transaction_id, plan.clone(), &callback);
 
         assert!(policy.running_statement);
@@ -130,7 +130,7 @@ mod zero_concurrency_policy_tests {
     }
 
     #[test]
-    fn multiple_connection_test() {
+    fn multiple_connection() {
         // Initialize the policy.
         let mut policy = ZeroConcurrencyPolicy::new();
 

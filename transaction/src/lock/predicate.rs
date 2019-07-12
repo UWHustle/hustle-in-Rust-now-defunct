@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use hustle_common::Plan;
+use hustle_types::data_type::DataType;
 use hustle_types::operators::Comparator;
 
 use crate::lock::{AccessMode, ValueLock};
-use hustle_types::data_type::DataType;
 
 pub struct PredicateLock {
     access_mode: AccessMode,
@@ -125,26 +125,17 @@ impl PredicateLock {
                 );
             },
 
-            Plan::Update { table, columns, assignments, filter } => {
+            Plan::Update { table, columns, assignments: _, filter } => {
                 *access_mode = AccessMode::Write;
 
-                // Create a value lock with the value being assigned to each column.
+                // Create a value lock that covers the entire domain of each column.
                 let mut columns_map = HashMap::new();
-                for (column, assignment) in columns.iter().zip(assignments) {
-                    if let Plan::Literal { value, literal_type } = assignment {
-                        let data_type = DataType::from_str(literal_type).unwrap();
-                        let value = data_type.parse(value).unwrap();
-                        let value_lock = ValueLock::new(
-                            AccessMode::Write,
-                            Some((Comparator::Eq, value)),
-                        );
-                        columns_map.insert(
-                            column.name.clone(),
-                            vec![value_lock],
-                        );
-                    } else {
-                        panic!("Predicate lock only supports assignment of columns to literals")
-                    }
+                for column in columns {
+                    let value_lock = ValueLock::new(AccessMode::Write, None);
+                    columns_map.insert(
+                        column.name.clone(),
+                        vec![value_lock],
+                    );
                 }
 
                 value_locks.insert(table.name.clone(), columns_map);
@@ -213,8 +204,7 @@ impl PredicateLock {
 
 #[cfg(test)]
 mod predicate_lock_tests {
-    use hustle_common::{Column, Table};
-    use hustle_resolver::{Catalog, Resolver};
+    use util;
 
     use crate::lock::PredicateLock;
 
@@ -240,7 +230,7 @@ mod predicate_lock_tests {
     fn insert_no_conflict() {
         let locks = generate_locks(&[
             "INSERT INTO T VALUES (1, 2, 3);",
-            "SELECT a FROM T WHERE a = 2 AND b < 2 AND c >= 4;",
+            "SELECT a FROM T WHERE a > 1 AND b = 1 AND c <= 2;",
         ]);
         assert!(!locks[0].conflicts(&locks[1]));
     }
@@ -257,8 +247,8 @@ mod predicate_lock_tests {
     #[test]
     fn update_conflict() {
         let locks = generate_locks(&[
-            "UPDATE T SET a = 1 WHERE a = 2;",
-            "SELECT a FROM T;",
+            "UPDATE T SET a = 1;",
+            "SELECT a FROM T WHERE a = 3;",
         ]);
         assert!(locks[0].conflicts(&locks[1]));
     }
@@ -293,34 +283,10 @@ mod predicate_lock_tests {
         assert!(locks[0].conflicts(&locks[1]));
     }
 
-    #[test]
-    fn update_same_column_filter_no_conflict() {
-        let locks = generate_locks(&[
-            "SELECT a FROM T WHERE b = 1;",
-            "UPDATE T SET b = 3 WHERE b = 2;",
-        ]);
-        assert!(!locks[0].conflicts(&locks[1]));
-    }
-
-    fn generate_locks(sqls: &[&str]) -> Vec<PredicateLock> {
-        let mut resolver = resolver();
-        sqls.iter()
-            .map(|sql| {
-                let plan = resolver.resolve(&hustle_parser::parse(sql).unwrap()).unwrap();
-                PredicateLock::from_plan(&plan)
-            })
+    pub fn generate_locks(sqls: &[&str]) -> Vec<PredicateLock> {
+        util::generate_plans(sqls)
+            .iter()
+            .map(|plan| PredicateLock::from_plan(&plan))
             .collect()
-    }
-
-    fn resolver() -> Resolver {
-        let column_a = Column::new("a".to_owned(), "int".to_owned(), "T".to_owned());
-        let column_b = Column::new("b".to_owned(), "int".to_owned(), "T".to_owned());
-        let column_c = Column::new("c".to_owned(), "int".to_owned(), "T".to_owned());
-        let table = Table::new("T".to_owned(), vec![column_a, column_b, column_c]);
-
-        let mut catalog = Catalog::new();
-        catalog.create_table(table).unwrap();
-
-        Resolver::with_catalog(catalog)
     }
 }
