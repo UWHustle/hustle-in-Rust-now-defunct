@@ -11,10 +11,12 @@ lazy_static! {
         let column_a = Column::new("a".to_owned(), "int".to_owned(), "T".to_owned());
         let column_b = Column::new("b".to_owned(), "int".to_owned(), "T".to_owned());
         let column_c = Column::new("c".to_owned(), "int".to_owned(), "T".to_owned());
-        let table = Table::new("T".to_owned(), vec![column_a, column_b, column_c]);
+        let table_t = Table::new("T".to_owned(), vec![column_a, column_b]);
+        let table_u = Table::new("U".to_owned(), vec![column_c]);
 
         let mut catalog = Catalog::new();
-        catalog.create_table(table).unwrap();
+        catalog.create_table(table_t).unwrap();
+        catalog.create_table(table_u).unwrap();
 
         Mutex::new(Resolver::with_catalog(catalog))
     };
