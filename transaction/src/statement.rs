@@ -8,7 +8,6 @@ use crate::Domain;
 use hustle_types::data_type::DataType;
 use hustle_types::operators::Comparator;
 use crate::policy::ColumnManager;
-use hustle_types::Value;
 
 type IndexedDomain = HashMap<u64, Vec<Domain>>;
 
@@ -219,9 +218,9 @@ impl Statement {
 
                 // Do not overwrite other domains that may have been parsed.
                 if !filter_domain.contains_key(&column_id) {
-                    let column_domains = read_domain.entry(column_id).or_default();
-                    if column_domains.is_empty() {
-                        column_domains.push(Domain::any());
+                    let value_domain = read_domain.entry(column_id).or_default();
+                    if value_domain.is_empty() {
+                        value_domain.push(Domain::any());
                     }
                 }
             } else {
@@ -256,11 +255,11 @@ impl Statement {
         } else {
             for (column, literal) in columns.iter().zip(assignments) {
                 let column_id = column_manager.get_column_id(&column.table, &column.name);
-                if let Some(mut value_domains) = filter_domain.remove(&column_id) {
+                if let Some(mut value_domain) = filter_domain.remove(&column_id) {
                     if let Plan::Literal { value, literal_type } = literal {
                         let domain = Self::parse_value(Comparator::Eq, value, literal_type);
-                        value_domains.push(domain);
-                        write_domain.insert(column_id, value_domains);
+                        value_domain.push(domain);
+                        write_domain.insert(column_id, value_domain);
                     } else {
                         panic!("Predicate lock only supports literals as assignments in update")
                     }
@@ -282,8 +281,8 @@ impl Statement {
         if rewrite_filter && filter_domain.len() > 1 {
             write_domain.extend(filter_domain.drain());
         } else {
-            write_domain.extend(filter_domain.iter().map(|(column_id, value_domains)|
-                (column_id.to_owned(), value_domains.clone())
+            write_domain.extend(filter_domain.iter().map(|(column_id, value_domain)|
+                (column_id.to_owned(), value_domain.clone())
             ));
         }
     }
@@ -305,27 +304,6 @@ impl Statement {
         }
     }
 
-    fn parse_update_filter(
-        filter: &Plan,
-        read_domain: &mut IndexedDomain,
-        write_domain: &mut IndexedDomain,
-        filter_domain: &mut IndexedDomain,
-        column_manager: &mut ColumnManager,
-    ) {
-        let mut rewrite_filter = false;
-        Self::parse_filter(filter, &mut rewrite_filter, filter_domain, column_manager);
-
-        filter_domain.retain(|column_id, filter_value_domains|
-            write_domain.get_mut(column_id)
-                .map(|write_value_domains| write_value_domains.append(filter_value_domains))
-                .is_none()
-        );
-
-        if rewrite_filter && filter_domain.len() > 1 {
-            read_domain.extend(filter_domain.drain());
-        }
-    }
-
     fn parse_filter(
         filter: &Plan,
         rewrite_filter: &mut bool,
@@ -336,7 +314,7 @@ impl Statement {
             Plan::Connective { name, terms } => {
                 for term in terms {
                     Self::parse_filter(
-                        filter,
+                        term,
                         rewrite_filter,
                         filter_domain,
                         column_manager,
