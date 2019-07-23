@@ -8,9 +8,11 @@ use crate::Domain;
 use hustle_types::data_type::DataType;
 use hustle_types::operators::Comparator;
 use crate::policy::ColumnManager;
+use hustle_types::Value;
 
 type IndexedDomain = HashMap<u64, Vec<Domain>>;
 
+#[derive(Debug)]
 pub struct Statement {
     pub id: u64,
     pub transaction_id: u64,
@@ -59,7 +61,7 @@ impl Statement {
             &self.filter_domain,
             &other.filter_domain,
             &|self_domains, other_domains|
-                self_domains.iter().all(|self_domain|
+                self_domains.iter().any(|self_domain|
                     other_domains.iter().all(|other_domain|
                         !self_domain.intersects(other_domain)
                     )
@@ -75,13 +77,10 @@ impl Statement {
                 )
             );
 
-        // First, check if the read domain conflicts with the write domain of the other.
         Self::compare_domains(&self.read_domain, &other.write_domain, intersects)
-
-            // Then, check if the write domain conflicts with the read domain of the other.
+            || Self::compare_domains(&self.filter_domain, &other.write_domain, intersects)
             || Self::compare_domains(&self.write_domain, &other.read_domain, intersects)
-
-            // Finally, check if the write domain conflicts with the write domain of the other.
+            || Self::compare_domains(&self.write_domain, &other.filter_domain, intersects)
             || Self::compare_domains(&self.write_domain, &other.write_domain, intersects)
     }
 
@@ -108,10 +107,13 @@ impl Statement {
     ) {
         match plan {
             Plan::Delete { from_table, filter } => {
-                Self::parse_delete_domain(from_table, write_domain, column_manager);
-                if let Some(f) = filter {
-                    Self::parse_delete_filter(&*f, write_domain, filter_domain, column_manager);
-                }
+                Self::parse_delete_domain(
+                    from_table,
+                    filter,
+                    write_domain,
+                    filter_domain,
+                    column_manager,
+                );
             },
             Plan::Insert { into_table, input } => {
                 Self::parse_insert_domain(
@@ -130,7 +132,12 @@ impl Statement {
                     filter_domain,
                     column_manager,
                 );
-                Self::parse_project_domain(&**table, projection, read_domain, column_manager);
+                Self::parse_project_domain(
+                    projection,
+                    read_domain,
+                    filter_domain,
+                    column_manager,
+                );
             },
             Plan::Select { table, filter } => {
                 Self::parse_domain(
@@ -142,17 +149,16 @@ impl Statement {
                 );
                 Self::parse_select_filter(&**filter, read_domain, filter_domain, column_manager);
             },
-            Plan::Update { table, columns, assignments, filter } => {
-                Self::parse_update_domain(table, columns, write_domain, column_manager);
-                if let Some(f) = filter {
-                    Self::parse_update_filter(
-                        &*f,
-                        read_domain,
-                        write_domain,
-                        filter_domain,
-                        column_manager,
-                    );
-                }
+            Plan::Update { table: _, columns, assignments, filter } => {
+                Self::parse_update_domain(
+                    columns,
+                    assignments,
+                    filter,
+                    read_domain,
+                    write_domain,
+                    filter_domain,
+                    column_manager,
+                );
             },
             Plan::TableReference { table: _ } => (),
             _ => panic!("Unsupported plan node for predicate lock: {:?}", plan),
@@ -161,19 +167,26 @@ impl Statement {
 
     fn parse_delete_domain(
         from_table: &Table,
+        filter: &Option<Box<Plan>>,
         write_domain: &mut IndexedDomain,
+        filter_domain: &mut IndexedDomain,
         column_manager: &mut ColumnManager,
     ) {
         // Create a new domain that covers the entire column.
         for column in &from_table.columns {
             let column_id = column_manager.get_column_id(&column.table, &column.name);
-            write_domain.insert(column_id, vec![Domain::new(None)]);
+            write_domain.insert(column_id, vec![Domain::any()]);
+        }
+
+        if let Some(f) = filter {
+            Self::parse_delete_filter(&*f, write_domain, filter_domain, column_manager);
         }
     }
 
     fn parse_insert_domain(
         into_table: &Table,
-        input: &Plan, write_domain: &mut IndexedDomain,
+        input: &Plan,
+        write_domain: &mut IndexedDomain,
         filter_domain: &mut IndexedDomain,
         column_manager: &mut ColumnManager,
     ) {
@@ -182,10 +195,9 @@ impl Statement {
             for (column, literal) in into_table.columns.iter().zip(values) {
                 if let Plan::Literal { value, literal_type } = literal {
                     let column_id = column_manager.get_column_id(&column.table, &column.name);
-                    let data_type = DataType::from_str(literal_type).unwrap();
-                    let value = data_type.parse(value).unwrap();
-                    let domain = Domain::new(Some((Comparator::Eq, value)));
-                    write_domain.insert(column_id, vec![domain]);
+                    let domain = Self::parse_value(Comparator::Eq, value, literal_type);
+                    write_domain.insert(column_id, vec![domain.clone()]);
+                    filter_domain.insert(column_id, vec![domain]);
                 } else {
                     panic!("Predicate lock only supports inserting literal values")
                 }
@@ -196,19 +208,21 @@ impl Statement {
     }
 
     fn parse_project_domain(
-        table: &Plan,
         projection: &Vec<Plan>,
         read_domain: &mut IndexedDomain,
+        filter_domain: &mut IndexedDomain,
         column_manager: &mut ColumnManager,
     ) {
         for column_reference in projection {
             if let Plan::ColumnReference { column } = column_reference {
                 let column_id = column_manager.get_column_id(&column.table, &column.name);
-                let column_domains = read_domain.entry(column_id).or_default();
 
-                // Do not overwrite other value locks that may have been generated.
-                if column_domains.is_empty() {
-                    column_domains.push(Domain::new(None));
+                // Do not overwrite other domains that may have been parsed.
+                if !filter_domain.contains_key(&column_id) {
+                    let column_domains = read_domain.entry(column_id).or_default();
+                    if column_domains.is_empty() {
+                        column_domains.push(Domain::any());
+                    }
                 }
             } else {
                 panic!("Predicate lock only supports column references in projection")
@@ -217,15 +231,43 @@ impl Statement {
     }
 
     fn parse_update_domain(
-        table: &Table,
         columns: &Vec<Column>,
+        assignments: &Vec<Plan>,
+        filter: &Option<Box<Plan>>,
+        read_domain: &mut IndexedDomain,
         write_domain: &mut IndexedDomain,
+        filter_domain: &mut IndexedDomain,
         column_manager: &mut ColumnManager,
     ) {
-        // Create a value lock that covers the entire domain of each column.
-        for column in columns {
-            let column_id = column_manager.get_column_id(&column.table, &column.name);
-            write_domain.insert(column_id, vec![Domain::new(None)]);
+        let mut rewrite_filter = false;
+        if let Some(f) = filter {
+            Self::parse_filter(&*f, &mut rewrite_filter, filter_domain, column_manager);
+        }
+
+        if rewrite_filter {
+            for column in columns {
+                let column_id = column_manager.get_column_id(&column.table, &column.name);
+                write_domain.insert(column_id, vec![Domain::any()]);
+            }
+            read_domain.extend(
+                filter_domain.drain()
+                    .filter(|(column_id, _)| !write_domain.contains_key(column_id))
+            );
+        } else {
+            for (column, literal) in columns.iter().zip(assignments) {
+                let column_id = column_manager.get_column_id(&column.table, &column.name);
+                if let Some(mut value_domains) = filter_domain.remove(&column_id) {
+                    if let Plan::Literal { value, literal_type } = literal {
+                        let domain = Self::parse_value(Comparator::Eq, value, literal_type);
+                        value_domains.push(domain);
+                        write_domain.insert(column_id, value_domains);
+                    } else {
+                        panic!("Predicate lock only supports literals as assignments in update")
+                    }
+                } else {
+                    write_domain.insert(column_id, vec![Domain::any()]);
+                }
+            }
         }
     }
 
@@ -309,11 +351,8 @@ impl Statement {
                 if let Plan::ColumnReference { column } = &**left {
                     if let Plan::Literal { value, literal_type } = &**right {
                         let column_id = column_manager.get_column_id(&column.table, &column.name);
-                        let value_domains = filter_domain.entry(column_id).or_default();
-                        let data_type = DataType::from_str(literal_type).unwrap();
-                        let value = data_type.parse(value).unwrap();
-                        let domain = Domain::new(Some((comparator, value)));
-                        value_domains.push(domain);
+                        let domain = Self::parse_value(comparator, value, literal_type);
+                        filter_domain.entry(column_id).or_default().push(domain);
                     } else {
                         panic!("Predicate lock only supports literals on right side of comparison");
                     }
@@ -323,6 +362,12 @@ impl Statement {
             },
             _ => panic!("Invalid plan node type for filter ({:?})", filter),
         }
+    }
+
+    fn parse_value(comparator: Comparator, value_str: &str, data_type_str: &str) -> Domain {
+        let data_type = DataType::from_str(data_type_str).unwrap();
+        let value = data_type.parse(value_str).unwrap();
+        Domain::new(comparator, value)
     }
 }
 

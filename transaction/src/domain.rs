@@ -1,15 +1,23 @@
 use hustle_types::operators::Comparator::{self, *};
 use hustle_types::Value;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Domain {
     domain: Option<(Comparator, Box<Value>)>,
 }
 
 impl Domain {
-    pub fn new(domain: Option<(Comparator, Box<Value>)>) -> Self {
+    pub fn new(comparator: Comparator, value: Box<Value>) -> Self {
+        Self::with_domain(Some((comparator, value)))
+    }
+
+    pub fn any() -> Self {
+        Self::with_domain(None)
+    }
+
+    fn with_domain(domain: Option<(Comparator, Box<Value>)>) -> Self {
         Domain {
-            domain,
+            domain
         }
     }
 
