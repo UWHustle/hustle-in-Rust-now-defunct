@@ -11,7 +11,6 @@ use std::mem::ManuallyDrop;
 
 mod zero_concurrency;
 mod direct_predicate;
-mod column_phasing;
 
 pub trait Policy {
     fn begin_transaction(&mut self) -> u64;

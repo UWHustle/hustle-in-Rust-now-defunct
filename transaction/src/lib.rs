@@ -3,7 +3,6 @@ use crate::statement::Statement;
 use domain::Domain;
 
 pub mod domain;
-pub mod lock;
 pub mod policy;
 pub mod manager;
 pub mod statement;

@@ -58,16 +58,6 @@ impl Domain {
     }
 }
 
-//impl Clone for Domain {
-//    fn clone(&self) -> Self {
-//        let domain = self.domain.as_ref().map(|(comparator, value)| (comparator.clone(), value.clone()));
-//        Domain {
-//            domain
-//        }
-//    }
-//}
-
-
 #[cfg(test)]
 mod domain_tests {
     use hustle_types::integer::Int1;
@@ -80,112 +70,105 @@ mod domain_tests {
         let mut ds = vec![];
         for cmp in &[Eq, Lt, Le, Gt, Ge] {
             for value in &[1, 2] {
-                ds.push(new_domain(Some((cmp.clone(), *value))));
+                let v = Box::new(Int1::new(*value, false)) as Box<Value + Send>;
+                ds.push(Domain::new(cmp.clone(), v));
             }
         }
 
         // (= 1) and (= 1) conflict.
-        assert!(ds[0].conflicts(&ds[0]));
+        assert!(ds[0].intersects(&ds[0]));
 
         // (= 1) and (= 2) do not conflict.
-        assert!(!ds[0].conflicts(&ds[1]));
+        assert!(!ds[0].intersects(&ds[1]));
 
         // (= 1) and (< 1) do not conflict.
-        assert!(!ds[0].conflicts(&ds[2]));
+        assert!(!ds[0].intersects(&ds[2]));
 
         // (= 1) and (< 2) conflict.
-        assert!(ds[0].conflicts(&ds[3]));
+        assert!(ds[0].intersects(&ds[3]));
 
         // (= 1) and (≤ 1) conflict.
-        assert!(ds[0].conflicts(&ds[4]));
+        assert!(ds[0].intersects(&ds[4]));
 
         // (= 1) and (≤ 2) conflict.
-        assert!(ds[0].conflicts(&ds[5]));
+        assert!(ds[0].intersects(&ds[5]));
 
         // (= 1) and (> 1) do not conflict.
-        assert!(!ds[0].conflicts(&ds[6]));
+        assert!(!ds[0].intersects(&ds[6]));
 
         // (= 1) and (> 2) do not conflict.
-        assert!(!ds[0].conflicts(&ds[7]));
+        assert!(!ds[0].intersects(&ds[7]));
 
         // (= 1) and (≥ 1) conflict.
-        assert!(ds[0].conflicts(&ds[8]));
+        assert!(ds[0].intersects(&ds[8]));
 
         // (= 1) and (≥ 2) do not conflict.
-        assert!(!ds[0].conflicts(&ds[9]));
+        assert!(!ds[0].intersects(&ds[9]));
 
         // (< 1) and (< 1) conflict.
-        assert!(ds[2].conflicts(&ds[2]));
+        assert!(ds[2].intersects(&ds[2]));
 
         // (< 1) and (< 2) conflict.
-        assert!(ds[2].conflicts(&ds[3]));
+        assert!(ds[2].intersects(&ds[3]));
 
         // (< 1) and (≤ 1) conflict.
-        assert!(ds[2].conflicts(&ds[4]));
+        assert!(ds[2].intersects(&ds[4]));
 
         // (< 1) and (≤ 2) conflict.
-        assert!(ds[2].conflicts(&ds[5]));
+        assert!(ds[2].intersects(&ds[5]));
 
         // (< 1) and (> 1) do not conflict.
-        assert!(!ds[2].conflicts(&ds[6]));
+        assert!(!ds[2].intersects(&ds[6]));
 
         // (< 1) and (> 2) do not conflict.
-        assert!(!ds[2].conflicts(&ds[7]));
+        assert!(!ds[2].intersects(&ds[7]));
 
         // (< 1) and (≥ 1) do not conflict.
-        assert!(!ds[2].conflicts(&ds[8]));
+        assert!(!ds[2].intersects(&ds[8]));
 
         // (< 1) and (≥ 2) do not conflict.
-        assert!(!ds[2].conflicts(&ds[9]));
+        assert!(!ds[2].intersects(&ds[9]));
 
         // (≤ 1) and (≤ 1) conflict.
-        assert!(ds[4].conflicts(&ds[4]));
+        assert!(ds[4].intersects(&ds[4]));
 
         // (≤ 1) and (≤ 2) conflict.
-        assert!(ds[4].conflicts(&ds[5]));
+        assert!(ds[4].intersects(&ds[5]));
 
         // (≤ 1) and (> 1) do not conflict.
-        assert!(!ds[4].conflicts(&ds[6]));
+        assert!(!ds[4].intersects(&ds[6]));
 
         // (≤ 1) and (> 2) do not conflict.
-        assert!(!ds[4].conflicts(&ds[7]));
+        assert!(!ds[4].intersects(&ds[7]));
 
         // (≤ 1) and (≥ 1) conflict.
-        assert!(ds[4].conflicts(&ds[8]));
+        assert!(ds[4].intersects(&ds[8]));
 
         // (≤ 1) and (≥ 2) do not conflict.
-        assert!(!ds[4].conflicts(&ds[9]));
+        assert!(!ds[4].intersects(&ds[9]));
 
         // (> 1) and (> 1) conflict.
-        assert!(ds[6].conflicts(&ds[6]));
+        assert!(ds[6].intersects(&ds[6]));
 
         // (> 1) and (> 2) conflict.
-        assert!(ds[6].conflicts(&ds[7]));
+        assert!(ds[6].intersects(&ds[7]));
 
         // (> 1) and (≥ 1) conflict.
-        assert!(ds[6].conflicts(&ds[8]));
+        assert!(ds[6].intersects(&ds[8]));
 
         // (> 1) and (≥ 2) conflict.
-        assert!(ds[6].conflicts(&ds[9]));
+        assert!(ds[6].intersects(&ds[9]));
 
         // (≥ 1) and (≥ 1) conflict.
-        assert!(ds[8].conflicts(&ds[8]));
+        assert!(ds[8].intersects(&ds[8]));
 
         // (≥ 1) and (≥ 2) conflict.
-        assert!(ds[8].conflicts(&ds[9]));
+        assert!(ds[8].intersects(&ds[9]));
 
         // A domain of "any" conflicts with everything.
-        let vl_any = new_domain(None);
+        let vl_any = Domain::any();
         for vl in ds {
-            assert!(vl_any.conflicts(&vl));
+            assert!(vl_any.intersects(&vl));
         }
-    }
-
-    fn new_domain(mut domain: Option<(Comparator, u8)>) -> Domain {
-        Domain::new(
-            domain.take().map(|(cmp, value)|
-                (cmp, Box::new(Int1::new(value, false)) as Box<Value + Send>)
-            )
-        )
     }
 }

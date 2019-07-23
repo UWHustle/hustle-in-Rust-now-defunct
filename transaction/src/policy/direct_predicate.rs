@@ -150,14 +150,14 @@ mod direct_predicate_policy_tests {
         assert_eq!(admitted.borrow().len(), 1);
 
         // Enqueue the second statement in the transaction.
-        let plan = util::generate_plan("UPDATE T SET c = 1 WHERE b = 2;");
+        let plan = util::generate_plan("UPDATE T SET a = 1 WHERE b = 2;");
         policy.enqueue_statement(transaction_id, plan, &callback);
 
         assert_eq!(policy.running.len(), 2);
         assert_eq!(admitted.borrow().len(), 2);
 
         // Enqueue the third statement in the transaction.
-        let plan = util::generate_plan("INSERT INTO T VALUES (1, 2, 3);");
+        let plan = util::generate_plan("INSERT INTO T VALUES (1, 2);");
         policy.enqueue_statement(transaction_id, plan, &callback);
 
         assert_eq!(policy.policy_helper.sidetracked.front().unwrap().statements.len(), 1);

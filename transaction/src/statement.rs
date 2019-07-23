@@ -1,12 +1,12 @@
 use std::borrow::Borrow;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use hustle_common::{Plan, Table, Column};
-
-use std::collections::HashMap;
-use crate::Domain;
+use hustle_common::{Column, Plan, Table};
 use hustle_types::data_type::DataType;
 use hustle_types::operators::Comparator;
+
+use crate::Domain;
 use crate::policy::ColumnManager;
 
 type IndexedDomain = HashMap<u64, Vec<Domain>>;
