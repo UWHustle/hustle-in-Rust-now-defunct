@@ -50,52 +50,24 @@ impl Header {
     }
 
     fn try_from_slice(source: &mut [u8]) -> Option<Self> {
-        let n_rows_raw: *mut usize;
-        let n_cols_raw: *mut usize;
-        let row_size_raw: *mut usize;
-        let row_capacity_raw: *mut usize;
-        let schema_raw: *mut usize;
-
+        let mut ptrs = [ptr::null_mut(); 5];
         let mut offset = 0;
-        n_rows_raw = source
-            .get_mut(offset..)?
-            .as_mut_ptr() as *mut usize;
-        offset += mem::size_of_val(&n_rows_raw);
-
-        n_cols_raw = source
-            .get_mut(offset..)?
-            .as_mut_ptr() as *mut usize;
-        offset += mem::size_of_val(&n_cols_raw);
-
-        row_size_raw = source
-            .get_mut(offset..)?
-            .as_mut_ptr() as *mut usize;
-        offset += mem::size_of_val(&row_size_raw);
-
-        row_capacity_raw = source
-            .get_mut(offset..)?
-            .as_mut_ptr() as *mut usize;
-        offset += mem::size_of_val(&row_capacity_raw);
-
-        schema_raw = source
-            .get_mut(offset..)?
-            .as_mut_ptr() as *mut usize;
+        for i in 0..ptrs.len() {
+            ptrs[i] = source.get_mut(offset..)?.as_mut_ptr() as *mut usize;
+            offset += mem::size_of::<usize>();
+        }
 
         Some(Header {
-            n_rows: n_rows_raw,
-            n_cols: n_cols_raw,
-            row_size: row_size_raw,
-            row_capacity: row_capacity_raw,
-            schema: schema_raw
+            n_rows: ptrs[0],
+            n_cols: ptrs[1],
+            row_size: ptrs[2],
+            row_capacity: ptrs[3],
+            schema: ptrs[4],
         })
     }
 
     fn size(&self) -> usize {
-        mem::size_of_val(&self.n_rows)
-            + mem::size_of_val(&self.n_cols)
-            + mem::size_of_val(&self.row_size)
-            + mem::size_of_val(&self.row_capacity)
-            + unsafe { *self.n_cols } * mem::size_of_val(&self.schema)
+        4 * mem::size_of::<usize>() + self.get_n_cols() * mem::size_of::<usize>()
     }
 
     fn get_n_rows(&self) -> usize {
