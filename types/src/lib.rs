@@ -54,7 +54,7 @@ pub trait Buffer {
 
 /// Values are stored as various types - concrete implementations can define a 'value()' method
 /// which returns the internal type
-pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug {
+pub trait Value: Any + AsAny + AsValue + BoxCloneValue + Debug + Send {
     fn data_type(&self) -> DataType;
     fn is_null(&self) -> bool;
     fn to_string(&self) -> String;

@@ -2,9 +2,9 @@ use logical_entities::relation::Relation;
 use logical_entities::predicates::Predicate;
 use physical_operators::Operator;
 
-use super::storage::StorageManager;
-use types::borrowed_buffer::BorrowedBuffer;
-use types::{Buffer, Value};
+use super::hustle_storage::StorageManager;
+use hustle_types::borrowed_buffer::BorrowedBuffer;
+use hustle_types::{Buffer, Value};
 use logical_entities::row::Row;
 use logical_entities::column::Column;
 

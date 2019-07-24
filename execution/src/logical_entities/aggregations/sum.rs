@@ -1,8 +1,8 @@
 use logical_entities::aggregations::AggregationTrait;
-use types::data_type::*;
-use types::force_numeric;
-use types::Numeric;
-use types::*;
+use hustle_types::data_type::*;
+use hustle_types::force_numeric;
+use hustle_types::Numeric;
+use hustle_types::*;
 
 #[derive(Clone, Debug)]
 pub struct Sum {

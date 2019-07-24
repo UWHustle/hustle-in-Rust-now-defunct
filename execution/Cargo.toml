@@ -1,13 +1,13 @@
 [package]
-name = "execution"
+name = "hustle-execution"
 version = "0.1.0"
 authors = ["Robert Claus <robertclaus@gmail.com>"]
 
 [dependencies]
-message = { path = "../message" }
-types = { path = "../types" }
-storage = { path = "../storage" }
-profiler = { path = "../profiler" }
+hustle-common = { path = "../common" }
+hustle-types = { path = "../types" }
+hustle-storage = { path = "../storage" }
+hustle-profiler = { path = "../profiler" }
 rand = "0.5.5"
 memmap = "0.6.2"
 sqlite = "0.23.9"

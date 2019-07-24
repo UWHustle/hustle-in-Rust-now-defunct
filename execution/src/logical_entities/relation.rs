@@ -64,7 +64,7 @@ mod tests {
     use logical_entities::column::Column;
     use logical_entities::relation::Relation;
     use logical_entities::schema::Schema;
-    use types::data_type::*;
+    use hustle_types::data_type::*;
 
     #[test]
     fn relation_create() {

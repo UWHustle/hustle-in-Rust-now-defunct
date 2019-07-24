@@ -1,5 +1,5 @@
 [package]
-name = "storage"
+name = "hustle-storage"
 version = "0.1.0"
 authors = ["gaffneyk <kpgaffney@wisc.edu>"]
 

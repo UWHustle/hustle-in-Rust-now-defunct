@@ -267,8 +267,12 @@ cmdx:
 ;
 
 cmd:
-  BEGIN transtype trans_opt { yyerror(NULL, scanner, "BEGIN not yet supported"); }
-| COMMIT trans_opt { yyerror(NULL, scanner, "COMMIT not yet supported"); }
+  BEGIN transtype trans_opt {
+    $$ = parse_node_alloc("begin_transaction");
+  }
+| COMMIT trans_opt {
+    $$ = parse_node_alloc("commit_transaction");
+  }
 | END trans_opt { yyerror(NULL, scanner, "END not yet supported"); }
 | ROLLBACK trans_opt { yyerror(NULL, scanner, "ROLLBACK not yet supported"); }
 | SAVEPOINT nm { yyerror(NULL, scanner, "SAVEPOINT not yet supported"); }

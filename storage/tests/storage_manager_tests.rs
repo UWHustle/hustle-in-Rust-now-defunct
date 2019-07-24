@@ -1,11 +1,11 @@
-extern crate storage;
+extern crate hustle_storage;
 extern crate memmap;
 extern crate core;
 
 #[cfg(test)]
 #[allow(unused_must_use)]
 mod storage_manager_tests {
-    use storage::StorageManager;
+    use hustle_storage::StorageManager;
 
     #[test]
     fn get() {

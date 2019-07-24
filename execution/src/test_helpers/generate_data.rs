@@ -6,10 +6,10 @@ use logical_entities::schema::Schema;
 use physical_operators::create_table::CreateTable;
 use physical_operators::insert::Insert;
 use physical_operators::Operator;
-use storage::StorageManager;
-use types::data_type::*;
-use types::integer::Int4;
-use types::*;
+use hustle_storage::StorageManager;
+use hustle_types::data_type::*;
+use hustle_types::integer::Int4;
+use hustle_types::*;
 
 extern crate rand;
 use self::rand::{random, Rng, SeedableRng, StdRng};

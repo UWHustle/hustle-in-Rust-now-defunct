@@ -43,7 +43,7 @@ impl Schema {
 mod tests {
     use logical_entities::column::Column;
     use logical_entities::schema::Schema;
-    use types::data_type::*;
+    use hustle_types::data_type::*;
 
     #[test]
     fn schema_create() {

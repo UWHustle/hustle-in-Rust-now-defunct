@@ -5,8 +5,8 @@ authors = ["Matthew Dutson <dutson@wisc.edu>", "Kevin Gaffney <kgaff33@gmail.com
 edition = "2018"
 
 [dependencies]
-message = { path = "../message" }
-profiler = { path = "../profiler" }
+hustle-common = { path = "../common" }
+hustle-profiler = { path = "../profiler" }
 
 [build-dependencies]
 cmake = "0.1.40"

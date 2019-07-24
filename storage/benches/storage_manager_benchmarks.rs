@@ -1,11 +1,11 @@
-extern crate storage;
+extern crate hustle_storage;
 
 #[macro_use]
 extern crate criterion;
 extern crate memmap;
 extern crate rand;
 
-use storage::StorageManager;
+use hustle_storage::StorageManager;
 use criterion::{Criterion, Benchmark};
 use std::{thread, fs};
 use std::sync::Arc;

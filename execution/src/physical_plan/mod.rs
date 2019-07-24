@@ -1,4 +1,4 @@
 pub mod node;
 pub mod parser;
 
-extern crate storage;
+extern crate hustle_storage;

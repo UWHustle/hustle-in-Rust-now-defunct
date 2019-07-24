@@ -1,8 +1,8 @@
 use logical_entities::relation::Relation;
-use storage::StorageManager;
-use types::borrowed_buffer::BorrowedBuffer;
-use types::integer::Int8;
-use types::{cast_numeric, force_numeric, Buffer, Numeric};
+use hustle_storage::StorageManager;
+use hustle_types::borrowed_buffer::BorrowedBuffer;
+use hustle_types::integer::Int8;
+use hustle_types::{cast_numeric, force_numeric, Buffer, Numeric};
 
 pub fn sum_column_hustle(
     storage_manager: &StorageManager,

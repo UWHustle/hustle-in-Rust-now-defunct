@@ -1,8 +1,8 @@
 use logical_entities::relation::Relation;
 use physical_operators::Operator;
-use types::*;
+use hustle_types::*;
 
-use super::storage::StorageManager;
+use super::hustle_storage::StorageManager;
 
 extern crate csv;
 

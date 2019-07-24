@@ -1,8 +1,8 @@
-use types::data_type::DataType;
+use hustle_types::data_type::DataType;
 use std::{slice, fmt};
-use types::borrowed_buffer::BorrowedBuffer;
-use types::Buffer;
-use types::integer::Int8;
+use hustle_types::borrowed_buffer::BorrowedBuffer;
+use hustle_types::Buffer;
+use hustle_types::integer::Int8;
 
 pub struct HustleResult {
     schema: Vec<(String, DataType)>,
@@ -87,10 +87,10 @@ impl<'a> HustleRow<'a> {
     }
 
     pub fn get_i64(&self, col: usize) -> Option<i64> {
-        self.get_col(col).map(|c| types::cast_value::<Int8>(c.as_ref()).value())
+        self.get_col(col).map(|c| hustle_types::cast_value::<Int8>(c.as_ref()).value())
     }
 
-    fn get_col(&self, col: usize) -> Option<Box<types::Value>> {
+    fn get_col(&self, col: usize) -> Option<Box<hustle_types::Value>> {
         self.row.get(col).and_then(|data| {
             self.schema.get(col).map(|(_, data_type)| {
                 let buff = BorrowedBuffer::new(data, data_type.clone(), false);

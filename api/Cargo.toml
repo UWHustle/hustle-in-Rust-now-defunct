@@ -5,5 +5,5 @@ authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-message = { path = "../message" }
-types = { path = "../types" }
+hustle-common = { path = "../common" }
+hustle-types = { path = "../types" }

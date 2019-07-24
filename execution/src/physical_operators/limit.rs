@@ -2,7 +2,7 @@ use logical_entities::relation::Relation;
 use logical_entities::schema::Schema;
 use physical_operators::Operator;
 
-use super::storage::StorageManager;
+use super::hustle_storage::StorageManager;
 
 pub struct Limit {
     input_relation: Relation,

@@ -1,9 +1,13 @@
 [package]
-name = "transaction"
+name = "hustle-transaction"
 version = "0.1.0"
 authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-message = { path = "../message" }
+hustle-common = { path = "../common" }
+hustle-types = { path = "../types" }
 crossbeam = "0.7.1"
+
+[dev-dependencies]
+util = { path = "util" }

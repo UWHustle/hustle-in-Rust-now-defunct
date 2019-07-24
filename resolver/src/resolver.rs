@@ -1,4 +1,4 @@
-use message::{Plan, Listener, Message, Column, Table};
+use hustle_common::{Plan, Message, Column, Table};
 use serde_json as json;
 use std::sync::mpsc::{Receiver, Sender};
 use crate::catalog::Catalog;
@@ -9,8 +9,39 @@ pub struct Resolver {
 
 impl Resolver {
     pub fn new() -> Self {
+        Resolver::with_catalog(Catalog::try_from_file().unwrap_or(Catalog::new()))
+    }
+
+    pub fn with_catalog(catalog: Catalog) -> Self {
         Resolver {
-            catalog: Catalog::try_from_file().unwrap_or(Catalog::new())
+            catalog
+        }
+    }
+
+    pub fn listen(
+        &mut self,
+        resolver_rx: Receiver<Vec<u8>>,
+        transaction_tx: Sender<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>,
+    ) {
+        loop {
+            let buf = resolver_rx.recv().unwrap();
+            let request = Message::deserialize(&buf).unwrap();
+            match request {
+                Message::ResolveAst { ast, connection_id } => {
+                    match self.resolve(&ast) {
+                        Ok(plan) => transaction_tx.send(Message::TransactPlan {
+                            plan,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap(),
+                        Err(reason) => completed_tx.send(Message::Failure {
+                            reason,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap()
+                    }
+                },
+                _ => completed_tx.send(buf).unwrap()
+            };
         }
     }
 
@@ -23,6 +54,8 @@ impl Resolver {
     fn resolve_node(&mut self, node: &json::Value) -> Result<Plan, String> {
         let node_type = node["type"].as_str().unwrap();
         match node_type {
+            "begin_transaction" => self.resolve_begin_transaction(node),
+            "commit_transaction" => self.resolve_commit_transaction(node),
             "create_table" => self.resolve_create_table(node),
             "delete" => self.resolve_delete(node),
             "drop_table" => self.resolve_drop_table(node),
@@ -31,6 +64,16 @@ impl Resolver {
             "update" => self.resolve_update(node),
             _ => Err(format!("Unrecognized AST node type: {}", node_type))
         }
+    }
+
+    fn resolve_begin_transaction(&self, node: &json::Value) -> Result<Plan, String> {
+        debug_assert_eq!(node["type"].as_str().unwrap(), "begin_transaction");
+        Ok(Plan::BeginTransaction)
+    }
+
+    fn resolve_commit_transaction(&self, node: &json::Value) -> Result<Plan, String> {
+        debug_assert_eq!(node["type"].as_str().unwrap(), "commit_transaction");
+        Ok(Plan::CommitTransaction)
     }
 
     fn resolve_create_table(&mut self, node: &json::Value) -> Result<Plan, String> {
@@ -278,23 +321,5 @@ impl Resolver {
             None => None
         };
         Ok(Plan::Update { table, columns, assignments, filter })
-    }
-}
-
-impl Listener for Resolver {
-    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
-        loop {
-            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
-            let response = match request {
-                Message::ResolveAst { ast, connection_id } => {
-                    match self.resolve(&ast) {
-                        Ok(plan) => Message::ExecutePlan { plan, connection_id },
-                        Err(reason) => Message::Failure { reason, connection_id }
-                    }
-                },
-                _ => request
-            };
-            output_tx.send(response.serialize().unwrap()).unwrap();
-        }
     }
 }

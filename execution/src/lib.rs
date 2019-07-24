@@ -4,16 +4,16 @@ pub mod physical_plan;
 pub mod relational_api;
 pub mod test_helpers;
 
-use storage::StorageManager;
+use hustle_storage::StorageManager;
 use logical_entities::relation::Relation;
 use physical_plan::parser::parse;
 use std::sync::mpsc::{Receiver, Sender};
-use message::{Message, Plan};
-use types::data_type::DataType;
+use hustle_common::{Message, Plan};
+use hustle_types::data_type::DataType;
 
-extern crate storage;
-extern crate message;
-extern crate types;
+extern crate hustle_storage;
+extern crate hustle_common;
+extern crate hustle_types;
 extern crate core;
 
 pub struct ExecutionEngine {
@@ -27,18 +27,24 @@ impl ExecutionEngine {
         }
     }
 
-    pub fn execute_plan(&self, plan: Plan) -> Result<Option<Relation>, String> {
+    pub fn execute_plan(&self, plan: &Plan) -> Result<Option<Relation>, String> {
         let node = parse(&plan)?;
         node.execute(&self.storage_manager);
         Ok(node.get_output_relation())
     }
 
-    pub fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+    pub fn listen(
+        &mut self,
+        execution_rx: Receiver<Vec<u8>>,
+        transaction_tx: Sender<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>,
+    ) {
         loop {
-            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
-            let response = match request {
-                Message::ExecutePlan { plan, connection_id } => {
-                    match self.execute_plan(plan) {
+            let buf = execution_rx.recv().unwrap();
+            let request = Message::deserialize(&buf).unwrap();
+            match request {
+                Message::ExecutePlan { plan, statement_id, connection_id } => {
+                    match self.execute_plan(&plan) {
                         Ok(relation) => {
                             if let Some(relation) = relation {
                                 let schema = relation.get_schema();
@@ -49,9 +55,9 @@ impl ExecutionEngine {
 
                                 let response = Message::Schema {
                                     schema: message_schema,
-                                    connection_id
+                                    connection_id,
                                 };
-                                output_tx.send(response.serialize().unwrap()).unwrap();
+                                completed_tx.send(response.serialize().unwrap()).unwrap();
 
                                 let physical_relation = self.storage_manager
                                     .relational_engine()
@@ -64,24 +70,32 @@ impl ExecutionEngine {
                                         for col_i in 0..schema.get_columns().len() {
                                             let data = block.get_row_col(row_i, col_i).unwrap();
                                             row.push(data.to_owned());
-                                        }
-                                        let response = Message::ReturnRow { row, connection_id };
-                                        output_tx.send(response.serialize().unwrap()).unwrap();
-                                    }
-                                }
-                            }
-                            Message::Success { connection_id }
-                        },
-
-                        Err(reason) => {
-                            Message::Failure { reason, connection_id }
+                                        };
+                                        completed_tx.send(Message::ReturnRow {
+                                            row,
+                                            connection_id,
+                                        }.serialize().unwrap()).unwrap();
+                                    };
+                                };
+                            };
+                            completed_tx.send(Message::Success {
+                                connection_id,
+                            }.serialize().unwrap()).unwrap();
                         }
-                    }
 
+                        Err(reason) => completed_tx.send(Message::Failure {
+                            reason,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap()
+                    };
+
+                    transaction_tx.send(Message::CompletePlan {
+                        statement_id,
+                        connection_id,
+                    }.serialize().unwrap()).unwrap();
                 },
-                _ => request
+                _ => completed_tx.send(buf).unwrap()
             };
-            output_tx.send(response.serialize().unwrap()).unwrap();
         }
     }
 }

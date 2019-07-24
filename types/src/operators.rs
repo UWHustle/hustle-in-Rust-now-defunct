@@ -2,7 +2,7 @@ use std::ops::{Add, Div, Mul, Sub};
 
 /// Defines essential comparison operators
 /// LessEq and GreaterEq can be defined via a combination of Less/Greater and Equal
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Comparator {
     Eq,
     Lt,

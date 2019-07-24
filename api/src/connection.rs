@@ -1,6 +1,6 @@
 use std::net::{ToSocketAddrs, TcpStream};
 use std::io;
-use message::Message;
+use hustle_common::Message;
 use crate::HustleResult;
 
 pub struct HustleConnection {

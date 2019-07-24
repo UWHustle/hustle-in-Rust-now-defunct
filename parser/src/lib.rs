@@ -1,9 +1,9 @@
-extern crate message;
+extern crate hustle_common;
 
 use std::ffi::{CString, CStr};
 use std::os::raw::{c_char, c_int};
 use std::sync::mpsc::{Receiver, Sender};
-use self::message::{Listener, Message};
+use self::hustle_common::Message;
 use std::ptr;
 
 extern {
@@ -32,22 +32,31 @@ impl Parser {
     pub fn new() -> Self {
         Parser
     }
-}
 
-impl Listener for Parser {
-    fn listen(&mut self, input_rx: Receiver<Vec<u8>>, output_tx: Sender<Vec<u8>>) {
+    pub fn listen(
+        &mut self,
+        parser_rx: Receiver<Vec<u8>>,
+        resolver_tx: Sender<Vec<u8>>,
+        completed_tx: Sender<Vec<u8>>,
+    ) {
         loop {
-            let request = Message::deserialize(&input_rx.recv().unwrap()).unwrap();
-            let response = match request {
+            let buf = parser_rx.recv().unwrap();
+            let request = Message::deserialize(&buf).unwrap();
+            match request {
                 Message::ParseSql { sql, connection_id } => {
                     match parse(&sql) {
-                        Ok(ast) => Message::ResolveAst { ast, connection_id },
-                        Err(reason) => Message::Failure { reason, connection_id }
-                    }
+                        Ok(ast) => resolver_tx.send(Message::ResolveAst {
+                            ast,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap(),
+                        Err(reason) => completed_tx.send(Message::Failure {
+                            reason,
+                            connection_id,
+                        }.serialize().unwrap()).unwrap()
+                    };
                 },
-                _ => request
+                _ => completed_tx.send(buf).unwrap()
             };
-            output_tx.send(response.serialize().unwrap()).unwrap();
         }
     }
 }

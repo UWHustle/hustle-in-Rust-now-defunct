@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use message::Table;
+use hustle_common::Table;
 use std::fs::File;
 use std::fs;
 

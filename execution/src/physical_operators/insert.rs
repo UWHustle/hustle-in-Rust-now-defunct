@@ -1,9 +1,9 @@
 use logical_entities::relation::Relation;
 use logical_entities::row::Row;
 use physical_operators::Operator;
-use types::*;
+use hustle_types::*;
 
-use super::storage::StorageManager;
+use super::hustle_storage::StorageManager;
 
 pub struct Insert {
     relation: Relation,
