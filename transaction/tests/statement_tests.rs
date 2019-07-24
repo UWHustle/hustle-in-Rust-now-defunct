@@ -3,6 +3,8 @@ mod statement_tests {
     use hustle_transaction::statement::Statement;
     use hustle_transaction::policy::PolicyHelper;
 
+    // DELETE tests.
+
     #[test]
     fn delete_conflict_a() {
         let stmts = generate_statements(&[
@@ -57,6 +59,8 @@ mod statement_tests {
         assert!(!stmts[0].conflicts(&stmts[1]));
     }
 
+    // INSERT tests.
+
     #[test]
     fn insert_conflict_a() {
         let stmts = generate_statements(&[
@@ -102,6 +106,8 @@ mod statement_tests {
         assert!(!stmts[0].conflicts(&stmts[1]));
     }
 
+    // SELECT tests.
+
     #[test]
     fn select_no_conflict_a() {
         let stmts = generate_statements(&[
@@ -110,6 +116,35 @@ mod statement_tests {
         ]);
         assert!(!stmts[0].conflicts(&stmts[1]));
     }
+
+    #[test]
+    fn select_no_conflict_b() {
+        let stmts = generate_statements(&[
+            "SELECT T.a, U.c FROM T, U WHERE T.b = U.c AND T.b = 1;",
+            "UPDATE T SET a = 1 WHERE b = 2;",
+        ]);
+        assert!(!stmts[0].conflicts(&stmts[1]));
+    }
+
+    #[test]
+    fn select_conflict_a() {
+        let stmts = generate_statements(&[
+            "SELECT T.a, U.c FROM T, U WHERE T.b = U.c;",
+            "UPDATE T SET b = 1;",
+        ]);
+        assert!(stmts[0].conflicts(&stmts[1]));
+    }
+
+    #[test]
+    fn select_conflict_b() {
+        let stmts = generate_statements(&[
+            "SELECT T.a, U.c FROM T, U WHERE T.b = U.c AND U.c = 1;",
+            "DELETE FROM U WHERE U.c = 1;",
+        ]);
+        assert!(stmts[0].conflicts(&stmts[1]));
+    }
+
+    // UPDATE tests.
 
     #[test]
     fn update_conflict_a() {

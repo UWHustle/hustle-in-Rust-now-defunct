@@ -15,6 +15,10 @@ impl Domain {
         Self::with_domain(None)
     }
 
+    pub fn is_any(&self) -> bool {
+        self.domain.is_none()
+    }
+
     fn with_domain(domain: Option<(Comparator, Box<Value>)>) -> Self {
         Domain {
             domain

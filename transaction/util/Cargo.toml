@@ -8,4 +8,3 @@ edition = "2018"
 hustle-common = { path = "../../common" }
 hustle-parser = { path = "../../parser" }
 hustle-resolver = { path = "../../resolver" }
-lazy_static = "1.3.0"

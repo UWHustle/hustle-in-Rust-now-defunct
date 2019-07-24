@@ -159,8 +159,7 @@ impl Statement {
                     column_manager,
                 );
             },
-            Plan::TableReference { table: _ } => (),
-            _ => panic!("Unsupported plan node for predicate lock: {:?}", plan),
+            _ => (), // Ignore all other plan node types for now.
         }
     }
 
@@ -216,9 +215,9 @@ impl Statement {
             if let Plan::ColumnReference { column } = column_reference {
                 let column_id = column_manager.get_column_id(&column.table, &column.name);
 
-                // Do not overwrite other domains that may have been parsed.
                 if !filter_domain.contains_key(&column_id) {
                     let value_domain = read_domain.entry(column_id).or_default();
+                    // Do not overwrite other domains that may have been parsed.
                     if value_domain.is_empty() {
                         value_domain.push(Domain::any());
                     }
@@ -324,15 +323,46 @@ impl Statement {
                     *rewrite_filter = true;
                 }
             },
+
             Plan::Comparative { name, left, right } => {
                 let comparator = Comparator::from_str(name).unwrap();
-                if let Plan::ColumnReference { column } = &**left {
-                    if let Plan::Literal { value, literal_type } = &**right {
-                        let column_id = column_manager.get_column_id(&column.table, &column.name);
-                        let domain = Self::parse_value(comparator, value, literal_type);
-                        filter_domain.entry(column_id).or_default().push(domain);
-                    } else {
-                        panic!("Predicate lock only supports literals on right side of comparison");
+                if let Plan::ColumnReference { column: left_column } = &**left {
+                    let left_column_id = column_manager.get_column_id(
+                        &left_column.table,
+                        &left_column.name,
+                    );
+
+                    match &**right {
+                        Plan::Literal { value, literal_type } => {
+                            // Filter predicate.
+                            let value_domain = filter_domain.entry(left_column_id).or_default();
+
+                            // If there is a domain of any for this column, replace it.
+                            if value_domain.first().map(|d| d.is_any()).unwrap_or(false) {
+                                value_domain.clear();
+                            }
+
+                            let domain = Self::parse_value(comparator, value, literal_type);
+                            value_domain.push(domain);
+                        },
+
+                        Plan::ColumnReference { column: right_column } => {
+                            // Join predicate.
+                            let right_column_id = column_manager.get_column_id(
+                                &right_column.table,
+                                &right_column.name,
+                            );
+                            for column_id in &[left_column_id, right_column_id] {
+                                let value_domain = filter_domain.entry(*column_id).or_default();
+                                // Do not overwrite other domains that may have been parsed.
+                                if value_domain.is_empty() {
+                                    value_domain.push(Domain::any());
+                                }
+                            }
+                        },
+
+                        _ => panic!("Predicate lock only supports literals or column references on \
+                        right side of comparison"),
                     }
                 } else {
                     panic!("Predicate lock only supports columns on left side of comparison");
