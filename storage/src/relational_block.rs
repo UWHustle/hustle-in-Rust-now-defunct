@@ -42,6 +42,8 @@ impl Header {
         // Calculate row capacity, accounting for two bits per row in the bitmap.
         row_capacity = remaining_block_size * 8 / (row_size * 8 + 2);
 
+        assert!(row_capacity > 0, "Row is too large to fit in a single block");
+
         let header = Self::try_from_slice(destination).unwrap();
 
         unsafe {
@@ -112,6 +114,8 @@ impl Header {
 /// of a `PhysicalRelation`.
 pub struct RelationalBlock {
     header: Header,
+    valid: *mut BitVecBlock,
+    tentative: *mut BitVecBlock,
     data_len: usize,
     data: *mut u8,
     mmap: Arc<MmapMut>,
@@ -140,17 +144,7 @@ impl RelationalBlock {
         };
 
         let header = Header::new(schema, &mut mmap);
-        let data_start = header.size();
-        let data_len = BLOCK_SIZE - data_start;
-        let data = mmap[data_start..].as_mut_ptr();
-        
-        RelationalBlock {
-            header,
-            data_len,
-            data,
-            mmap: Arc::new(mmap),
-            rc: Arc::new((Mutex::new(1), Condvar::new()))
-        }
+        Self::with_header(header, mmap)
     }
 
     /// Loads a `RelationalBlock` from storage using the specified `path`. Returns an `Option`
@@ -165,17 +159,36 @@ impl RelationalBlock {
 
         let mut mmap = unsafe { MmapMut::map_mut(&file).ok()? };
         let header = Header::try_from_slice(&mut mmap)?;
-        let data_start = header.size();
+
+        Some(Self::with_header(header, mmap))
+    }
+
+    fn with_header(header: Header, mut mmap: MmapMut) -> Self {
+        let row_capacity = header.get_row_capacity();
+        let bit_vec_block_size = mem::size_of::<BitVecBlock>() * 8;
+        let bitmap_len = (row_capacity / bit_vec_block_size
+            + (row_capacity % bit_vec_block_size != 0) as usize)
+            * 8;
+
+        let valid_start = header.size();
+        let valid = mmap[valid_start..].as_mut_ptr() as *mut BitVecBlock;
+
+        let tentative_start = valid_start + bitmap_len;
+        let tentative = mmap[tentative_start..].as_mut_ptr() as *mut BitVecBlock;
+
+        let data_start = tentative_start + bitmap_len;
         let data_len = BLOCK_SIZE - data_start;
         let data = mmap[data_start..].as_mut_ptr();
 
-        Some(RelationalBlock {
+        RelationalBlock {
             header,
+            valid,
+            tentative,
             data_len,
             data,
             mmap: Arc::new(mmap),
             rc: Arc::new((Mutex::new(1), Condvar::new()))
-        })
+        }
     }
 
     /// Returns the number of rows in the `RelationalBlock`.
@@ -320,6 +333,8 @@ impl Clone for RelationalBlock {
         *rc_guard += 1;
         RelationalBlock {
             header: self.header.clone(),
+            valid: self.valid,
+            tentative: self.tentative,
             data_len: self.data_len,
             data: self.data,
             mmap: self.mmap.clone(),
