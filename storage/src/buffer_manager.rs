@@ -3,14 +3,14 @@ extern crate omap;
 
 use std::cmp::{max, min};
 use std::fs;
-use std::fs::{OpenOptions, File};
+use std::fs::{File, OpenOptions};
 use std::mem;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::Mmap;
 
-use relational_block::RelationalBlock;
+use block::RelationalBlock;
 
 use self::omap::OrderedHashMap;
 

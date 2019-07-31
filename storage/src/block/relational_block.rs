@@ -6,116 +6,14 @@ use std::sync::{Arc, Condvar, Mutex};
 use memmap::MmapMut;
 
 use buffer_manager::BufferManager;
-
-const BLOCK_SIZE: usize = 4096;
-
-type BitVecBlock = u64;
-
-#[derive(Clone)]
-struct Header {
-    n_rows: *mut usize,
-    n_cols: *mut usize,
-    row_size: *mut usize,
-    row_capacity: *mut usize,
-    schema: *mut usize,
-}
-
-impl Header {
-    fn new(schema: &[usize], destination: &mut [u8]) -> Self {
-        // Blocks must have valid schema.
-        assert!(!schema.is_empty(), "Cannot create a block with empty schema");
-        assert!(*schema.first().unwrap() > 0, "Column size must be positive integer");
-
-        let n_rows = 0;
-        let n_cols = schema.len();
-        let row_size: usize = schema.iter().sum();
-        let mut row_capacity = 0;
-
-        let mut remaining_block_size = BLOCK_SIZE
-            - mem::size_of_val(&n_rows) - mem::size_of_val(&n_cols)
-            - mem::size_of_val(&row_size) - mem::size_of_val(&row_capacity)
-            - n_cols * mem::size_of_val(schema.first().unwrap());
-
-        // Add some padding to account for the bitmap blocks.
-        remaining_block_size -= 2 * mem::size_of::<BitVecBlock>();
-
-        // Calculate row capacity, accounting for two bits per row in the bitmap.
-        row_capacity = remaining_block_size * 8 / (row_size * 8 + 2);
-
-        assert!(row_capacity > 0, "Row is too large to fit in a single block");
-
-        let header = Self::try_from_slice(destination).unwrap();
-
-        unsafe {
-            *header.n_rows = n_rows;
-            *header.n_cols = n_cols;
-            *header.row_size = row_size;
-            *header.row_capacity = row_capacity;
-            let schema_slice = slice::from_raw_parts_mut(header.schema, n_cols);
-            schema_slice.copy_from_slice(schema);
-        }
-
-        header
-    }
-
-    fn try_from_slice(source: &mut [u8]) -> Option<Self> {
-        let mut ptrs = [ptr::null_mut(); 5];
-        let mut offset = 0;
-        for i in 0..ptrs.len() {
-            ptrs[i] = source.get_mut(offset..)?.as_mut_ptr() as *mut usize;
-            offset += mem::size_of::<usize>();
-        }
-
-        let [n_rows, n_cols, row_size, row_capacity, schema] = ptrs;
-
-        Some(Header {
-            n_rows,
-            n_cols,
-            row_size,
-            row_capacity,
-            schema,
-        })
-    }
-
-    fn size(&self) -> usize {
-        unsafe {
-            mem::size_of_val(&*self.n_rows) + mem::size_of_val(&*self.n_cols)
-                + mem::size_of_val(&*self.row_size) + mem::size_of_val(&*self.row_capacity)
-                + self.get_n_cols() * mem::size_of_val(&*self.schema)
-        }
-    }
-
-    fn get_n_rows(&self) -> usize {
-        unsafe { *self.n_rows }
-    }
-
-    fn get_n_cols(&self) -> usize {
-        unsafe { *self.n_cols }
-    }
-
-    fn get_row_size(&self) -> usize {
-        unsafe { *self.row_size }
-    }
-
-    fn get_row_capacity(&self) -> usize {
-        unsafe { *self.row_capacity }
-    }
-
-    fn get_schema(&self) -> &[usize] {
-        unsafe { slice::from_raw_parts(self.schema, *self.n_cols) }
-    }
-
-    fn set_n_rows(&self, n_rows: usize) {
-        unsafe { *self.n_rows = n_rows };
-    }
-}
+use block::{Header, BLOCK_SIZE, BitMap};
+use owning_ref::OwningRef;
 
 /// The unit of storage and replacement in the cache. A `RelationalBlock` is a horizontal partition
 /// of a `PhysicalRelation`.
 pub struct RelationalBlock {
     header: Header,
-    valid: *mut BitVecBlock,
-    tentative: *mut BitVecBlock,
+//    bitmap: BitMap<OwningRef<Arc<MmapMut>, [u8]>>,
     data_len: usize,
     data: *mut u8,
     mmap: Arc<MmapMut>,
@@ -165,25 +63,23 @@ impl RelationalBlock {
 
     fn with_header(header: Header, mut mmap: MmapMut) -> Self {
         let row_capacity = header.get_row_capacity();
-        let bit_vec_block_size = mem::size_of::<BitVecBlock>() * 8;
+        let bit_vec_block_size = 8 * 8;
         let bitmap_len = (row_capacity / bit_vec_block_size
             + (row_capacity % bit_vec_block_size != 0) as usize)
             * 8;
 
         let valid_start = header.size();
-        let valid = mmap[valid_start..].as_mut_ptr() as *mut BitVecBlock;
+        let valid = mmap[valid_start..].as_mut_ptr() as *mut u64;
 
-        let tentative_start = valid_start + bitmap_len;
-        let tentative = mmap[tentative_start..].as_mut_ptr() as *mut BitVecBlock;
+        let ready_start = valid_start + bitmap_len;
+        let ready = mmap[ready_start..].as_mut_ptr() as *mut u64;
 
-        let data_start = tentative_start + bitmap_len;
+        let data_start = ready_start + bitmap_len;
         let data_len = BLOCK_SIZE - data_start;
         let data = mmap[data_start..].as_mut_ptr();
 
         RelationalBlock {
             header,
-            valid,
-            tentative,
             data_len,
             data,
             mmap: Arc::new(mmap),
@@ -333,8 +229,6 @@ impl Clone for RelationalBlock {
         *rc_guard += 1;
         RelationalBlock {
             header: self.header.clone(),
-            valid: self.valid,
-            tentative: self.tentative,
             data_len: self.data_len,
             data: self.data,
             mmap: self.mmap.clone(),

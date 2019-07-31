@@ -1,5 +1,5 @@
 use buffer_manager::BufferManager;
-use relational_block::{RelationalBlock, RowBuilder};
+use block::{RelationalBlock, RowBuilder};
 use relational_storage_engine::RelationalStorageEngine;
 use std::cmp::min;
 use std::sync::Arc;
