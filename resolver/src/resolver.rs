@@ -78,7 +78,7 @@ impl Resolver {
 
     fn resolve_create_table(&mut self, node: &json::Value) -> Result<Plan, String> {
         debug_assert_eq!(node["type"].as_str().unwrap(), "create_table");
-        let name = node["name"].as_str().unwrap().to_owned();
+        let name = node["name"].as_str().unwrap();
         if self.catalog.table_exists(&name) {
             Err(format!("Table {} already exists", &name))
         } else {
@@ -87,9 +87,10 @@ impl Resolver {
                 .iter()
                 .map(|column| {
                     Column::new(
-                        column["name"].as_str().unwrap().to_owned(),
-                    column["column_type"].as_str().unwrap().to_owned(),
-                        name.clone()
+                        column["name"].as_str().unwrap(),
+                    column["column_type"].as_str().unwrap(),
+                        name,
+                        None
                     )
                 })
                 .collect();

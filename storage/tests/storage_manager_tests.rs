@@ -51,7 +51,7 @@ mod storage_manager_tests {
     fn get_row_col() {
         let sm = StorageManager::new();
         let rl_engine = sm.relational_engine();
-        let pr = rl_engine.create("key_get_row_col", vec![1, 2]);
+        let mut pr = rl_engine.create("key_get_row_col", vec![1, 2]);
         pr.bulk_write(b"abbcdd");
 
         let block = pr.get_block(0).unwrap();
@@ -69,7 +69,7 @@ mod storage_manager_tests {
     fn set_row_col() {
         let sm = StorageManager::new();
         let rl_engine = sm.relational_engine();
-        let pr = rl_engine.create("key_set_row_col", vec![1, 2]);
+        let mut pr = rl_engine.create("key_set_row_col", vec![1, 2]);
         pr.bulk_write(b"abbcdd");
 
         let block = pr.get_block(0).unwrap();
@@ -111,7 +111,7 @@ mod storage_manager_tests {
     fn delete_row() {
         let sm = StorageManager::new();
         let rl_engine = sm.relational_engine();
-        let pr = rl_engine.create("key_delete_row", vec![1, 2]);
+        let mut pr = rl_engine.create("key_delete_row", vec![1, 2]);
 
         pr.bulk_write(b"abbcddeff");
 

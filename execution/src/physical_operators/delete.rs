@@ -27,7 +27,7 @@ impl Operator for Delete {
 
     fn execute(&self, storage_manager: &StorageManager) -> Result<Option<Relation>, String> {
         let schema = self.relation.get_schema();
-        let physical_relation = storage_manager
+        let mut physical_relation = storage_manager
             .relational_engine()
             .get(self.relation.get_name())
             .unwrap();

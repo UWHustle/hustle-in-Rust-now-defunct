@@ -7,7 +7,7 @@ use memmap::MmapMut;
 
 use buffer_manager::BufferManager;
 
-const BLOCK_SIZE: usize = 4096;
+const BLOCK_SIZE: usize = 64 * 1024 * 1024;
 
 #[derive(Clone)]
 struct Header {
@@ -161,7 +161,7 @@ impl RelationalBlock {
         let header_size = header.size();
         header.set_row_capacity((BLOCK_SIZE - header_size) / header.get_row_size());
         let data = mmap[header_size..].as_mut_ptr();
-        
+
         RelationalBlock {
             header,
             data,

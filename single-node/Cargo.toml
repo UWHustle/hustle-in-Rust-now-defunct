@@ -1,0 +1,17 @@
+[package]
+name = "hustle-run"
+version = "0.1.0"
+authors = ["Zuyu Zhang <zuyu@cs.wisc.edu>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+core_affinity = "0.5.9"
+hustle-common = { path = "../common" }
+hustle-operators = { path = "../operators" }
+hustle-optimizer = { path = "../optimizer" }
+hustle-scheduling = { path = "../scheduling" }
+hustle-storage = { path = "../storage" }
+serde = { version = "1.0.92", features = ["derive"] }
+serde_json = "1.0.39"

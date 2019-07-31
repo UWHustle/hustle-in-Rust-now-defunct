@@ -9,6 +9,7 @@ pub struct PhysicalRelation<'a> {
     key: &'a str,
     schema: Vec<usize>,
     buffer_manager: Arc<BufferManager>,
+    block_ids: Vec<usize>,
 }
 
 impl<'a> PhysicalRelation<'a> {
@@ -18,7 +19,8 @@ impl<'a> PhysicalRelation<'a> {
         PhysicalRelation {
             key,
             schema,
-            buffer_manager
+            buffer_manager,
+            block_ids: Vec::new(),
         }
     }
 
@@ -29,10 +31,19 @@ impl<'a> PhysicalRelation<'a> {
             .map(|block| {
                 let mut schema = vec![];
                 schema.extend_from_slice(block.get_schema());
+                let mut block_ids = vec![0];
+                let mut block_index = 1;
+                let mut key_for_block = RelationalStorageEngine::formatted_key_for_block(key, block_index);
+                while buffer_manager.exists(&key_for_block) {
+                    block_ids.push(block_index);
+                    block_index += 1;
+                    key_for_block = RelationalStorageEngine::formatted_key_for_block(key, block_index);
+                }
                 PhysicalRelation {
                     key,
                     schema,
-                    buffer_manager
+                    buffer_manager,
+                    block_ids,
                 }
             })
     }
@@ -46,6 +57,11 @@ impl<'a> PhysicalRelation<'a> {
     /// Returns an iterator over the blocks of the `PhyscialRelation`.
     pub fn blocks(&self) -> BlockIter {
         BlockIter::new(self)
+    }
+
+    /// Returns all block_ids of the `PhyscialRelation`.
+    pub fn block_ids(&self) -> &Vec<usize> {
+        &self.block_ids
     }
 
     /// Returns a `RowBuilder` that is used to insert a row into the `PhysicalRelation`. The row is
@@ -69,8 +85,7 @@ impl<'a> PhysicalRelation<'a> {
 
     /// Deletes all rows in the `PhysicalRelation`, but maintains the relation itself by keeping
     /// the first block on storage.
-    pub fn clear(&self) {
-
+    pub fn clear(&mut self) {
         let first_block = self.get_block(0)
             .expect("Could not find block 0 for relation.");
         first_block.clear();
@@ -83,6 +98,8 @@ impl<'a> PhysicalRelation<'a> {
             block_index += 1;
             key_for_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
         }
+
+        self.block_ids.clear();
     }
 
     /// Returns the entire data of the `PhysicalRelation`, concatenated into a vector of bytes in
@@ -97,10 +114,11 @@ impl<'a> PhysicalRelation<'a> {
 
     /// Overwrites the entire `PhysicalRelation` with the `value`, which must be in row-major
     /// format.
-    pub fn bulk_write(&self, value: &[u8]) {
+    pub fn bulk_write(&mut self, value: &[u8]) {
         let mut block_index = 0;
         let mut offset = 0;
         while offset < value.len() {
+            self.block_ids.push(block_index);
             let ref mut block = self.get_block(block_index)
                 .unwrap_or_else(|| RelationalBlock::new(
                     &RelationalStorageEngine::formatted_key_for_block(self.key, block_index),

@@ -3,6 +3,7 @@ use std::sync::{Mutex, Arc};
 
 use buffer_manager::BufferManager;
 use physical_relation::PhysicalRelation;
+use relational_block::RelationalBlock;
 use storage_manager::TEMP_PREFIX;
 
 /// A storage engine for managing relational data.
@@ -50,6 +51,12 @@ impl RelationalStorageEngine {
     /// Returns the `PhysicalRelation` associated with `key` if it exists.
     pub fn get<'a>(&'a self, key: &'a str) -> Option<PhysicalRelation> {
         PhysicalRelation::try_from_block(key, self.buffer_manager.clone())
+    }
+
+    /// Gets the `RelationalBlock` at the specified `block_index`.
+    pub fn get_block<'a>(&'a self, key: &'a str, block_index: usize) -> Option<RelationalBlock> {
+        let block_name = RelationalStorageEngine::formatted_key_for_block(key, block_index);
+        self.buffer_manager.get(&block_name)
     }
 
     /// Removes the `PhysicalRelation` from storage.
