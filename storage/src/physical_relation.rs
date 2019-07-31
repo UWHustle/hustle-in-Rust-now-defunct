@@ -1,5 +1,5 @@
 use buffer_manager::BufferManager;
-use block::{RelationalBlock, RowBuilder};
+use block::{RowMajorBlock, RowBuilder};
 use relational_storage_engine::RelationalStorageEngine;
 use std::cmp::min;
 use std::sync::Arc;
@@ -14,7 +14,7 @@ pub struct PhysicalRelation<'a> {
 impl<'a> PhysicalRelation<'a> {
     pub fn new(key: &'a str, schema: Vec<usize>, buffer_manager: Arc<BufferManager>) -> Self {
         let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
-        RelationalBlock::new(&key_for_new_block, &schema, &buffer_manager);
+        RowMajorBlock::new(&key_for_new_block, &schema, &buffer_manager);
         PhysicalRelation {
             key,
             schema,
@@ -37,7 +37,7 @@ impl<'a> PhysicalRelation<'a> {
     }
 
     /// Gets the `RelationalBlock` at the specified `block_index`.
-    pub fn get_block(&self, block_index: usize) -> Option<RelationalBlock> {
+    pub fn get_block(&self, block_index: usize) -> Option<RowMajorBlock> {
         let key = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
         self.buffer_manager.get(&key)
     }
@@ -59,7 +59,7 @@ impl<'a> PhysicalRelation<'a> {
         }
 
         let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
-        let mut block = RelationalBlock::new(
+        let mut block = RowMajorBlock::new(
             &key_for_new_block,
             &self.schema,
             &self.buffer_manager);
@@ -101,7 +101,7 @@ impl<'a> PhysicalRelation<'a> {
         let mut offset = 0;
         while offset < value.len() {
             let ref mut block = self.get_block(block_index)
-                .unwrap_or_else(|| RelationalBlock::new(
+                .unwrap_or_else(|| RowMajorBlock::new(
                     &RelationalStorageEngine::formatted_key_for_block(self.key, block_index),
                     &self.schema,
                     &self.buffer_manager
@@ -129,9 +129,9 @@ impl<'a> BlockIter<'a> {
 }
 
 impl<'a> Iterator for BlockIter<'a> {
-    type Item = RelationalBlock;
+    type Item = RowMajorBlock;
 
-    fn next(&mut self) -> Option<RelationalBlock> {
+    fn next(&mut self) -> Option<RowMajorBlock> {
         let block = self.relation.get_block(self.block_index);
         self.block_index += 1;
         block

@@ -1,8 +1,8 @@
 pub use self::header::Header;
 pub use self::bitmap::{BitMap};
-pub use self::relational_block::{RelationalBlock, RowBuilder};
+pub use self::row_major::{RowMajorBlock, RowBuilder};
 
-mod relational_block;
+mod row_major;
 mod header;
 mod bitmap;
 

@@ -10,18 +10,18 @@ use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::Mmap;
 
-use block::RelationalBlock;
+use block::RowMajorBlock;
 
 use self::omap::OrderedHashMap;
 
 /// A wrapper around `Block` to keep track of information used by the cache.
 struct CacheBlock {
-    block: RelationalBlock,
+    block: RowMajorBlock,
     reference: RwLock<bool>
 }
 
 impl CacheBlock {
-    fn new(block: RelationalBlock) -> Self {
+    fn new(block: RowMajorBlock) -> Self {
         CacheBlock {
             block,
             reference: RwLock::new(false)
@@ -97,7 +97,7 @@ impl BufferManager {
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.
-    pub fn get(&self, key: &str) -> Option<RelationalBlock> {
+    pub fn get(&self, key: &str) -> Option<RowMajorBlock> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
@@ -148,10 +148,10 @@ impl BufferManager {
     }
 
     /// Loads the file from storage into the cache.
-    fn load(&self, key: &str) -> Option<RelationalBlock> {
+    fn load(&self, key: &str) -> Option<RowMajorBlock> {
         // Load the file from storage
         let path = Self::file_path(key);
-        let block = RelationalBlock::try_from_file(&path)?;
+        let block = RowMajorBlock::try_from_file(&path)?;
         let buffer_block = CacheBlock::new(block.clone());
 
         // Request write locks on all lists.

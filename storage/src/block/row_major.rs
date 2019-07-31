@@ -38,19 +38,19 @@ impl DerefMut for RawSlice {
     }
 }
 
-/// The unit of storage and replacement in the cache. A `RelationalBlock` is a horizontal partition
-/// of a `PhysicalRelation`.
-pub struct RelationalBlock {
+/// A `RowMajorBlock` is a horizontal partition of a `PhysicalRelation` in row-major order.
+pub struct RowMajorBlock {
     header: Header<RawSlice>,
     valid: BitMap<RawSlice>,
     ready: BitMap<RawSlice>,
     data: RawSlice,
+    column_offsets: Arc<Vec<usize>>,
     mmap: Arc<MmapMut>,
     rc: Arc<(Mutex<u64>, Condvar)>
 }
 
-impl RelationalBlock {
-    /// Creates a new `RelationalBlock`, backed by a file on storage. If the file path for the
+impl RowMajorBlock {
+    /// Creates a new `RowMajorBlock`, backed by a file on storage. If the file path for the
     /// specified `key` already exists, it will be overwritten.
     pub fn new(key: &str, schema: &[usize], buffer_manager: &BufferManager) -> Self {
         let mut options = OpenOptions::new();
@@ -75,8 +75,8 @@ impl RelationalBlock {
         Self::with_header(header, mmap)
     }
 
-    /// Loads a `RelationalBlock` from storage using the specified `path`. Returns an `Option`
-    /// containing the `RelationalBlock` if it exists, otherwise `None`.
+    /// Loads a `RowMajorBlock` from storage using the specified `path`. Returns an `Option`
+    /// containing the `RowMajorBlock` if it exists, otherwise `None`.
     pub fn try_from_file(path: &Path) -> Option<Self> {
         let file = OpenOptions::new()
             .read(true)
@@ -103,22 +103,31 @@ impl RelationalBlock {
         let ready = BitMap::new(RawSlice::new(&mut mmap[ready_start..data_start]));
         let data = RawSlice::new(&mut mmap[data_start..]);
 
-        RelationalBlock {
+        let column_offsets = header.get_schema().iter()
+            .scan(0, |state, &col_size| {
+                let offset = *state;
+                *state += col_size;
+                Some(offset)
+            })
+            .collect();
+
+        RowMajorBlock {
             header,
             valid,
             ready,
             data,
+            column_offsets: Arc::new(column_offsets),
             mmap: Arc::new(mmap),
             rc: Arc::new((Mutex::new(1), Condvar::new()))
         }
     }
 
-    /// Returns the number of rows in the `RelationalBlock`.
+    /// Returns the number of rows in the `RowMajorBlock`.
     pub fn get_n_rows(&self) -> usize {
         self.header.get_n_rows()
     }
 
-    /// Returns the number of columns in the `RelationalBlock`.
+    /// Returns the number of columns in the `RowMajorBlock`.
     pub fn get_n_cols(&self) -> usize {
         self.header.get_n_cols()
     }
@@ -128,13 +137,17 @@ impl RelationalBlock {
         self.header.get_row_size()
     }
 
-    /// Returns the total number of rows that can fit into the `RelationalBlock`.
+    /// Returns the total number of rows that can fit into the `RowMajorBlock`.
     pub fn get_row_capacity(&self) -> usize {
         self.header.get_row_capacity()
     }
 
     pub fn get_schema(&self) -> Vec<usize> {
         self.header.get_schema()
+    }
+
+    pub fn project<'a>(&self, cols: &'a [usize]) -> ProjectIter<'a> {
+        ProjectIter::new(cols)
     }
 
     /// Returns the raw value at the specified `row` and `col` if it exists.
@@ -159,7 +172,7 @@ impl RelationalBlock {
         unimplemented!()
     }
 
-    /// Returns the entire data of the `RelationalBlock`, concatenated into a vector of bytes in
+    /// Returns the entire data of the `RowMajorBlock`, concatenated into a vector of bytes in
     /// row-major format.
     pub fn bulk_read(&self) -> Vec<u8> {
         let mut result = vec![];
@@ -172,7 +185,7 @@ impl RelationalBlock {
         result
     }
 
-    /// Overwrites the entire `RelationalBlock` with the `value`, which must be in row-major format.
+    /// Overwrites the entire `RowMajorBlock` with the `value`, which must be in row-major format.
     pub fn bulk_write(&mut self, value: &[u8]) {
         assert!(value.len() <= self.header.get_row_size() * self.header.get_row_capacity());
         self.clear();
@@ -189,7 +202,7 @@ impl RelationalBlock {
         }
     }
 
-    /// Clears all the rows from the `RelationalBlock`, but does not remove it from storage.
+    /// Clears all the rows from the `RowMajorBlock`, but does not remove it from storage.
     pub fn clear(&mut self) {
         self.header.set_n_rows(0);
     }
@@ -199,22 +212,23 @@ impl RelationalBlock {
     }
 }
 
-impl Clone for RelationalBlock {
+impl Clone for RowMajorBlock {
     fn clone(&self) -> Self {
         let mut rc_guard = self.rc.0.lock().unwrap();
         *rc_guard += 1;
-        RelationalBlock {
+        RowMajorBlock {
             header: self.header.clone(),
             valid: self.valid.clone(),
             ready: self.ready.clone(),
             data: self.data.clone(),
+            column_offsets: self.column_offsets.clone(),
             mmap: self.mmap.clone(),
             rc: self.rc.clone()
         }
     }
 }
 
-impl Drop for RelationalBlock {
+impl Drop for RowMajorBlock {
     fn drop(&mut self) {
         // Decrement the reference count when Value is dropped.
         let &(ref rc_lock, ref cvar) = &*self.rc;
@@ -224,16 +238,16 @@ impl Drop for RelationalBlock {
     }
 }
 
-/// A utility for constructing a row in a `RelationalBlock`.
+/// A utility for constructing a row in a `RowMajorBlock`.
 pub struct RowBuilder {
     row: usize,
     col: usize,
     schema: Vec<usize>,
-    block: RelationalBlock
+    block: RowMajorBlock
 }
 
 impl RowBuilder {
-    pub fn new(row: usize, schema: Vec<usize>, block: RelationalBlock) -> Self {
+    pub fn new(row: usize, schema: Vec<usize>, block: RowMajorBlock) -> Self {
         RowBuilder {
             row,
             col: 0,
@@ -249,5 +263,17 @@ impl RowBuilder {
         assert_eq!(value.len(), self.schema[self.col]);
         self.block.set_row_col(self.row, self.col, value);
         self.col += 1;
+    }
+}
+
+pub struct ProjectIter<'a> {
+    cols: &'a [usize]
+}
+
+impl<'a> ProjectIter<'a> {
+    fn new(cols: &'a [usize]) -> Self {
+        ProjectIter {
+            cols
+        }
     }
 }
