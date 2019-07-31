@@ -1,10 +1,6 @@
-use std::mem::size_of;
-use owning_ref::OwningRef;
-use std::sync::Arc;
-use memmap::MmapMut;
-use std::ops::{Deref, DerefMut, Index};
-use std::borrow::Borrow;
+use std::ops::DerefMut;
 
+#[derive(Clone)]
 pub struct BitMap<D> {
     blocks: D,
     len: usize,
@@ -21,7 +17,7 @@ impl<D> BitMap<D> where D: DerefMut<Target = [u8]> {
 
     pub fn get_unchecked(&self, i: usize) -> bool {
         let (block_i, mask) = Self::position_of_bit(i);
-        self.blocks[i] & mask != 0
+        self.blocks[block_i] & mask != 0
     }
 
     pub fn set_unchecked(&mut self, i: usize, value: bool) {

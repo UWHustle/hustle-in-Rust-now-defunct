@@ -1,4 +1,4 @@
-use std::{mem, ptr, slice};
+use std::slice;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::sync::{Arc, Condvar, Mutex};
@@ -7,15 +7,44 @@ use memmap::MmapMut;
 
 use buffer_manager::BufferManager;
 use block::{Header, BLOCK_SIZE, BitMap};
-use owning_ref::OwningRef;
+use std::ops::{DerefMut, Deref};
+
+#[derive(Clone)]
+struct RawSlice {
+    data: *mut u8,
+    len: usize,
+}
+
+impl RawSlice {
+    fn new(s: &mut [u8]) -> Self {
+        RawSlice {
+            data: s.as_mut_ptr(),
+            len: s.len(),
+        }
+    }
+}
+
+impl Deref for RawSlice {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { slice::from_raw_parts(self.data, self.len) }
+    }
+}
+
+impl DerefMut for RawSlice {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { slice::from_raw_parts_mut(self.data, self.len) }
+    }
+}
 
 /// The unit of storage and replacement in the cache. A `RelationalBlock` is a horizontal partition
 /// of a `PhysicalRelation`.
 pub struct RelationalBlock {
-    header: Header,
-//    bitmap: BitMap<OwningRef<Arc<MmapMut>, [u8]>>,
-    data_len: usize,
-    data: *mut u8,
+    header: Header<RawSlice>,
+    valid: BitMap<RawSlice>,
+    ready: BitMap<RawSlice>,
+    data: RawSlice,
     mmap: Arc<MmapMut>,
     rc: Arc<(Mutex<u64>, Condvar)>
 }
@@ -41,7 +70,8 @@ impl RelationalBlock {
                 .expect("Error memory-mapping file.")
         };
 
-        let header = Header::new(schema, &mut mmap);
+        let header = Header::new(schema, RawSlice::new(&mut mmap));
+
         Self::with_header(header, mmap)
     }
 
@@ -56,31 +86,27 @@ impl RelationalBlock {
         file.set_len(BLOCK_SIZE as u64).ok()?;
 
         let mut mmap = unsafe { MmapMut::map_mut(&file).ok()? };
-        let header = Header::try_from_slice(&mut mmap)?;
+
+        let header = Header::with_buf(RawSlice::new(&mut mmap));
 
         Some(Self::with_header(header, mmap))
     }
 
-    fn with_header(header: Header, mut mmap: MmapMut) -> Self {
-        let row_capacity = header.get_row_capacity();
-        let bit_vec_block_size = 8 * 8;
-        let bitmap_len = (row_capacity / bit_vec_block_size
-            + (row_capacity % bit_vec_block_size != 0) as usize)
-            * 8;
+    fn with_header(header: Header<RawSlice>, mut mmap: MmapMut) -> Self {
+        let bitmap_size = header.get_bitmap_size();
 
         let valid_start = header.size();
-        let valid = mmap[valid_start..].as_mut_ptr() as *mut u64;
+        let ready_start = valid_start + bitmap_size;
+        let data_start = ready_start + bitmap_size;
 
-        let ready_start = valid_start + bitmap_len;
-        let ready = mmap[ready_start..].as_mut_ptr() as *mut u64;
-
-        let data_start = ready_start + bitmap_len;
-        let data_len = BLOCK_SIZE - data_start;
-        let data = mmap[data_start..].as_mut_ptr();
+        let valid = BitMap::new(RawSlice::new(&mut mmap[valid_start..ready_start]));
+        let ready = BitMap::new(RawSlice::new(&mut mmap[ready_start..data_start]));
+        let data = RawSlice::new(&mut mmap[data_start..]);
 
         RelationalBlock {
             header,
-            data_len,
+            valid,
+            ready,
             data,
             mmap: Arc::new(mmap),
             rc: Arc::new((Mutex::new(1), Condvar::new()))
@@ -107,56 +133,30 @@ impl RelationalBlock {
         self.header.get_row_capacity()
     }
 
-    pub fn get_schema(&self) -> &[usize] {
+    pub fn get_schema(&self) -> Vec<usize> {
         self.header.get_schema()
     }
 
     /// Returns the raw value at the specified `row` and `col` if it exists.
     pub fn get_row_col(&self, row: usize, col: usize) -> Option<&[u8]> {
-        self.position_of_row_col(row, col)
-            .and_then(|(offset, size)| self.data_as_slice().get(offset..offset + size))
+        unimplemented!()
     }
 
     /// Sets the raw value at the specified `row` and `col`. A `panic!` will occur if the `row` or
     /// `col` is out of bounds or the value is the wrong size for the schema.
     pub fn set_row_col(&self, row: usize, col: usize, value: &[u8]) {
-        let (offset, size) = self.position_of_row_col(row, col)
-            .expect(format!("Row {} and col {} out of bounds.", row, col).as_str());
-
-        assert_eq!(value.len(), size, "Value for row {} and col {} is the wrong size.", row, col);
-
-        self.data_as_slice_mut()[offset..offset + size].copy_from_slice(value);
+        unimplemented!()
     }
 
     /// Returns a `RowBuilder` that can be used to construct a new row by pushing values.
     pub fn insert_row(&mut self) -> RowBuilder {
-        assert!(self.get_n_rows() < self.header.get_row_capacity());
-
-        let mut schema = vec![];
-        schema.extend_from_slice(self.get_schema());
-
-        let row_builder = RowBuilder::new(self.get_n_rows(), schema, self.clone());
-        self.header.set_n_rows(self.header.get_n_rows() + 1);
-        row_builder
+        unimplemented!()
     }
 
     /// Deletes the specified `row`. To maintain packing, the last row of the block is moved from
     /// the end to the deleted position.
     pub fn delete_row(&mut self, row: usize) {
-        let (deleted_offset, _) = self.position_of_row_col(row, 0)
-            .expect(format!("Row {} out of bounds.", row).as_str());
-
-        let (last_offset, _) = self.position_of_row_col(self.get_n_rows() - 1, 0).unwrap();
-
-        let row_size = self.header.get_row_size();
-
-        unsafe {
-            ptr::copy(self.data.offset(last_offset as isize),
-                           self.data.offset(deleted_offset as isize),
-                           row_size);
-        }
-
-        self.header.set_n_rows(self.header.get_n_rows() - 1);
+        unimplemented!()
     }
 
     /// Returns the entire data of the `RelationalBlock`, concatenated into a vector of bytes in
@@ -190,36 +190,12 @@ impl RelationalBlock {
     }
 
     /// Clears all the rows from the `RelationalBlock`, but does not remove it from storage.
-    pub fn clear(&self) {
+    pub fn clear(&mut self) {
         self.header.set_n_rows(0);
     }
 
     pub fn get_reference_count(&self) -> &Arc<(Mutex<u64>, Condvar)> {
         &self.rc
-    }
-
-    /// Returns the raw data of the block, excluding the header, as a mutable slice of bytes.
-    fn data_as_slice(&self) -> &[u8] {
-        unsafe { slice::from_raw_parts(self.data, self.data_len) }
-    }
-
-    /// Returns the raw data of the block, excluding the header, as a mutable slice of bytes.
-    fn data_as_slice_mut(&self) -> &mut [u8] {
-        unsafe { slice::from_raw_parts_mut(self.data, self.data_len) }
-    }
-
-    /// Returns the offset in the block and the size for the specified `row` and `col`.
-    fn position_of_row_col(&self, row: usize, col: usize) -> Option<(usize, usize)> {
-        let schema = self.get_schema();
-        if row < self.get_n_rows() && col < self.get_n_cols() {
-            let row_offset = self.get_row_size() * row;
-            let col_offset: usize = schema.get(..col)?.iter().sum();
-            let offset = row_offset + col_offset;
-            let size = schema.get(col)?.clone();
-            Some((offset, size))
-        } else {
-            None
-        }
     }
 }
 
@@ -229,8 +205,9 @@ impl Clone for RelationalBlock {
         *rc_guard += 1;
         RelationalBlock {
             header: self.header.clone(),
-            data_len: self.data_len,
-            data: self.data,
+            valid: self.valid.clone(),
+            ready: self.ready.clone(),
+            data: self.data.clone(),
             mmap: self.mmap.clone(),
             rc: self.rc.clone()
         }

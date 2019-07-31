@@ -27,8 +27,7 @@ impl<'a> PhysicalRelation<'a> {
         let key_for_first_block = RelationalStorageEngine::formatted_key_for_block(key, 0);
         buffer_manager.get(&key_for_first_block)
             .map(|block| {
-                let mut schema = vec![];
-                schema.extend_from_slice(block.get_schema());
+                let schema = block.get_schema();
                 PhysicalRelation {
                     key,
                     schema,
@@ -71,7 +70,7 @@ impl<'a> PhysicalRelation<'a> {
     /// the first block on storage.
     pub fn clear(&self) {
 
-        let first_block = self.get_block(0)
+        let mut first_block = self.get_block(0)
             .expect("Could not find block 0 for relation.");
         first_block.clear();
 

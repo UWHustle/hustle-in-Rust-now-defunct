@@ -1,7 +1,6 @@
 extern crate memmap;
 extern crate omap;
 extern crate core;
-extern crate owning_ref;
 extern crate byteorder;
 
 pub mod storage_manager;
