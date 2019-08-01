@@ -3,16 +3,11 @@ extern crate hustle_storage;
 #[cfg(test)]
 mod bitmap_tests {
     use hustle_storage::block::BitMap;
-    use std::convert::TryInto;
 
     #[test]
     fn get() {
         let bm = BitMap::new(vec![0]);
         assert_eq!(bm.get_unchecked(0), false);
-
-        let t = &[0u8; 8];
-        let (int_bytes, rest) =
-        let val = u32::from_le_bytes(t_t);
     }
 
     #[test]

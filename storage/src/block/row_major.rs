@@ -5,6 +5,7 @@ use memmap::MmapMut;
 
 use buffer_manager::BufferManager;
 use block::{Header, BLOCK_SIZE, BitMap, RawSlice};
+use std::io::{Cursor, Write};
 
 /// A `RowMajorBlock` is a horizontal partition of a `PhysicalRelation` in row-major order.
 pub struct RowMajorBlock {
@@ -128,7 +129,41 @@ impl RowMajorBlock {
 
     /// Inserts a new row into the block. The row is inserted into the first available slot.
     pub fn insert(&mut self, row: &[&[u8]]) {
-        unimplemented!()
+        let schema = self.get_schema();
+        assert!(
+            row.len() == schema.len()
+                && row.iter()
+                    .zip(schema)
+                    .all(|(insert_col, col_len)| insert_col.len() == col_len),
+            "Row has incorrect schema",
+        );
+
+        let row_i = {
+            // Determine whether the block is at capacity. If there is space to insert a row,
+            // increment n_rows. Access to n_rows_guard is scoped so we don't hold the lock any
+            // longer than necessary.
+            let mut n_rows_guard = self.header.get_n_rows_guard();
+            let n_rows = n_rows_guard.get();
+            if n_rows == self.get_row_capacity() {
+                panic!("Block is already at capacity");
+            }
+            n_rows_guard.set(n_rows + 1);
+
+            // Find the position in the block to insert the row.
+            self.valid.iter()
+                .zip(self.ready.iter())
+                .enumerate()
+                .find(|(i, (valid, ready))| !*valid && *ready)
+                .unwrap()
+                .0
+        };
+
+        // Write the new row to the block.
+        let start = row_i + self.get_row_size();
+        let mut cursor = Cursor::new(&mut self.data[start..]);
+        for &col in row {
+            cursor.write(col).unwrap();
+        }
     }
 
     /// Deletes each row in the block where `filter` called on that row returns true.
