@@ -16,12 +16,12 @@ impl<D> BitMap<D> where D: DerefMut<Target = [u8]> {
     }
 
     pub fn get_unchecked(&self, i: usize) -> bool {
-        let (block_i, mask) = Self::position_of_bit(i);
+        let (block_i, mask) = Self::mask(i);
         self.blocks[block_i] & mask != 0
     }
 
     pub fn set_unchecked(&mut self, i: usize, value: bool) {
-        let (block_i, mask) = Self::position_of_bit(i);
+        let (block_i, mask) = Self::mask(i);
         if value {
             self.blocks[block_i] |= mask;
         } else {
@@ -29,14 +29,20 @@ impl<D> BitMap<D> where D: DerefMut<Target = [u8]> {
         }
     }
 
+    pub fn set_all(&mut self, value: bool) {
+        let v = if value { u8::max_value() } else { u8::min_value() };
+        self.blocks.iter_mut()
+            .map(|block| *block = v);
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {
         self.blocks.iter()
             .flat_map(|block|
-                (0..8).map(move |shift| block & (1 << shift as usize) != 0)
+                (0..8).map(move |shift| block & (1 << shift) != 0)
             )
     }
 
-    fn position_of_bit(i: usize) -> (usize, u8) {
+    fn mask(i: usize) -> (usize, u8) {
         let block_i = i / 8;
         let bit_i = i % 8;
         let mask = 1 << bit_i as u8;

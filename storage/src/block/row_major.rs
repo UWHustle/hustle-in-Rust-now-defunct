@@ -109,20 +109,19 @@ impl RowMajorBlock {
     }
 
     pub fn project<F>(&self, cols: &[usize], f: F) where F: Fn(&[&[u8]]) {
-        let row_offsets = self.valid.iter()
-            .zip(self.ready.iter())
-            .zip((0..).step_by(self.get_row_size()))
-            .filter(|((valid, ready), _)| *valid && *ready)
-            .map(|(_, offset)| offset);
-
-        let mut row_buf = vec![&[] as &[u8]; cols.len()];
         let schema = self.get_schema();
-        for offset in row_offsets {
+        let mut row_buf = vec![&[] as &[u8]; cols.len()];
+
+        let rows = self.rows()
+            .filter(|(_, _, valid, ready)| *valid && *ready);
+
+        for (_, offset, _, _) in rows {
             for (i, col) in cols.iter().enumerate() {
                 let start = offset + self.column_offsets[*col];
                 let end = start + schema[*col];
                 row_buf[i] = &self.data[start..end];
             }
+
             f(&row_buf)
         }
     }
@@ -138,7 +137,7 @@ impl RowMajorBlock {
             "Row has incorrect schema",
         );
 
-        let row_i = {
+        let offset = {
             // Determine whether the block is at capacity. If there is space to insert a row,
             // increment n_rows. Access to n_rows_guard is scoped so we don't hold the lock any
             // longer than necessary.
@@ -150,30 +149,52 @@ impl RowMajorBlock {
             n_rows_guard.set(n_rows + 1);
 
             // Find the position in the block to insert the row.
-            self.valid.iter()
-                .zip(self.ready.iter())
-                .enumerate()
-                .find(|(i, (valid, ready))| !*valid && *ready)
+            self.rows()
+                .find(|(row_i, offset, valid, ready)| !*valid && *ready)
                 .unwrap()
-                .0
+                .1
         };
 
         // Write the new row to the block.
-        let start = row_i + self.get_row_size();
-        let mut cursor = Cursor::new(&mut self.data[start..]);
+        let mut cursor = Cursor::new(&mut self.data[offset..]);
         for &col in row {
             cursor.write(col).unwrap();
         }
     }
 
-    /// Deletes each row in the block where `filter` called on that row returns true.
+    /// For each row in the block, deletes the row if `filter` called on that row returns true.
     pub fn delete<F>(&mut self, filter: F) where F: Fn(&[&[u8]]) -> bool {
-        unimplemented!()
+        let schema = self.get_schema();
+        let row_size = self.get_row_size();
+        let mut row_buf = vec![&[] as &[u8]; schema.len()];
+
+        let rows = (0..self.get_row_capacity())
+            .zip((0..).step_by(self.get_row_size()));
+
+        for (row_i, offset) in rows {
+            if self.valid.get_unchecked(row_i) && self.ready.get_unchecked(row_i) {
+                for (col, col_size) in schema.iter().enumerate() {
+                    let start = offset + self.column_offsets[col];
+                    let end = start + *col_size;
+                    row_buf[col] = &self.data[start..end];
+                }
+
+                if filter(&row_buf) {
+                    let mut n_rows_guard = self.header.get_n_rows_guard();
+                    self.valid.set_unchecked(row_i, false);
+                    let n_rows = n_rows_guard.get() - 1;
+                    n_rows_guard.set(n_rows);
+                }
+            }
+        }
     }
 
     /// Clears all the rows from the `RowMajorBlock`, but does not remove it from storage.
     pub fn clear(&mut self) {
-        self.header.get_n_rows_guard().set(0);
+        let mut n_rows_guard = self.header.get_n_rows_guard();
+        self.valid.set_all(false);
+        self.ready.set_all(true);
+        n_rows_guard.set(0);
     }
 
     /// Returns the entire data of the `RowMajorBlock`, concatenated into a vector of bytes in
@@ -185,6 +206,14 @@ impl RowMajorBlock {
     /// Overwrites the entire `RowMajorBlock` with the `value`, which must be in row-major format.
     pub fn bulk_write(&self, value: &[u8]) {
         unimplemented!()
+    }
+
+    fn rows(&self) -> impl Iterator<Item = (usize, usize, bool, bool)> + '_ {
+        self.valid.iter()
+            .zip(self.ready.iter())
+            .zip((0..).step_by(self.get_row_size()))
+            .enumerate()
+            .map(|(row_i, ((valid, ready), offset))| (row_i, offset, valid, ready))
     }
 }
 
