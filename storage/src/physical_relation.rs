@@ -1,5 +1,5 @@
 use buffer_manager::BufferManager;
-use block::{RowMajorBlock, RowBuilder};
+use block::{RowMajorBlock, BlockReference};
 use relational_storage_engine::RelationalStorageEngine;
 use std::cmp::min;
 use std::sync::Arc;
@@ -37,7 +37,7 @@ impl<'a> PhysicalRelation<'a> {
     }
 
     /// Gets the `RelationalBlock` at the specified `block_index`.
-    pub fn get_block(&self, block_index: usize) -> Option<RowMajorBlock> {
+    pub fn get_block(&self, block_index: usize) -> Option<BlockReference> {
         let key = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
         self.buffer_manager.get(&key)
     }
@@ -49,39 +49,41 @@ impl<'a> PhysicalRelation<'a> {
 
     /// Returns a `RowBuilder` that is used to insert a row into the `PhysicalRelation`. The row is
     /// inserted into the first block that has free space.
-    pub fn insert_row(&self) -> RowBuilder {
-        let mut block_index = 0;
-        for mut block in self.blocks() {
-            if block.get_n_rows() < block.get_row_capacity() {
-                return block.insert_row()
-            }
-            block_index += 1
-        }
-
-        let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
-        let mut block = RowMajorBlock::new(
-            &key_for_new_block,
-            &self.schema,
-            &self.buffer_manager);
-        block.insert_row()
+    pub fn insert_row(&mut self) {
+        unimplemented!()
+//        let mut block_index = 0;
+//        for mut block in self.blocks() {
+//            if block.get_n_rows() < block.get_row_capacity() {
+//                return block.insert_row()
+//            }
+//            block_index += 1
+//        }
+//
+//        let key_for_new_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
+//        let mut block = RowMajorBlock::new(
+//            &key_for_new_block,
+//            &self.schema,
+//            &self.buffer_manager);
+//        block.insert_row()
     }
 
     /// Deletes all rows in the `PhysicalRelation`, but maintains the relation itself by keeping
     /// the first block on storage.
     pub fn clear(&self) {
+        unimplemented!()
 
-        let mut first_block = self.get_block(0)
-            .expect("Could not find block 0 for relation.");
-        first_block.clear();
-
-        let mut block_index = 1;
-        let mut key_for_block = RelationalStorageEngine::formatted_key_for_block(
-            self.key, block_index);
-        while self.buffer_manager.exists(&key_for_block) {
-            self.buffer_manager.erase(&key_for_block);
-            block_index += 1;
-            key_for_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
-        }
+//        let mut first_block = self.get_block(0)
+//            .expect("Could not find block 0 for relation.");
+//        first_block.clear();
+//
+//        let mut block_index = 1;
+//        let mut key_for_block = RelationalStorageEngine::formatted_key_for_block(
+//            self.key, block_index);
+//        while self.buffer_manager.exists(&key_for_block) {
+//            self.buffer_manager.erase(&key_for_block);
+//            block_index += 1;
+//            key_for_block = RelationalStorageEngine::formatted_key_for_block(self.key, block_index);
+//        }
     }
 
     /// Returns the entire data of the `PhysicalRelation`, concatenated into a vector of bytes in
@@ -101,11 +103,11 @@ impl<'a> PhysicalRelation<'a> {
         let mut offset = 0;
         while offset < value.len() {
             let ref mut block = self.get_block(block_index)
-                .unwrap_or_else(|| RowMajorBlock::new(
+                .unwrap_or_else(|| BlockReference::new(RowMajorBlock::new(
                     &RelationalStorageEngine::formatted_key_for_block(self.key, block_index),
                     &self.schema,
                     &self.buffer_manager
-                ));
+                )));
             let size = min(block.get_row_size() * block.get_row_capacity(), value.len() - offset);
             block.bulk_write(&value[offset..offset + size]);
             block_index += 1;
@@ -129,9 +131,9 @@ impl<'a> BlockIter<'a> {
 }
 
 impl<'a> Iterator for BlockIter<'a> {
-    type Item = RowMajorBlock;
+    type Item = BlockReference;
 
-    fn next(&mut self) -> Option<RowMajorBlock> {
+    fn next(&mut self) -> Option<BlockReference> {
         let block = self.relation.get_block(self.block_index);
         self.block_index += 1;
         block

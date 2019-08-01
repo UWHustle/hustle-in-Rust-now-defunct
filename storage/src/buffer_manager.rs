@@ -10,27 +10,27 @@ use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::Mmap;
 
-use block::RowMajorBlock;
+use block::{RowMajorBlock, BlockReference};
 
 use self::omap::OrderedHashMap;
 
-/// A wrapper around `Block` to keep track of information used by the cache.
-struct CacheBlock {
-    block: RowMajorBlock,
+/// A wrapper around `BlockReference` to keep track of information used by the cache.
+struct CacheBlockReference {
+    block: BlockReference,
     reference: RwLock<bool>
 }
 
-impl CacheBlock {
-    fn new(block: RowMajorBlock) -> Self {
-        CacheBlock {
+impl CacheBlockReference {
+    fn new(block: BlockReference) -> Self {
+        CacheBlockReference {
             block,
             reference: RwLock::new(false)
         }
     }
 }
 
-unsafe impl Send for CacheBlock {}
-unsafe impl Sync for CacheBlock {}
+unsafe impl Send for CacheBlockReference {}
+unsafe impl Sync for CacheBlockReference {}
 
 /// A buffer that reads and writes to storage and maintains a cache in memory. The `Buffer` is
 /// implemented as a key-value store, where the keys are strings and the values (pages) are
@@ -40,8 +40,8 @@ unsafe impl Sync for CacheBlock {}
 /// writes to the same key-value. This must be handled by an external concurrency control module.
 pub struct BufferManager {
     capacity: usize,
-    t1: RwLock<OrderedHashMap<String, CacheBlock>>,
-    t2: RwLock<OrderedHashMap<String, CacheBlock>>,
+    t1: RwLock<OrderedHashMap<String, CacheBlockReference>>,
+    t2: RwLock<OrderedHashMap<String, CacheBlockReference>>,
     b1: Mutex<OrderedHashMap<String, ()>>,
     b2: Mutex<OrderedHashMap<String, ()>>,
     p: Mutex<usize>
@@ -97,7 +97,7 @@ impl BufferManager {
     }
 
     /// Loads the value for `key` into the cache and returns a reference if it exists.
-    pub fn get(&self, key: &str) -> Option<RowMajorBlock> {
+    pub fn get(&self, key: &str) -> Option<BlockReference> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
@@ -148,11 +148,11 @@ impl BufferManager {
     }
 
     /// Loads the file from storage into the cache.
-    fn load(&self, key: &str) -> Option<RowMajorBlock> {
+    fn load(&self, key: &str) -> Option<BlockReference> {
         // Load the file from storage
         let path = Self::file_path(key);
-        let block = RowMajorBlock::try_from_file(&path)?;
-        let buffer_block = CacheBlock::new(block.clone());
+        let block = BlockReference::new(RowMajorBlock::try_from_file(&path)?);
+        let cache_block = CacheBlockReference::new(block.clone());
 
         // Request write locks on all lists.
         let mut t1_write_guard = self.t1.write().unwrap();
@@ -193,7 +193,7 @@ impl BufferManager {
 
         if cache_directory_miss {
             // Move the page to the back of T1.
-            t1_write_guard.push_back(key.to_string(), buffer_block);
+            t1_write_guard.push_back(key.to_string(), cache_block);
 
         } else if b1_guard.contains_key(key) {
             // B1 cache directory hit. Increase the target size for T1.
@@ -201,7 +201,7 @@ impl BufferManager {
 
             // Move the page to the back of T2.
             b1_guard.remove(key);
-            t2_write_guard.push_back(key.to_string(), buffer_block);
+            t2_write_guard.push_back(key.to_string(), cache_block);
 
         } else {
             // B2 cache directory hit. Decrease the target size for T2.
@@ -209,7 +209,7 @@ impl BufferManager {
 
             // Move the page to the back of T2.
             b2_guard.remove(key);
-            t2_write_guard.push_back(key.to_string(), buffer_block);
+            t2_write_guard.push_back(key.to_string(), cache_block);
         };
 
         Some(block)
@@ -217,8 +217,8 @@ impl BufferManager {
 
     /// Removes the approximated least recently used page from the cache.
     fn replace(&self,
-               t1: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlock>>,
-               t2: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlock>>,
+               t1: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlockReference>>,
+               t2: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlockReference>>,
                b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
                b2: &mut MutexGuard<OrderedHashMap<String, ()>>,
                p: &MutexGuard<usize>) {

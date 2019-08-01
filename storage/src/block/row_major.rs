@@ -1,52 +1,19 @@
-use std::slice;
 use std::fs::OpenOptions;
 use std::path::Path;
-use std::sync::{Arc, Condvar, Mutex};
 
 use memmap::MmapMut;
 
 use buffer_manager::BufferManager;
-use block::{Header, BLOCK_SIZE, BitMap};
-use std::ops::{DerefMut, Deref};
-
-#[derive(Clone)]
-struct RawSlice {
-    data: *mut u8,
-    len: usize,
-}
-
-impl RawSlice {
-    fn new(s: &mut [u8]) -> Self {
-        RawSlice {
-            data: s.as_mut_ptr(),
-            len: s.len(),
-        }
-    }
-}
-
-impl Deref for RawSlice {
-    type Target = [u8];
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { slice::from_raw_parts(self.data, self.len) }
-    }
-}
-
-impl DerefMut for RawSlice {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { slice::from_raw_parts_mut(self.data, self.len) }
-    }
-}
+use block::{Header, BLOCK_SIZE, BitMap, RawSlice};
 
 /// A `RowMajorBlock` is a horizontal partition of a `PhysicalRelation` in row-major order.
 pub struct RowMajorBlock {
-    header: Header<RawSlice>,
+    header: Header,
     valid: BitMap<RawSlice>,
     ready: BitMap<RawSlice>,
     data: RawSlice,
-    column_offsets: Arc<Vec<usize>>,
-    mmap: Arc<MmapMut>,
-    rc: Arc<(Mutex<u64>, Condvar)>
+    column_offsets: Vec<usize>,
+    mmap: MmapMut,
 }
 
 impl RowMajorBlock {
@@ -70,7 +37,7 @@ impl RowMajorBlock {
                 .expect("Error memory-mapping file.")
         };
 
-        let header = Header::new(schema, RawSlice::new(&mut mmap));
+        let header = Header::new(schema, &mut mmap);
 
         Self::with_header(header, mmap)
     }
@@ -87,12 +54,12 @@ impl RowMajorBlock {
 
         let mut mmap = unsafe { MmapMut::map_mut(&file).ok()? };
 
-        let header = Header::with_buf(RawSlice::new(&mut mmap));
+        let header = Header::with_buf(&mut mmap);
 
         Some(Self::with_header(header, mmap))
     }
 
-    fn with_header(header: Header<RawSlice>, mut mmap: MmapMut) -> Self {
+    fn with_header(header: Header, mut mmap: MmapMut) -> Self {
         let bitmap_size = header.get_bitmap_size();
 
         let valid_start = header.size();
@@ -116,15 +83,9 @@ impl RowMajorBlock {
             valid,
             ready,
             data,
-            column_offsets: Arc::new(column_offsets),
-            mmap: Arc::new(mmap),
-            rc: Arc::new((Mutex::new(1), Condvar::new()))
+            column_offsets,
+            mmap,
         }
-    }
-
-    /// Returns the number of rows in the `RowMajorBlock`.
-    pub fn get_n_rows(&self) -> usize {
-        self.header.get_n_rows()
     }
 
     /// Returns the number of columns in the `RowMajorBlock`.
@@ -146,134 +107,62 @@ impl RowMajorBlock {
         self.header.get_schema()
     }
 
-    pub fn project<'a>(&self, cols: &'a [usize]) -> ProjectIter<'a> {
-        ProjectIter::new(cols)
+    pub fn project<F>(&self, cols: &[usize], f: F) where F: Fn(&[&[u8]]) {
+        let row_offsets = self.valid.iter()
+            .zip(self.ready.iter())
+            .zip((0..).step_by(self.get_row_size()))
+            .filter(|((valid, ready), _)| *valid && *ready)
+            .map(|(_, offset)| offset);
+
+        let mut row_buf = vec![&[] as &[u8]; cols.len()];
+        let schema = self.get_schema();
+        for offset in row_offsets {
+            for (i, col) in cols.iter().enumerate() {
+                let start = offset + self.column_offsets[*col];
+                let end = start + schema[*col];
+                row_buf[i] = &self.data[start..end];
+            }
+            f(&row_buf)
+        }
     }
 
-    /// Returns the raw value at the specified `row` and `col` if it exists.
-    pub fn get_row_col(&self, row: usize, col: usize) -> Option<&[u8]> {
+    /// Inserts a new row into the block. The row is inserted into the first available slot.
+    pub fn insert(&mut self, row: &[&[u8]]) {
         unimplemented!()
     }
 
-    /// Sets the raw value at the specified `row` and `col`. A `panic!` will occur if the `row` or
-    /// `col` is out of bounds or the value is the wrong size for the schema.
-    pub fn set_row_col(&self, row: usize, col: usize, value: &[u8]) {
+    /// Deletes each row in the block where `filter` called on that row returns true.
+    pub fn delete<F>(&mut self, filter: F) where F: Fn(&[&[u8]]) -> bool {
         unimplemented!()
     }
 
-    /// Returns a `RowBuilder` that can be used to construct a new row by pushing values.
-    pub fn insert_row(&mut self) -> RowBuilder {
-        unimplemented!()
-    }
-
-    /// Deletes the specified `row`. To maintain packing, the last row of the block is moved from
-    /// the end to the deleted position.
-    pub fn delete_row(&mut self, row: usize) {
-        unimplemented!()
+    /// Clears all the rows from the `RowMajorBlock`, but does not remove it from storage.
+    pub fn clear(&mut self) {
+        self.header.get_n_rows_guard().set(0);
     }
 
     /// Returns the entire data of the `RowMajorBlock`, concatenated into a vector of bytes in
     /// row-major format.
     pub fn bulk_read(&self) -> Vec<u8> {
-        let mut result = vec![];
-        for row_i in 0..self.header.get_n_rows() {
-            for col_i in 0..self.header.get_n_cols() {
-                self.get_row_col(row_i, col_i)
-                    .map(|value| result.extend_from_slice(value));
-            }
-        }
-        result
+        unimplemented!()
     }
 
     /// Overwrites the entire `RowMajorBlock` with the `value`, which must be in row-major format.
-    pub fn bulk_write(&mut self, value: &[u8]) {
-        assert!(value.len() <= self.header.get_row_size() * self.header.get_row_capacity());
-        self.clear();
-        let n_rows = value.len() / self.header.get_row_size();
-        self.header.set_n_rows(n_rows);
-        let schema = self.header.get_schema();
-        let mut offset = 0;
-        for row_i in 0..n_rows {
-            for col_i in 0..self.header.get_n_cols() {
-                let size = schema[col_i];
-                self.set_row_col(row_i, col_i, &value[offset..offset + size]);
-                offset += size;
-            }
-        }
-    }
-
-    /// Clears all the rows from the `RowMajorBlock`, but does not remove it from storage.
-    pub fn clear(&mut self) {
-        self.header.set_n_rows(0);
-    }
-
-    pub fn get_reference_count(&self) -> &Arc<(Mutex<u64>, Condvar)> {
-        &self.rc
-    }
-}
-
-impl Clone for RowMajorBlock {
-    fn clone(&self) -> Self {
-        let mut rc_guard = self.rc.0.lock().unwrap();
-        *rc_guard += 1;
-        RowMajorBlock {
-            header: self.header.clone(),
-            valid: self.valid.clone(),
-            ready: self.ready.clone(),
-            data: self.data.clone(),
-            column_offsets: self.column_offsets.clone(),
-            mmap: self.mmap.clone(),
-            rc: self.rc.clone()
-        }
-    }
-}
-
-impl Drop for RowMajorBlock {
-    fn drop(&mut self) {
-        // Decrement the reference count when Value is dropped.
-        let &(ref rc_lock, ref cvar) = &*self.rc;
-        let mut rc_guard = rc_lock.lock().unwrap();
-        *rc_guard -= 1;
-        cvar.notify_all();
-    }
-}
-
-/// A utility for constructing a row in a `RowMajorBlock`.
-pub struct RowBuilder {
-    row: usize,
-    col: usize,
-    schema: Vec<usize>,
-    block: RowMajorBlock
-}
-
-impl RowBuilder {
-    pub fn new(row: usize, schema: Vec<usize>, block: RowMajorBlock) -> Self {
-        RowBuilder {
-            row,
-            col: 0,
-            schema,
-            block
-        }
-    }
-
-    /// Push a new cell into the row. A `panic!` will occur if the row is already full or the value
-    /// is the wrong size for the schema.
-    pub fn push(&mut self, value: &[u8]) {
-        assert!(self.col < self.schema.len());
-        assert_eq!(value.len(), self.schema[self.col]);
-        self.block.set_row_col(self.row, self.col, value);
-        self.col += 1;
+    pub fn bulk_write(&self, value: &[u8]) {
+        unimplemented!()
     }
 }
 
 pub struct ProjectIter<'a> {
-    cols: &'a [usize]
+    cols: &'a [usize],
 }
 
 impl<'a> ProjectIter<'a> {
     fn new(cols: &'a [usize]) -> Self {
         ProjectIter {
-            cols
+            cols,
         }
     }
 }
+
+

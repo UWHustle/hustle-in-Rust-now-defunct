@@ -1,7 +1,7 @@
-use block::{BLOCK_SIZE};
-use std::ops::DerefMut;
+use block::{BLOCK_SIZE, RawSlice};
 use byteorder::{LittleEndian, ByteOrder};
 use std::mem::size_of;
+use std::sync::{MutexGuard, Mutex};
 
 // These types must be safely casted to usize.
 type NRows = u32;
@@ -16,13 +16,16 @@ const ROW_SIZE_OFFSET: usize = N_COLS_OFFSET + size_of::<NCols>();
 const ROW_CAPACITY_OFFSET: usize = ROW_SIZE_OFFSET + size_of::<RowSize>();
 const SCHEMA_OFFSET: usize = ROW_CAPACITY_OFFSET + size_of::<RowCapacity>();
 
-#[derive(Clone)]
-pub struct Header<D> {
-    buf: D,
+pub struct Header {
+    n_rows: Mutex<RawSlice>,
+    n_cols: RawSlice,
+    row_size: RawSlice,
+    row_capacity: RawSlice,
+    schema: RawSlice,
 }
 
-impl<D> Header<D> where D: DerefMut<Target = [u8]> {
-    pub fn new(schema: &[usize], buf: D) -> Self {
+impl Header {
+    pub fn new(schema: &[usize], buf: &mut [u8]) -> Self {
         // Blocks must have valid schema.
         assert!(!schema.is_empty(), "Cannot create a block with empty schema");
         assert!(
@@ -43,7 +46,7 @@ impl<D> Header<D> where D: DerefMut<Target = [u8]> {
 
         assert!(row_capacity > 0, "Row is too large to fit in a single block");
 
-        header.set_n_rows(0);
+        header.get_n_rows_guard().set(0);
         header.set_n_cols(n_cols);
         header.set_row_size(row_size);
         header.set_row_capacity(row_capacity);
@@ -52,9 +55,19 @@ impl<D> Header<D> where D: DerefMut<Target = [u8]> {
         header
     }
 
-    pub fn with_buf(buf: D) -> Self {
+    pub fn with_buf(buf: &mut [u8]) -> Self {
+        let n_rows = Mutex::new(RawSlice::new(&mut buf[N_ROWS_OFFSET..N_COLS_OFFSET]));
+        let n_cols = RawSlice::new(&mut buf[N_COLS_OFFSET..ROW_SIZE_OFFSET]);
+        let row_size = RawSlice::new(&mut buf[ROW_SIZE_OFFSET..ROW_CAPACITY_OFFSET]);
+        let row_capacity = RawSlice::new(&mut buf[ROW_CAPACITY_OFFSET..SCHEMA_OFFSET]);
+        let schema = RawSlice::new(&mut buf[SCHEMA_OFFSET..]);
+
         Header {
-            buf,
+            n_rows,
+            n_cols,
+            row_size,
+            row_capacity,
+            schema,
         }
     }
 
@@ -62,29 +75,27 @@ impl<D> Header<D> where D: DerefMut<Target = [u8]> {
         SCHEMA_OFFSET + self.get_n_cols() * size_of::<ColSize>()
     }
 
-    pub fn get_n_rows(&self) -> usize {
-        Self::read::<NRows>(&self.buf[N_ROWS_OFFSET..]) as usize
+    pub fn get_n_rows_guard(&self) -> NRowsGuard {
+        NRowsGuard { inner: self.n_rows.lock().unwrap() }
     }
 
     pub fn get_n_cols(&self) -> usize {
-        Self::read::<NCols>(&self.buf[N_COLS_OFFSET..]) as usize
+        Self::read::<NCols>(&self.n_cols) as usize
     }
 
     pub fn get_row_size(&self) -> usize {
-        Self::read::<RowSize>(&self.buf[ROW_SIZE_OFFSET..]) as usize
+        Self::read::<RowSize>(&self.row_size) as usize
     }
 
     pub fn get_row_capacity(&self) -> usize {
-        Self::read::<RowCapacity>(&self.buf[ROW_CAPACITY_OFFSET..]) as usize
+        Self::read::<RowCapacity>(&self.row_capacity) as usize
     }
 
     pub fn get_schema(&self) -> Vec<usize> {
-        let mut offset = SCHEMA_OFFSET;
         let n_cols = self.get_n_cols() as usize;
         let mut schema = Vec::with_capacity(n_cols);
-        for _ in 0..n_cols {
-            schema.push(Self::read::<ColSize>(&self.buf[offset..]) as usize);
-            offset += size_of::<ColSize>()
+        for offset in (0..n_cols * size_of::<ColSize>()).step_by(size_of::<ColSize>()) {
+            schema.push(Self::read::<ColSize>(&self.schema[offset..]) as usize);
         }
         schema
     }
@@ -93,27 +104,23 @@ impl<D> Header<D> where D: DerefMut<Target = [u8]> {
         self.get_row_capacity() / 8 + (self.get_row_capacity() % 8 != 0) as usize
     }
 
-    pub fn set_n_rows(&mut self, n_rows: usize) {
-        Self::write::<NRows>(&mut self.buf[N_ROWS_OFFSET..], n_rows as u64);
-    }
-
     fn set_n_cols(&mut self, n_cols: usize) {
-        Self::write::<NCols>(&mut self.buf[N_COLS_OFFSET..], n_cols as u64);
+        Self::write::<NCols>(&mut self.n_cols, n_cols as u64);
     }
 
     fn set_row_size(&mut self, row_size: usize) {
-        Self::write::<RowSize>(&mut self.buf[ROW_SIZE_OFFSET..], row_size as u64);
+        Self::write::<RowSize>(&mut self.row_size, row_size as u64);
     }
 
     fn set_row_capacity(&mut self, row_capacity: usize) {
-        Self::write::<RowCapacity>(&mut self.buf[ROW_CAPACITY_OFFSET..], row_capacity as u64);
+        Self::write::<RowCapacity>(&mut self.row_capacity, row_capacity as u64);
     }
 
     fn set_schema(&mut self, schema: &[usize]) {
-        let mut offset = SCHEMA_OFFSET;
-        for col in schema {
-            Self::write::<ColSize>(&mut self.buf[offset..], *col as u64);
-            offset += size_of::<ColSize>()
+        for (col, offset) in schema.iter()
+            .zip((0..schema.len() * size_of::<ColSize>()).step_by(size_of::<ColSize>()))
+        {
+            Self::write::<ColSize>(&mut self.schema[offset..], *col as u64);
         }
     }
 
@@ -123,5 +130,19 @@ impl<D> Header<D> where D: DerefMut<Target = [u8]> {
 
     fn write<T>(buf: &mut [u8], val: u64) {
         LittleEndian::write_uint(buf, val, size_of::<T>());
+    }
+}
+
+pub struct NRowsGuard<'a> {
+    inner: MutexGuard<'a, RawSlice>,
+}
+
+impl<'a> NRowsGuard<'a> {
+    pub fn get(&self) -> usize {
+        Header::read::<NRows>(&self.inner) as usize
+    }
+
+    pub fn set(&mut self, n_rows: usize) {
+        Header::write::<NRows>(&mut self.inner, n_rows as u64);
     }
 }
