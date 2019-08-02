@@ -31,8 +31,9 @@ impl<D> BitMap<D> where D: DerefMut<Target = [u8]> {
 
     pub fn set_all(&mut self, value: bool) {
         let v = if value { u8::max_value() } else { u8::min_value() };
-        self.blocks.iter_mut()
-            .map(|block| *block = v);
+        for block in self.blocks.iter_mut() {
+            *block = v
+        }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {

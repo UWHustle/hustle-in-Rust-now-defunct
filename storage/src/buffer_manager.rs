@@ -2,15 +2,15 @@ extern crate memmap;
 extern crate omap;
 
 use std::cmp::{max, min};
-use std::fs;
-use std::fs::{File, OpenOptions};
+use std::collections::HashMap;
+use std::fs::{self, OpenOptions};
 use std::mem;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
-use memmap::Mmap;
+use memmap::MmapMut;
 
-use block::{RowMajorBlock, BlockReference};
+use block::{BLOCK_SIZE, BlockReference, RowMajorBlock};
 
 use self::omap::OrderedHashMap;
 
@@ -32,80 +32,51 @@ impl CacheBlockReference {
 unsafe impl Send for CacheBlockReference {}
 unsafe impl Sync for CacheBlockReference {}
 
-/// A buffer that reads and writes to storage and maintains a cache in memory. The `Buffer` is
-/// implemented as a key-value store, where the keys are strings and the values (pages) are
+/// A buffer that reads and writes to storage and maintains a cache in memory. The `BufferManager`
+/// is implemented as a key-value store, where the keys are u64 and the values (blocks) are
 /// uniformly sized arrays of bytes. The page replacement policy for the cache is Clock with
 /// Adaptive Replacement ([CAR](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.105.6057)).
-/// The `Buffer` itself is thread-safe. However, it does not guard against concurrent reads and
-/// writes to the same key-value. This must be handled by an external concurrency control module.
+/// The `BufferManager` itself is thread-safe. However, it does not guard against concurrent reads
+/// and writes to the same block. This must be handled by an external concurrency control module.
 pub struct BufferManager {
     capacity: usize,
-    t1: RwLock<OrderedHashMap<String, CacheBlockReference>>,
-    t2: RwLock<OrderedHashMap<String, CacheBlockReference>>,
-    b1: Mutex<OrderedHashMap<String, ()>>,
-    b2: Mutex<OrderedHashMap<String, ()>>,
-    p: Mutex<usize>
+    block_ids: RwLock<HashMap<String, Vec<u64>>>,
+    block_ctr: Mutex<u64>,
+    t1: RwLock<OrderedHashMap<u64, CacheBlockReference>>,
+    t2: RwLock<OrderedHashMap<u64, CacheBlockReference>>,
+    b1: Mutex<OrderedHashMap<u64, ()>>,
+    b2: Mutex<OrderedHashMap<u64, ()>>,
+    p: Mutex<usize>,
 }
 
 impl BufferManager {
-    /// Creates a new `Buffer` with the specified capacity. The `Buffer` will hold at maximum
-    /// `capacity` pages in memory.
+    /// Creates a new `BufferManager` with the specified capacity. The `BufferManager` will hold at
+    /// maximum `capacity` blocks in memory.
     pub fn with_capacity(capacity: usize) -> Self {
+        let (blocks, block_ctr) = Self::inventory();
         BufferManager {
             capacity,
+            block_ids: RwLock::new(blocks),
+            block_ctr: Mutex::new(block_ctr),
             t1: RwLock::new(OrderedHashMap::new()),
             t2: RwLock::new(OrderedHashMap::new()),
             b1: Mutex::new(OrderedHashMap::new()),
             b2: Mutex::new(OrderedHashMap::new()),
-            p: Mutex::new(0)
+            p: Mutex::new(0),
         }
     }
 
-    /// Writes the key-value pair directly to storage without loading it into the cache. If a value
-    /// for `key` already exists, it is overwritten with the new `value`.
-    pub fn write_uncached(&self, key: &str, value: &[u8]) {
-        let path = Self::file_path(key);
-        fs::write(&path, value)
-            .expect("Error writing file.");
-    }
-
-    /// Memory-maps the value associated with the specified `key` and returns it if it exists,
-    /// without loading it into the cache.
-    pub fn get_uncached(&self, key: &str) -> Option<Mmap> {
-        let path = Self::file_path(key);
-        let file = OpenOptions::new()
-            .read(true)
-            .open(&path)
-            .ok()?;
-        unsafe { Mmap::map(&file).ok() }
-    }
-
-    /// Opens the file associated with the specified `key` with the given `options`.
-    pub fn open(&self, key: &str, options: &OpenOptions) -> Option<File> {
-        let path = Self::file_path(key);
-        options.open(&path).ok()
-    }
-
-    /// Copies the file associated with the key `from` to the destination `to`.
-    pub fn copy(&self, from: &str, to: &str) {
-        let from_path = Self::file_path(from);
-        let to_path = Self::file_path(to);
-        debug_assert!(from_path.exists(), "File to copy does not exist.");
-        debug_assert!(from_path.is_file(), "File to copy is not a file.");
-        debug_assert!(!to_path.exists(), "Destination file already exists.");
-        fs::copy(from_path, to_path).expect("Error copying file.");
-    }
-
-    /// Loads the value for `key` into the cache and returns a reference if it exists.
-    pub fn get(&self, key: &str) -> Option<BlockReference> {
+    /// Loads the block with the specified `block_id` into the cache and returns a reference if it
+    /// exists.
+    pub fn get_block(&self, block_group: &str, block_id: u64) -> Option<BlockReference> {
         // Request read locks on cache lists.
         let t1_read_guard = self.t1.read().unwrap();
         let t2_read_guard = self.t2.read().unwrap();
 
-        if let Some(buffer_block) = t1_read_guard.get(key).or(t2_read_guard.get(key)) {
+        if let Some(cache_block) = t1_read_guard.get(&block_id).or(t2_read_guard.get(&block_id)) {
             // Cache hit. Set reference bit to 1.
-            *buffer_block.reference.write().unwrap() = true;
-            return Some(buffer_block.block.clone());
+            *cache_block.reference.write().unwrap() = true;
+            return Some(cache_block.block.clone());
         }
 
         // Cache miss. Drop read locks on cache lists.
@@ -113,45 +84,42 @@ impl BufferManager {
         mem::drop(t2_read_guard);
 
         // Load the file from storage.
-        let value = self.load(key);
+        let block = self.load(block_group, block_id);
 
-        // Return the cached byte array.
-        value
+        // Return the cached block.
+        block
     }
 
-    /// Removes the block associated with the key from the cache and deletes the underlying file on
-    /// storage.
-    pub fn erase(&self, key: &str) {
+    /// Removes the block with the specified `block_id` from the cache and deletes the underlying
+    /// file on storage.
+    pub fn erase(&self, block_group: &str, block_id: u64) {
         // Remove the block from the cache and cache directory
-        if self.t1.write().unwrap().remove(key)
-            .or(self.t2.write().unwrap().remove(key)).is_none() {
+        if self.t1.write().unwrap().remove(&block_id)
+            .or(self.t2.write().unwrap().remove(&block_id)).is_none() {
 
-            self.b1.lock().unwrap().remove(key)
-                .or(self.b2.lock().unwrap().remove(key));
+            self.b1.lock().unwrap().remove(&block_id)
+                .or(self.b2.lock().unwrap().remove(&block_id));
         }
 
         // Delete the file.
-        let path = Self::file_path(key);
+        let path = Self::file_path(block_group, block_id);
         fs::remove_file(&path)
             .expect("Error removing file.");
     }
 
-    /// Returns true if the key-value pair exists, regardless of whether it is cached.
-    pub fn exists(&self, key: &str) -> bool {
-        let path = Self::file_path(key);
-        path.exists()
-    }
-
-    /// Returns true if the key-value pair exists and is cached.
-    pub fn is_cached(&self, key: &str) -> bool {
-        self.t1.read().unwrap().contains_key(key) || self.t2.read().unwrap().contains_key(key)
-    }
-
-    /// Loads the file from storage into the cache.
-    fn load(&self, key: &str) -> Option<BlockReference> {
+    /// Loads the block from storage into the cache.
+    fn load(&self, block_group: &str, block_id: u64) -> Option<BlockReference> {
         // Load the file from storage
-        let path = Self::file_path(key);
-        let block = BlockReference::new(RowMajorBlock::try_from_file(&path)?);
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&Self::file_path(block_group, block_id))
+            .ok()?;
+
+        file.set_len(BLOCK_SIZE as u64).ok()?;
+
+        let mut mmap = unsafe { MmapMut::map_mut(&file).ok()? };
+        let block = BlockReference::new(RowMajorBlock::with_buf(mmap));
         let cache_block = CacheBlockReference::new(block.clone());
 
         // Request write locks on all lists.
@@ -163,14 +131,16 @@ impl BufferManager {
 
         // Another thread may have loaded the block into the cache while this one was waiting for
         // the write locks. If this is the case, return the cached block.
-        if let Some(buffer_block) = t1_write_guard.get(key).or(t2_write_guard.get(key)) {
+        if let Some(cache_block) = t1_write_guard.get(&block_id)
+            .or(t2_write_guard.get(&block_id))
+        {
             // Cache hit. Set reference bit to 1.
-            *buffer_block.reference.write().unwrap() = true;
-            return Some(buffer_block.block.clone());
+            *cache_block.reference.write().unwrap() = true;
+            return Some(cache_block.block.clone());
         };
 
-        let cache_directory_miss = !b1_guard.contains_key(key)
-            && !b2_guard.contains_key(key);
+        let cache_directory_miss = !b1_guard.contains_key(&block_id)
+            && !b2_guard.contains_key(&block_id);
 
         if t1_write_guard.len() + t2_write_guard.len() == self.capacity {
             // Cache is full. Replace a page from the cache.
@@ -181,7 +151,7 @@ impl BufferManager {
             if cache_directory_miss {
                 if t1_write_guard.len() + b1_guard.len() == self.capacity {
                     // Discard the LRU page in B1.
-                    b1_guard.pop_front().unwrap().0;
+                    b1_guard.pop_front();
 
                 } else if t1_write_guard.len() + t2_write_guard.len()
                     + b1_guard.len() + b2_guard.len() == 2 * self.capacity {
@@ -193,23 +163,23 @@ impl BufferManager {
 
         if cache_directory_miss {
             // Move the page to the back of T1.
-            t1_write_guard.push_back(key.to_string(), cache_block);
+            t1_write_guard.push_back(block_id, cache_block);
 
-        } else if b1_guard.contains_key(key) {
+        } else if b1_guard.contains_key(&block_id) {
             // B1 cache directory hit. Increase the target size for T1.
             *p_guard = min(*p_guard + max(1, b2_guard.len() / b1_guard.len()), self.capacity);
 
             // Move the page to the back of T2.
-            b1_guard.remove(key);
-            t2_write_guard.push_back(key.to_string(), cache_block);
+            b1_guard.remove(&block_id);
+            t2_write_guard.push_back(block_id, cache_block);
 
         } else {
             // B2 cache directory hit. Decrease the target size for T2.
             *p_guard = max(*p_guard - max(1, b1_guard.len() / b2_guard.len()), 0);
 
             // Move the page to the back of T2.
-            b2_guard.remove(key);
-            t2_write_guard.push_back(key.to_string(), cache_block);
+            b2_guard.remove(&block_id);
+            t2_write_guard.push_back(block_id, cache_block);
         };
 
         Some(block)
@@ -217,46 +187,88 @@ impl BufferManager {
 
     /// Removes the approximated least recently used page from the cache.
     fn replace(&self,
-               t1: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlockReference>>,
-               t2: &mut RwLockWriteGuard<OrderedHashMap<String, CacheBlockReference>>,
-               b1: &mut MutexGuard<OrderedHashMap<String, ()>>,
-               b2: &mut MutexGuard<OrderedHashMap<String, ()>>,
+               t1: &mut RwLockWriteGuard<OrderedHashMap<u64, CacheBlockReference>>,
+               t2: &mut RwLockWriteGuard<OrderedHashMap<u64, CacheBlockReference>>,
+               b1: &mut MutexGuard<OrderedHashMap<u64, ()>>,
+               b2: &mut MutexGuard<OrderedHashMap<u64, ()>>,
                p: &MutexGuard<usize>) {
         if t1.len() >= max(1, **p) {
             // T1 is at or above target size. Pop the front of T1.
-            let (t1_front_key, t1_front_block) = t1.pop_front().unwrap();
+            let (t1_front_block_id, t1_front_block) = t1.pop_front().unwrap();
 
             if !*t1_front_block.reference.read().unwrap()
                 && *t1_front_block.block.get_reference_count().0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
-                // Replace this page and push the key to the MRU position of B1.
-                b1.push_back(t1_front_key, ());
+                // Replace this page and push the block_id to the MRU position of B1.
+                b1.push_back(t1_front_block_id, ());
             } else {
                 // Set the page reference bit to 0. Push the block to the back of T2.
                 *t1_front_block.reference.write().unwrap() = false;
-                t2.push_back(t1_front_key, t1_front_block);
+                t2.push_back(t1_front_block_id, t1_front_block);
             }
 
         } else {
             // Pop the front of T2.
-            let (t2_front_key, t2_front_block) = t2.pop_front().unwrap();
+            let (t2_front_block_id, t2_front_block) = t2.pop_front().unwrap();
 
             if !*t2_front_block.reference.read().unwrap()
                 && *t2_front_block.block.get_reference_count().0.lock().unwrap() == 1 {
                 // Page reference bit is 0 and no other threads are using it.
-                // Replace this page and push the key to the MRU position of B2.
-                b2.push_back(t2_front_key, ());
+                // Replace this page and push the block_id to the MRU position of B2.
+                b2.push_back(t2_front_block_id, ());
             } else {
                 // Set the page reference bit to 0. Push the block to the back of T2.
                 *t2_front_block.reference.write().unwrap() = false;
-                t2.push_back(t2_front_key, t2_front_block);
+                t2.push_back(t2_front_block_id, t2_front_block);
             }
         }
     }
 
-    fn file_path(key: &str) -> PathBuf {
-        let name =  format!("{}.hsl", key);
-        let path = PathBuf::from(name);
+    fn inventory() -> (HashMap<String, Vec<u64>>, u64) {
+        let mut block_ctr = 0;
+        let blocks_dir = Self::blocks_dir();
+
+        if !blocks_dir.exists() {
+            fs::create_dir(&blocks_dir);
+        }
+
+        let mut blocks = HashMap::new();
+
+        for group_entry in fs::read_dir(blocks_dir).unwrap() {
+            let group_entry = group_entry.unwrap();
+            let group_path = group_entry.path();
+            let block_group = group_entry.file_name()
+                .to_str().unwrap()
+                .to_owned();
+
+            let mut block_ids = vec![];
+
+            for block_entry in fs::read_dir(group_path).unwrap() {
+                let block_id = block_entry.unwrap().file_name()
+                    .to_str().unwrap()
+                    .parse::<u64>().unwrap();
+
+                if block_id > block_ctr {
+                    block_ctr = block_id;
+                }
+
+                block_ids.push(block_id)
+            }
+
+            blocks.insert(block_group, block_ids);
+        }
+
+        (blocks, block_ctr)
+    }
+
+    fn file_path(block_group: &str, block_id: u64) -> PathBuf {
+        let mut path = Self::blocks_dir();
+        path.push(block_group);
+        path.push(format!("{}.hsl", block_id));
         path
+    }
+
+    fn blocks_dir() -> PathBuf {
+        PathBuf::from("blocks")
     }
 }

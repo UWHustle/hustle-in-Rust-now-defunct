@@ -10,7 +10,7 @@ mod header;
 mod bitmap;
 mod reference;
 
-const BLOCK_SIZE: usize = 4096;
+pub const BLOCK_SIZE: usize = 4096;
 
 #[derive(Clone)]
 struct RawSlice {

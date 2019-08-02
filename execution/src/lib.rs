@@ -58,25 +58,7 @@ impl ExecutionEngine {
                                     connection_id,
                                 };
                                 completed_tx.send(response.serialize().unwrap()).unwrap();
-
-                                let physical_relation = self.storage_manager
-                                    .relational_engine()
-                                    .get(relation.get_name())
-                                    .unwrap();
-
-                                for block in physical_relation.blocks() {
-                                    for row_i in 0..block.get_n_rows() {
-                                        let mut row = vec![];
-                                        for col_i in 0..schema.get_columns().len() {
-                                            let data = block.get_row_col(row_i, col_i).unwrap();
-                                            row.push(data.to_owned());
-                                        };
-                                        completed_tx.send(Message::ReturnRow {
-                                            row,
-                                            connection_id,
-                                        }.serialize().unwrap()).unwrap();
-                                    };
-                                };
+                                self.return_rows(&relation, connection_id, &completed_tx)
                             };
                             completed_tx.send(Message::Success {
                                 connection_id,
@@ -98,4 +80,23 @@ impl ExecutionEngine {
             };
         }
     }
+
+    fn return_rows(&self, relation: &Relation, connection_id: u64, completed_tx: &Sender<Vec<u8>>) {
+        let physical_relation = self.storage_manager
+            .relational_engine()
+            .get(relation.get_name())
+            .unwrap();
+
+        for block in physical_relation.blocks() {
+            block.rows(|row_raw| {
+                let row: Vec<Vec<u8>> = row_raw.iter().map(|col| col.to_vec()).collect();
+                completed_tx.send(Message::ReturnRow {
+                    row,
+                    connection_id,
+                }.serialize().unwrap()).unwrap();
+            });
+        };
+    }
 }
+
+

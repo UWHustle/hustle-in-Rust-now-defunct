@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, Condvar};
 use block::RowMajorBlock;
-use std::ops::{Deref};
+use std::ops::Deref;
 
 pub struct BlockReference {
     block: Arc<RowMajorBlock>,

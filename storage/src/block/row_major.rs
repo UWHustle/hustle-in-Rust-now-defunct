@@ -1,11 +1,8 @@
-use std::fs::OpenOptions;
-use std::path::Path;
+use std::io::{Cursor, Write};
 
 use memmap::MmapMut;
 
-use buffer_manager::BufferManager;
-use block::{Header, BLOCK_SIZE, BitMap, RawSlice};
-use std::io::{Cursor, Write};
+use block::{BitMap, Header, RawSlice};
 
 /// A `RowMajorBlock` is a horizontal partition of a `PhysicalRelation` in row-major order.
 pub struct RowMajorBlock {
@@ -20,44 +17,14 @@ pub struct RowMajorBlock {
 impl RowMajorBlock {
     /// Creates a new `RowMajorBlock`, backed by a file on storage. If the file path for the
     /// specified `key` already exists, it will be overwritten.
-    pub fn new(key: &str, schema: &[usize], buffer_manager: &BufferManager) -> Self {
-        let mut options = OpenOptions::new();
-        options
-            .read(true)
-            .write(true)
-            .create(true);
-
-        let file = buffer_manager.open(key, &options)
-            .expect("Error opening file.");
-
-        file.set_len(BLOCK_SIZE as u64)
-            .expect("Error setting length of file.");
-
-        let mut mmap = unsafe {
-            MmapMut::map_mut(&file)
-                .expect("Error memory-mapping file.")
-        };
-
-        let header = Header::new(schema, &mut mmap);
-
-        Self::with_header(header, mmap)
+    pub fn new(schema: &[usize], mut mmap: MmapMut) -> Self {
+        Self::with_header(Header::new(schema, &mut mmap), mmap)
     }
 
     /// Loads a `RowMajorBlock` from storage using the specified `path`. Returns an `Option`
     /// containing the `RowMajorBlock` if it exists, otherwise `None`.
-    pub fn try_from_file(path: &Path) -> Option<Self> {
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&path)
-            .ok()?;
-        file.set_len(BLOCK_SIZE as u64).ok()?;
-
-        let mut mmap = unsafe { MmapMut::map_mut(&file).ok()? };
-
-        let header = Header::with_buf(&mut mmap);
-
-        Some(Self::with_header(header, mmap))
+    pub fn with_buf(mut mmap: MmapMut) -> Self {
+        Self::with_header(Header::with_buf(&mut mmap), mmap)
     }
 
     fn with_header(header: Header, mut mmap: MmapMut) -> Self {
@@ -108,11 +75,16 @@ impl RowMajorBlock {
         self.header.get_schema()
     }
 
+    pub fn rows<F>(&self, f: F) where F: Fn(&[&[u8]]) {
+        let cols: Vec<usize> = (0..self.get_n_cols()).collect();
+        self.project(&cols, f)
+    }
+
     pub fn project<F>(&self, cols: &[usize], f: F) where F: Fn(&[&[u8]]) {
         let schema = self.get_schema();
         let mut row_buf = vec![&[] as &[u8]; cols.len()];
 
-        let rows = self.rows()
+        let rows = self.row_offsets()
             .filter(|(_, _, valid, ready)| *valid && *ready);
 
         for (_, offset, _, _) in rows {
@@ -149,8 +121,8 @@ impl RowMajorBlock {
             n_rows_guard.set(n_rows + 1);
 
             // Find the position in the block to insert the row.
-            self.rows()
-                .find(|(row_i, offset, valid, ready)| !*valid && *ready)
+            self.row_offsets()
+                .find(|(_, _, valid, ready)| !*valid && *ready)
                 .unwrap()
                 .1
         };
@@ -165,7 +137,6 @@ impl RowMajorBlock {
     /// For each row in the block, deletes the row if `filter` called on that row returns true.
     pub fn delete<F>(&mut self, filter: F) where F: Fn(&[&[u8]]) -> bool {
         let schema = self.get_schema();
-        let row_size = self.get_row_size();
         let mut row_buf = vec![&[] as &[u8]; schema.len()];
 
         let rows = (0..self.get_row_capacity())
@@ -208,7 +179,7 @@ impl RowMajorBlock {
         unimplemented!()
     }
 
-    fn rows(&self) -> impl Iterator<Item = (usize, usize, bool, bool)> + '_ {
+    fn row_offsets(&self) -> impl Iterator<Item = (usize, usize, bool, bool)> + '_ {
         self.valid.iter()
             .zip(self.ready.iter())
             .zip((0..).step_by(self.get_row_size()))
@@ -216,17 +187,3 @@ impl RowMajorBlock {
             .map(|(row_i, ((valid, ready), offset))| (row_i, offset, valid, ready))
     }
 }
-
-pub struct ProjectIter<'a> {
-    cols: &'a [usize],
-}
-
-impl<'a> ProjectIter<'a> {
-    fn new(cols: &'a [usize]) -> Self {
-        ProjectIter {
-            cols,
-        }
-    }
-}
-
-
