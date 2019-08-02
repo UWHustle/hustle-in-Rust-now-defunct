@@ -1,11 +1,8 @@
 use block::BlockReference;
 use buffer_manager::BufferManager;
 
-pub const TEMP_PREFIX: char = '$';
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 
-/// Hustle's storage manager. Manages both unstructured key-value pairs and structured relational
-/// data using dedicated engines.
 pub struct StorageManager {
     buffer_manager: BufferManager,
 }
