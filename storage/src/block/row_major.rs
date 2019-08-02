@@ -75,6 +75,10 @@ impl RowMajorBlock {
         self.header.get_schema()
     }
 
+    pub fn is_full(&self) -> bool {
+        self.header.get_n_rows_guard().get() == self.get_row_capacity()
+    }
+
     pub fn rows<F>(&self, f: F) where F: Fn(&[&[u8]]) {
         let cols: Vec<usize> = (0..self.get_n_cols()).collect();
         self.project(&cols, f)
