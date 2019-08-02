@@ -3,13 +3,15 @@ use block::RowMajorBlock;
 use std::ops::Deref;
 
 pub struct BlockReference {
+    pub id: u64,
     block: Arc<RowMajorBlock>,
     rc: Arc<(Mutex<u64>, Condvar)>,
 }
 
 impl BlockReference {
-    pub fn new(block: RowMajorBlock) -> Self {
+    pub fn new(id: u64, block: RowMajorBlock) -> Self {
         BlockReference {
+            id,
             block: Arc::new(block),
             rc: Arc::new((Mutex::new(1), Condvar::new())),
         }
@@ -33,6 +35,7 @@ impl Clone for BlockReference {
         let mut rc_guard = self.rc.0.lock().unwrap();
         *rc_guard += 1;
         BlockReference {
+            id: self.id,
             block: self.block.clone(),
             rc: self.rc.clone(),
         }

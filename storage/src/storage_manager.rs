@@ -1,5 +1,4 @@
-use std::sync::Mutex;
-
+use block::BlockReference;
 use buffer_manager::BufferManager;
 
 pub const TEMP_PREFIX: char = '$';
@@ -9,7 +8,6 @@ const DEFAULT_BUFFER_CAPACITY: usize = 1000;
 /// data using dedicated engines.
 pub struct StorageManager {
     buffer_manager: BufferManager,
-    anon_ctr: Mutex<u64>,
 }
 
 impl StorageManager {
@@ -20,14 +18,18 @@ impl StorageManager {
     pub fn with_buffer_capacity(buffer_capacity: usize) -> Self {
         StorageManager {
             buffer_manager: BufferManager::with_capacity(buffer_capacity),
-            anon_ctr: Mutex::new(0),
         }
     }
 
-    pub fn new_block(&self, key: &str) {
+    pub fn create(&self, schema: &[usize]) -> BlockReference {
+        self.buffer_manager.create(schema)
     }
 
-    pub fn exists(&self, key: &str) {
+    pub fn get(&self, block_id: u64) -> Option<BlockReference> {
+        self.buffer_manager.get(block_id)
+    }
 
+    pub fn erase(&self, block_id: u64) {
+        self.buffer_manager.erase(block_id);
     }
 }
