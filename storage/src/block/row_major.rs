@@ -10,7 +10,7 @@ pub struct RowMajorBlock {
     valid: BitMap<RawSlice>,
     ready: BitMap<RawSlice>,
     data: RawSlice,
-    column_offsets: Vec<usize>,
+    col_offsets: Vec<usize>,
     mmap: MmapMut,
 }
 
@@ -38,7 +38,7 @@ impl RowMajorBlock {
         let ready = BitMap::new(RawSlice::new(&mut mmap[ready_start..data_start]));
         let data = RawSlice::new(&mut mmap[data_start..]);
 
-        let column_offsets = header.get_schema().iter()
+        let col_offsets = header.get_schema().iter()
             .scan(0, |state, &col_size| {
                 let offset = *state;
                 *state += col_size;
@@ -51,7 +51,7 @@ impl RowMajorBlock {
             valid,
             ready,
             data,
-            column_offsets,
+            col_offsets,
             mmap,
         }
     }
@@ -93,7 +93,7 @@ impl RowMajorBlock {
 
         for (_, offset, _, _) in rows {
             for (i, col) in cols.iter().enumerate() {
-                let start = offset + self.column_offsets[*col];
+                let start = offset + self.col_offsets[*col];
                 let end = start + schema[*col];
                 row_buf[i] = &self.data[start..end];
             }
@@ -149,7 +149,7 @@ impl RowMajorBlock {
         for (row_i, offset) in rows {
             if self.valid.get_unchecked(row_i) && self.ready.get_unchecked(row_i) {
                 for (col, col_size) in schema.iter().enumerate() {
-                    let start = offset + self.column_offsets[col];
+                    let start = offset + self.col_offsets[col];
                     let end = start + *col_size;
                     row_buf[col] = &self.data[start..end];
                 }

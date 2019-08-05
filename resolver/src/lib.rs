@@ -1,8 +1,5 @@
-#[macro_use]
-extern crate serde;
+pub struct Resolver;
 
-pub mod resolver;
-pub mod catalog;
+impl Resolver {
 
-pub use crate::resolver::Resolver;
-pub use crate::catalog::Catalog;
+}
