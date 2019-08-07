@@ -33,27 +33,24 @@ impl<F: Fn(&[&[u8]]) -> bool> Select<F> {
 
 impl<F: Fn(&[&[u8]]) -> bool> Operator for Select<F> {
     fn execute(&self, storage_manager: &StorageManager) {
-        let output_block = self.destination_router.get_block(
+        let mut output_block = self.destination_router.get_block(
             storage_manager,
             &self.output_schema,
         );
 
         for block_id in &self.input_block_ids {
             let input_block = storage_manager.get_block(block_id).unwrap();
-
-            input_block.rows(|row| {
+            let mut rows = input_block.select(&self.filter).peekable();
+            while rows.peek().is_some() {
+                output_block.insert(&mut rows);
                 if output_block.is_full() {
                     self.output_block_ids.send(output_block.id).unwrap();
-                    let output_block = self.destination_router.get_block(
+                    output_block = self.destination_router.get_block(
                         storage_manager,
                         &self.output_schema,
                     );
                 }
-
-                if (self.filter)(row) {
-                    output_block.insert(row);
-                }
-            })
+            }
         }
     }
 }

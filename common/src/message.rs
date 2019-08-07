@@ -4,7 +4,7 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
 use hustle_catalog::Column;
-use crate::logical_plan::Plan;
+use crate::plan::Plan;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {

@@ -1,8 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::mpsc;
 
 use hustle_catalog::Table;
-use hustle_common::logical_plan::{Expression, Plan, Query};
+use hustle_common::plan::{Expression, Plan, Query};
 use hustle_common::message::Message;
 use hustle_storage::StorageManager;
 
@@ -49,13 +48,12 @@ impl ExecutionEngine {
                             // Send each row of the result.
                             for &block_id in &relation.block_ids {
                                 let block = self.storage_manager.get_block(block_id).unwrap();
-                                block.rows(|r| {
-                                    let row = r.iter().map(|col| col.to_vec()).collect();
+                                for row in block.rows() {
                                     completed_tx.send(Message::ReturnRow {
-                                        row,
+                                        row: row.map(|value| value.to_vec()).collect(),
                                         connection_id,
                                     }).unwrap();
-                                })
+                                }
                             }
                         }
 

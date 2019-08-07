@@ -2,4 +2,4 @@
 extern crate serde;
 
 pub mod message;
-pub mod logical_plan;
+pub mod plan;

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate serde;
 
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 
 use hustle_types::Type;
 use std::fs;
@@ -55,22 +55,17 @@ impl Catalog {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Schema {
+pub struct Table {
     pub name: String,
     pub columns: Vec<Column>,
-    column_ids: HashMap<String, usize>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Table {
-    pub schema: Schema,
     pub block_ids: Vec<u64>,
 }
 
 impl Table {
-    pub fn new(schema: Schema, block_ids: Vec<u64>) -> Self {
+    pub fn new(name: String, columns: Vec<Column>, block_ids: Vec<u64>) -> Self {
         Table {
-            schema,
+            name,
+            columns,
             block_ids,
         }
     }

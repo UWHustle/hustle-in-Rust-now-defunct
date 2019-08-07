@@ -17,7 +17,7 @@ impl BitMap {
         self.blocks.as_slice()[block_i] & mask != 0
     }
 
-    pub fn set_unchecked(&mut self, i: usize, value: bool) {
+    pub fn set_unchecked(&self, i: usize, value: bool) {
         let (block_i, mask) = Self::mask(i);
         if value {
             self.blocks.as_slice()[block_i] |= mask;
@@ -26,7 +26,7 @@ impl BitMap {
         }
     }
 
-    pub fn set_all(&mut self, value: bool) {
+    pub fn set_all(&self, value: bool) {
         let v = if value { u8::max_value() } else { u8::min_value() };
         for block in self.blocks.as_slice().iter_mut() {
             *block = v
