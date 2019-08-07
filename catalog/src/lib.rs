@@ -8,18 +8,19 @@ use std::fs;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::borrow::Borrow;
+use std::sync::RwLock;
 
 const CATALOG_FILE_NAME: &str = "catalog.json";
 
 #[derive(Serialize, Deserialize)]
 pub struct Catalog {
-    tables: HashSet<Table>,
+    tables: RwLock<HashSet<Table>>,
 }
 
 impl Catalog {
     pub fn new() -> Self {
         Catalog {
-            tables: HashSet::new(),
+            tables: RwLock::new(HashSet::new()),
         }
     }
 
@@ -29,21 +30,19 @@ impl Catalog {
     }
 
     pub fn table_exists(&self, name: &str) -> bool {
-        self.tables.contains(name)
+        self.tables.read().unwrap().contains(name)
     }
 
-    pub fn create_table(&mut self, table: Table) -> Result<(), String> {
-        self.tables.insert(table);
+    pub fn create_table(&self, table: Table) -> Result<(), String> {
+        let mut tables = self.tables.write().unwrap();
+        tables.insert(table);
         self.flush()
     }
 
-    pub fn drop_table(&mut self, name: &str) -> Result<(), String> {
-        self.tables.remove(name);
+    pub fn drop_table(&self, name: &str) -> Result<(), String> {
+        let mut tables = self.tables.write().unwrap();
+        tables.remove(name);
         self.flush()
-    }
-
-    pub fn get_table(&self, name: &str) -> Option<&Table> {
-        self.tables.get(name)
     }
 
     fn flush(&self) -> Result<(), String> {

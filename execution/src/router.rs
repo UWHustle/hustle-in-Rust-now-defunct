@@ -42,7 +42,11 @@ pub struct BlockPoolDestinationRouter {
 }
 
 impl BlockPoolDestinationRouter {
-    pub fn new(block_ids: Vec<u64>) -> Self {
+    pub fn new() -> Self {
+        Self::with_block_ids(vec![])
+    }
+
+    pub fn with_block_ids(block_ids: Vec<u64>) -> Self {
         BlockPoolDestinationRouter {
             block_ids: Mutex::new(block_ids),
             available_blocks: Arc::new(Mutex::new(vec![])),

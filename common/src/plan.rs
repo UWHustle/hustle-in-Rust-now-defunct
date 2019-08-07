@@ -31,8 +31,8 @@ pub enum Plan {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Query {
-    operator: QueryOperator,
-    output: Vec<Column>,
+    pub operator: QueryOperator,
+    pub output_cols: Vec<Column>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -53,6 +53,7 @@ pub enum QueryOperator {
     },
     Project {
         input: Box<Query>,
+        cols: Vec<usize>
     },
     Select {
         input: Box<Query>,

@@ -1,26 +1,30 @@
+use std::sync::{Arc, mpsc};
 use std::sync::mpsc::{Receiver, Sender};
 
-use hustle_catalog::Table;
-use hustle_common::plan::{Expression, Plan, Query};
+use hustle_catalog::{Catalog, Table};
 use hustle_common::message::Message;
+use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::StorageManager;
 
-use crate::operator::{CreateTable, DropTable, Operator};
+use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference};
+use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
+    catalog: Arc<Catalog>,
 }
 
 impl ExecutionEngine {
-    pub fn new() -> Self {
+    pub fn new(catalog: Arc<Catalog>) -> Self {
         ExecutionEngine {
             storage_manager: StorageManager::new(),
+            catalog
         }
     }
 
     pub fn execute_plan(&self, plan: Plan) -> Result<Option<Table>, String> {
         let operator_tree = Self::parse_plan(plan);
-        operator_tree.execute(&self.storage_manager);
+        operator_tree.execute(&self.storage_manager, &self.catalog);
         Ok(None)
     }
 
@@ -80,15 +84,42 @@ impl ExecutionEngine {
 
     fn parse_plan(plan: Plan) -> Box<dyn Operator> {
         match plan {
-            Plan::Query { query } => Self::parse_query(query),
+            Plan::Query { query } => {
+                let (block_tx, block_rx) = mpsc::channel();
+                let mut operators = Vec::new();
+                Self::parse_query(query, block_tx, &mut operators);
+                Box::new(Collect::new(block_rx, operators))
+            },
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
             _ => panic!("Unsupported plan: {:?}", plan),
         }
     }
 
-    fn parse_query(query: Query) -> Box<dyn Operator> {
-        unimplemented!()
+    fn parse_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
+        match query.operator {
+            QueryOperator::TableReference { table } => {
+                operators.push(Box::new(TableReference::new(table, block_tx)));
+            },
+            QueryOperator::Project { input, cols } => {
+                let (child_block_tx, block_rx) = mpsc::channel();
+                Self::parse_query(*input, child_block_tx, operators);
+
+                let router = BlockPoolDestinationRouter::new();
+                let project = Project::new(block_rx, block_tx, query.output_cols, router, cols);
+                operators.push(Box::new(project));
+            },
+            QueryOperator::Select { input, filter } => {
+                let (child_block_tx, block_rx) = mpsc::channel();
+                Self::parse_query(*input, child_block_tx, operators);
+
+                let router = BlockPoolDestinationRouter::new();
+                let filter = Self::parse_filter(*filter);
+                let select = Select::new(block_rx, block_tx, query.output_cols, router, filter);
+                operators.push(Box::new(select));
+            },
+            _ => panic!(""),
+        }
     }
 
     fn parse_filter(filter: Expression) -> impl Fn(&[&[u8]]) -> bool {

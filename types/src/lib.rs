@@ -4,7 +4,7 @@ extern crate serde;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Type {
     variant: TypeVariant,
-    size: usize,
+    pub size: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
