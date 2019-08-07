@@ -6,13 +6,15 @@ mod bitmap_tests {
 
     #[test]
     fn get() {
-        let bm = BitMap::new(vec![0]);
+        let mut v = vec![0];
+        let bm = BitMap::new(&mut v);
         assert_eq!(bm.get_unchecked(0), false);
     }
 
     #[test]
     fn set() {
-        let mut bm = BitMap::new(vec![0]);
+        let mut v = vec![0];
+        let bm = BitMap::new(&mut v);
 
         bm.set_unchecked(0, true);
         assert_eq!(bm.get_unchecked(0), true);
@@ -23,7 +25,8 @@ mod bitmap_tests {
 
     #[test]
     fn iter() {
-        let mut bm = BitMap::new(vec![0]);
+        let mut v = vec![0];
+        let bm = BitMap::new(&mut v);
 
         bm.set_unchecked(7, true);
 
