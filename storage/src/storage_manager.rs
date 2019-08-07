@@ -26,7 +26,7 @@ impl StorageManager {
         self.buffer_manager.get(block_id)
     }
 
-    pub fn erase_block(&self, block_id: u64) {
+    pub fn delete_block(&self, block_id: u64) {
         self.buffer_manager.erase(block_id);
     }
 }

@@ -235,7 +235,8 @@ impl BufferManager {
 
         let mut block_ctr = 0;
         for entry in fs::read_dir(blocks_dir).unwrap() {
-            let block_id = entry.unwrap().file_name()
+            let block_id = entry.unwrap().path()
+                .file_stem().unwrap()
                 .to_str().unwrap()
                 .parse::<u64>().unwrap();
 
@@ -249,7 +250,8 @@ impl BufferManager {
 
     fn file_path(block_id: u64) -> PathBuf {
         let mut path = Self::blocks_dir();
-        path.push(format!("{}.hsl", block_id));
+        path.push(block_id.to_string());
+        path.set_extension("hsl");
         path
     }
 
