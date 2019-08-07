@@ -1,22 +1,98 @@
 #[macro_use]
 extern crate serde;
 
-use hustle_types::Type;
+use std::collections::{HashSet, HashMap};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Table {
+use hustle_types::Type;
+use std::fs;
+use std::fs::File;
+use std::hash::{Hash, Hasher};
+use std::borrow::Borrow;
+
+const CATALOG_FILE_NAME: &str = "catalog.json";
+
+#[derive(Serialize, Deserialize)]
+pub struct Catalog {
+    tables: HashSet<Table>,
+}
+
+impl Catalog {
+    pub fn new() -> Self {
+        Catalog {
+            tables: HashSet::new(),
+        }
+    }
+
+    pub fn try_from_file() -> Option<Self> {
+        let file = File::open(CATALOG_FILE_NAME).ok()?;
+        serde_json::from_reader(file).ok()
+    }
+
+    pub fn table_exists(&self, name: &str) -> bool {
+        self.tables.contains(name)
+    }
+
+    pub fn create_table(&mut self, table: Table) -> Result<(), String> {
+        self.tables.insert(table);
+        self.flush()
+    }
+
+    pub fn drop_table(&mut self, name: &str) -> Result<(), String> {
+        self.tables.remove(name);
+        self.flush()
+    }
+
+    pub fn get_table(&self, name: &str) -> Option<&Table> {
+        self.tables.get(name)
+    }
+
+    fn flush(&self) -> Result<(), String> {
+        let buf = serde_json::to_vec(self)
+            .map_err(|e| e.to_string())?;
+        fs::write(CATALOG_FILE_NAME, buf)
+            .map_err(|e| e.to_string())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Schema {
     pub name: String,
     pub columns: Vec<Column>,
+    column_ids: HashMap<String, usize>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Table {
+    pub schema: Schema,
     pub block_ids: Vec<u64>,
 }
 
 impl Table {
-    pub fn new(name: String, columns: Vec<Column>, block_ids: Vec<u64>) -> Self {
+    pub fn new(schema: Schema, block_ids: Vec<u64>) -> Self {
         Table {
-            name,
-            columns,
+            schema,
             block_ids,
         }
+    }
+}
+
+impl Hash for Table {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
+impl PartialEq for Table {
+    fn eq(&self, other: &Self) -> bool {
+        self.name.eq(&other.name)
+    }
+}
+
+impl Eq for Table {}
+
+impl Borrow<str> for Table {
+    fn borrow(&self) -> &str {
+        self.name.borrow()
     }
 }
 

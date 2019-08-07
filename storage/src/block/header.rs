@@ -80,22 +80,22 @@ impl Header {
     }
 
     pub fn get_n_cols(&self) -> usize {
-        Self::read::<NCols>(&self.n_cols) as usize
+        Self::read::<NCols>(self.n_cols.as_slice()) as usize
     }
 
     pub fn get_row_size(&self) -> usize {
-        Self::read::<RowSize>(&self.row_size) as usize
+        Self::read::<RowSize>(self.row_size.as_slice()) as usize
     }
 
     pub fn get_row_capacity(&self) -> usize {
-        Self::read::<RowCapacity>(&self.row_capacity) as usize
+        Self::read::<RowCapacity>(self.row_capacity.as_slice()) as usize
     }
 
     pub fn get_schema(&self) -> Vec<usize> {
         let n_cols = self.get_n_cols() as usize;
         let mut schema = Vec::with_capacity(n_cols);
         for offset in (0..n_cols * size_of::<ColSize>()).step_by(size_of::<ColSize>()) {
-            schema.push(Self::read::<ColSize>(&self.schema[offset..]) as usize);
+            schema.push(Self::read::<ColSize>(&self.schema.as_slice()[offset..]) as usize);
         }
         schema
     }
@@ -105,22 +105,22 @@ impl Header {
     }
 
     fn set_n_cols(&mut self, n_cols: usize) {
-        Self::write::<NCols>(&mut self.n_cols, n_cols as u64);
+        Self::write::<NCols>(self.n_cols.as_slice(), n_cols as u64);
     }
 
     fn set_row_size(&mut self, row_size: usize) {
-        Self::write::<RowSize>(&mut self.row_size, row_size as u64);
+        Self::write::<RowSize>(self.row_size.as_slice(), row_size as u64);
     }
 
     fn set_row_capacity(&mut self, row_capacity: usize) {
-        Self::write::<RowCapacity>(&mut self.row_capacity, row_capacity as u64);
+        Self::write::<RowCapacity>(self.row_capacity.as_slice(), row_capacity as u64);
     }
 
     fn set_schema(&mut self, schema: &[usize]) {
         for (col, offset) in schema.iter()
             .zip((0..schema.len() * size_of::<ColSize>()).step_by(size_of::<ColSize>()))
         {
-            Self::write::<ColSize>(&mut self.schema[offset..], *col as u64);
+            Self::write::<ColSize>(&mut self.schema.as_slice()[offset..], *col as u64);
         }
     }
 
@@ -139,10 +139,10 @@ pub struct NRowsGuard<'a> {
 
 impl<'a> NRowsGuard<'a> {
     pub fn get(&self) -> usize {
-        Header::read::<NRows>(&self.inner) as usize
+        Header::read::<NRows>(self.inner.as_slice()) as usize
     }
 
     pub fn set(&mut self, n_rows: usize) {
-        Header::write::<NRows>(&mut self.inner, n_rows as u64);
+        Header::write::<NRows>(self.inner.as_slice(), n_rows as u64);
     }
 }

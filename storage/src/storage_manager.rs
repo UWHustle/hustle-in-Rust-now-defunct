@@ -18,15 +18,15 @@ impl StorageManager {
         }
     }
 
-    pub fn create(&self, schema: &[usize]) -> BlockReference {
+    pub fn create_block(&self, schema: &[usize]) -> BlockReference {
         self.buffer_manager.create(schema)
     }
 
-    pub fn get(&self, block_id: u64) -> Option<BlockReference> {
+    pub fn get_block(&self, block_id: u64) -> Option<BlockReference> {
         self.buffer_manager.get(block_id)
     }
 
-    pub fn erase(&self, block_id: u64) {
+    pub fn erase_block(&self, block_id: u64) {
         self.buffer_manager.erase(block_id);
     }
 }

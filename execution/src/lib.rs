@@ -1,4 +1,5 @@
-pub use engine::ExecutionEngine;
-
-pub mod engine;
+mod engine;
 mod operator;
+mod router;
+
+pub use engine::ExecutionEngine;

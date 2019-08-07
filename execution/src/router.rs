@@ -1,6 +1,7 @@
-use block::BlockReference;
 use std::sync::{Arc, Mutex};
-use StorageManager;
+use hustle_storage::StorageManager;
+use hustle_storage::block::BlockReference;
+use std::ops::Deref;
 
 pub struct BlockPoolBlockReference {
     block: BlockReference,
@@ -19,6 +20,14 @@ impl BlockPoolBlockReference {
     }
 }
 
+impl Deref for BlockPoolBlockReference {
+    type Target = BlockReference;
+
+    fn deref(&self) -> &Self::Target {
+        &self.block
+    }
+}
+
 impl Drop for BlockPoolBlockReference {
     fn drop(&mut self) {
         if !self.block.is_full() {
@@ -28,28 +37,28 @@ impl Drop for BlockPoolBlockReference {
 }
 
 pub struct BlockPoolDestinationRouter {
-    storage_manager: StorageManager,
-    schema: Vec<usize>,
     block_ids: Mutex<Vec<u64>>,
     available_blocks: Arc<Mutex<Vec<BlockReference>>>,
 }
 
 impl BlockPoolDestinationRouter {
-    pub fn new(storage_manager: StorageManager, schema: Vec<usize>, block_ids: Vec<u64>) -> Self {
+    pub fn new(block_ids: Vec<u64>) -> Self {
         BlockPoolDestinationRouter {
-            storage_manager,
-            schema,
             block_ids: Mutex::new(block_ids),
             available_blocks: Arc::new(Mutex::new(vec![])),
         }
     }
 
-    pub fn get_block(&self) -> BlockPoolBlockReference {
+    pub fn get_block(
+        &self,
+        storage_manager: &StorageManager,
+        schema: &[usize],
+    ) -> BlockPoolBlockReference {
         let block = self.available_blocks.lock().unwrap().pop()
             .or_else(|| {
                 loop {
                     if let Some(block_id) = self.block_ids.lock().unwrap().pop() {
-                        let block = self.storage_manager.get(block_id).unwrap();
+                        let block = storage_manager.get_block(block_id).unwrap();
                         if !block.is_full() {
                             break Some(block)
                         }
@@ -58,7 +67,7 @@ impl BlockPoolDestinationRouter {
                     }
                 }
             })
-            .unwrap_or(self.storage_manager.create(&self.schema));
+            .unwrap_or(storage_manager.create_block(schema));
         BlockPoolBlockReference::new(block, self.available_blocks.clone())
     }
 }

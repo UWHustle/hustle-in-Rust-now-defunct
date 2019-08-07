@@ -1,43 +1,40 @@
-use std::ops::DerefMut;
+use block::RawSlice;
 
 #[derive(Clone)]
-pub struct BitMap<D> {
-    blocks: D,
-    len: usize,
+pub struct BitMap {
+    blocks: RawSlice,
 }
 
-impl<D> BitMap<D> where D: DerefMut<Target = [u8]> {
-    pub fn new(blocks: D) -> Self {
-        let len = 8 * blocks.len();
+impl BitMap {
+    pub fn new(buf: &mut [u8]) -> Self {
         BitMap {
-            blocks,
-            len,
+            blocks: RawSlice::new(buf),
         }
     }
 
     pub fn get_unchecked(&self, i: usize) -> bool {
         let (block_i, mask) = Self::mask(i);
-        self.blocks[block_i] & mask != 0
+        self.blocks.as_slice()[block_i] & mask != 0
     }
 
     pub fn set_unchecked(&mut self, i: usize, value: bool) {
         let (block_i, mask) = Self::mask(i);
         if value {
-            self.blocks[block_i] |= mask;
+            self.blocks.as_slice()[block_i] |= mask;
         } else {
-            self.blocks[block_i] &= !mask;
+            self.blocks.as_slice()[block_i] &= !mask;
         }
     }
 
     pub fn set_all(&mut self, value: bool) {
         let v = if value { u8::max_value() } else { u8::min_value() };
-        for block in self.blocks.iter_mut() {
+        for block in self.blocks.as_slice().iter_mut() {
             *block = v
         }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {
-        self.blocks.iter()
+        self.blocks.as_slice().iter()
             .flat_map(|block|
                 (0..8).map(move |shift| block & (1 << shift) != 0)
             )
