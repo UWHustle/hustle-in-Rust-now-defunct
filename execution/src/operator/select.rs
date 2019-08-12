@@ -43,7 +43,7 @@ impl<F: Fn(&[&[u8]]) -> bool> Operator for Select<F> {
             let input_block = storage_manager.get_block(block_id).unwrap();
             let mut rows = input_block.select(&self.filter).peekable();
             while rows.peek().is_some() {
-                output_block.insert(&mut rows);
+                output_block.extend(&mut rows);
                 if output_block.is_full() {
                     self.block_tx.send(output_block.id).unwrap();
                     output_block = self.router.get_block(storage_manager, &output_schema);

@@ -11,6 +11,8 @@ use memmap::MmapMut;
 use block::{BLOCK_SIZE, BlockReference, RowMajorBlock};
 
 use self::omap::OrderedHashMap;
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 /// A wrapper around `BlockReference` to keep track of information used by the cache.
 struct CacheBlockReference {
@@ -38,7 +40,7 @@ unsafe impl Sync for CacheBlockReference {}
 /// and writes to the same block. This must be handled by an external concurrency control module.
 pub struct BufferManager {
     capacity: usize,
-    block_ctr: Mutex<u64>,
+    blocks: Mutex<(u64, HashSet<u64>)>,
     t1: RwLock<OrderedHashMap<u64, CacheBlockReference>>,
     t2: RwLock<OrderedHashMap<u64, CacheBlockReference>>,
     b1: Mutex<OrderedHashMap<u64, ()>>,
@@ -52,7 +54,7 @@ impl BufferManager {
     pub fn with_capacity(capacity: usize) -> Self {
         BufferManager {
             capacity,
-            block_ctr: Mutex::new(Self::initialize_block_ctr()),
+            blocks: Mutex::new((0, Self::inventory())),
             t1: RwLock::new(OrderedHashMap::new()),
             t2: RwLock::new(OrderedHashMap::new()),
             b1: Mutex::new(OrderedHashMap::new()),
@@ -65,10 +67,15 @@ impl BufferManager {
     /// reference.
     pub fn create(&self, schema: &[usize]) -> BlockReference {
         let block_id = {
-            let mut block_ctr = self.block_ctr.lock().unwrap();
-            let block_id = *block_ctr;
-            *block_ctr += 1;
-            block_id
+            let mut guard = self.blocks.lock().unwrap();
+            let (block_ctr, blocks) = &mut *guard;
+
+            while blocks.contains(block_ctr) {
+                *block_ctr += 1;
+            }
+
+            blocks.insert(*block_ctr);
+            *block_ctr
         };
 
         let mmap = Self::mmap(block_id, true).unwrap();
@@ -227,25 +234,22 @@ impl BufferManager {
         unsafe { MmapMut::map_mut(&file).ok() }
     }
 
-    fn initialize_block_ctr() -> u64 {
+    fn inventory() -> HashSet<u64> {
         let blocks_dir = Self::blocks_dir();
         if !blocks_dir.exists() {
             fs::create_dir(&blocks_dir).unwrap();
         }
 
-        let mut block_ctr = 0;
-        for entry in fs::read_dir(blocks_dir).unwrap() {
-            let block_id = entry.unwrap().path()
-                .file_stem().unwrap()
-                .to_str().unwrap()
-                .parse::<u64>().unwrap();
-
-            if block_id >= block_ctr {
-                block_ctr = block_id + 1;
-            }
-        }
-
-        block_ctr
+        HashSet::from_iter(
+            fs::read_dir(blocks_dir).unwrap()
+                .filter_map(|entry|
+                    entry.unwrap().path()
+                        .file_stem().unwrap()
+                        .to_str().unwrap()
+                        .parse::<u64>()
+                        .ok()
+            )
+        )
     }
 
     fn file_path(block_id: u64) -> PathBuf {

@@ -4,7 +4,6 @@ extern crate hustle_storage;
 extern crate lazy_static;
 
 #[cfg(test)]
-#[allow(unused_must_use)]
 mod storage_manager_tests {
     use hustle_storage::StorageManager;
 
