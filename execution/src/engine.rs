@@ -6,8 +6,9 @@ use hustle_common::message::Message;
 use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference};
+use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference, Insert};
 use crate::router::BlockPoolDestinationRouter;
+use crate::predicate::Predicate;
 
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
@@ -84,14 +85,19 @@ impl ExecutionEngine {
 
     fn parse_plan(plan: Plan) -> Box<dyn Operator> {
         match plan {
+            Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
+            Plan::DropTable { table } => Box::new(DropTable::new(table)),
+//            Plan::Insert { into_table, values } => {
+//                let schema = into_table.columns.iter().map(|c| c.column_type.size).collect();
+//                let router = BlockPoolDestinationRouter::new(schema);
+//                Box::new(Insert::new())
+//            },
             Plan::Query { query } => {
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
                 Self::parse_query(query, block_tx, &mut operators);
                 Box::new(Collect::new(block_rx, operators))
             },
-            Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
-            Plan::DropTable { table } => Box::new(DropTable::new(table)),
             _ => panic!("Unsupported plan: {:?}", plan),
         }
     }
@@ -105,24 +111,26 @@ impl ExecutionEngine {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::parse_query(*input, child_block_tx, operators);
 
-                let router = BlockPoolDestinationRouter::new();
-                let project = Project::new(block_rx, block_tx, query.output_cols, router, cols);
+                let schema = query.output_cols.iter().map(|c| c.data_type.size()).collect();
+                let router = BlockPoolDestinationRouter::new(schema);
+                let project = Project::new(block_rx, block_tx, router, cols);
                 operators.push(Box::new(project));
             },
             QueryOperator::Select { input, filter } => {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::parse_query(*input, child_block_tx, operators);
 
-                let router = BlockPoolDestinationRouter::new();
+                let schema = query.output_cols.iter().map(|c| c.data_type.size()).collect();
+                let router = BlockPoolDestinationRouter::new(schema);
                 let filter = Self::parse_filter(*filter);
-                let select = Select::new(block_rx, block_tx, query.output_cols, router, filter);
+                let select = Select::new(block_rx, block_tx, router, filter);
                 operators.push(Box::new(select));
             },
             _ => panic!(""),
         }
     }
 
-    fn parse_filter(filter: Expression) -> impl Fn(&[&[u8]]) -> bool {
-        |_| false
+    fn parse_filter(filter: Expression) -> Box<dyn Predicate> {
+        unimplemented!()
     }
 }

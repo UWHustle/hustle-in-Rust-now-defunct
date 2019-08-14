@@ -8,3 +8,5 @@ edition = "2018"
 hustle-catalog = { path = "../catalog" }
 hustle-common = { path = "../common" }
 hustle-storage = { path = "../storage" }
+hustle-types = { path = "../types" }
+bit-vec = "0.6"

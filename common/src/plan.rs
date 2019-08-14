@@ -52,7 +52,7 @@ pub enum QueryOperator {
     },
     Project {
         input: Box<Query>,
-        cols: Vec<usize>
+        cols: Vec<usize>,
     },
     Select {
         input: Box<Query>,
@@ -70,8 +70,10 @@ pub enum Expression {
         left: Box<Expression>,
         right: Box<Expression>,
     },
-    Connective {
-        variant: ConnectiveVariant,
+    Conjunctive {
+        terms: Vec<Expression>,
+    },
+    Disjunctive {
         terms: Vec<Expression>,
     },
     Function {

@@ -21,9 +21,9 @@ impl TableReference {
 }
 
 impl Operator for TableReference {
-    fn execute(&self, _storage_manager: &StorageManager, catalog: &Catalog) {
+    fn execute(&self, _storage_manager: &StorageManager, _catalog: &Catalog) {
         for &block_id in &self.table.block_ids {
-            self.block_tx.send(block_id);
+            self.block_tx.send(block_id).unwrap();
         }
     }
 }

@@ -19,6 +19,6 @@ impl Operator for DropTable {
             storage_manager.delete_block(block_id);
         }
 
-        catalog.drop_table(&self.table.name);
+        catalog.drop_table(&self.table.name).unwrap();
     }
 }

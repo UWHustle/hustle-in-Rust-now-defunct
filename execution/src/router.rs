@@ -39,24 +39,25 @@ impl Drop for BlockPoolBlockReference {
 pub struct BlockPoolDestinationRouter {
     block_ids: Mutex<Vec<u64>>,
     available_blocks: Arc<Mutex<Vec<BlockReference>>>,
+    schema: Vec<usize>,
 }
 
 impl BlockPoolDestinationRouter {
-    pub fn new() -> Self {
-        Self::with_block_ids(vec![])
+    pub fn new(schema: Vec<usize>) -> Self {
+        Self::with_block_ids(vec![], schema)
     }
 
-    pub fn with_block_ids(block_ids: Vec<u64>) -> Self {
+    pub fn with_block_ids(block_ids: Vec<u64>, schema: Vec<usize>) -> Self {
         BlockPoolDestinationRouter {
             block_ids: Mutex::new(block_ids),
             available_blocks: Arc::new(Mutex::new(vec![])),
+            schema,
         }
     }
 
     pub fn get_block(
         &self,
         storage_manager: &StorageManager,
-        schema: &[usize],
     ) -> BlockPoolBlockReference {
         let block = self.available_blocks.lock().unwrap().pop()
             .or_else(|| {
@@ -71,7 +72,7 @@ impl BlockPoolDestinationRouter {
                     }
                 }
             })
-            .unwrap_or(storage_manager.create_block(schema));
+            .unwrap_or(storage_manager.create_block(&self.schema));
         BlockPoolBlockReference::new(block, self.available_blocks.clone())
     }
 }

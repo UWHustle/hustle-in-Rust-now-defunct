@@ -14,6 +14,6 @@ impl CreateTable {
 
 impl Operator for CreateTable {
     fn execute(&self, _storage_manager: &StorageManager, catalog: &Catalog) {
-        catalog.create_table(self.table.clone());
+        catalog.create_table(self.table.clone()).unwrap();
     }
 }

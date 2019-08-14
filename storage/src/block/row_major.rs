@@ -3,6 +3,7 @@ use std::io::{Cursor, Write};
 use memmap::MmapMut;
 
 use block::{BitMap, Header, RawSlice};
+use bit_vec::BitVec;
 
 /// A `RowMajorBlock` is a horizontal partition of a `PhysicalRelation` in row-major order.
 pub struct RowMajorBlock {
@@ -11,7 +12,7 @@ pub struct RowMajorBlock {
     ready: BitMap,
     data: RawSlice,
     col_bounds: Vec<usize>,
-    mmap: MmapMut,
+    _mmap: MmapMut,
 }
 
 impl RowMajorBlock {
@@ -58,7 +59,7 @@ impl RowMajorBlock {
             ready,
             data,
             col_bounds,
-            mmap,
+            _mmap: mmap,
         }
     }
 
@@ -136,13 +137,47 @@ impl RowMajorBlock {
             .map(|(_, rows)| rows)
     }
 
-    pub fn insert(&self, row: &[&[u8]]) {
+    pub fn mask_from_value(&self, value: bool) -> BitVec {
+        BitVec::from_elem(self.row_capacity(), value)
+    }
+
+    pub fn mask_from_predicate(&self, col: usize, f: impl Fn(&[u8]) -> bool) -> BitVec {
+        let bounds = (self.col_bounds[col]..).step_by(self.row_size())
+            .zip((self.col_bounds[col + 1]..).step_by(self.row_size()))
+            .zip(self.valid.iter())
+            .zip(self.ready.iter())
+            .take(self.row_capacity())
+            .enumerate();
+
+        let mut mask = self.mask_from_value(false);
+
+        for (i, (((left, right), valid), ready)) in bounds {
+            mask.set(i, valid && ready && f(&self.data.as_slice()[left..right]));
+        };
+
+        mask
+    }
+
+    pub fn rows_with_mask<'a>(
+        &'a self,
+        mask: &'a BitVec,
+    ) -> impl Iterator<Item = impl Iterator<Item = &'a [u8]> + 'a> + 'a {
+        (0..).step_by(self.row_size())
+            .zip(mask.iter())
+            .filter(|&(_, on)| on)
+            .map(move |(offset, _)|
+                self.col_bounds.iter()
+                    .zip(self.col_bounds.iter().skip(1))
+                    .map(move |(&left_bound, &right_bound)| {
+                        let start = offset + left_bound;
+                        let end = offset + right_bound;
+                        &self.data.as_slice()[start..end]
+                    })
+            )
+    }
+
+    pub fn insert<'a>(&self, row: impl Iterator<Item = &'a [u8]>) {
         let schema = self.schema();
-        assert_eq!(row.len(), schema.len(), "Row has incorrect schema");
-        assert!(
-            row.iter().zip(schema).all(|(col, col_len)| col.len() == col_len),
-            "Row has incorrect schema"
-        );
 
         let (row_i, offset) = {
             // Determine whether the block is at capacity. If there is space to insert a row,
@@ -164,8 +199,9 @@ impl RowMajorBlock {
 
         // Write the new row to the block.
         let mut cursor = Cursor::new(&mut self.data.as_slice()[offset..]);
-        for &col in row {
-            cursor.write(col).unwrap();
+        for (value, &value_len) in row.zip(&schema) {
+            assert_eq!(value.len(), value_len, "Row has incorrect schema");
+            cursor.write(value).unwrap();
         }
 
         self.valid.set_unchecked(row_i, true);
@@ -240,7 +276,7 @@ impl RowMajorBlock {
     }
 
     /// Overwrites the entire `RowMajorBlock` with the `value`, which must be in row-major format.
-    pub fn bulk_write(&self, value: &[u8]) {
+    pub fn bulk_write(&self, _value: &[u8]) {
         unimplemented!()
     }
 
