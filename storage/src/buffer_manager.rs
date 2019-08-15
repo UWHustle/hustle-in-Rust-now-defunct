@@ -8,7 +8,7 @@ use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::MmapMut;
 
-use block::{BLOCK_SIZE, BlockReference, RowMajorBlock};
+use block::{BLOCK_SIZE, BlockReference, ColumnMajorBlock};
 
 use self::omap::OrderedHashMap;
 use std::collections::HashSet;
@@ -79,7 +79,7 @@ impl BufferManager {
         };
 
         let mmap = Self::mmap(block_id, true).unwrap();
-        let block = BlockReference::new(block_id, RowMajorBlock::new(schema, mmap));
+        let block = BlockReference::new(block_id, ColumnMajorBlock::new(schema, mmap));
         self.cache(block.clone());
         block
     }
@@ -103,7 +103,7 @@ impl BufferManager {
         cache_block.or_else(|| {
             // Cache miss. Load the file from storage and return the cached block.
             let mmap = Self::mmap(block_id, false)?;
-            let block = BlockReference::new(block_id, RowMajorBlock::with_buf(mmap));
+            let block = BlockReference::new(block_id, ColumnMajorBlock::from_buf(mmap));
             self.cache(block.clone());
             Some(block)
         })

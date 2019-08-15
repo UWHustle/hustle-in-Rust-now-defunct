@@ -1,15 +1,15 @@
 use std::sync::{Arc, Mutex, Condvar};
-use block::RowMajorBlock;
+use block::ColumnMajorBlock;
 use std::ops::Deref;
 
 pub struct BlockReference {
     pub id: u64,
-    block: Arc<RowMajorBlock>,
+    block: Arc<ColumnMajorBlock>,
     rc: Arc<(Mutex<u64>, Condvar)>,
 }
 
 impl BlockReference {
-    pub fn new(id: u64, block: RowMajorBlock) -> Self {
+    pub fn new(id: u64, block: ColumnMajorBlock) -> Self {
         BlockReference {
             id,
             block: Arc::new(block),
@@ -23,7 +23,7 @@ impl BlockReference {
 }
 
 impl Deref for BlockReference {
-    type Target = RowMajorBlock;
+    type Target = ColumnMajorBlock;
 
     fn deref(&self) -> &Self::Target {
         &self.block
