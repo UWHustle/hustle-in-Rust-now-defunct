@@ -3,7 +3,7 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use hustle_catalog::{Catalog, Table};
 use hustle_common::message::Message;
-use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
+use hustle_common::plan::{Expression, Plan, Query, QueryOperator, Literal};
 use hustle_storage::StorageManager;
 
 use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference, Insert};
@@ -88,9 +88,19 @@ impl ExecutionEngine {
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
 //            Plan::Insert { into_table, values } => {
-//                let schema = into_table.columns.iter().map(|c| c.column_type.size).collect();
+//                let literals = values.iter()
+//                    .map(|expression| {
+//                        if let &Expression::Literal { literal } = expression {
+//                            literal
+//                        } else {
+//                            panic!("Only inserts of literal values are supported");
+//                        }
+//                    })
+//                    .collect::<Vec<Literal>>();
+//
+//                let schema = into_table.columns.iter().map(|c| c.data_type.size()).collect();
 //                let router = BlockPoolDestinationRouter::new(schema);
-//                Box::new(Insert::new())
+//                Box::new(Insert::new(literals, router))
 //            },
             Plan::Query { query } => {
                 let (block_tx, block_rx) = mpsc::channel();
@@ -133,4 +143,6 @@ impl ExecutionEngine {
     fn parse_filter(filter: Expression) -> Box<dyn Predicate> {
         unimplemented!()
     }
+
+
 }

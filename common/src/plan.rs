@@ -76,14 +76,8 @@ pub enum Expression {
     Disjunctive {
         terms: Vec<Expression>,
     },
-    Function {
-        name: String,
-        arguments: Vec<Expression>,
-        output_type: String,
-    },
     Literal {
-        value: String,
-        literal_type: String,
+        literal: Literal,
     },
     ColumnReference {
         column: Column,
@@ -109,4 +103,9 @@ pub struct AggregateFunction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AggregateFunctionVariant {
     Avg, Count, Max, Min, Sum
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Literal {
+    Int8(i8),
 }

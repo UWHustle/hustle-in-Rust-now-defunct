@@ -93,5 +93,5 @@ impl Borrow<str> for Table {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Column {
     pub name: String,
-    pub data_type: DataType,
+    pub data_type: HustleType,
 }
