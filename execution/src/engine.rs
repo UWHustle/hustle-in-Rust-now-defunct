@@ -53,7 +53,7 @@ impl ExecutionEngine {
                             // Send each row of the result.
                             for &block_id in &relation.block_ids {
                                 let block = self.storage_manager.get_block(block_id).unwrap();
-                                for row in block.rows() {
+                                for row in block.get_rows() {
                                     completed_tx.send(Message::ReturnRow {
                                         row: row.map(|value| value.to_vec()).collect(),
                                         connection_id,
@@ -121,7 +121,7 @@ impl ExecutionEngine {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::parse_query(*input, child_block_tx, operators);
 
-                let schema = query.output_cols.iter().map(|c| c.data_type.size()).collect();
+                let schema = query.output_cols.iter().map(|c| c.type_info.size).collect();
                 let router = BlockPoolDestinationRouter::new(schema);
                 let project = Project::new(block_rx, block_tx, router, cols);
                 operators.push(Box::new(project));
@@ -130,7 +130,7 @@ impl ExecutionEngine {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::parse_query(*input, child_block_tx, operators);
 
-                let schema = query.output_cols.iter().map(|c| c.data_type.size()).collect();
+                let schema = query.output_cols.iter().map(|c| c.type_info.size).collect();
                 let router = BlockPoolDestinationRouter::new(schema);
                 let filter = Self::parse_filter(*filter);
                 let select = Select::new(block_rx, block_tx, router, filter);

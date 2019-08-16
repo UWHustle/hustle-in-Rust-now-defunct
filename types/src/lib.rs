@@ -1,8 +1,11 @@
+#[macro_use]
+extern crate serde;
+
 use std::mem::size_of;
 use std::ops::DerefMut;
 
-#[derive(Debug)]
-pub enum HustleTypeVariant {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum TypeVariant {
     Int8,
     Int16,
     Int32,
@@ -11,9 +14,21 @@ pub enum HustleTypeVariant {
     Float64,
 }
 
-pub trait HustleType {
-    fn variant(&self) -> HustleTypeVariant;
-    fn size(&self) -> usize;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeInfo {
+    pub variant: TypeVariant,
+    pub size: usize,
+}
+
+pub trait HustleType<D: DerefMut<Target = [u8]>> {
+    fn interpret(buf: D) -> Self;
+    fn get_info(&self) -> &TypeInfo;
+}
+
+pub trait PrimitiveType<D: DerefMut<Target = [u8]>> {
+    type Primitive;
+    fn from_primitive(n: Self::Primitive, buf: D) -> Self;
+    fn get_primitive(&self) -> Self::Primitive;
 }
 
 pub trait Comparable<T> {
@@ -24,56 +39,53 @@ pub trait Comparable<T> {
     fn ge(&self, other: &T) -> bool;
 }
 
-macro_rules! make_type {
+macro_rules! make_primitive {
     ($name:ident, $variant:expr, $primitive_ty:ty) => {
         pub struct $name<D: DerefMut<Target = [u8]>> {
+            info: TypeInfo,
             ptr: *mut $primitive_ty,
             _buf: D,
         }
 
-        impl $name<Vec<u8>> {
-            pub fn new(n: $primitive_ty) -> Self {
-                let buf = vec![0; size_of::<$primitive_ty>()];
-                let t = Self::interpret(buf);
-                unsafe { *t.ptr = n };
-                t
-            }
-        }
-
-        impl<D: DerefMut<Target = [u8]>> $name<D> {
-            pub fn interpret(mut buf: D) -> Self {
+        impl<D: DerefMut<Target = [u8]>> HustleType<D> for $name<D> {
+            fn interpret(mut buf: D) -> Self {
                 assert_eq!(
                     buf.len(),
                     size_of::<$primitive_ty>(),
                     "Incorrectly sized buffer for type {:?}",
                     $variant,
                 );
+                let info = TypeInfo { variant: $variant, size: size_of::<$primitive_ty>() };
                 let ptr = buf.as_mut_ptr() as *mut $primitive_ty;
                 $name {
+                    info,
                     ptr,
                     _buf: buf,
                 }
             }
 
-            pub fn get_primitive(&self) -> $primitive_ty {
+            fn get_info(&self) -> &TypeInfo {
+                &self.info
+            }
+        }
+
+        impl<D: DerefMut<Target = [u8]>> PrimitiveType<D> for $name<D> {
+            type Primitive = $primitive_ty;
+
+            fn from_primitive(n: $primitive_ty, buf: D) -> Self {
+                let t = Self::interpret(buf);
+                unsafe { *t.ptr = n };
+                t
+            }
+
+            fn get_primitive(&self) -> $primitive_ty {
                 unsafe { *self.ptr }
             }
         }
-
-        impl<D: DerefMut<Target = [u8]>> HustleType for $name<D> {
-            fn variant(&self) -> HustleTypeVariant {
-                $variant
-            }
-
-            fn size(&self) -> usize {
-                size_of::<$primitive_ty>()
-            }
-        }
-
     };
 }
 
-macro_rules! make_comparable {
+macro_rules! make_primitive_comparable {
     ($left:ident, $right:ident, $cast_ty:ty) => {
         impl<L, R> Comparable<$right<R>> for $left<L>
         where
@@ -103,51 +115,51 @@ macro_rules! make_comparable {
     };
 }
 
-make_type!(Int8, HustleTypeVariant::Int8, i8);
-make_type!(Int16, HustleTypeVariant::Int16, i16);
-make_type!(Int32, HustleTypeVariant::Int32, i32);
-make_type!(Int64, HustleTypeVariant::Int64, i64);
-make_type!(Float32, HustleTypeVariant::Float32, f32);
-make_type!(Float64, HustleTypeVariant::Float64, f64);
+make_primitive!(Int8, TypeVariant::Int8, i8);
+make_primitive!(Int16, TypeVariant::Int16, i16);
+make_primitive!(Int32, TypeVariant::Int32, i32);
+make_primitive!(Int64, TypeVariant::Int64, i64);
+make_primitive!(Float32, TypeVariant::Float32, f32);
+make_primitive!(Float64, TypeVariant::Float64, f64);
 
-make_comparable!(Int8, Int8, i8);
-make_comparable!(Int8, Int16, i16);
-make_comparable!(Int8, Int32, i32);
-make_comparable!(Int8, Int64, i64);
-make_comparable!(Int8, Float32, f32);
-make_comparable!(Int8, Float64, f64);
+make_primitive_comparable!(Int8, Int8, i8);
+make_primitive_comparable!(Int8, Int16, i16);
+make_primitive_comparable!(Int8, Int32, i32);
+make_primitive_comparable!(Int8, Int64, i64);
+make_primitive_comparable!(Int8, Float32, f32);
+make_primitive_comparable!(Int8, Float64, f64);
 
-make_comparable!(Int16, Int8, i16);
-make_comparable!(Int16, Int16, i16);
-make_comparable!(Int16, Int32, i32);
-make_comparable!(Int16, Int64, i64);
-make_comparable!(Int16, Float32, f32);
-make_comparable!(Int16, Float64, f64);
+make_primitive_comparable!(Int16, Int8, i16);
+make_primitive_comparable!(Int16, Int16, i16);
+make_primitive_comparable!(Int16, Int32, i32);
+make_primitive_comparable!(Int16, Int64, i64);
+make_primitive_comparable!(Int16, Float32, f32);
+make_primitive_comparable!(Int16, Float64, f64);
 
-make_comparable!(Int32, Int8, i32);
-make_comparable!(Int32, Int16, i32);
-make_comparable!(Int32, Int32, i32);
-make_comparable!(Int32, Int64, i64);
-make_comparable!(Int32, Float32, f64);
-make_comparable!(Int32, Float64, f64);
+make_primitive_comparable!(Int32, Int8, i32);
+make_primitive_comparable!(Int32, Int16, i32);
+make_primitive_comparable!(Int32, Int32, i32);
+make_primitive_comparable!(Int32, Int64, i64);
+make_primitive_comparable!(Int32, Float32, f64);
+make_primitive_comparable!(Int32, Float64, f64);
 
-make_comparable!(Int64, Int8, i64);
-make_comparable!(Int64, Int16, i64);
-make_comparable!(Int64, Int32, i64);
-make_comparable!(Int64, Int64, i64);
+make_primitive_comparable!(Int64, Int8, i64);
+make_primitive_comparable!(Int64, Int16, i64);
+make_primitive_comparable!(Int64, Int32, i64);
+make_primitive_comparable!(Int64, Int64, i64);
 //make_comparable!(Int64, Float32, f64);
 //make_comparable!(Int64, Float64, f64);
 
-make_comparable!(Float32, Int8, f32);
-make_comparable!(Float32, Int16, f32);
-make_comparable!(Float32, Int32, f64);
+make_primitive_comparable!(Float32, Int8, f32);
+make_primitive_comparable!(Float32, Int16, f32);
+make_primitive_comparable!(Float32, Int32, f64);
 //make_comparable!(Float32, Int64, f64);
-make_comparable!(Float32, Float32, f32);
-make_comparable!(Float32, Float64, f64);
+make_primitive_comparable!(Float32, Float32, f32);
+make_primitive_comparable!(Float32, Float64, f64);
 
-make_comparable!(Float64, Int8, f64);
-make_comparable!(Float64, Int16, f64);
-make_comparable!(Float64, Int32, f64);
+make_primitive_comparable!(Float64, Int8, f64);
+make_primitive_comparable!(Float64, Int16, f64);
+make_primitive_comparable!(Float64, Int32, f64);
 //make_comparable!(Float64, Int64, f64);
-make_comparable!(Float64, Float32, f64);
-make_comparable!(Float64, Float64, f64);
+make_primitive_comparable!(Float64, Float32, f64);
+make_primitive_comparable!(Float64, Float64, f64);

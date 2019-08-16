@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bit_vec::BitVec;
 
 use hustle_storage::block::BlockReference;
-use hustle_types::{Comparable, Value};
+use hustle_types::{Comparable, HustleType};
 
 use crate::predicate::Predicate;
 
@@ -19,7 +19,7 @@ pub struct ValueComparisonPredicate<C, L, R> {
 
 impl<C, L, R> ValueComparisonPredicate<C, L, R>
 where
-    L: for<'a> Value<'a> + Comparable<R>
+    L: for<'a> HustleType<&'a [u8]> + Comparable<R>,
 {
     fn new(col: usize, right: R, comparison: C) -> Self {
         ValueComparisonPredicate {
@@ -29,47 +29,17 @@ where
             phantom: PhantomData,
         }
     }
-
-    fn evaluate_with_comparison<F>(&self, block: &BlockReference, comparison: F) -> BitVec
-    where
-        F: Fn(L, &R) -> bool,
-    {
-        block.mask_from_predicate(self.col, |v| comparison(L::bind(v), &self.right))
-    }
 }
 
-impl<L, R> ValueComparisonPredicate<EqValueComparison, L, R>
+impl<C, L, R> Predicate for ValueComparisonPredicate<C, L, R>
 where
-    L: for<'a> Value<'a> + Comparable<R>,
-{
-    pub fn eq(col: usize, right: R) -> Self {
-        Self::new(col, right, EqValueComparison)
-    }
-}
-
-impl<L, R> Predicate for ValueComparisonPredicate<EqValueComparison, L, R>
-where
-    L: for<'a> Value<'a> + Comparable<R>,
+    L: for <'a> HustleType<&'a [u8]> + Comparable<R>
 {
     fn evaluate(&self, block: &BlockReference) -> BitVec {
-        self.evaluate_with_comparison(block, |l, r| l.eq(r))
-    }
-}
-
-impl<L, R> ValueComparisonPredicate<LtValueComparison, L, R>
-where
-    L: for<'a> Value<'a> + Comparable<R>,
-{
-    pub fn lt(col: usize, right: R) -> Self {
-        Self::new(col, right, LtValueComparison)
-    }
-}
-
-impl<L, R> Predicate for ValueComparisonPredicate<LtValueComparison, L, R>
-where
-    L: for<'a> Value<'a> + Comparable<R>,
-{
-    fn evaluate(&self, block: &BlockReference) -> BitVec {
-        self.evaluate_with_comparison(block, |l, r| l.lt(r))
+        let mut bits = BitVec::from_elem(block.get_n_rows(), false);
+        for (i, buf) in block.get_col(self.col).enumerate() {
+            bits.set(i, L::interpret(buf).eq(&self.right));
+        }
+        bits
     }
 }
