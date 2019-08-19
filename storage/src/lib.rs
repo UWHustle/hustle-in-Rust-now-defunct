@@ -1,5 +1,4 @@
 extern crate byteorder;
-extern crate core;
 extern crate memmap;
 extern crate omap;
 extern crate bit_vec;

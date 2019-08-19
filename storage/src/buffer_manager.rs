@@ -79,7 +79,7 @@ impl BufferManager {
         };
 
         let mmap = Self::mmap(block_id, true).unwrap();
-        let block = BlockReference::new(block_id, ColumnMajorBlock::new(schema, mmap));
+        let block = BlockReference::new(block_id, ColumnMajorBlock::new(schema.to_vec(), mmap));
         self.cache(block.clone());
         block
     }

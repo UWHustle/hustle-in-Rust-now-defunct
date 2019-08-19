@@ -16,13 +16,22 @@ pub enum TypeVariant {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TypeInfo {
-    pub variant: TypeVariant,
-    pub size: usize,
+    variant: TypeVariant,
+    size: usize,
+}
+
+impl TypeInfo {
+    pub fn get_variant(&self) -> TypeVariant {
+        self.variant.clone()
+    }
+    pub fn get_size(&self) -> usize {
+        self.size
+    }
 }
 
 pub trait HustleType<D: DerefMut<Target = [u8]>> {
     fn interpret(buf: D) -> Self;
-    fn get_info(&self) -> &TypeInfo;
+    fn get_info(&self) -> TypeInfo;
 }
 
 pub trait PrimitiveType<D: DerefMut<Target = [u8]>> {
@@ -42,30 +51,32 @@ pub trait Comparable<T> {
 macro_rules! make_primitive {
     ($name:ident, $variant:expr, $primitive_ty:ty) => {
         pub struct $name<D: DerefMut<Target = [u8]>> {
-            info: TypeInfo,
-            ptr: *mut $primitive_ty,
-            _buf: D,
+            buf: D,
+        }
+
+        impl<D: DerefMut<Target = [u8]>> $name<D> {
+            fn as_ptr(&self) -> *const $primitive_ty {
+                self.buf.as_ptr() as *const $primitive_ty
+            }
+
+            fn as_mut_ptr(&mut self) -> *mut $primitive_ty {
+                self.buf.as_mut_ptr() as *mut $primitive_ty
+            }
         }
 
         impl<D: DerefMut<Target = [u8]>> HustleType<D> for $name<D> {
-            fn interpret(mut buf: D) -> Self {
+            fn interpret(buf: D) -> Self {
                 assert_eq!(
                     buf.len(),
                     size_of::<$primitive_ty>(),
                     "Incorrectly sized buffer for type {:?}",
                     $variant,
                 );
-                let info = TypeInfo { variant: $variant, size: size_of::<$primitive_ty>() };
-                let ptr = buf.as_mut_ptr() as *mut $primitive_ty;
-                $name {
-                    info,
-                    ptr,
-                    _buf: buf,
-                }
+                $name { buf }
             }
 
-            fn get_info(&self) -> &TypeInfo {
-                &self.info
+            fn get_info(&self) -> TypeInfo {
+                TypeInfo { variant: $variant, size: size_of::<$primitive_ty>() }
             }
         }
 
@@ -73,13 +84,13 @@ macro_rules! make_primitive {
             type Primitive = $primitive_ty;
 
             fn from_primitive(n: $primitive_ty, buf: D) -> Self {
-                let t = Self::interpret(buf);
-                unsafe { *t.ptr = n };
+                let mut t = Self::interpret(buf);
+                unsafe { *t.as_mut_ptr() = n };
                 t
             }
 
             fn get_primitive(&self) -> $primitive_ty {
-                unsafe { *self.ptr }
+                unsafe { *self.as_ptr() }
             }
         }
     };
