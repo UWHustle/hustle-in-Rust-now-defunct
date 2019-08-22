@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bit_vec::BitVec;
 
 use hustle_storage::block::BlockReference;
-use hustle_types::{Comparable, HustleType};
+use hustle_types::{Compare, HustleType};
 
 use crate::predicate::Predicate;
 
@@ -19,7 +19,7 @@ pub struct ValueComparisonPredicate<C, L, R> {
 
 impl<C, L, R> ValueComparisonPredicate<C, L, R>
 where
-    L: for<'a> HustleType<&'a [u8]> + Comparable<R>,
+    L: for<'a> HustleType<&'a [u8]> + Compare<R>,
 {
     fn new(col: usize, right: R, comparison: C) -> Self {
         ValueComparisonPredicate {
@@ -33,7 +33,7 @@ where
 
 impl<C, L, R> Predicate for ValueComparisonPredicate<C, L, R>
 where
-    L: for <'a> HustleType<&'a [u8]> + Comparable<R>
+    L: for <'a> HustleType<&'a [u8]> + Compare<R>
 {
     fn evaluate(&self, block: &BlockReference) -> BitVec {
         let mut bits = BitVec::from_elem(block.get_n_rows(), false);
