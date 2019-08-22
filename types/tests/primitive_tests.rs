@@ -2,13 +2,13 @@
 mod primitive_tests {
     use hustle_types::{
         Bool,
-        CompareOrd,
         CompareEq,
+        CompareOrd,
         HustleType,
-        Int8,
         Int16,
         Int32,
         Int64,
+        Int8,
     };
 
     macro_rules! init_buf {
