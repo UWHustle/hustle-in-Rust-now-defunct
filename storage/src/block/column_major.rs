@@ -9,7 +9,6 @@ pub struct ColumnMajorBlock {
     col_offsets: Vec<usize>,
     n_rows: usize,
     data: *mut u8,
-    data_len: usize,
     _mmap: MmapMut,
 }
 
@@ -68,7 +67,6 @@ impl ColumnMajorBlock {
             col_offsets,
             n_rows,
             data,
-            data_len,
             _mmap: mmap,
         }
     }
@@ -78,46 +76,66 @@ impl ColumnMajorBlock {
     }
 
     pub fn get_rows<'a>(&'a self)
-        -> impl Iterator<Item = impl Iterator<Item = &'a [u8]> + 'a> + 'a
+        -> impl Iterator<Item = impl Iterator<Item = &'a mut [u8]> + 'a> + 'a
     {
         (0..self.n_rows)
             .map(move |row| self.get_row(row))
     }
 
     pub fn get_cols<'a>(&'a self)
-        -> impl Iterator<Item = impl Iterator<Item = &'a [u8]> + 'a> + 'a
+        -> impl Iterator<Item = impl Iterator<Item = &'a mut [u8]> + 'a> + 'a
     {
         (0..self.col_sizes.len())
             .map(move |row| self.get_col(row))
     }
 
-    pub fn get_row<'a>(&'a self, row: usize) -> impl Iterator<Item = &'a [u8]> + 'a {
-        let data = unsafe { slice::from_raw_parts(self.data, self.data_len) };
+    pub fn get_row<'a>(&'a self, row: usize) -> impl Iterator<Item = &'a mut [u8]> + 'a {
+        self.assert_row_in_bounds(row);
+
         self.col_offsets.iter()
             .zip(&self.col_sizes)
             .map(move |(&col_offset, &col_size)| {
-                let left = col_offset * row * col_size;
-                let right = left + col_size;
-                &data[left..right]
+                let offset = col_offset + row * col_size;
+                unsafe { slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size) }
             })
     }
 
-    pub fn get_col<'a>(&'a self, col: usize) -> impl Iterator<Item = &'a [u8]> + 'a {
-        let data = unsafe { slice::from_raw_parts(self.data, self.data_len) };
-        let col_offset = self.col_offsets[col];
+    pub fn get_col<'a>(&'a self, col: usize) -> impl Iterator<Item = &'a mut [u8]> + 'a {
+        self.assert_col_in_bounds(col);
+
         let col_size = self.col_sizes[col];
-        (col_offset..)
+        (self.col_offsets[col]..)
             .step_by(col_size)
-            .zip((col_offset + col_size..).step_by(col_size))
-            .map(move |(left, right)| &data[left..right])
+            .take(self.n_rows)
+            .map(move |offset| {
+                unsafe { slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size) }
+            })
     }
 
-    pub fn get_row_col(&self, row: usize, col: usize) -> &[u8] {
-        let data = unsafe { slice::from_raw_parts(self.data, self.data_len) };
-        let col_offset = self.col_offsets[col];
+    pub fn get_row_col(&self, row: usize, col: usize) -> &mut [u8] {
+        self.assert_row_in_bounds(row);
+        self.assert_col_in_bounds(col);
+
         let col_size = self.col_sizes[col];
-        let left = col_offset + row * col_size;
-        let right = left + col_size;
-        &data[left..right]
+        let offset = self.col_offsets[col] + row * col_size;
+        unsafe { slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size) }
+    }
+
+    fn assert_row_in_bounds(&self, row: usize) {
+        assert!(
+            row < self.n_rows,
+            "Row {} out of bounds for block with {} rows",
+            row,
+            self.n_rows,
+        );
+    }
+
+    fn assert_col_in_bounds(&self, col: usize) {
+        assert!(
+            col < self.col_sizes.len(),
+            "Column {} out of bounds for block with {} columns",
+            col,
+            self.col_sizes.len(),
+        );
     }
 }

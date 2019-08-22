@@ -15,144 +15,105 @@ mod block_tests {
     }
 
     #[test]
-    fn metadata() {
+    fn col_sizes() {
         let schema = vec![1, 2, 3];
         let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
 
-        assert_eq!(block.n_cols(), schema.len());
-        assert_eq!(block.row_size(), schema.iter().sum::<usize>());
-        assert_eq!(block.schema(), schema);
-        assert!(!block.is_full());
+        assert_eq!(block.get_col_sizes(), schema.as_slice());
 
         STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
-    fn insert() {
-        let (block, expected, _) = block_with_data();
-
-        let actual = block.rows()
-            .map(|row| row.collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        compare_rows(actual, expected);
-
-        STORAGE_MANAGER.delete_block(block.id);
-    }
-
-    #[test]
-    fn extend() {
-        let (block_a, expected, schema) = block_with_data();
-        let block_b: BlockReference = STORAGE_MANAGER.create_block(&schema);
-
-        block_b.extend(&mut block_a.rows());
-
-        let actual = block_b.rows()
-            .map(|row| row.collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        compare_rows(actual, expected);
-
-        STORAGE_MANAGER.delete_block(block_a.id);
-        STORAGE_MANAGER.delete_block(block_b.id);
-    }
-
-    #[test]
-    fn project() {
-        let (block, rows, _) = block_with_data();
-        let cols = vec![0, 2];
-
-        let actual = block.project(&cols)
-            .map(|row| row.collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        let expected = rows.into_iter()
-            .map(|row| cols.iter().map(|&col| row[col]).collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        compare_rows(actual, expected);
-
-        STORAGE_MANAGER.delete_block(block.id);
-    }
-
-    #[test]
-    fn select() {
-        let (block, rows, _) = block_with_data();
-        let filter = |row: &[&[u8]]| row[0] == b"d";
-
-        let actual = block.select(filter)
-            .map(|row| row.collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        let expected = rows.into_iter()
-            .filter(|row| filter(row))
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        compare_rows(actual, expected);
-
-        STORAGE_MANAGER.delete_block(block.id);
-    }
-
-    #[test]
-    fn delete() {
-        let (block, rows, _) = block_with_data();
-        let filter = |row: &[&[u8]]| row[0] == b"d";
-
-        block.delete(filter);
-
-        let actual = block.rows()
-            .map(|row| row.collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        let expected = rows.into_iter()
-            .filter(|row| !filter(row))
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        compare_rows(actual, expected);
-
-        STORAGE_MANAGER.delete_block(block.id);
-    }
-
-    #[test]
-    fn clear() {
-        let (block, _, _) = block_with_data();
-
-        block.clear();
-
-        let actual = block.rows()
-            .map(|row| row.collect::<Vec<&[u8]>>())
-            .collect::<Vec<Vec<&[u8]>>>();
-
-        compare_rows(actual, vec![]);
-
-        STORAGE_MANAGER.delete_block(block.id);
-    }
-
-    fn block_with_data() -> (BlockReference, Vec<Vec<&'static [u8]>>, Vec<usize>) {
+    fn get_row_col() {
         let schema = vec![1, 2, 3];
         let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
 
-        let rows: Vec<Vec<&[u8]>> = vec![
-            vec![b"a", b"bb", b"ccc"],
-            vec![b"d", b"ee", b"fff"],
-        ];
+        block.get_row_col(0, 0).copy_from_slice(b"a");
+        block.get_row_col(0, 1).copy_from_slice(b"bb");
+        block.get_row_col(0, 2).copy_from_slice(b"ccc");
 
-        for row in &rows {
-            block.insert(&row);
+        assert_eq!(block.get_row_col(0, 0), b"a");
+        assert_eq!(block.get_row_col(0, 1), b"bb");
+        assert_eq!(block.get_row_col(0, 2), b"ccc");
+    }
+
+    #[test]
+    fn get_row() {
+        let schema = vec![1, 2, 3];
+        let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
+
+        let mut row = block.get_row(0);
+        row.next().unwrap().copy_from_slice(b"a");
+        row.next().unwrap().copy_from_slice(b"bb");
+        row.next().unwrap().copy_from_slice(b"ccc");
+
+        let mut row = block.get_row(0);
+        assert_eq!(row.next().unwrap(), b"a");
+        assert_eq!(row.next().unwrap(), b"bb");
+        assert_eq!(row.next().unwrap(), b"ccc");
+        assert_eq!(row.next(), None);
+    }
+
+    #[test]
+    fn get_col() {
+        let schema = vec![b"repetition".len(), b"duplication".len()];
+        let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
+
+        for (c0, c1) in block.get_col(0).zip(block.get_col(1)) {
+            c0.copy_from_slice(b"repetition");
+            c1.copy_from_slice(b"duplication");
         }
 
-        (block, rows, schema)
+        for (c0, c1) in block.get_col(0).zip(block.get_col(1)) {
+            assert_eq!(c0, b"repetition");
+            assert_eq!(c1, b"duplication");
+        }
     }
 
-    fn compare_rows<'a>(
-        actual: Vec<Vec<&[u8]>>,
-        expected: Vec<Vec<&[u8]>>,
-    ) {
-        assert_eq!(actual.len(), expected.len());
-        for (actual_row, expected_row) in actual.iter().zip(expected) {
-            assert_eq!(actual_row.len(), expected_row.len());
-            for (&actual_value, &expected_value) in actual_row.iter().zip(expected_row.iter()) {
-                assert_eq!(actual_value, expected_value);
+    #[test]
+    fn get_rows() {
+        let schema = vec![1, 2, 3];
+        let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
+
+        let expected = [
+            [b"a" as &[u8], b"bb", b"ccc"],
+            [b"d", b"ee", b"ddd"],
+        ];
+
+        for (row_i, row) in expected.iter().enumerate() {
+            for (col_i, val) in row.iter().enumerate() {
+                block.get_row_col(row_i, col_i).copy_from_slice(val);
+            }
+        }
+
+        for (row, expected_row) in block.get_rows().zip(expected.iter()) {
+            for (val, &expected_val) in row.zip(expected_row.iter()) {
+                assert_eq!(val, expected_val);
+            }
+        }
+    }
+
+    #[test]
+    fn get_cols() {
+        let schema = vec![1, 2, 3];
+        let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
+
+        let expected = [
+            [b"a" as &[u8], b"d"],
+            [b"bb", b"ee"],
+            [b"ccc", b"ddd"],
+        ];
+
+        for (col_i, col) in expected.iter().enumerate() {
+            for (row_i, val) in col.iter().enumerate() {
+                block.get_row_col(row_i, col_i).copy_from_slice(val);
+            }
+        }
+
+        for (col, expected_col) in block.get_cols().zip(expected.iter()) {
+            for (val, &expected_val) in col.zip(expected_col.iter()) {
+                assert_eq!(val, expected_val);
             }
         }
     }
