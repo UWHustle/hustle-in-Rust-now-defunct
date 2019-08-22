@@ -1,5 +1,6 @@
-use crate::{HustleType, CompareEq, CompareOrd};
 use std::str;
+
+use crate::{CompareEq, CompareOrd, HustleType};
 
 #[derive(Serialize, Deserialize)]
 pub struct Char {

@@ -1,18 +1,14 @@
 #[macro_use]
 extern crate serde;
 
-use crate::bits::Bits;
-use crate::char::Char;
-use crate::primitive::{
+pub use crate::bits::Bits;
+pub use crate::char::Char;
+pub use crate::primitive::{
     Bool,
     Int16,
     Int32,
     Int64,
     Int8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt8,
 };
 
 pub mod bits;
@@ -26,10 +22,6 @@ pub enum TypeVariant {
     Int16(Int16),
     Int32(Int32),
     Int64(Int64),
-    UInt8(UInt8),
-    UInt16(UInt16),
-    UInt32(UInt32),
-    UInt64(UInt64),
     Char(Char),
     Bits(Bits),
 }
