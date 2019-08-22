@@ -30,9 +30,10 @@ impl Deref for BlockPoolBlockReference {
 
 impl Drop for BlockPoolBlockReference {
     fn drop(&mut self) {
-        if !self.block.is_full() {
-            self.available_blocks.lock().unwrap().push(self.block.clone())
-        }
+        unimplemented!()
+//        if !self.block.is_full() {
+//            self.available_blocks.lock().unwrap().push(self.block.clone())
+//        }
     }
 }
 
@@ -59,20 +60,21 @@ impl BlockPoolDestinationRouter {
         &self,
         storage_manager: &StorageManager,
     ) -> BlockPoolBlockReference {
-        let block = self.available_blocks.lock().unwrap().pop()
-            .or_else(|| {
-                loop {
-                    if let Some(block_id) = self.block_ids.lock().unwrap().pop() {
-                        let block = storage_manager.get_block(block_id).unwrap();
-                        if !block.is_full() {
-                            break Some(block)
-                        }
-                    } else {
-                        break None
-                    }
-                }
-            })
-            .unwrap_or(storage_manager.create_block(&self.schema));
-        BlockPoolBlockReference::new(block, self.available_blocks.clone())
+        unimplemented!()
+//        let block = self.available_blocks.lock().unwrap().pop()
+//            .or_else(|| {
+//                loop {
+//                    if let Some(block_id) = self.block_ids.lock().unwrap().pop() {
+//                        let block = storage_manager.get_block(block_id).unwrap();
+//                        if !block.is_full() {
+//                            break Some(block)
+//                        }
+//                    } else {
+//                        break None
+//                    }
+//                }
+//            })
+//            .unwrap_or(storage_manager.create_block(&self.schema));
+//        BlockPoolBlockReference::new(block, self.available_blocks.clone())
     }
 }

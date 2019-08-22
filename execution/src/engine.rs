@@ -3,12 +3,13 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use hustle_catalog::{Catalog, Table};
 use hustle_common::message::Message;
-use hustle_common::plan::{Expression, Plan, Query, QueryOperator, Literal};
+use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
+use hustle_storage::block::BlockReference;
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference, Insert};
+use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference};
 use crate::router::BlockPoolDestinationRouter;
-use crate::predicate::Predicate;
+use bit_vec::BitVec;
 
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
@@ -87,21 +88,6 @@ impl ExecutionEngine {
         match plan {
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
-//            Plan::Insert { into_table, values } => {
-//                let literals = values.iter()
-//                    .map(|expression| {
-//                        if let &Expression::Literal { literal } = expression {
-//                            literal
-//                        } else {
-//                            panic!("Only inserts of literal values are supported");
-//                        }
-//                    })
-//                    .collect::<Vec<Literal>>();
-//
-//                let schema = into_table.columns.iter().map(|c| c.data_type.size()).collect();
-//                let router = BlockPoolDestinationRouter::new(schema);
-//                Box::new(Insert::new(literals, router))
-//            },
             Plan::Query { query } => {
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
@@ -121,7 +107,7 @@ impl ExecutionEngine {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::parse_query(*input, child_block_tx, operators);
 
-                let schema = query.output_cols.iter().map(|c| c.type_info.size).collect();
+                let schema = query.output_types.iter().map(|t| t.byte_len()).collect();
                 let router = BlockPoolDestinationRouter::new(schema);
                 let project = Project::new(block_rx, block_tx, router, cols);
                 operators.push(Box::new(project));
@@ -130,19 +116,17 @@ impl ExecutionEngine {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::parse_query(*input, child_block_tx, operators);
 
-                let schema = query.output_cols.iter().map(|c| c.type_info.size).collect();
+                let schema = query.output_types.iter().map(|t| t.byte_len()).collect();
                 let router = BlockPoolDestinationRouter::new(schema);
                 let filter = Self::parse_filter(*filter);
                 let select = Select::new(block_rx, block_tx, router, filter);
                 operators.push(Box::new(select));
             },
-            _ => panic!(""),
+            _ => panic!("Unsupported query: {:?}", query),
         }
     }
 
-    fn parse_filter(filter: Expression) -> Box<dyn Predicate> {
+    fn parse_filter(filter: Expression) -> Box<dyn Fn(&BlockReference) -> BitVec> {
         unimplemented!()
     }
-
-
 }

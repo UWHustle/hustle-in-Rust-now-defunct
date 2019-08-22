@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate serde;
 
+use std::borrow::Borrow;
 use std::collections::HashSet;
-
 use std::fs;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
-use std::borrow::Borrow;
 use std::sync::RwLock;
-use hustle_types::TypeInfo;
+
+use hustle_types::TypeVariant;
 
 const CATALOG_FILE_NAME: &str = "catalog.json";
 
@@ -93,5 +93,5 @@ impl Borrow<str> for Table {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Column {
     pub name: String,
-    pub type_info: TypeInfo,
+    pub type_variant: TypeVariant,
 }

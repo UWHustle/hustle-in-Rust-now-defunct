@@ -1,6 +1,6 @@
 use crate::HustleType;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Bits {
     len: usize,
     byte_len: usize,

@@ -2,7 +2,7 @@ use std::str;
 
 use crate::{CompareEq, CompareOrd, HustleType};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Char {
     len: usize,
 }

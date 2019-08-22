@@ -21,11 +21,6 @@ impl Insert {
 
 impl Operator for Insert {
     fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
-//        let block = self.router.get_block(storage_manager);
-//        block.insert(self.values.iter().map(|literal| {
-//            match literal {
-//                Literal::Int8(i) =>
-//            }
-//        }));
+        unimplemented!()
     }
 }

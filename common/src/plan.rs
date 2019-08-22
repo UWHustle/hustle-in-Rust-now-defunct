@@ -1,4 +1,5 @@
 use hustle_catalog::{Table, Column};
+use hustle_types::TypeVariant;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
@@ -32,7 +33,7 @@ pub enum Plan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Query {
     pub operator: QueryOperator,
-    pub output_cols: Vec<Column>,
+    pub output_types: Vec<TypeVariant>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
