@@ -8,12 +8,29 @@ pub struct Char {
 }
 
 impl Char {
+    pub fn new(len: usize) -> Self {
+        assert!(len > 0, "Cannot create Char type with zero length");
+        Char {
+            len,
+        }
+    }
+
     pub fn get<'a>(&self, buf: &'a [u8]) -> &'a str {
         str::from_utf8(buf).unwrap()
     }
 
     pub fn set(&self, val: &str, buf: &mut [u8]) {
-        buf.copy_from_slice(val.as_bytes());
+        if val.len() < self.len {
+            // Short strings are padded with the null character.
+            buf[..val.len()].clone_from_slice(val.as_bytes());
+            for c in &mut buf[val.len()..] {
+                *c = 0x00;
+            }
+        } else {
+            // Long strings are truncated.
+            buf.clone_from_slice(val[..self.len].as_bytes());
+        }
+
     }
 }
 

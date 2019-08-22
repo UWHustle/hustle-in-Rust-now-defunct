@@ -31,7 +31,7 @@ impl Bits {
     }
 
     fn mask(&self, i: usize) -> (usize, u8) {
-        assert!(i < self.len);
+        assert!(i < self.len, "Bit {} out of range for length {}", i, self.len);
         (i / 8, (1 << i % 8) as u8)
     }
 }
