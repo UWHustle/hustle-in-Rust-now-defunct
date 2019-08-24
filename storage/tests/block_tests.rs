@@ -43,12 +43,12 @@ mod block_tests {
         let schema = vec![1, 2, 3];
         let block: BlockReference = STORAGE_MANAGER.create_block(&schema);
 
-        let mut row = block.get_row(0);
+        let mut row = block.get_row_internal(0);
         row.next().unwrap().copy_from_slice(b"a");
         row.next().unwrap().copy_from_slice(b"bb");
         row.next().unwrap().copy_from_slice(b"ccc");
 
-        let mut row = block.get_row(0);
+        let mut row = block.get_row_internal(0);
         assert_eq!(row.next().unwrap(), b"a");
         assert_eq!(row.next().unwrap(), b"bb");
         assert_eq!(row.next().unwrap(), b"ccc");

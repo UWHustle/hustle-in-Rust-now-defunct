@@ -2,17 +2,17 @@ extern crate memmap;
 extern crate omap;
 
 use std::cmp::{max, min};
+use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
+use std::iter::FromIterator;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::MmapMut;
 
-use block::{BLOCK_SIZE, BlockReference, ColumnMajorBlock};
+use block::{BLOCK_SIZE, BlockReference, ColumnMajorBlock, Latch};
 
 use self::omap::OrderedHashMap;
-use std::collections::HashSet;
-use std::iter::FromIterator;
 
 /// A wrapper around `BlockReference` to keep track of information used by the cache.
 struct CacheBlockReference {
@@ -65,7 +65,7 @@ impl BufferManager {
 
     /// Creates a new block with the specified `schema`, loads it into the cache, and returns a
     /// reference.
-    pub fn create(&self, schema: &[usize]) -> BlockReference {
+    pub fn create(&self, col_sizes: Vec<usize>, n_flags: usize) -> BlockReference {
         let block_id = {
             let mut guard = self.blocks.lock().unwrap();
             let (block_ctr, blocks) = &mut *guard;
@@ -79,7 +79,10 @@ impl BufferManager {
         };
 
         let mmap = Self::mmap(block_id, true).unwrap();
-        let block = BlockReference::new(block_id, ColumnMajorBlock::new(schema.to_vec(), mmap));
+        let block = BlockReference::new(
+            block_id,
+            ColumnMajorBlock::new(col_sizes, n_flags, Latch::rw_latch(), mmap)
+        );
         self.cache(block.clone());
         block
     }
@@ -103,7 +106,10 @@ impl BufferManager {
         cache_block.or_else(|| {
             // Cache miss. Load the file from storage and return the cached block.
             let mmap = Self::mmap(block_id, false)?;
-            let block = BlockReference::new(block_id, ColumnMajorBlock::from_buf(mmap));
+            let block = BlockReference::new(
+                block_id,
+                ColumnMajorBlock::from_buf(Latch::rw_latch(), mmap)
+            );
             self.cache(block.clone());
             Some(block)
         })

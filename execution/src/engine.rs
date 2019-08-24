@@ -1,15 +1,16 @@
 use std::sync::{Arc, mpsc};
 use std::sync::mpsc::{Receiver, Sender};
 
+use bit_vec::BitVec;
+
 use hustle_catalog::{Catalog, Table};
 use hustle_common::message::Message;
 use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::BlockReference;
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference};
-use crate::router::BlockPoolDestinationRouter;
-use bit_vec::BitVec;
+use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference, Insert};
+use crate::storage_util;
 
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
@@ -25,7 +26,7 @@ impl ExecutionEngine {
     }
 
     pub fn execute_plan(&self, plan: Plan) -> Result<Option<Table>, String> {
-        let operator_tree = Self::parse_plan(plan);
+        let operator_tree = Self::compile_plan(plan);
         operator_tree.execute(&self.storage_manager, &self.catalog);
         Ok(None)
     }
@@ -84,41 +85,50 @@ impl ExecutionEngine {
         }
     }
 
-    fn parse_plan(plan: Plan) -> Box<dyn Operator> {
+    fn compile_plan(plan: Plan) -> Box<dyn Operator> {
         match plan {
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
+            Plan::Insert { into_table, values } => {
+                let literals = values.into_iter().map(|v| {
+                    if let Expression::Literal { literal } = v {
+                        literal
+                    } else {
+                        panic!("Unsupported insert argument: {:?}", v);
+                    }
+                }).collect();
+                let router = storage_util::new_destination_router()
+                Box::new(Insert::new(literals))
+            }
             Plan::Query { query } => {
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
-                Self::parse_query(query, block_tx, &mut operators);
+                Self::compile_query(query, block_tx, &mut operators);
                 Box::new(Collect::new(block_rx, operators))
             },
             _ => panic!("Unsupported plan: {:?}", plan),
         }
     }
 
-    fn parse_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
+    fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
         match query.operator {
             QueryOperator::TableReference { table } => {
                 operators.push(Box::new(TableReference::new(table, block_tx)));
             },
             QueryOperator::Project { input, cols } => {
                 let (child_block_tx, block_rx) = mpsc::channel();
-                Self::parse_query(*input, child_block_tx, operators);
+                Self::compile_query(*input, child_block_tx, operators);
 
-                let schema = query.output_types.iter().map(|t| t.byte_len()).collect();
-                let router = BlockPoolDestinationRouter::new(schema);
+                let router = storage_util::new_destination_router(&query.output);
                 let project = Project::new(block_rx, block_tx, router, cols);
                 operators.push(Box::new(project));
             },
             QueryOperator::Select { input, filter } => {
                 let (child_block_tx, block_rx) = mpsc::channel();
-                Self::parse_query(*input, child_block_tx, operators);
+                Self::compile_query(*input, child_block_tx, operators);
 
-                let schema = query.output_types.iter().map(|t| t.byte_len()).collect();
-                let router = BlockPoolDestinationRouter::new(schema);
-                let filter = Self::parse_filter(*filter);
+                let router = storage_util::new_destination_router(&query.output);
+                let filter = Self::compile_filter(*filter);
                 let select = Select::new(block_rx, block_tx, router, filter);
                 operators.push(Box::new(select));
             },
@@ -126,7 +136,7 @@ impl ExecutionEngine {
         }
     }
 
-    fn parse_filter(filter: Expression) -> Box<dyn Fn(&BlockReference) -> BitVec> {
+    fn compile_filter(filter: Expression) -> Box<dyn Fn(&BlockReference) -> BitVec> {
         unimplemented!()
     }
 }

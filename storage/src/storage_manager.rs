@@ -18,8 +18,8 @@ impl StorageManager {
         }
     }
 
-    pub fn create_block(&self, schema: &[usize]) -> BlockReference {
-        self.buffer_manager.create(schema)
+    pub fn create_block(&self, col_sizes: Vec<usize>, n_flags: usize) -> BlockReference {
+        self.buffer_manager.create(col_sizes, n_flags)
     }
 
     pub fn get_block(&self, block_id: u64) -> Option<BlockReference> {

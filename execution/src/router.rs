@@ -38,21 +38,21 @@ impl Drop for BlockPoolBlockReference {
 }
 
 pub struct BlockPoolDestinationRouter {
-    block_ids: Mutex<Vec<u64>>,
+    existing_block_ids: Mutex<Vec<u64>>,
     available_blocks: Arc<Mutex<Vec<BlockReference>>>,
-    schema: Vec<usize>,
+    col_sizes: Vec<usize>,
 }
 
 impl BlockPoolDestinationRouter {
     pub fn new(schema: Vec<usize>) -> Self {
-        Self::with_block_ids(vec![], schema)
+        Self::with_existing_block_ids(vec![], schema)
     }
 
-    pub fn with_block_ids(block_ids: Vec<u64>, schema: Vec<usize>) -> Self {
+    pub fn with_existing_block_ids(block_ids: Vec<u64>, col_sizes: Vec<usize>) -> Self {
         BlockPoolDestinationRouter {
-            block_ids: Mutex::new(block_ids),
+            existing_block_ids: Mutex::new(block_ids),
             available_blocks: Arc::new(Mutex::new(vec![])),
-            schema,
+            col_sizes,
         }
     }
 

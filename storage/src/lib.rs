@@ -1,7 +1,9 @@
-extern crate byteorder;
 extern crate memmap;
 extern crate omap;
 extern crate bit_vec;
+extern crate hustle_types;
+#[macro_use]
+extern crate serde;
 
 pub use storage_manager::StorageManager;
 

@@ -92,6 +92,33 @@ impl Borrow<str> for Table {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Column {
-    pub name: String,
-    pub type_variant: TypeVariant,
+    name: String,
+    type_variant: TypeVariant,
+    nullable: bool,
+}
+
+impl Column {
+    pub fn new(name: String, type_variant: TypeVariant, nullable: bool) -> Self {
+        Column {
+            name,
+            type_variant,
+            nullable,
+        }
+    }
+
+    pub fn anon(type_variant: TypeVariant, nullable: bool) -> Self {
+        Self::new(String::new(), type_variant, nullable)
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn get_type_variant(&self) -> &TypeVariant {
+        &self.type_variant
+    }
+
+    pub fn get_nullable(&self) -> bool {
+        self.nullable
+    }
 }
