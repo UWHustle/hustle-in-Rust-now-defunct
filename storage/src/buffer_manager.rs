@@ -10,7 +10,7 @@ use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::MmapMut;
 
-use block::{BLOCK_SIZE, BlockReference, ColumnMajorBlock, Latch};
+use block::{BLOCK_SIZE, BlockReference, ColumnMajorBlock};
 
 use self::omap::OrderedHashMap;
 
@@ -81,7 +81,7 @@ impl BufferManager {
         let mmap = Self::mmap(block_id, true).unwrap();
         let block = BlockReference::new(
             block_id,
-            ColumnMajorBlock::new(col_sizes, n_flags, Latch::rw_latch(), mmap)
+            ColumnMajorBlock::new(col_sizes, n_flags, mmap)
         );
         self.cache(block.clone());
         block
@@ -108,7 +108,7 @@ impl BufferManager {
             let mmap = Self::mmap(block_id, false)?;
             let block = BlockReference::new(
                 block_id,
-                ColumnMajorBlock::from_buf(Latch::rw_latch(), mmap)
+                ColumnMajorBlock::from_buf(mmap)
             );
             self.cache(block.clone());
             Some(block)

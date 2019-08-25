@@ -1,6 +1,7 @@
-use crate::operator::Operator;
+use hustle_catalog::{Catalog, Table};
 use hustle_storage::StorageManager;
-use hustle_catalog::{Table, Catalog};
+
+use crate::operator::Operator;
 
 pub struct CreateTable {
     table: Table,

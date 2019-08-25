@@ -9,8 +9,8 @@ use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::BlockReference;
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Operator, Project, Select, TableReference, Insert};
-use crate::storage_util;
+use crate::operator::{Collect, CreateTable, DropTable, Insert, Operator, Project, Select, TableReference};
+use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
@@ -89,17 +89,6 @@ impl ExecutionEngine {
         match plan {
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
-            Plan::Insert { into_table, values } => {
-                let literals = values.into_iter().map(|v| {
-                    if let Expression::Literal { literal } = v {
-                        literal
-                    } else {
-                        panic!("Unsupported insert argument: {:?}", v);
-                    }
-                }).collect();
-                let router = storage_util::new_destination_router()
-                Box::new(Insert::new(literals))
-            }
             Plan::Query { query } => {
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
@@ -112,26 +101,26 @@ impl ExecutionEngine {
 
     fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
         match query.operator {
-            QueryOperator::TableReference { table } => {
-                operators.push(Box::new(TableReference::new(table, block_tx)));
-            },
-            QueryOperator::Project { input, cols } => {
-                let (child_block_tx, block_rx) = mpsc::channel();
-                Self::compile_query(*input, child_block_tx, operators);
-
-                let router = storage_util::new_destination_router(&query.output);
-                let project = Project::new(block_rx, block_tx, router, cols);
-                operators.push(Box::new(project));
-            },
-            QueryOperator::Select { input, filter } => {
-                let (child_block_tx, block_rx) = mpsc::channel();
-                Self::compile_query(*input, child_block_tx, operators);
-
-                let router = storage_util::new_destination_router(&query.output);
-                let filter = Self::compile_filter(*filter);
-                let select = Select::new(block_rx, block_tx, router, filter);
-                operators.push(Box::new(select));
-            },
+//            QueryOperator::TableReference { table } => {
+//                operators.push(Box::new(TableReference::new(table, block_tx)));
+//            },
+//            QueryOperator::Project { input, cols } => {
+//                let (child_block_tx, block_rx) = mpsc::channel();
+//                Self::compile_query(*input, child_block_tx, operators);
+//
+//                let router = storage_util::new_destination_router(&query.output);
+//                let project = Project::new(block_rx, block_tx, router, cols);
+//                operators.push(Box::new(project));
+//            },
+//            QueryOperator::Select { input, filter } => {
+//                let (child_block_tx, block_rx) = mpsc::channel();
+//                Self::compile_query(*input, child_block_tx, operators);
+//
+//                let router = storage_util::new_destination_router(&query.output);
+//                let filter = Self::compile_filter(*filter);
+//                let select = Select::new(block_rx, block_tx, router, filter);
+//                operators.push(Box::new(select));
+//            },
             _ => panic!("Unsupported query: {:?}", query),
         }
     }

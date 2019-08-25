@@ -1,6 +1,7 @@
-use std::sync::{Arc, Mutex, Condvar};
-use block::ColumnMajorBlock;
 use std::ops::Deref;
+use std::sync::{Arc, Condvar, Mutex};
+
+use block::ColumnMajorBlock;
 
 pub struct BlockReference {
     pub id: u64,

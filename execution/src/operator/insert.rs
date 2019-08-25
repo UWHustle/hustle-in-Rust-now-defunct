@@ -1,9 +1,9 @@
 use hustle_catalog::Catalog;
+use hustle_common::plan::Literal;
 use hustle_storage::StorageManager;
 
 use crate::operator::Operator;
 use crate::router::BlockPoolDestinationRouter;
-use hustle_common::plan::Literal;
 
 pub struct Insert {
     values: Vec<Literal>,

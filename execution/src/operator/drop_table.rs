@@ -1,4 +1,4 @@
-use hustle_catalog::{Table, Catalog};
+use hustle_catalog::{Catalog, Table};
 use hustle_storage::StorageManager;
 
 use crate::operator::Operator;
