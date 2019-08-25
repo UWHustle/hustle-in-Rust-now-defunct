@@ -27,15 +27,15 @@ pub enum TypeVariant {
 }
 
 impl TypeVariant {
-    pub fn byte_len(&self) -> usize {
+    pub fn into_type(self) -> Box<dyn HustleType> {
         match self {
-            TypeVariant::Bool(t) => t.byte_len(),
-            TypeVariant::Int8(t) => t.byte_len(),
-            TypeVariant::Int16(t) => t.byte_len(),
-            TypeVariant::Int32(t) => t.byte_len(),
-            TypeVariant::Int64(t) => t.byte_len(),
-            TypeVariant::Char(t) => t.byte_len(),
-            TypeVariant::Bits(t) => t.byte_len(),
+            TypeVariant::Bool(t) => Box::new(t),
+            TypeVariant::Int8(t) => Box::new(t),
+            TypeVariant::Int16(t) => Box::new(t),
+            TypeVariant::Int32(t) => Box::new(t),
+            TypeVariant::Int64(t) => Box::new(t),
+            TypeVariant::Char(t) => Box::new(t),
+            TypeVariant::Bits(t) => Box::new(t),
         }
     }
 }

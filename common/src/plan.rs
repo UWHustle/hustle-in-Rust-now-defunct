@@ -107,5 +107,6 @@ pub enum AggregateFunctionVariant {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Literal {
-    Int8(i8),
+    Int(i64),
+    String(String),
 }

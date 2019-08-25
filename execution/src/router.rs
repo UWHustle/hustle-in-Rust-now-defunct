@@ -17,7 +17,9 @@ impl BlockPoolDestinationRouter {
     }
 
     pub fn with_block_ids(block_ids: Vec<u64>, schema: Vec<Column>) -> Self {
-        let col_sizes = schema.iter().map(|c| c.get_type_variant().byte_len()).collect();
+        let col_sizes = schema.into_iter()
+            .map(|c| c.into_type_variant().into_type().byte_len())
+            .collect();
         BlockPoolDestinationRouter {
             available_block_ids: Mutex::new(block_ids),
             unfilled_blocks: Mutex::new(vec![]),

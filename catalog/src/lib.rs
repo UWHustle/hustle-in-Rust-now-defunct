@@ -118,6 +118,10 @@ impl Column {
         &self.type_variant
     }
 
+    pub fn into_type_variant(self) -> TypeVariant {
+        self.type_variant
+    }
+
     pub fn get_nullable(&self) -> bool {
         self.nullable
     }
