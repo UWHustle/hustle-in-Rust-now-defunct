@@ -31,6 +31,8 @@ mod block_tests {
                 assert_eq!(val, expected_val);
             }
         }
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
@@ -51,6 +53,8 @@ mod block_tests {
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
@@ -61,6 +65,8 @@ mod block_tests {
         block.delete_rows();
 
         assert!(block.get_rows().next().is_none());
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
@@ -82,6 +88,8 @@ mod block_tests {
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
@@ -100,6 +108,8 @@ mod block_tests {
         let mut row = block.get_rows().next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"dd");
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
@@ -122,6 +132,8 @@ mod block_tests {
         assert_eq!(rows.next().unwrap().next().unwrap(), b"c");
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
@@ -133,6 +145,8 @@ mod block_tests {
                 buf.copy_from_slice(b"a");
             }
         }
+
+        STORAGE_MANAGER.delete_block(block.id);
     }
 
     fn insert_row(row: &[&[u8]], block: &BlockReference) {
