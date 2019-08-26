@@ -1,13 +1,12 @@
 use std::io::Cursor;
-use std::iter::{FromIterator, StepBy, Take, Zip};
-use std::ops::{Range, RangeFrom};
+use std::iter::FromIterator;
 use std::slice;
+use std::sync::{Mutex, MutexGuard};
 
 use bit_vec::BitVec;
 use memmap::MmapMut;
 
 use hustle_types::{Bits, HustleType};
-use std::sync::{MutexGuard, Mutex};
 
 pub struct RowMask {
     bits: BitVec
@@ -21,6 +20,7 @@ struct Header {
 
 struct Metadata {
     n_rows: Mutex<usize>,
+    n_cols: usize,
     row_cap: usize,
     col_offsets: Vec<usize>,
     bits_type: Bits,
@@ -36,20 +36,46 @@ impl<'a> InsertGuard<'a> {
         *self.n_rows == self.block.metadata.row_cap
     }
 
-    pub fn insert_row(&mut self) -> RowIterMut {
-        let (row_i, _) = self.block.get_valid()
-            .zip(self.block.get_ready())
+    pub fn insert_row(&mut self) -> impl Iterator<Item = &mut [u8]> {
+        // Find the index of the first row with the state (!valid, ready).
+        let (row_i, _) = self.block.get_valid_flag_for_rows()
+            .zip(self.block.get_ready_flag_for_rows())
             .enumerate()
-            .find(|&(_, (valid, ready))| valid && ready)
-            .unwrap();
+            .find(|&(_, (valid, ready))| !valid && ready)
+            .expect("Cannot insert a row into a full block");
 
+        // Increment the number of rows.
         *self.n_rows += 1;
-        RowIterMut::new(row_i, self.block)
+
+        // Set the row state to (valid, ready).
+        self.block.set_valid_flag_for_row(row_i, true);
+
+        // Return an iterator over mutable references to the buffers of this row.
+        self.block.get_row_mut(row_i)
     }
 
-    pub fn insert_rows(&mut self) -> RowMajorIterMut {
-        let mask = self.block.get_valid_ready_mask(|valid, ready| !valid && ready);
-        RowMajorIterMut::new(mask, self.block)
+    pub fn into_insert_rows(mut self) -> impl Iterator<Item = impl Iterator<Item = &'a mut [u8]>> {
+        // Build a mask where the "on" bits represent the indices of the rows with state
+        // (!valid, ready).
+        let bits = BitVec::from_iter(
+            self.block.get_valid_flag_for_rows()
+                .zip(self.block.get_ready_flag_for_rows())
+                .map(|(valid, ready)| !valid && ready)
+        );
+        let mask = RowMask { bits };
+
+        // Iterate over the rows with this mask.
+        self.block.get_rows_with_mask_mut(mask)
+            .map(move |(row_i, row)| {
+                // Increment the number of rows.
+                *self.n_rows += 1;
+
+                // Set the row state to (valid, ready).
+                self.block.set_valid_flag_for_row(row_i, true);
+
+                // Return an iterator over mutable references to the buffers of this row.
+                row
+            })
     }
 }
 
@@ -72,7 +98,11 @@ impl ColumnMajorBlock {
             cursor.position() as usize
         };
 
-        Self::with_header(header, data_offset, mmap)
+        let block = Self::with_header(header, data_offset, mmap);
+
+        block.delete_rows();
+
+        block
     }
 
     pub fn from_buf(mut mmap: MmapMut) -> Self {
@@ -86,6 +116,9 @@ impl ColumnMajorBlock {
     }
 
     fn with_header(mut header: Header, data_offset: usize, mut mmap: MmapMut) -> Self {
+        let n_rows = Mutex::new(0);
+        let n_cols = header.col_sizes.len();
+
         let (data, data_len) = {
             let data = &mut mmap[data_offset..];
             (data.as_mut_ptr(), data.len())
@@ -110,7 +143,8 @@ impl ColumnMajorBlock {
             .collect::<Vec<usize>>();
 
         let metadata = Metadata {
-            n_rows: Mutex::new(0),
+            n_rows,
+            n_cols,
             row_cap,
             col_offsets,
             bits_type,
@@ -124,243 +158,149 @@ impl ColumnMajorBlock {
         }
     }
 
-    pub fn get_rows(&self) -> RowMajorIter {
-        let mask = self.get_valid_ready_mask(|valid, ready| valid && ready);
-        RowMajorIter::new(mask, self)
+    pub fn get_rows(&self) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> {
+        let bits = BitVec::from_iter(
+            self.get_valid_flag_for_rows()
+                .zip(self.get_ready_flag_for_rows())
+                .map(|(valid, ready)| valid && ready)
+        );
+        let mask = RowMask { bits };
+
+        self.get_rows_with_mask(mask)
     }
 
-    pub fn get_rows_with_mask(&self, mask: RowMask) -> RowMajorIter {
-        RowMajorIter::new(mask, self)
+    pub fn get_rows_with_mask(
+        &self,
+        mask: RowMask,
+    ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> {
+        self.get_rows_with_mask_mut(mask)
+            .map(|(_, row)| row.map(|buf| &buf[..]))
     }
 
     pub fn delete_rows(&self) {
-        for buf in ColIter::new(self.header.col_sizes.len(), self) {
-            self.metadata.bits_type.set(self.valid_flag_i(), false, buf);
-            *self.metadata.n_rows.lock().unwrap() -= 1;
-        }
+        self.set_valid_flag_for_rows(false);
+        self.set_ready_flag_for_rows(true);
+        *self.metadata.n_rows.lock().unwrap() = 0;
     }
 
     pub fn delete_rows_with_mask(&self, mask: RowMask) {
-        for (buf, _) in ColIter::new(self.header.col_sizes.len(), self)
-            .zip(mask.bits.iter())
-            .filter(|&(_, bit)| bit)
-        {
-            self.metadata.bits_type.set(self.valid_flag_i(), false, buf);
+        let row_is = mask.bits.iter()
+            .enumerate()
+            .filter(|&(_, bit)| bit);
+
+        for (row_i, _) in row_is {
+            self.set_valid_flag_for_row(row_i, false);
+            self.set_ready_flag_for_row(row_i, true);
             *self.metadata.n_rows.lock().unwrap() -= 1;
         }
     }
 
     pub fn update_col(&self, col_i: usize, value: &[u8]) {
-        for buf in ColIter::new(col_i, self) {
+        for buf in self.get_col_mut(col_i) {
             buf.copy_from_slice(value);
         }
     }
 
     pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: RowMask) {
-        for (buf, _) in ColIter::new(col_i, self)
+        let bufs = self.get_col_mut(col_i)
             .zip(mask.bits.iter())
-            .filter(|&(_, bit)| bit)
-        {
+            .filter(|&(_, bit)| bit);
+
+        for (buf, _) in bufs {
             buf.copy_from_slice(value);
         }
     }
 
     pub fn filter_col(&self, col_i: usize, f: impl Fn(&[u8]) -> bool) -> RowMask {
         let bits = BitVec::from_iter(
-            self.get_valid()
-                .zip(self.get_ready())
-                .zip(ColIter::new(col_i, self))
+            self.get_valid_flag_for_rows()
+                .zip(self.get_ready_flag_for_rows())
+                .zip(self.get_col_mut(col_i))
                 .map(|((valid, ready), buf)| valid && ready && f(buf))
         );
 
         RowMask { bits }
     }
 
-    pub fn lock_insert(&self) -> InsertGuard {
+    pub fn get_insert_guard(&self) -> InsertGuard {
         InsertGuard { n_rows: self.metadata.n_rows.lock().unwrap(), block: self }
     }
 
-    fn get_valid(&self) -> FlagIter {
-        FlagIter::new(self.valid_flag_i(), self)
+    fn get_row_col_mut(&self, row_i: usize, col_i: usize) -> &mut [u8] {
+        let col_offset = self.metadata.col_offsets[col_i];
+        let col_size = self.header.col_sizes[col_i];
+        let offset = col_offset + row_i * col_size;
+        unsafe { slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size) }
     }
 
-    fn get_ready(&self) -> FlagIter {
-        FlagIter::new(self.ready_flag_i(), self)
+    fn get_row_mut(&self, row_i: usize) -> impl Iterator<Item = &mut [u8]> {
+        (0..self.metadata.n_cols)
+            .map(move |col_i| self.get_row_col_mut(row_i, col_i))
     }
 
-    fn valid_flag_i(&self) -> usize {
-        self.header.n_flags
-    }
-
-    fn ready_flag_i(&self) -> usize {
-        self.header.n_flags + 1
-    }
-
-    fn get_valid_ready_mask(&self, f: impl Fn(bool, bool) -> bool) -> RowMask {
-        let bits = BitVec::from_iter(
-            self.get_valid()
-                .zip(self.get_ready())
-                .map(|(valid, ready)| f(valid, ready))
-        );
-
-        RowMask { bits }
-    }
-}
-
-pub struct RowIterMut<'a> {
-    row_i: usize,
-    inner: Zip<slice::Iter<'a, usize>, slice::Iter<'a, usize>>,
-    block: &'a ColumnMajorBlock,
-}
-
-impl<'a> RowIterMut<'a> {
-    fn new(row_i: usize, block: &'a ColumnMajorBlock) -> Self {
-        let inner = block.metadata.col_offsets.iter().zip(&block.header.col_sizes);
-        RowIterMut {
-            row_i,
-            inner,
-            block,
-        }
-    }
-}
-
-impl<'a> Iterator for RowIterMut<'a> {
-    type Item = &'a mut [u8];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-            .map(move |(&col_offset, &col_size)| {
-                let offset = col_offset + self.row_i * col_size;
-                unsafe {
-                    slice::from_raw_parts_mut(self.block.data.offset(offset as isize), col_size)
-                }
-            })
-    }
-}
-
-pub struct RowIter<'a> {
-    inner: RowIterMut<'a>,
-}
-
-impl<'a> RowIter<'a> {
-    fn new(row_i: usize, block: &'a ColumnMajorBlock) -> Self {
-        let inner = RowIterMut::new(row_i, block);
-        RowIter {
-            inner,
-        }
-    }
-}
-
-impl<'a> Iterator for RowIter<'a> {
-    type Item = &'a [u8];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|v| &v[..])
-    }
-}
-
-pub struct ColIter<'a> {
-    inner: Take<StepBy<RangeFrom<usize>>>,
-    col_size: usize,
-    block: &'a ColumnMajorBlock,
-}
-
-impl<'a> ColIter<'a> {
-    fn new(col_i: usize, block: &'a ColumnMajorBlock) -> Self {
-        let col_size = block.header.col_sizes[col_i];
-        let inner = (block.metadata.col_offsets[col_i]..)
+    fn get_col_mut(&self, col_i: usize) -> impl Iterator<Item = &mut [u8]> {
+        let col_offset = self.metadata.col_offsets[col_i];
+        let col_size = self.header.col_sizes[col_i];
+        (col_offset..)
             .step_by(col_size)
-            .take(block.metadata.row_cap);
-
-        ColIter {
-            inner,
-            col_size,
-            block,
-        }
-    }
-}
-
-impl<'a> Iterator for ColIter<'a> {
-    type Item = &'a mut [u8];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-            .map(|offset| unsafe {
-                slice::from_raw_parts_mut(self.block.data.offset(offset as isize), self.col_size)
+            .take(self.metadata.row_cap)
+            .map(move |offset| unsafe {
+                slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size)
             })
     }
-}
 
-pub struct FlagIter<'a> {
-    inner: ColIter<'a>,
-    flag_i: usize,
-    block: &'a ColumnMajorBlock,
-}
+    fn get_rows_with_mask_mut(
+        &self,
+        mask: RowMask,
+    ) -> impl Iterator<Item = (usize, impl Iterator<Item = &mut [u8]>)> {
+        (0..self.metadata.row_cap)
+            .zip(mask.bits.into_iter())
+            .filter(|&(_, bit)| bit)
+            .map(move |(row_i, _)| (row_i, self.get_row_mut(row_i)))
+    }
 
-impl<'a> FlagIter<'a> {
-    fn new(flag_i: usize, block: &'a ColumnMajorBlock) -> Self {
-        let inner = ColIter::new(block.header.col_sizes.len(), block);
-        FlagIter {
-            inner,
-            flag_i,
-            block,
+    fn get_flag_for_row(&self, flag_i: usize, row_i: usize) -> bool {
+        let buf = self.get_row_col_mut(row_i, self.metadata.n_cols);
+        self.metadata.bits_type.get(flag_i, buf)
+    }
+
+    fn set_flag_for_row(&self, flag_i: usize, row_i: usize, val: bool) {
+        let buf = self.get_row_col_mut(row_i, self.metadata.n_cols);
+        self.metadata.bits_type.set(flag_i, val, buf)
+    }
+
+    fn set_valid_flag_for_row(&self, row_i: usize, val: bool) {
+        self.set_flag_for_row(self.header.n_flags, row_i, val);
+    }
+
+    fn set_ready_flag_for_row(&self, row_i: usize, val: bool) {
+        self.set_flag_for_row(self.header.n_flags + 1, row_i, val);
+    }
+
+    fn get_flag_for_rows<'a>(&'a self, flag_i: usize) -> impl Iterator<Item = bool> + 'a {
+        (0..self.metadata.row_cap)
+            .map(move |row_i| self.get_flag_for_row(flag_i, row_i))
+    }
+
+    fn set_flag_for_rows(&self, flag_i: usize, val: bool) {
+        for row_i in 0..self.metadata.row_cap {
+            self.set_flag_for_row(flag_i, row_i, val)
         }
     }
-}
 
-impl<'a> Iterator for FlagIter<'a> {
-    type Item = bool;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next().map(|buf| self.block.metadata.bits_type.get(self.flag_i, buf))
+    fn get_valid_flag_for_rows<'a>(&'a self) -> impl Iterator<Item = bool> + 'a {
+        self.get_flag_for_rows(self.header.n_flags)
     }
-}
 
-pub struct RowMajorIter<'a> {
-    inner: RowMajorIterMut<'a>,
-}
-
-impl<'a> RowMajorIter<'a> {
-    fn new(mask: RowMask, block: &'a ColumnMajorBlock) -> Self {
-        let inner = RowMajorIterMut::new(mask, block);
-        RowMajorIter {
-            inner,
-        }
+    fn get_ready_flag_for_rows<'a>(&'a self) -> impl Iterator<Item = bool> + 'a {
+        self.get_flag_for_rows(self.header.n_flags + 1)
     }
-}
 
-impl<'a> Iterator for RowMajorIter<'a> {
-    type Item = RowIter<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
+    fn set_valid_flag_for_rows(&self, val: bool) {
+        self.set_flag_for_rows(self.header.n_flags, val);
     }
-}
 
-pub struct RowMajorIterMut<'a> {
-    inner: Zip<Range<usize>, bit_vec::IntoIter>,
-    block: &'a ColumnMajorBlock,
-}
-
-impl<'a> RowMajorIterMut<'a> {
-    fn new(mask: RowMask, block: &'a ColumnMajorBlock) -> Self {
-        let inner = (0..block.metadata.row_cap).zip(mask.bits.into_iter());
-        RowMajorIterMut {
-            inner,
-            block,
-        }
-    }
-}
-
-impl<'a> Iterator for RowMajorIterMut<'a> {
-    type Item = RowIter<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while let Some((row_i, bit)) = self.inner.next() {
-            if bit {
-                return Some(RowIter::new(row_i, self.block))
-            }
-        }
-        None
+    fn set_ready_flag_for_rows(&self, val: bool) {
+        self.set_flag_for_rows(self.header.n_flags + 1, val);
     }
 }

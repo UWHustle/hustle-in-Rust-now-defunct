@@ -30,7 +30,6 @@ impl Char {
             // Long strings are truncated.
             buf.clone_from_slice(val[..self.len].as_bytes());
         }
-
     }
 }
 

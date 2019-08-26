@@ -15,14 +15,14 @@ mod storage_manager_tests {
 
     #[test]
     fn create_block() {
-        let block_id = STORAGE_MANAGER.create_block(&[1]).id;
+        let block_id = STORAGE_MANAGER.create_block(vec![1], 0).id;
         assert!(STORAGE_MANAGER.get_block(block_id).is_some());
         STORAGE_MANAGER.delete_block(block_id);
     }
 
     #[test]
     fn delete_block() {
-        let block_id = STORAGE_MANAGER.create_block(&[1]).id;
+        let block_id = STORAGE_MANAGER.create_block(vec![1], 0).id;
         STORAGE_MANAGER.delete_block(block_id);
         assert!(STORAGE_MANAGER.get_block(block_id).is_none());
     }

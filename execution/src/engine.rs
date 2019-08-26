@@ -89,6 +89,23 @@ impl ExecutionEngine {
         match plan {
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
+            Plan::Insert { into_table, values } => {
+                let columns = into_table.columns;
+                let literals = values.into_iter()
+                    .map(|expression| {
+                        if let Expression::Literal { literal } = expression {
+                            literal
+                        } else {
+                            panic!("Only inserts of literals are supported");
+                        }
+                    })
+                    .collect();
+                let router = BlockPoolDestinationRouter::with_block_ids(
+                    into_table.block_ids,
+                    columns.clone(),
+                );
+                Box::new(Insert::new(columns, literals, router))
+            },
             Plan::Query { query } => {
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
@@ -101,17 +118,17 @@ impl ExecutionEngine {
 
     fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
         match query.operator {
-//            QueryOperator::TableReference { table } => {
-//                operators.push(Box::new(TableReference::new(table, block_tx)));
-//            },
-//            QueryOperator::Project { input, cols } => {
-//                let (child_block_tx, block_rx) = mpsc::channel();
-//                Self::compile_query(*input, child_block_tx, operators);
-//
-//                let router = storage_util::new_destination_router(&query.output);
-//                let project = Project::new(block_rx, block_tx, router, cols);
-//                operators.push(Box::new(project));
-//            },
+            QueryOperator::TableReference { table } => {
+                operators.push(Box::new(TableReference::new(table, block_tx)));
+            },
+            QueryOperator::Project { input, cols } => {
+                let (child_block_tx, block_rx) = mpsc::channel();
+                Self::compile_query(*input, child_block_tx, operators);
+
+                let router = BlockPoolDestinationRouter::new(query.output);
+                let project = Project::new(block_rx, block_tx, router, cols);
+                operators.push(Box::new(project));
+            },
 //            QueryOperator::Select { input, filter } => {
 //                let (child_block_tx, block_rx) = mpsc::channel();
 //                Self::compile_query(*input, child_block_tx, operators);
