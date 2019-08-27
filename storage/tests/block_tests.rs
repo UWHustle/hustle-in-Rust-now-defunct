@@ -14,7 +14,7 @@ mod block_tests {
     }
 
     #[test]
-    fn get_rows() {
+    fn project() {
         let block: BlockReference = STORAGE_MANAGER.create_block(vec![1, 2], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
@@ -26,17 +26,26 @@ mod block_tests {
             insert_row(row, &block);
         }
 
-        for (row, expected_row) in block.get_rows().zip(&rows) {
+        for (row, expected_row) in block.project(&[0, 1]).zip(&rows) {
             for (val, &expected_val) in row.zip(expected_row.iter()) {
                 assert_eq!(val, expected_val);
             }
         }
 
+        let mut projection = block.project(&[1]);
+        let mut row = projection.next().unwrap();
+        assert_eq!(row.next().unwrap(), b"bb");
+
+        row = projection.next().unwrap();
+        assert_eq!(row.next().unwrap(), b"dd");
+
+        assert!(projection.next().is_none());
+
         STORAGE_MANAGER.delete_block(block.id);
     }
 
     #[test]
-    fn get_rows_with_mask() {
+    fn project_with_mask() {
         let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
@@ -49,7 +58,7 @@ mod block_tests {
         }
 
         let mask = block.filter_col(0, |buf| buf == b"b");
-        let mut rows = block.get_rows_with_mask(mask);
+        let mut rows = block.project_with_mask(&[0], mask);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
@@ -64,7 +73,7 @@ mod block_tests {
         insert_row(&[b"a"], &block);
         block.delete_rows();
 
-        assert!(block.get_rows().next().is_none());
+        assert!(block.project(&[0]).next().is_none());
 
         STORAGE_MANAGER.delete_block(block.id);
     }
@@ -84,7 +93,7 @@ mod block_tests {
 
         let mask = block.filter_col(0, |buf| buf == b"a");
         block.delete_rows_with_mask(mask);
-        let mut rows = block.get_rows();
+        let mut rows = block.project(&[0]);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
@@ -99,13 +108,13 @@ mod block_tests {
         insert_row(&[b"a", b"bb"], &block);
         block.update_col(0, b"c");
 
-        let mut row = block.get_rows().next().unwrap();
+        let mut row = block.project(&[0, 1]).next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"bb");
 
         block.update_col(1, b"dd");
 
-        let mut row = block.get_rows().next().unwrap();
+        let mut row = block.project(&[0, 1]).next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"dd");
 
@@ -127,7 +136,7 @@ mod block_tests {
 
         let mask = block.filter_col(0, |buf| buf == b"a");
         block.update_col_with_mask(0, b"c", mask);
-        let mut rows = block.get_rows();
+        let mut rows = block.project(&[0]);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"c");
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
@@ -140,7 +149,7 @@ mod block_tests {
     fn insert_rows() {
         let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
 
-        for row in block.get_insert_guard().into_insert_rows() {
+        for row in block.insert_guard().into_insert_rows() {
             for buf in row {
                 buf.copy_from_slice(b"a");
             }
@@ -150,7 +159,7 @@ mod block_tests {
     }
 
     fn insert_row(row: &[&[u8]], block: &BlockReference) {
-        for (insert_buf, buf) in block.get_insert_guard().insert_row().zip(row.iter()) {
+        for (insert_buf, buf) in block.insert_guard().insert_row().zip(row.iter()) {
             insert_buf.copy_from_slice(buf);
         }
     }

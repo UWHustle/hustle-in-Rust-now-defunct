@@ -33,15 +33,17 @@ impl Catalog {
         self.tables.read().unwrap().contains(name)
     }
 
+    pub fn get_table(&self, name: &str) -> Option<Table> {
+        self.tables.read().unwrap().get(name).map(|t| t.clone())
+    }
+
     pub fn create_table(&self, table: Table) -> Result<(), String> {
-        let mut tables = self.tables.write().unwrap();
-        tables.insert(table);
+        self.tables.write().unwrap().insert(table);
         self.flush()
     }
 
     pub fn drop_table(&self, name: &str) -> Result<(), String> {
-        let mut tables = self.tables.write().unwrap();
-        tables.remove(name);
+        self.tables.write().unwrap().remove(name);
         self.flush()
     }
 

@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use hustle_catalog::{Catalog, Table};
 use hustle_storage::StorageManager;
 

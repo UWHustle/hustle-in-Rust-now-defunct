@@ -26,9 +26,10 @@ impl ExecutionEngine {
     }
 
     pub fn execute_plan(&self, plan: Plan) -> Result<Option<Table>, String> {
-        let operator_tree = Self::compile_plan(plan);
-        operator_tree.execute(&self.storage_manager, &self.catalog);
-        Ok(None)
+        let operator = Self::compile_plan(plan);
+        operator.execute(&self.storage_manager, &self.catalog);
+        let table = operator.downcast_ref::<Collect>().map(|collect| collect.get_table());
+        Ok(table)
     }
 
     pub fn listen(
@@ -55,7 +56,7 @@ impl ExecutionEngine {
                             // Send each row of the result.
                             for &block_id in &relation.block_ids {
                                 let block = self.storage_manager.get_block(block_id).unwrap();
-                                for row in block.get_rows() {
+                                for row in block.rows() {
                                     completed_tx.send(Message::ReturnRow {
                                         row: row.map(|value| value.to_vec()).collect(),
                                         connection_id,
@@ -107,10 +108,11 @@ impl ExecutionEngine {
                 Box::new(Insert::new(columns, literals, router))
             },
             Plan::Query { query } => {
+                let cols = query.output.clone();
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
                 Self::compile_query(query, block_tx, &mut operators);
-                Box::new(Collect::new(block_rx, operators))
+                Box::new(Collect::new(block_rx, operators, cols))
             },
             _ => panic!("Unsupported plan: {:?}", plan),
         }

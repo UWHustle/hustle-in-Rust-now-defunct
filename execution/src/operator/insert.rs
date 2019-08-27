@@ -1,7 +1,7 @@
 use hustle_catalog::{Catalog, Column};
 use hustle_common::plan::Literal;
 use hustle_storage::StorageManager;
-use hustle_types::{Char, Int64, TypeVariant, HustleType};
+use hustle_types::{HustleType, TypeVariant};
 
 use crate::operator::Operator;
 use crate::router::BlockPoolDestinationRouter;
@@ -25,7 +25,7 @@ impl Insert {
 impl Operator for Insert {
     fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
         let block = self.router.get_block(storage_manager);
-        let mut insert_guard = block.lock_insert();
+        let mut insert_guard = block.insert_guard();
         for ((column, literal), buf) in self.columns.iter().zip(&self.literals).zip(insert_guard.insert_row()) {
             let type_variant = column.get_type_variant();
             match literal {

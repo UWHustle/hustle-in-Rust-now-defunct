@@ -158,7 +158,10 @@ impl ColumnMajorBlock {
         }
     }
 
-    pub fn get_rows(&self) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> {
+    pub fn project<'a>(
+        &'a self,
+        cols: &'a [usize]
+    ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> + 'a {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
@@ -166,15 +169,20 @@ impl ColumnMajorBlock {
         );
         let mask = RowMask { bits };
 
-        self.get_rows_with_mask(mask)
+        self.project_with_mask(cols, mask)
     }
 
-    pub fn get_rows_with_mask(
-        &self,
+    pub fn project_with_mask<'a>(
+        &'a self,
+        cols: &'a [usize],
         mask: RowMask,
-    ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> {
-        self.get_rows_with_mask_mut(mask)
-            .map(|(_, row)| row.map(|buf| &buf[..]))
+    ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> + 'a {
+        (0..self.metadata.row_cap)
+            .zip(mask.bits.into_iter())
+            .filter(|&(_, bit)| bit)
+            .map(move |(row_i, _)|
+                cols.iter().map(move |&col_i| self.get_row_col(row_i, col_i))
+            )
     }
 
     pub fn delete_rows(&self) {
@@ -222,7 +230,7 @@ impl ColumnMajorBlock {
         RowMask { bits }
     }
 
-    pub fn get_insert_guard(&self) -> InsertGuard {
+    pub fn insert_guard(&self) -> InsertGuard {
         InsertGuard { n_rows: self.metadata.n_rows.lock().unwrap(), block: self }
     }
 
@@ -231,6 +239,10 @@ impl ColumnMajorBlock {
         let col_size = self.header.col_sizes[col_i];
         let offset = col_offset + row_i * col_size;
         unsafe { slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size) }
+    }
+
+    fn get_row_col(&self, row_i: usize, col_i: usize) -> &[u8] {
+        &self.get_row_col_mut(row_i, col_i)[..]
     }
 
     fn get_row_mut(&self, row_i: usize) -> impl Iterator<Item = &mut [u8]> {

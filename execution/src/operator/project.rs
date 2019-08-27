@@ -31,6 +31,10 @@ impl Project {
 
 impl Operator for Project {
     fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
-        unimplemented!()
+        let output_block = self.router.get_block(storage_manager);
+        for input_block_id in self.block_rx {
+            let input_block = storage_manager.get_block(input_block_id).unwrap();
+
+        }
     }
 }
