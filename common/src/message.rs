@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use hustle_catalog::Column;
 use crate::plan::Plan;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Message {
     CloseConnection { connection_id: u64 },
     ExecuteSql { sql: String },

@@ -32,7 +32,7 @@ mod drop_table_tests {
         let storage_manager = StorageManager::new();
         let catalog = Catalog::new();
         let table = Table::new("drop_table".to_owned(), vec![], vec![]);
-        catalog.create_table(table.clone());
+        catalog.create_table(table.clone()).unwrap();
         DropTable::new(table).execute(&storage_manager, &catalog);
         assert!(!catalog.table_exists("drop_table"))
     }

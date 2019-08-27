@@ -15,7 +15,7 @@ pub mod bits;
 pub mod char;
 pub mod primitive;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TypeVariant {
     Bool(Bool),
     Int8(Int8),

@@ -4,7 +4,7 @@ use crate::{CompareEq, CompareOrd, HustleType};
 
 macro_rules! make_primitive_type {
     ($name:ident, $primitive_ty:ty) => {
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Serialize, Deserialize)]
         pub struct $name;
 
         impl $name {
