@@ -89,22 +89,12 @@ impl ExecutionEngine {
         match plan {
             Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
             Plan::DropTable { table } => Box::new(DropTable::new(table)),
-            Plan::Insert { into_table, values } => {
-                let columns = into_table.columns;
-                let literals = values.into_iter()
-                    .map(|expression| {
-                        if let Expression::Literal { literal } = expression {
-                            literal
-                        } else {
-                            panic!("Only inserts of literals are supported");
-                        }
-                    })
-                    .collect();
+            Plan::Insert { into_table, bufs } => {
                 let router = BlockPoolDestinationRouter::with_block_ids(
                     into_table.block_ids,
-                    columns.clone(),
+                    into_table.columns,
                 );
-                Box::new(Insert::new(columns, literals, router))
+                Box::new(Insert::new(bufs, router))
             },
             Plan::Query { query } => {
                 let cols = query.output.clone();
@@ -144,7 +134,7 @@ impl ExecutionEngine {
         }
     }
 
-    fn compile_filter(filter: Expression) -> Box<dyn Fn(&BlockReference) -> RowMask> {
+    fn compile_filter(_filter: Expression) -> Box<dyn Fn(&BlockReference) -> RowMask> {
         unimplemented!()
     }
 }

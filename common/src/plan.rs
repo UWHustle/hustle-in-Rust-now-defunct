@@ -15,7 +15,7 @@ pub enum Plan {
     },
     Insert {
         into_table: Table,
-        values: Vec<Expression>,
+        bufs: Vec<Vec<u8>>,
     },
     Delete {
         from_table: Table,

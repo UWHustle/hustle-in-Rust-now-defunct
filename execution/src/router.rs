@@ -1,5 +1,4 @@
-use std::ops::Deref;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use hustle_catalog::Column;
 use hustle_storage::block::BlockReference;
@@ -36,11 +35,11 @@ impl BlockPoolDestinationRouter {
             .unwrap_or(storage_manager.create_block(self.col_sizes.clone(), 0))
     }
 
-    pub fn return_block(&self, block: BlockReference) {
+    pub fn _return_block(&self, block: BlockReference) {
         self.unfilled_blocks.lock().unwrap().push(block);
     }
 
-    pub fn get_block_ids(&self) -> Vec<u64> {
+    pub fn _get_block_ids(&self) -> Vec<u64> {
         let mut block_ids = self.available_block_ids.lock().unwrap().clone();
         block_ids.extend(self.unfilled_blocks.lock().unwrap().iter().map(|block| block.id));
         block_ids

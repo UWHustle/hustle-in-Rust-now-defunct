@@ -1,14 +1,11 @@
 use std::sync::mpsc::{Receiver, Sender};
 
-use bit_vec::BitVec;
-
 use hustle_catalog::Catalog;
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
 use crate::operator::Operator;
 use crate::router::BlockPoolDestinationRouter;
-use std::iter::Peekable;
 
 pub struct Select {
     cols: Vec<usize>,
@@ -37,7 +34,7 @@ impl Select {
 
     fn send_rows<'a>(
         &self,
-        mut rows: impl Iterator<Item = impl Iterator<Item = &'a [u8]>>,
+        rows: impl Iterator<Item = impl Iterator<Item = &'a [u8]>>,
         output_block: &mut BlockReference,
         storage_manager: &StorageManager,
     ) {
@@ -56,7 +53,6 @@ impl Select {
 impl Operator for Select {
     fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
         let mut output_block = self.router.get_block(storage_manager);
-        let cols = (0..output_block.n_cols()).collect::<Vec<usize>>();
 
         for input_block_id in &self.block_rx {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
