@@ -1,27 +1,29 @@
-use crate::operator::Operator;
 use std::sync::mpsc::Receiver;
-use hustle_storage::StorageManager;
 use std::sync::Mutex;
+
 use hustle_catalog::{Catalog, Column, Table};
+use hustle_storage::StorageManager;
+
+use crate::operator::Operator;
 
 pub struct Collect {
-    block_rx: Receiver<u64>,
     operators: Vec<Box<dyn Operator>>,
     cols: Vec<Column>,
     block_ids: Mutex<Vec<u64>>,
+    block_rx: Receiver<u64>,
 }
 
 impl Collect {
     pub fn new(
-        block_rx: Receiver<u64>,
         operators: Vec<Box<dyn Operator>>,
         cols: Vec<Column>,
+        block_rx: Receiver<u64>,
     ) -> Self {
         Collect {
-            block_rx,
             operators,
             cols,
             block_ids: Mutex::new(Vec::new()),
+            block_rx,
         }
     }
 

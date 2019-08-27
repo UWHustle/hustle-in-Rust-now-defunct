@@ -1,15 +1,13 @@
 use std::sync::{Arc, mpsc};
 use std::sync::mpsc::{Receiver, Sender};
 
-use bit_vec::BitVec;
-
 use hustle_catalog::{Catalog, Table};
 use hustle_common::message::Message;
 use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
-use hustle_storage::block::BlockReference;
+use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Insert, Operator, Project, Select, TableReference};
+use crate::operator::{Collect, CreateTable, DropTable, Insert, Operator, Select, TableReference};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
@@ -56,7 +54,8 @@ impl ExecutionEngine {
                             // Send each row of the result.
                             for &block_id in &relation.block_ids {
                                 let block = self.storage_manager.get_block(block_id).unwrap();
-                                for row in block.rows() {
+                                let cols = (0..relation.columns.len()).collect::<Vec<usize>>();
+                                for row in block.project(&cols) {
                                     completed_tx.send(Message::ReturnRow {
                                         row: row.map(|value| value.to_vec()).collect(),
                                         connection_id,
@@ -112,7 +111,7 @@ impl ExecutionEngine {
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
                 Self::compile_query(query, block_tx, &mut operators);
-                Box::new(Collect::new(block_rx, operators, cols))
+                Box::new(Collect::new(operators, cols, block_rx))
             },
             _ => panic!("Unsupported plan: {:?}", plan),
         }
@@ -128,23 +127,24 @@ impl ExecutionEngine {
                 Self::compile_query(*input, child_block_tx, operators);
 
                 let router = BlockPoolDestinationRouter::new(query.output);
-                let project = Project::new(block_rx, block_tx, router, cols);
+                let project = Select::new(cols, None, router, block_rx, block_tx);
                 operators.push(Box::new(project));
             },
-//            QueryOperator::Select { input, filter } => {
-//                let (child_block_tx, block_rx) = mpsc::channel();
-//                Self::compile_query(*input, child_block_tx, operators);
-//
-//                let router = storage_util::new_destination_router(&query.output);
-//                let filter = Self::compile_filter(*filter);
-//                let select = Select::new(block_rx, block_tx, router, filter);
-//                operators.push(Box::new(select));
-//            },
+            QueryOperator::Select { input, filter } => {
+                let (child_block_tx, block_rx) = mpsc::channel();
+                Self::compile_query(*input, child_block_tx, operators);
+
+                let cols = (0..query.output.len()).collect::<Vec<usize>>();
+                let filter = Self::compile_filter(*filter);
+                let router = BlockPoolDestinationRouter::new(query.output);
+                let select = Select::new(cols, Some(filter), router, block_rx, block_tx);
+                operators.push(Box::new(select));
+            },
             _ => panic!("Unsupported query: {:?}", query),
         }
     }
 
-    fn compile_filter(filter: Expression) -> Box<dyn Fn(&BlockReference) -> BitVec> {
+    fn compile_filter(filter: Expression) -> Box<dyn Fn(&BlockReference) -> RowMask> {
         unimplemented!()
     }
 }

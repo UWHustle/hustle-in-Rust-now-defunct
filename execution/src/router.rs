@@ -2,7 +2,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use hustle_catalog::Column;
-use hustle_storage::block::{BlockReference, InsertGuard};
+use hustle_storage::block::BlockReference;
 use hustle_storage::StorageManager;
 
 pub struct BlockPoolDestinationRouter {

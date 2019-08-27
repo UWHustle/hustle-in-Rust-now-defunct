@@ -1,4 +1,4 @@
-pub use self::column_major::{ColumnMajorBlock, InsertGuard};
+pub use self::column_major::{ColumnMajorBlock, RowMask};
 pub use self::reference::BlockReference;
 
 mod reference;

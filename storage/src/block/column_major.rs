@@ -1,7 +1,7 @@
 use std::io::Cursor;
 use std::iter::FromIterator;
 use std::slice;
-use std::sync::{Mutex, MutexGuard};
+use std::sync::Mutex;
 
 use bit_vec::BitVec;
 use memmap::MmapMut;
@@ -24,59 +24,6 @@ struct Metadata {
     row_cap: usize,
     col_offsets: Vec<usize>,
     bits_type: Bits,
-}
-
-pub struct InsertGuard<'a> {
-    n_rows: MutexGuard<'a, usize>,
-    block: &'a ColumnMajorBlock,
-}
-
-impl<'a> InsertGuard<'a> {
-    pub fn is_full(&self) -> bool {
-        *self.n_rows == self.block.metadata.row_cap
-    }
-
-    pub fn insert_row(&mut self) -> impl Iterator<Item = &mut [u8]> {
-        // Find the index of the first row with the state (!valid, ready).
-        let (row_i, _) = self.block.get_valid_flag_for_rows()
-            .zip(self.block.get_ready_flag_for_rows())
-            .enumerate()
-            .find(|&(_, (valid, ready))| !valid && ready)
-            .expect("Cannot insert a row into a full block");
-
-        // Increment the number of rows.
-        *self.n_rows += 1;
-
-        // Set the row state to (valid, ready).
-        self.block.set_valid_flag_for_row(row_i, true);
-
-        // Return an iterator over mutable references to the buffers of this row.
-        self.block.get_row_mut(row_i)
-    }
-
-    pub fn into_insert_rows(mut self) -> impl Iterator<Item = impl Iterator<Item = &'a mut [u8]>> {
-        // Build a mask where the "on" bits represent the indices of the rows with state
-        // (!valid, ready).
-        let bits = BitVec::from_iter(
-            self.block.get_valid_flag_for_rows()
-                .zip(self.block.get_ready_flag_for_rows())
-                .map(|(valid, ready)| !valid && ready)
-        );
-        let mask = RowMask { bits };
-
-        // Iterate over the rows with this mask.
-        self.block.get_rows_with_mask_mut(mask)
-            .map(move |(row_i, row)| {
-                // Increment the number of rows.
-                *self.n_rows += 1;
-
-                // Set the row state to (valid, ready).
-                self.block.set_valid_flag_for_row(row_i, true);
-
-                // Return an iterator over mutable references to the buffers of this row.
-                row
-            })
-    }
 }
 
 pub struct ColumnMajorBlock {
@@ -158,6 +105,14 @@ impl ColumnMajorBlock {
         }
     }
 
+    pub fn n_cols(&self) -> usize {
+        self.metadata.n_cols
+    }
+
+    pub fn is_full(&self) -> bool {
+        *self.metadata.n_rows.lock().unwrap() == self.metadata.row_cap
+    }
+
     pub fn project<'a>(
         &'a self,
         cols: &'a [usize]
@@ -183,6 +138,57 @@ impl ColumnMajorBlock {
             .map(move |(row_i, _)|
                 cols.iter().map(move |&col_i| self.get_row_col(row_i, col_i))
             )
+    }
+
+    pub fn insert_row<'a>(&self, row: impl Iterator<Item = &'a [u8]>) {
+        // Acquire a lock on the row counter so no other thread can write to the same row.
+        let mut n_rows = self.metadata.n_rows.lock().unwrap();
+
+        // Find the index of the first row with the state (!valid, ready).
+        let (row_i, _) = self.get_valid_flag_for_rows()
+            .zip(self.get_ready_flag_for_rows())
+            .enumerate()
+            .find(|&(_, (valid, ready))| !valid && ready)
+            .expect("Cannot insert a row into a full block");
+
+        // Increment the number of rows.
+        *n_rows += 1;
+
+        // Set the row state to (valid, ready).
+        self.set_valid_flag_for_row(row_i, true);
+
+        // Write the data to the row.
+        for (dst_buf, src_buf) in self.get_row_mut(row_i).zip(row) {
+            dst_buf.copy_from_slice(src_buf);
+        }
+    }
+
+    pub fn insert_rows<'a>(&self, rows: &mut impl Iterator<Item = impl Iterator<Item = &'a [u8]>>) {
+        // Acquire a lock on the row counter so no other thread can write to the same rows.
+        let mut n_rows = self.metadata.n_rows.lock().unwrap();
+
+        // Build a mask where the "on" bits represent the indices of the rows with state
+        // (!valid, ready).
+        let bits = BitVec::from_iter(
+            self.get_valid_flag_for_rows()
+                .zip(self.get_ready_flag_for_rows())
+                .map(|(valid, ready)| !valid && ready)
+        );
+        let mask = RowMask { bits };
+
+        // Iterate over the rows with this mask.
+        for ((row_i, dst_row), src_row) in self.get_rows_with_mask_mut(mask).zip(rows) {
+            // Increment the number of rows.
+            *n_rows += 1;
+
+            // Set the row state to (valid, ready).
+            self.set_valid_flag_for_row(row_i, true);
+
+            // Write the data to the row.
+            for (dst_buf, src_buf) in dst_row.zip(src_row) {
+                dst_buf.copy_from_slice(src_buf);
+            }
+        }
     }
 
     pub fn delete_rows(&self) {
@@ -228,10 +234,6 @@ impl ColumnMajorBlock {
         );
 
         RowMask { bits }
-    }
-
-    pub fn insert_guard(&self) -> InsertGuard {
-        InsertGuard { n_rows: self.metadata.n_rows.lock().unwrap(), block: self }
     }
 
     fn get_row_col_mut(&self, row_i: usize, col_i: usize) -> &mut [u8] {

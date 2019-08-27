@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use hustle_catalog::{Catalog, Table};
 use hustle_storage::StorageManager;
 
@@ -22,5 +20,20 @@ impl Operator for DropTable {
         }
 
         catalog.drop_table(&self.table.name).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod drop_table_tests {
+    use super::*;
+
+    #[test]
+    fn drop_table() {
+        let storage_manager = StorageManager::new();
+        let catalog = Catalog::new();
+        let table = Table::new("drop_table".to_owned(), vec![], vec![]);
+        catalog.create_table(table.clone());
+        DropTable::new(table).execute(&storage_manager, &catalog);
+        assert!(!catalog.table_exists("drop_table"))
     }
 }

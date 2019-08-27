@@ -149,18 +149,18 @@ mod block_tests {
     fn insert_rows() {
         let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
 
-        for row in block.insert_guard().into_insert_rows() {
-            for buf in row {
-                buf.copy_from_slice(b"a");
-            }
-        }
+        let rows: Vec<Vec<&[u8]>> = vec![
+            vec![b"a"],
+            vec![b"b"],
+            vec![b"c"],
+        ];
+
+        block.insert_rows(&mut rows.iter().map(|row| row.iter().map(|&buf| buf)));
 
         STORAGE_MANAGER.delete_block(block.id);
     }
 
     fn insert_row(row: &[&[u8]], block: &BlockReference) {
-        for (insert_buf, buf) in block.insert_guard().insert_row().zip(row.iter()) {
-            insert_buf.copy_from_slice(buf);
-        }
+        block.insert_row(row.iter().map(|&buf| buf));
     }
 }
