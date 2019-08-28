@@ -124,96 +124,205 @@ pub struct AstLiteral {
     literal_type: String,
 }
 
+//#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+//pub enum Plan {
+//    Aggregate {
+//        table: Box<Plan>,
+//        aggregates: Vec<Plan>,
+//        groups: Vec<Plan>,
+//    },
+//    BeginTransaction,
+//    ColumnReference {
+//        column: Column,
+//    },
+//    CommitTransaction,
+//    Comparative {
+//        name: String,
+//        left: Box<Plan>,
+//        right: Box<Plan>,
+//    },
+//    Connective {
+//        name: String,
+//        terms: Vec<Plan>,
+//    },
+//    CreateTable {
+//        table: Table,
+//    },
+//    Delete {
+//        from_table: Table,
+//        filter: Option<Box<Plan>>,
+//    },
+//    DropTable {
+//        table: Table,
+//    },
+//    Function {
+//        name: String,
+//        arguments: Vec<Plan>,
+//        output_type: String
+//    },
+//    Insert {
+//        into_table: Table,
+//        input: Box<Plan>,
+//    },
+//    Join {
+//        l_table: Box<Plan>,
+//        r_table: Box<Plan>,
+//        filter: Option<Box<Plan>>,
+//    },
+//    Limit {
+//        table: Box<Plan>,
+//        limit: usize,
+//    },
+//    Literal {
+//        value: String,
+//        literal_type: String,
+//    },
+//    Project {
+//        table: Box<Plan>,
+//        projection: Vec<Plan>,
+//    },
+//    Row {
+//        values: Vec<Plan>,
+//    },
+//    Select {
+//        table: Box<Plan>,
+//        filter: Box<Plan>,
+//    },
+//    TableReference {
+//        table: Table,
+//    },
+//    Update {
+//        table: Table,
+//        columns: Vec<Column>,
+//        assignments: Vec<Plan>,
+//        filter: Option<Box<Plan>>,
+//    },
+//}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
-    Aggregate {
-        table: Box<Plan>,
-        aggregates: Vec<Plan>,
-        groups: Vec<Plan>,
-    },
     BeginTransaction,
-    ColumnReference {
-        column: Column,
-    },
     CommitTransaction,
-    Comparative {
-        name: String,
-        left: Box<Plan>,
-        right: Box<Plan>,
-    },
-    Connective {
-        name: String,
-        terms: Vec<Plan>,
+    Query {
+        query: Query,
     },
     CreateTable {
         table: Table,
     },
-    Delete {
-        from_table: Table,
-        filter: Option<Box<Plan>>,
-    },
     DropTable {
         table: Table,
     },
-    Function {
-        name: String,
-        arguments: Vec<Plan>,
-        output_type: String
-    },
     Insert {
         into_table: Table,
-        input: Box<Plan>,
+        values: Vec<Expression>,
     },
-    Join {
-        l_table: Box<Plan>,
-        r_table: Box<Plan>,
-        filter: Option<Box<Plan>>,
-    },
-    Limit {
-        table: Box<Plan>,
-        limit: usize,
-    },
-    Literal {
-        value: String,
-        literal_type: String,
-    },
-    Project {
-        table: Box<Plan>,
-        projection: Vec<Plan>,
-    },
-    Row {
-        values: Vec<Plan>,
-    },
-    Select {
-        table: Box<Plan>,
-        filter: Box<Plan>,
-    },
-    TableReference {
-        table: Table,
+    Delete {
+        from_table: Table,
+        filter: Option<Box<Expression>>,
     },
     Update {
         table: Table,
         columns: Vec<Column>,
-        assignments: Vec<Plan>,
-        filter: Option<Box<Plan>>,
+        assignments: Vec<Expression>,
+        filter: Option<Box<Expression>>,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Query {
+    pub operator: QueryOperator,
+//    pub output_type: Vec<String>,
+//    pub output_name: Vec<String>,
+    pub output: Vec<Column>
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum QueryOperator {
+    Aggregate {
+        input: Box<Query>,
+        aggregates: Vec<AggregateFunction>,
+        groups: Vec<Expression>,
+    },
+    Join {
+        input: Vec<Query>,
+        filter: Option<Box<Expression>>,
+    },
+    Limit {
+        input: Box<Query>,
+        limit: usize,
+    },
+    Project {
+        input: Box<Query>,
+    },
+    Select {
+        input: Box<Query>,
+        filter: Box<Expression>,
+    },
+    TableReference {
+        table: Table,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Expression {
+    Comparative {
+        variant: ComparativeVariant,
+        left: Box<Expression>,
+        right: Box<Expression>,
+    },
+    Connective {
+        variant: ConnectiveVariant,
+        terms: Vec<Expression>,
+    },
+//    Function {
+//        name: String,
+//        arguments: Vec<Expression>,
+//        output_type: String,
+//    },
+    Literal {
+        value: String,
+        literal_type: String,
+    },
+    ColumnReference {
+        table: usize,
+        column: usize,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ComparativeVariant {
+    Eq, Lt, Le, Gt, Ge
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ConnectiveVariant {
+    And, Or
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AggregateFunction {
+    pub variant: AggregateFunctionVariant,
+    pub column: Column
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AggregateFunctionVariant {
+    Avg, Count, Max, Min, Sum
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Column {
     pub name: String,
     pub column_type: String,
-    pub table: String,
-    pub alias: Option<String>,
+    pub from_table: String,
 }
 
 impl Column {
-    pub fn new(name: String, column_type: String, table: String) -> Self {
+    pub fn new(name: String, column_type: String, from_table: String) -> Self {
         Column {
             name,
             column_type,
-            table,
-            alias: None,
+            from_table,
         }
     }
 }
