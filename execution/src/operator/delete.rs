@@ -33,3 +33,43 @@ impl Operator for Delete {
         }
     }
 }
+
+#[cfg(test)]
+mod delete_tests {
+    use hustle_execution_test_util as test_util;
+    use super::*;
+    use hustle_types::Bool;
+
+    #[test]
+    fn delete() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let catalog = Catalog::new();
+        let block = test_util::example_block(&storage_manager);
+
+        let delete = Delete::new(None, vec![block.id]);
+        delete.execute(&storage_manager, &catalog);
+
+        assert!(block.project(&[0, 1, 2]).next().is_none());
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn delete_with_filter() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let catalog = Catalog::new();
+        let block = test_util::example_block(&storage_manager);
+
+        let filter = Box::new(|block: &BlockReference|
+            block.filter_col(0, |buf| Bool.get(buf))
+        );
+
+        let delete = Delete::new(Some(filter), vec![block.id]);
+        delete.execute(&storage_manager, &catalog);
+
+        assert!(block.project(&[0, 1, 2]).next().is_some());
+        assert_eq!(block.get_row_col(1, 0), None);
+
+        storage_manager.clear();
+    }
+}
