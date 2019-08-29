@@ -23,8 +23,8 @@ pub enum Plan {
     },
     Update {
         table: Table,
-        columns: Vec<Column>,
-        assignments: Vec<Expression>,
+        columns: Vec<usize>,
+        bufs: Vec<Vec<u8>>,
         filter: Option<Box<Expression>>,
     },
 }

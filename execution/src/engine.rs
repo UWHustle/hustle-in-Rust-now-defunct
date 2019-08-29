@@ -7,7 +7,7 @@ use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Insert, Operator, Select, TableReference};
+use crate::operator::{Collect, CreateTable, DropTable, Insert, Operator, Select, TableReference, Update};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
@@ -96,6 +96,10 @@ impl ExecutionEngine {
                 );
                 Box::new(Insert::new(bufs, router))
             },
+            Plan::Update { table, columns, bufs, filter } => {
+                let filter = filter.map(|f| Self::compile_filter(*f));
+                Box::new(Update::new(columns, bufs, filter, table.block_ids))
+            }
             Plan::Query { query } => {
                 let cols = query.output.clone();
                 let (block_tx, block_rx) = mpsc::channel();

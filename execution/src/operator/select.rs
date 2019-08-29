@@ -59,7 +59,7 @@ impl Operator for Select {
 
             if let Some(filter) = &self.filter {
                 let mask = (filter)(&input_block);
-                let rows = input_block.project_with_mask(&self.cols, mask);
+                let rows = input_block.project_with_mask(&self.cols, &mask);
                 self.send_rows(rows, &mut output_block, storage_manager);
             } else {
                 let rows = input_block.project(&self.cols);

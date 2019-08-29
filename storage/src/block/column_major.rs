@@ -117,23 +117,22 @@ impl ColumnMajorBlock {
         &'a self,
         cols: &'a [usize]
     ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> + 'a {
-        let bits = BitVec::from_iter(
-            self.get_valid_flag_for_rows()
-                .zip(self.get_ready_flag_for_rows())
-                .map(|(valid, ready)| valid && ready)
-        );
-        let mask = RowMask { bits };
-
-        self.project_with_mask(cols, mask)
+        (0..self.metadata.row_cap)
+            .zip(self.get_valid_flag_for_rows())
+            .zip(self.get_ready_flag_for_rows())
+            .filter(|&((_, valid), ready)| valid && ready)
+            .map(move | ((row_i, _), _)|
+                cols.iter().map(move |&col_i| self.get_row_col(row_i, col_i))
+            )
     }
 
     pub fn project_with_mask<'a>(
         &'a self,
         cols: &'a [usize],
-        mask: RowMask,
+        mask: &'a RowMask,
     ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> + 'a {
         (0..self.metadata.row_cap)
-            .zip(mask.bits.into_iter())
+            .zip(mask.bits.iter())
             .filter(|&(_, bit)| bit)
             .map(move |(row_i, _)|
                 cols.iter().map(move |&col_i| self.get_row_col(row_i, col_i))
@@ -197,7 +196,7 @@ impl ColumnMajorBlock {
         *self.metadata.n_rows.lock().unwrap() = 0;
     }
 
-    pub fn delete_rows_with_mask(&self, mask: RowMask) {
+    pub fn delete_rows_with_mask(&self, mask: &RowMask) {
         let row_is = mask.bits.iter()
             .enumerate()
             .filter(|&(_, bit)| bit);
@@ -215,7 +214,7 @@ impl ColumnMajorBlock {
         }
     }
 
-    pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: RowMask) {
+    pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: &RowMask) {
         let bufs = self.get_col_mut(col_i)
             .zip(mask.bits.iter())
             .filter(|&(_, bit)| bit);
