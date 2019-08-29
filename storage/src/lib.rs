@@ -4,6 +4,7 @@ extern crate bit_vec;
 extern crate hustle_types;
 #[macro_use]
 extern crate serde;
+extern crate uuid;
 
 pub use storage_manager::StorageManager;
 

@@ -29,11 +29,16 @@ mod drop_table_tests {
 
     #[test]
     fn drop_table() {
-        let storage_manager = StorageManager::new();
+        let storage_manager = StorageManager::default();
         let catalog = Catalog::new();
         let table = Table::new("drop_table".to_owned(), vec![], vec![]);
         catalog.create_table(table.clone()).unwrap();
-        DropTable::new(table).execute(&storage_manager, &catalog);
-        assert!(!catalog.table_exists("drop_table"))
+
+        let drop_table = DropTable::new(table);
+        drop_table.execute(&storage_manager, &catalog);
+
+        assert!(!catalog.table_exists("drop_table"));
+
+        storage_manager.clear();
     }
 }

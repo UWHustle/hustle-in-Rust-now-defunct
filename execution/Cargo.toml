@@ -11,3 +11,6 @@ hustle-storage = { path = "../storage" }
 hustle-types = { path = "../types" }
 bit-vec = "0.6"
 downcast-rs = "1.0.4"
+
+[dev-dependencies]
+hustle-execution-test-util = { path = "util" }

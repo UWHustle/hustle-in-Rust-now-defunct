@@ -7,7 +7,17 @@ use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, DropTable, Insert, Operator, Select, TableReference, Update, Delete};
+use crate::operator::{
+    Collect,
+    CreateTable,
+    Delete,
+    DropTable,
+    Insert,
+    Operator,
+    Select,
+    TableReference,
+    Update,
+};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
@@ -18,7 +28,7 @@ pub struct ExecutionEngine {
 impl ExecutionEngine {
     pub fn new(catalog: Arc<Catalog>) -> Self {
         ExecutionEngine {
-            storage_manager: StorageManager::new(),
+            storage_manager: StorageManager::default(),
             catalog
         }
     }

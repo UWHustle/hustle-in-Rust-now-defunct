@@ -25,10 +25,15 @@ mod create_table_tests {
 
     #[test]
     fn create_table() {
-        let storage_manager = StorageManager::new();
+        let storage_manager = StorageManager::default();
         let catalog = Catalog::new();
         let table = Table::new("create_table".to_owned(), vec![], vec![]);
-        CreateTable::new(table).execute(&storage_manager, &catalog);
+
+        let create_table = CreateTable::new(table);
+        create_table.execute(&storage_manager, &catalog);
+
         assert!(catalog.table_exists("create_table"));
+
+        storage_manager.clear()
     }
 }

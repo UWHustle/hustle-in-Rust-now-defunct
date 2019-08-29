@@ -113,6 +113,17 @@ impl ColumnMajorBlock {
         *self.metadata.n_rows.lock().unwrap() == self.metadata.row_cap
     }
 
+    pub fn get_row_col(&self, row_i: usize, col_i: usize) -> Option<&[u8]> {
+        if self.get_valid_flag_for_row(row_i)
+            && self.get_ready_flag_for_row(row_i)
+            && col_i < self.n_cols()
+        {
+            Some(self.get_row_col_unchecked(row_i, col_i))
+        } else {
+            None
+        }
+    }
+
     pub fn project<'a>(
         &'a self,
         cols: &'a [usize]
@@ -122,7 +133,7 @@ impl ColumnMajorBlock {
             .zip(self.get_ready_flag_for_rows())
             .filter(|&((_, valid), ready)| valid && ready)
             .map(move | ((row_i, _), _)|
-                cols.iter().map(move |&col_i| self.get_row_col(row_i, col_i))
+                cols.iter().map(move |&col_i| self.get_row_col_unchecked(row_i, col_i))
             )
     }
 
@@ -135,7 +146,7 @@ impl ColumnMajorBlock {
             .zip(mask.bits.iter())
             .filter(|&(_, bit)| bit)
             .map(move |(row_i, _)|
-                cols.iter().map(move |&col_i| self.get_row_col(row_i, col_i))
+                cols.iter().map(move |&col_i| self.get_row_col_unchecked(row_i, col_i))
             )
     }
 
@@ -235,20 +246,20 @@ impl ColumnMajorBlock {
         RowMask { bits }
     }
 
-    fn get_row_col_mut(&self, row_i: usize, col_i: usize) -> &mut [u8] {
+    fn get_row_col_unchecked_mut(&self, row_i: usize, col_i: usize) -> &mut [u8] {
         let col_offset = self.metadata.col_offsets[col_i];
         let col_size = self.header.col_sizes[col_i];
         let offset = col_offset + row_i * col_size;
         unsafe { slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size) }
     }
 
-    fn get_row_col(&self, row_i: usize, col_i: usize) -> &[u8] {
-        &self.get_row_col_mut(row_i, col_i)[..]
+    fn get_row_col_unchecked(&self, row_i: usize, col_i: usize) -> &[u8] {
+        &self.get_row_col_unchecked_mut(row_i, col_i)[..]
     }
 
     fn get_row_mut(&self, row_i: usize) -> impl Iterator<Item = &mut [u8]> {
         (0..self.metadata.n_cols)
-            .map(move |col_i| self.get_row_col_mut(row_i, col_i))
+            .map(move |col_i| self.get_row_col_unchecked_mut(row_i, col_i))
     }
 
     fn get_col_mut(&self, col_i: usize) -> impl Iterator<Item = &mut [u8]> {
@@ -273,13 +284,21 @@ impl ColumnMajorBlock {
     }
 
     fn get_flag_for_row(&self, flag_i: usize, row_i: usize) -> bool {
-        let buf = self.get_row_col_mut(row_i, self.metadata.n_cols);
+        let buf = self.get_row_col_unchecked_mut(row_i, self.metadata.n_cols);
         self.metadata.bits_type.get(flag_i, buf)
     }
 
     fn set_flag_for_row(&self, flag_i: usize, row_i: usize, val: bool) {
-        let buf = self.get_row_col_mut(row_i, self.metadata.n_cols);
+        let buf = self.get_row_col_unchecked_mut(row_i, self.metadata.n_cols);
         self.metadata.bits_type.set(flag_i, val, buf)
+    }
+
+    fn get_valid_flag_for_row(&self, row_i: usize) -> bool {
+        self.get_flag_for_row(self.header.n_flags, row_i)
+    }
+
+    fn get_ready_flag_for_row(&self, row_i: usize) -> bool {
+        self.get_flag_for_row(self.header.n_flags + 1, row_i)
     }
 
     fn set_valid_flag_for_row(&self, row_i: usize, val: bool) {

@@ -1,0 +1,10 @@
+[package]
+name = "hustle-execution-test-util"
+version = "0.1.0"
+authors = ["gaffneyk <kgaff33@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+hustle-catalog = { path = "../../catalog" }
+hustle-types = { path = "../../types" }
+hustle-storage = { path = "../../storage" }

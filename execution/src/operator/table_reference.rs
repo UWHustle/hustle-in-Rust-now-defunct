@@ -1,7 +1,9 @@
 use std::sync::mpsc::Sender;
-use hustle_catalog::{Table, Catalog};
-use crate::operator::Operator;
+
+use hustle_catalog::{Catalog, Table};
 use hustle_storage::StorageManager;
+
+use crate::operator::Operator;
 
 pub struct TableReference {
     table: Table,
@@ -30,17 +32,25 @@ impl Operator for TableReference {
 
 #[cfg(test)]
 mod table_reference_tests {
-    use super::*;
+    use std::mem;
     use std::sync::mpsc;
+
+    use super::*;
 
     #[test]
     fn table_reference() {
-        let storage_manager = StorageManager::new();
+        let storage_manager = StorageManager::with_unique_data_directory();
         let catalog = Catalog::new();
         let block_ids = vec![0, 1, 2];
         let table = Table::new("table_reference".to_owned(), vec![], block_ids.clone());
         let (block_tx, block_rx) = mpsc::channel();
-        TableReference::new(table.clone(), block_tx).execute(&storage_manager, &catalog);
+
+        let table_reference = TableReference::new(table.clone(), block_tx);
+        table_reference.execute(&storage_manager, &catalog);
+        mem::drop(table_reference);
+
         assert_eq!(block_rx.iter().collect::<Vec<u64>>(), block_ids);
+
+        storage_manager.clear();
     }
 }

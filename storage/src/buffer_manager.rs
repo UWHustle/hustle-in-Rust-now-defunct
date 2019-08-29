@@ -5,7 +5,7 @@ use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::iter::FromIterator;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::sync::{Mutex, MutexGuard, RwLock, RwLockWriteGuard};
 
 use memmap::MmapMut;
@@ -40,6 +40,7 @@ unsafe impl Sync for CacheBlockReference {}
 /// and writes to the same block. This must be handled by an external concurrency control module.
 pub struct BufferManager {
     capacity: usize,
+    dir: String,
     blocks: Mutex<(u64, HashSet<u64>)>,
     t1: RwLock<OrderedHashMap<u64, CacheBlockReference>>,
     t2: RwLock<OrderedHashMap<u64, CacheBlockReference>>,
@@ -51,10 +52,12 @@ pub struct BufferManager {
 impl BufferManager {
     /// Creates a new `BufferManager` with the specified capacity. The `BufferManager` will hold at
     /// maximum `capacity` blocks in memory.
-    pub fn with_capacity(capacity: usize) -> Self {
+    pub fn with_capacity_and_directory(capacity: usize, dir: String) -> Self {
+        let block_ids = Self::inventory(&Path::new(&dir));
         BufferManager {
             capacity,
-            blocks: Mutex::new((0, Self::inventory())),
+            dir,
+            blocks: Mutex::new((0, block_ids)),
             t1: RwLock::new(OrderedHashMap::new()),
             t2: RwLock::new(OrderedHashMap::new()),
             b1: Mutex::new(OrderedHashMap::new()),
@@ -78,7 +81,7 @@ impl BufferManager {
             *block_ctr
         };
 
-        let mmap = Self::mmap(block_id, true).unwrap();
+        let mmap = self.mmap(block_id, true).unwrap();
         let block = BlockReference::new(
             block_id,
             ColumnMajorBlock::new(col_sizes, n_flags, mmap)
@@ -105,7 +108,7 @@ impl BufferManager {
 
         cache_block.or_else(|| {
             // Cache miss. Load the file from storage and return the cached block.
-            let mmap = Self::mmap(block_id, false)?;
+            let mmap = self.mmap(block_id, false)?;
             let block = BlockReference::new(
                 block_id,
                 ColumnMajorBlock::from_buf(mmap)
@@ -127,9 +130,13 @@ impl BufferManager {
         }
 
         // Delete the file.
-        let path = Self::file_path(block_id);
+        let path = self.file_path(block_id);
         fs::remove_file(&path)
             .expect("Error removing file.");
+    }
+
+    pub fn clear(&self) {
+        fs::remove_dir_all(&self.dir).unwrap();
     }
 
     /// Inserts the block into the cache if it is not already cached.
@@ -230,24 +237,23 @@ impl BufferManager {
         }
     }
 
-    fn mmap(block_id: u64, create: bool) -> Option<MmapMut> {
+    fn mmap(&self, block_id: u64, create: bool) -> Option<MmapMut> {
         let file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(create)
-            .open(&Self::file_path(block_id)).ok()?;
+            .open(&self.file_path(block_id)).ok()?;
         file.set_len(BLOCK_SIZE as u64).ok()?;
         unsafe { MmapMut::map_mut(&file).ok() }
     }
 
-    fn inventory() -> HashSet<u64> {
-        let blocks_dir = Self::blocks_dir();
-        if !blocks_dir.exists() {
-            fs::create_dir(&blocks_dir).unwrap();
+    fn inventory(dir: &Path) -> HashSet<u64> {
+        if !dir.exists() {
+            fs::create_dir(&dir).unwrap();
         }
 
         HashSet::from_iter(
-            fs::read_dir(blocks_dir).unwrap()
+            fs::read_dir(dir).unwrap()
                 .filter_map(|entry|
                     entry.unwrap().path()
                         .file_stem().unwrap()
@@ -258,14 +264,10 @@ impl BufferManager {
         )
     }
 
-    fn file_path(block_id: u64) -> PathBuf {
-        let mut path = Self::blocks_dir();
+    fn file_path(&self, block_id: u64) -> PathBuf {
+        let mut path = PathBuf::from(&self.dir);
         path.push(block_id.to_string());
         path.set_extension("hsl");
         path
-    }
-
-    fn blocks_dir() -> PathBuf {
-        PathBuf::from("blocks")
     }
 }

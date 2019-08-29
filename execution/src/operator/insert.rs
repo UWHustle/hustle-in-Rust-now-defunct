@@ -28,8 +28,8 @@ impl Operator for Insert {
 
 #[cfg(test)]
 mod insert_tests {
-    use hustle_catalog::{Column, Table};
-    use hustle_types::{Bool, Char, HustleType, Int64, TypeVariant};
+    use hustle_execution_test_util as test_util;
+    use hustle_types::{Bool, Char, HustleType, Int64};
 
     use crate::operator::Insert;
 
@@ -37,34 +37,24 @@ mod insert_tests {
 
     #[test]
     fn insert() {
-        let storage_manager = StorageManager::new();
+        let storage_manager = StorageManager::with_unique_data_directory();
         let catalog = Catalog::new();
+        let table = test_util::example_table();
+        let router = BlockPoolDestinationRouter::new(table.columns);
 
         let bool_type = Bool;
-        let mut bool_buf = vec![0; bool_type.byte_len()];
-        bool_type.set(true, &mut bool_buf);
-
         let int64_type = Int64;
-        let mut int64_buf = vec![0; int64_type.byte_len()];
-        int64_type.set(1, &mut int64_buf);
-
         let char_type = Char::new(1);
-        let mut char_buf = vec![0; char_type.byte_len()];
-        char_type.set("a", &mut char_buf);
 
-        let bufs = vec![bool_buf, int64_buf, char_buf];
+        let mut bufs = vec![
+            vec![0; bool_type.byte_len()],
+            vec![0; int64_type.byte_len()],
+            vec![0; char_type.byte_len()],
+        ];
 
-        let table = Table::new(
-            "insert".to_owned(),
-            vec![
-                Column::new("col_bool".to_owned(), TypeVariant::Bool(bool_type.clone()), false),
-                Column::new("col_int64".to_owned(), TypeVariant::Int64(int64_type.clone()), false),
-                Column::new("col_char".to_owned(), TypeVariant::Char(char_type.clone()), false),
-            ],
-            vec![],
-        );
-
-        let router = BlockPoolDestinationRouter::new(table.columns);
+        bool_type.set(false, &mut bufs[0]);
+        int64_type.set(1, &mut bufs[1]);
+        char_type.set("a", &mut bufs[2]);
 
         let insert = Insert::new(bufs, router);
         insert.execute(&storage_manager, &catalog);
@@ -81,5 +71,7 @@ mod insert_tests {
         }
 
         assert!(rows.next().is_none());
+
+        storage_manager.clear();
     }
 }
