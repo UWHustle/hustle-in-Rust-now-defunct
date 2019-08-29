@@ -106,9 +106,9 @@ impl ExecutionEngine {
                 );
                 Box::new(Insert::new(bufs, router))
             },
-            Plan::Update { table, columns, bufs, filter } => {
+            Plan::Update { table, assignments, filter } => {
                 let filter = filter.map(|f| Self::compile_filter(*f));
-                Box::new(Update::new(columns, bufs, filter, table.block_ids))
+                Box::new(Update::new(assignments, filter, table.block_ids))
             },
             Plan::Delete { from_table, filter } => {
                 let filter = filter.map(|f| Self::compile_filter(*f));
