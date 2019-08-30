@@ -5,15 +5,15 @@ Hustle is a scalable data platform using a relational kernel and a microservices
 
 Installation instructions:
 ==========================
-To build Hustle, the prerequisites are `cmake` and `bison`.
+The prerequisites for building are `cmake` and `bison`.
 
-Finally, build the project:
+Build Hustle:
 
 ```bash
 cargo build [--release]
 ```
 
-and then run the executable. The `--release` option means this is a optimized `release` build, otherwise a `debug`.
+and then run the executable. The `--release` option means this is a optimized `release` build, otherwise a `debug` build.
 ```bash
 cargo run [--release] --bin hustle-server
 cargo run [--release] --bin hustle-cli
