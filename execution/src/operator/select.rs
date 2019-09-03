@@ -8,8 +8,7 @@ use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct Select {
-    cols: Vec<usize>,
-    filter: Option<Box<dyn Fn(&BlockReference) -> RowMask>>,
+    filter: Box<dyn Fn(&BlockReference) -> RowMask>,
     router: BlockPoolDestinationRouter,
     block_rx: Receiver<u64>,
     block_tx: Sender<u64>,
@@ -17,14 +16,12 @@ pub struct Select {
 
 impl Select {
     pub fn new(
-        cols: Vec<usize>,
-        filter: Option<Box<dyn Fn(&BlockReference) -> RowMask>>,
+        filter: Box<dyn Fn(&BlockReference) -> RowMask>,
         router: BlockPoolDestinationRouter,
         block_rx: Receiver<u64>,
         block_tx: Sender<u64>,
     ) -> Self {
         Select {
-            cols,
             filter,
             router,
             block_rx,
@@ -39,27 +36,15 @@ impl Operator for Select {
 
         for input_block_id in &self.block_rx {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
-
-            if let Some(filter) = &self.filter {
-                let mask = (filter)(&input_block);
-                let rows = input_block.project_with_mask(&self.cols, &mask);
-                util::send_rows(
-                    rows,
-                    &mut output_block,
-                    &self.block_tx,
-                    &self.router,
-                    storage_manager,
-                );
-            } else {
-                let rows = input_block.project(&self.cols);
-                util::send_rows(
-                    rows,
-                    &mut output_block,
-                    &self.block_tx,
-                    &self.router,
-                    storage_manager,
-                );
-            }
+            let mask = (self.filter)(&input_block);
+            let rows = input_block.rows_with_mask(&mask);
+            util::send_rows(
+                rows,
+                &mut output_block,
+                &self.block_tx,
+                &self.router,
+                storage_manager,
+            );
         }
 
         self.block_tx.send(output_block.id).unwrap();

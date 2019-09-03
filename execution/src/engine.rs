@@ -7,17 +7,7 @@ use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::{
-    Collect,
-    CreateTable,
-    Delete,
-    DropTable,
-    Insert,
-    Operator,
-    Select,
-    TableReference,
-    Update,
-};
+use crate::operator::{Collect, CreateTable, Delete, DropTable, Insert, Operator, Select, TableReference, Update, Project, Join};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
@@ -126,6 +116,7 @@ impl ExecutionEngine {
     }
 
     fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
+        let router = BlockPoolDestinationRouter::new(query.output);
         match query.operator {
             QueryOperator::TableReference { table } => {
                 operators.push(Box::new(TableReference::new(table, block_tx)));
@@ -134,25 +125,39 @@ impl ExecutionEngine {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::compile_query(*input, child_block_tx, operators);
 
-                let router = BlockPoolDestinationRouter::new(query.output);
-                let project = Select::new(cols, None, router, block_rx, block_tx);
+                let project = Project::new(cols, router, block_rx, block_tx);
                 operators.push(Box::new(project));
             },
             QueryOperator::Select { input, filter } => {
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::compile_query(*input, child_block_tx, operators);
 
-                let cols = (0..query.output.len()).collect::<Vec<usize>>();
                 let filter = Self::compile_filter(*filter);
-                let router = BlockPoolDestinationRouter::new(query.output);
-                let select = Select::new(cols, Some(filter), router, block_rx, block_tx);
+                let select = Select::new(filter, router, block_rx, block_tx);
                 operators.push(Box::new(select));
             },
-            _ => panic!("Unsupported query: {:?}", query),
+            QueryOperator::Join { inputs, filter } => {
+                let block_rxs = inputs.into_iter()
+                    .map(|input| {
+                        let (child_block_tx, block_rx) = mpsc::channel();
+                        Self::compile_query(input, child_block_tx, operators);
+                        block_rx
+                    })
+                    .collect::<Vec<_>>();
+
+                let filter = filter.map(|f| Self::compile_row_filter(*f));
+                let join = Join::new(filter, router, block_rxs, block_tx);
+                operators.push(Box::new(join));
+            },
+            _ => panic!("Unsupported query"),
         }
     }
 
     fn compile_filter(_filter: Expression) -> Box<dyn Fn(&BlockReference) -> RowMask> {
+        unimplemented!()
+    }
+
+    fn compile_row_filter(_filter: Expression) -> Box<dyn Fn(&[&[u8]]) -> bool> {
         unimplemented!()
     }
 }

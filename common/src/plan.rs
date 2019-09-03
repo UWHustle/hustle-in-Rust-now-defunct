@@ -42,7 +42,7 @@ pub enum QueryOperator {
         groups: Vec<Expression>,
     },
     Join {
-        input: Vec<Query>,
+        inputs: Vec<Query>,
         filter: Option<Box<Expression>>,
     },
     Limit {
