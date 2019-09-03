@@ -4,7 +4,7 @@ use hustle_catalog::Catalog;
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::Operator;
+use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct Select {
@@ -31,23 +31,6 @@ impl Select {
             block_tx,
         }
     }
-
-    fn send_rows<'a>(
-        &self,
-        rows: impl Iterator<Item = impl Iterator<Item = &'a [u8]>>,
-        output_block: &mut BlockReference,
-        storage_manager: &StorageManager,
-    ) {
-        let mut rows = rows.peekable();
-        while rows.peek().is_some() {
-            output_block.insert_rows(&mut rows);
-
-            if output_block.is_full() {
-                self.block_tx.send(output_block.id).unwrap();
-                *output_block = self.router.get_block(storage_manager);
-            }
-        }
-    }
 }
 
 impl Operator for Select {
@@ -60,10 +43,22 @@ impl Operator for Select {
             if let Some(filter) = &self.filter {
                 let mask = (filter)(&input_block);
                 let rows = input_block.project_with_mask(&self.cols, &mask);
-                self.send_rows(rows, &mut output_block, storage_manager);
+                util::send_rows(
+                    rows,
+                    &mut output_block,
+                    &self.block_tx,
+                    &self.router,
+                    storage_manager,
+                );
             } else {
                 let rows = input_block.project(&self.cols);
-                self.send_rows(rows, &mut output_block, storage_manager);
+                util::send_rows(
+                    rows,
+                    &mut output_block,
+                    &self.block_tx,
+                    &self.router,
+                    storage_manager,
+                );
             }
         }
 
@@ -79,7 +74,7 @@ mod select_tests {
     use hustle_catalog::{Catalog, Column, Table};
     use hustle_execution_test_util as test_util;
     use hustle_storage::StorageManager;
-    use hustle_types::{Int64, TypeVariant, Bool};
+    use hustle_types::{Bool, Int64, TypeVariant};
 
     use crate::router::BlockPoolDestinationRouter;
 

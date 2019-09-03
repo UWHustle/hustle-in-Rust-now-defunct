@@ -1,5 +1,6 @@
 use std::io::Cursor;
-use std::iter::FromIterator;
+use std::iter::{FromIterator, Zip};
+use std::ops::Range;
 use std::slice;
 use std::sync::Mutex;
 
@@ -22,6 +23,7 @@ struct Metadata {
     n_rows: Mutex<usize>,
     n_cols: usize,
     row_cap: usize,
+    col_indices: Vec<usize>,
     col_offsets: Vec<usize>,
     bits_type: Bits,
 }
@@ -81,6 +83,8 @@ impl ColumnMajorBlock {
         let row_size = header.col_sizes.iter().sum::<usize>() + bits_type.byte_len();
         let row_cap = data_len / row_size;
 
+        let col_indices = (0..n_cols).collect();
+
         let col_offsets = header.col_sizes.iter()
             .scan(0, |state, &col_size| {
                 let col_offset = *state;
@@ -93,6 +97,7 @@ impl ColumnMajorBlock {
             n_rows,
             n_cols,
             row_cap,
+            col_indices,
             col_offsets,
             bits_type,
         };
@@ -124,30 +129,24 @@ impl ColumnMajorBlock {
         }
     }
 
-    pub fn project<'a>(
-        &'a self,
-        cols: &'a [usize]
-    ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> + 'a {
-        (0..self.metadata.row_cap)
-            .zip(self.get_valid_flag_for_rows())
-            .zip(self.get_ready_flag_for_rows())
-            .filter(|&((_, valid), ready)| valid && ready)
-            .map(move | ((row_i, _), _)|
-                cols.iter().map(move |&col_i| self.get_row_col_unchecked(row_i, col_i))
-            )
+    pub fn row_ids(&self) -> RowIdIter {
+        RowIdIter::new(self)
     }
 
-    pub fn project_with_mask<'a>(
-        &'a self,
-        cols: &'a [usize],
-        mask: &'a RowMask,
-    ) -> impl Iterator<Item = impl Iterator<Item = &[u8]>> + 'a {
-        (0..self.metadata.row_cap)
-            .zip(mask.bits.iter())
-            .filter(|&(_, bit)| bit)
-            .map(move |(row_i, _)|
-                cols.iter().map(move |&col_i| self.get_row_col_unchecked(row_i, col_i))
-            )
+    pub fn rows(&self) -> RowsIter {
+        self.project(&self.metadata.col_indices)
+    }
+
+    pub fn project<'a>(&'a self, cols: &'a [usize]) -> RowsIter {
+        RowsIter::new(cols, self)
+    }
+
+    pub fn rows_with_mask<'a>(&'a self, mask: &'a RowMask) -> MaskedRowsIter {
+        self.project_with_mask(&self.metadata.col_indices, mask)
+    }
+
+    pub fn project_with_mask<'a>(&'a self, cols: &'a [usize], mask: &'a RowMask) -> MaskedRowsIter {
+        MaskedRowsIter::new(mask, cols, self)
     }
 
     pub fn insert_row<'a>(&self, row: impl Iterator<Item = &'a [u8]>) {
@@ -168,7 +167,7 @@ impl ColumnMajorBlock {
         self.set_valid_flag_for_row(row_i, true);
 
         // Write the data to the row.
-        for (dst_buf, src_buf) in self.get_row_mut(row_i).zip(row) {
+        for (dst_buf, src_buf) in self.get_row_unchecked_mut(row_i).zip(row) {
             dst_buf.copy_from_slice(src_buf);
         }
     }
@@ -257,7 +256,7 @@ impl ColumnMajorBlock {
         &self.get_row_col_unchecked_mut(row_i, col_i)[..]
     }
 
-    fn get_row_mut(&self, row_i: usize) -> impl Iterator<Item = &mut [u8]> {
+    fn get_row_unchecked_mut(&self, row_i: usize) -> impl Iterator<Item = &mut [u8]> {
         (0..self.metadata.n_cols)
             .map(move |col_i| self.get_row_col_unchecked_mut(row_i, col_i))
     }
@@ -280,7 +279,7 @@ impl ColumnMajorBlock {
         (0..self.metadata.row_cap)
             .zip(mask.bits.into_iter())
             .filter(|&(_, bit)| bit)
-            .map(move |(row_i, _)| (row_i, self.get_row_mut(row_i)))
+            .map(move |(row_i, _)| (row_i, self.get_row_unchecked_mut(row_i)))
     }
 
     fn get_flag_for_row(&self, flag_i: usize, row_i: usize) -> bool {
@@ -309,9 +308,8 @@ impl ColumnMajorBlock {
         self.set_flag_for_row(self.header.n_flags + 1, row_i, val);
     }
 
-    fn get_flag_for_rows<'a>(&'a self, flag_i: usize) -> impl Iterator<Item = bool> + 'a {
-        (0..self.metadata.row_cap)
-            .map(move |row_i| self.get_flag_for_row(flag_i, row_i))
+    fn get_flag_for_rows(&self, flag_i: usize) -> FlagIter {
+        FlagIter::new(flag_i, self)
     }
 
     fn set_flag_for_rows(&self, flag_i: usize, val: bool) {
@@ -320,11 +318,11 @@ impl ColumnMajorBlock {
         }
     }
 
-    fn get_valid_flag_for_rows<'a>(&'a self) -> impl Iterator<Item = bool> + 'a {
+    fn get_valid_flag_for_rows(&self) -> FlagIter {
         self.get_flag_for_rows(self.header.n_flags)
     }
 
-    fn get_ready_flag_for_rows<'a>(&'a self) -> impl Iterator<Item = bool> + 'a {
+    fn get_ready_flag_for_rows(&self) -> FlagIter {
         self.get_flag_for_rows(self.header.n_flags + 1)
     }
 
@@ -334,5 +332,152 @@ impl ColumnMajorBlock {
 
     fn set_ready_flag_for_rows(&self, val: bool) {
         self.set_flag_for_rows(self.header.n_flags + 1, val);
+    }
+}
+
+#[derive(Clone)]
+pub struct FlagIter<'a> {
+    flag_i: usize,
+    iter: Range<usize>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> FlagIter<'a> {
+    fn new(flag_i: usize, block: &'a ColumnMajorBlock) -> Self {
+        let iter = 0..block.metadata.row_cap;
+        FlagIter {
+            flag_i,
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for FlagIter<'a> {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+            .map(|row_i| self.block.get_flag_for_row(self.flag_i, row_i))
+    }
+}
+
+#[derive(Clone)]
+pub struct RowIdIter<'a> {
+    iter: Zip<Zip<Range<usize>, FlagIter<'a>>, FlagIter<'a>>,
+}
+
+impl<'a> RowIdIter<'a> {
+    fn new(block: &'a ColumnMajorBlock) -> Self {
+        let iter = (0..block.metadata.row_cap)
+            .zip(block.get_valid_flag_for_rows())
+            .zip(block.get_ready_flag_for_rows());
+        RowIdIter {
+            iter,
+        }
+    }
+}
+
+impl<'a> Iterator for RowIdIter<'a> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(((row_i, valid), ready)) = self.iter.next() {
+                if valid && ready {
+                    break Some(row_i)
+                }
+            } else {
+                break None
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct RowIter<'a> {
+    row_i: usize,
+    iter: slice::Iter<'a, usize>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> RowIter<'a> {
+    fn new(row_i: usize, cols: &'a [usize], block: &'a ColumnMajorBlock) -> Self {
+        let iter = cols.iter();
+        RowIter {
+            row_i,
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for RowIter<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+            .map(|&col_i| self.block.get_row_col_unchecked(self.row_i, col_i))
+    }
+}
+
+#[derive(Clone)]
+pub struct RowsIter<'a> {
+    cols: &'a [usize],
+    iter: RowIdIter<'a>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> RowsIter<'a> {
+    fn new(cols: &'a [usize], block: &'a ColumnMajorBlock) -> Self {
+        let iter = block.row_ids();
+        RowsIter {
+            cols,
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for RowsIter<'a> {
+    type Item = RowIter<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+            .map(|row_i| RowIter::new(row_i, self.cols, self.block))
+    }
+}
+
+pub struct MaskedRowsIter<'a> {
+    cols: &'a [usize],
+    iter: Zip<Range<usize>, bit_vec::Iter<'a>>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> MaskedRowsIter<'a> {
+    fn new(mask: &'a RowMask, cols: &'a [usize], block: &'a ColumnMajorBlock) -> Self {
+        let iter = (0..block.metadata.row_cap)
+            .zip(&mask.bits);
+        MaskedRowsIter {
+            cols,
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for MaskedRowsIter<'a> {
+    type Item = RowIter<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some((row_i, bit)) = self.iter.next() {
+                if bit {
+                    break Some(RowIter::new(row_i, self.cols, self.block))
+                }
+            } else {
+                break None
+            }
+        }
     }
 }
