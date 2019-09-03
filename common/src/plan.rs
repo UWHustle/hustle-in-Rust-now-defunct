@@ -36,18 +36,8 @@ pub struct Query {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum QueryOperator {
-    Aggregate {
-        input: Box<Query>,
-        aggregates: Vec<AggregateFunction>,
-        groups: Vec<Expression>,
-    },
-    Join {
+    Cartesian {
         inputs: Vec<Query>,
-        filter: Option<Box<Expression>>,
-    },
-    Limit {
-        input: Box<Query>,
-        limit: usize,
     },
     Project {
         input: Box<Query>,
@@ -86,11 +76,6 @@ pub enum Expression {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ComparativeVariant {
     Eq, Lt, Le, Gt, Ge
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum ConnectiveVariant {
-    And, Or
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

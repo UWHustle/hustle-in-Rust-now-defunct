@@ -8,7 +8,7 @@ pub use update::Update;
 pub use delete::Delete;
 pub use select::Select;
 pub use project::Project;
-pub use join::Join;
+pub use join::Cartesian;
 pub use table_reference::TableReference;
 pub use collect::Collect;
 use downcast_rs::Downcast;

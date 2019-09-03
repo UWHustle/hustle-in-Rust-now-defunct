@@ -7,7 +7,7 @@ use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::{Collect, CreateTable, Delete, DropTable, Insert, Operator, Select, TableReference, Update, Project, Join};
+use crate::operator::{Collect, CreateTable, Delete, DropTable, Insert, Operator, Select, TableReference, Update, Project, Cartesian};
 use crate::router::BlockPoolDestinationRouter;
 
 pub struct ExecutionEngine {
@@ -54,8 +54,7 @@ impl ExecutionEngine {
                             // Send each row of the result.
                             for &block_id in &relation.block_ids {
                                 let block = self.storage_manager.get_block(block_id).unwrap();
-                                let cols = (0..relation.columns.len()).collect::<Vec<usize>>();
-                                for row in block.project(&cols) {
+                                for row in block.rows() {
                                     completed_tx.send(Message::ReturnRow {
                                         row: row.map(|value| value.to_vec()).collect(),
                                         connection_id,
@@ -136,7 +135,7 @@ impl ExecutionEngine {
                 let select = Select::new(filter, router, block_rx, block_tx);
                 operators.push(Box::new(select));
             },
-            QueryOperator::Join { inputs, filter } => {
+            QueryOperator::Cartesian { inputs } => {
                 let block_rxs = inputs.into_iter()
                     .map(|input| {
                         let (child_block_tx, block_rx) = mpsc::channel();
@@ -145,19 +144,13 @@ impl ExecutionEngine {
                     })
                     .collect::<Vec<_>>();
 
-                let filter = filter.map(|f| Self::compile_row_filter(*f));
-                let join = Join::new(filter, router, block_rxs, block_tx);
-                operators.push(Box::new(join));
+                let cartesian = Cartesian::new(router, block_rxs, block_tx);
+                operators.push(Box::new(cartesian));
             },
-            _ => panic!("Unsupported query"),
         }
     }
 
     fn compile_filter(_filter: Expression) -> Box<dyn Fn(&BlockReference) -> RowMask> {
-        unimplemented!()
-    }
-
-    fn compile_row_filter(_filter: Expression) -> Box<dyn Fn(&[&[u8]]) -> bool> {
         unimplemented!()
     }
 }
