@@ -245,6 +245,25 @@ impl ColumnMajorBlock {
         RowMask { bits }
     }
 
+    pub fn filter_cols(
+        &self,
+        left_col_i: usize,
+        right_col_i: usize,
+        f: impl Fn(&[u8], &[u8]) -> bool
+    ) -> RowMask {
+        let bits = BitVec::from_iter(
+            self.get_valid_flag_for_rows()
+                .zip(self.get_ready_flag_for_rows())
+                .zip(self.get_col_mut(left_col_i))
+                .zip(self.get_col_mut(right_col_i))
+                .map(|(((valid, ready), left_buf), right_buf)|
+                    valid && ready && f(left_buf, right_buf)
+                )
+        );
+
+        RowMask { bits }
+    }
+
     fn get_row_col_unchecked_mut(&self, row_i: usize, col_i: usize) -> &mut [u8] {
         let col_offset = self.metadata.col_offsets[col_i];
         let col_size = self.header.col_sizes[col_i];

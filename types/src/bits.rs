@@ -1,4 +1,4 @@
-use crate::HustleType;
+use crate::{HustleType, CompareEq};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bits {
@@ -39,5 +39,11 @@ impl Bits {
 impl HustleType for Bits {
     fn byte_len(&self) -> usize {
         self.byte_len
+    }
+}
+
+impl CompareEq<Bits> for Bits {
+    fn eq(&self, other: &Bits, left: &[u8], right: &[u8]) -> bool {
+        self.len == other.len && left == right
     }
 }

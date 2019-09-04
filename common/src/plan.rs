@@ -1,4 +1,5 @@
 use hustle_catalog::{Table, Column};
+use hustle_types::TypeVariant;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Plan {
@@ -66,11 +67,10 @@ pub enum Expression {
         terms: Vec<Expression>,
     },
     Literal {
-        literal: Literal,
+        buf: Vec<u8>,
+        type_variant: TypeVariant,
     },
-    ColumnReference {
-        column: Column,
-    },
+    ColumnReference(usize),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -87,10 +87,4 @@ pub struct AggregateFunction {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum AggregateFunctionVariant {
     Avg, Count, Max, Min, Sum
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Literal {
-    Int(i64),
-    String(String),
 }
