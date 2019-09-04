@@ -13,6 +13,16 @@ pub struct RowMask {
     bits: BitVec
 }
 
+impl RowMask {
+    pub fn and(&mut self, other: &Self) {
+        self.bits.intersect(&other.bits);
+    }
+
+    pub fn or(&mut self, other: &Self) {
+        self.bits.union(&other.bits);
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 struct Header {
     col_sizes: Vec<usize>,

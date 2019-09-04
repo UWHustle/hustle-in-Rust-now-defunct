@@ -328,6 +328,34 @@ impl ExecutionEngine {
                     columns
                 )
             },
+            Expression::Conjunctive { terms } => {
+                let compiled_terms = terms.into_iter()
+                    .map(|term| Self::compile_filter(term, columns))
+                    .collect::<Vec<_>>();
+
+                Box::new(move |block| {
+                    let mut compiled_terms_iter = compiled_terms.iter();
+                    let mut mask = (compiled_terms_iter.next().unwrap())(block);
+                    for compiled_term in compiled_terms_iter {
+                        mask.and(&(compiled_term)(block));
+                    }
+                    mask
+                })
+            },
+            Expression::Disjunctive { terms } => {
+                let compiled_terms = terms.into_iter()
+                    .map(|term| Self::compile_filter(term, columns))
+                    .collect::<Vec<_>>();
+
+                Box::new(move |block| {
+                    let mut compiled_terms_iter = compiled_terms.iter();
+                    let mut mask = (compiled_terms_iter.next().unwrap())(block);
+                    for compiled_term in compiled_terms_iter {
+                        mask.or(&(compiled_term)(block));
+                    }
+                    mask
+                })
+            }
             _ => panic!(""),
         }
     }
