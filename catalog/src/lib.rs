@@ -92,7 +92,7 @@ impl Borrow<str> for Table {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Column {
     name: String,
     table: String,

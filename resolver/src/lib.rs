@@ -6,7 +6,7 @@ use sqlparser::ast::{Assignment, BinaryOperator, ColumnDef, DataType, Expr, Obje
 
 use hustle_catalog::{Catalog, Column, Table};
 use hustle_common::plan::{ComparativeVariant, Expression, Plan, Query as QueryPlan, QueryOperator};
-use hustle_types::{Bool, Char, HustleType, Int64, TypeVariant};
+use hustle_types::{Bool, Char, Int64, TypeVariant};
 
 pub struct Resolver {
     catalog: Arc<Catalog>,
@@ -421,8 +421,7 @@ impl Resolver {
                 match value {
                     Value::Boolean(v) => {
                         let bool_type = Bool;
-                        let mut buf = vec![0; bool_type.byte_len()];
-                        bool_type.set(*v, &mut buf);
+                        let buf = bool_type.new_buf(*v);
                         Ok(Expression::Literal {
                             type_variant: TypeVariant::Bool(bool_type),
                             buf,
@@ -431,8 +430,7 @@ impl Resolver {
                     Value::Long(v) => {
                         let v = i64::try_from(*v).map_err(|e| e.to_string())?;
                         let int64_type = Int64;
-                        let mut buf = vec![0; int64_type.byte_len()];
-                        int64_type.set(v, &mut buf);
+                        let buf = int64_type.new_buf(v);
                         Ok(Expression::Literal {
                             type_variant: TypeVariant::Int64(int64_type),
                             buf,
@@ -440,8 +438,7 @@ impl Resolver {
                     },
                     Value::SingleQuotedString(v) => {
                         let char_type = Char::new(v.len());
-                        let mut buf = vec![0; char_type.byte_len()];
-                        char_type.set(v, &mut buf);
+                        let buf = char_type.new_buf(v);
                         Ok(Expression::Literal {
                             type_variant: TypeVariant::Char(char_type),
                             buf,

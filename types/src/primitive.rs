@@ -4,7 +4,7 @@ use crate::{CompareEq, CompareOrd, HustleType};
 
 macro_rules! make_primitive_type {
     ($name:ident, $primitive_ty:ty) => {
-        #[derive(Debug, Clone, Serialize, Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
         pub struct $name;
 
         impl $name {
@@ -14,6 +14,12 @@ macro_rules! make_primitive_type {
 
             pub fn set(&self, val: $primitive_ty, buf: &mut [u8]) {
                 unsafe { *(buf.as_ptr() as *mut $primitive_ty) = val }
+            }
+
+            pub fn new_buf(&self, val: $primitive_ty) -> Vec<u8> {
+                let mut buf = vec![0; self.byte_len()];
+                self.set(val, &mut buf);
+                buf
             }
         }
 

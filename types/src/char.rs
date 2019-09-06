@@ -2,7 +2,7 @@ use std::str;
 
 use crate::{CompareEq, CompareOrd, HustleType};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Char {
     len: usize,
 }
@@ -30,6 +30,12 @@ impl Char {
             // Long strings are truncated.
             buf.clone_from_slice(val[..self.len].as_bytes());
         }
+    }
+
+    pub fn new_buf(&self, val: &str) -> Vec<u8> {
+        let mut buf = vec![0; self.len];
+        self.set(val, &mut buf);
+        buf
     }
 }
 

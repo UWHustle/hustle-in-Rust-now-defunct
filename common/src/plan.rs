@@ -1,7 +1,7 @@
-use hustle_catalog::{Table, Column};
+use hustle_catalog::{Column, Table};
 use hustle_types::TypeVariant;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
     BeginTransaction,
     CommitTransaction,
@@ -29,13 +29,13 @@ pub enum Plan {
     },
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Query {
     pub operator: QueryOperator,
     pub output: Vec<Column>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryOperator {
     Cartesian {
         inputs: Vec<Query>,
@@ -53,7 +53,7 @@ pub enum QueryOperator {
     },
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     Comparative {
         variant: ComparativeVariant,
@@ -73,18 +73,18 @@ pub enum Expression {
     ColumnReference(usize),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComparativeVariant {
     Eq, Lt, Le, Gt, Ge
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AggregateFunction {
     variant: AggregateFunctionVariant,
     column: Column
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AggregateFunctionVariant {
     Avg, Count, Max, Min, Sum
 }

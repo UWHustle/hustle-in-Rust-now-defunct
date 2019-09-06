@@ -1,6 +1,6 @@
-use crate::{HustleType, CompareEq};
+use crate::{CompareEq, HustleType};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Bits {
     len: usize,
     byte_len: usize,
