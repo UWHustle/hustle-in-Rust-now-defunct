@@ -67,8 +67,8 @@ pub enum Expression {
         terms: Vec<Expression>,
     },
     Literal {
-        buf: Vec<u8>,
         type_variant: TypeVariant,
+        buf: Vec<u8>,
     },
     ColumnReference(usize),
 }

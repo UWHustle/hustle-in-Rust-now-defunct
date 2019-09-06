@@ -63,11 +63,11 @@ pub struct Table {
 }
 
 impl Table {
-    pub fn new(name: String, columns: Vec<Column>, block_ids: Vec<u64>) -> Self {
+    pub fn new(name: String, columns: Vec<Column>) -> Self {
         Table {
             name,
             columns,
-            block_ids,
+            block_ids: vec![],
         }
     }
 }
@@ -95,25 +95,31 @@ impl Borrow<str> for Table {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Column {
     name: String,
+    table: String,
     type_variant: TypeVariant,
     nullable: bool,
 }
 
 impl Column {
-    pub fn new(name: String, type_variant: TypeVariant, nullable: bool) -> Self {
+    pub fn new(name: String, table: String, type_variant: TypeVariant, nullable: bool) -> Self {
         Column {
             name,
+            table,
             type_variant,
             nullable,
         }
     }
 
     pub fn anon(type_variant: TypeVariant, nullable: bool) -> Self {
-        Self::new(String::new(), type_variant, nullable)
+        Self::new(String::new(), String::new(), type_variant, nullable)
     }
 
     pub fn get_name(&self) -> &str {
         &self.name
+    }
+
+    pub fn get_table(&self) -> &str {
+        &self.table
     }
 
     pub fn get_type_variant(&self) -> &TypeVariant {

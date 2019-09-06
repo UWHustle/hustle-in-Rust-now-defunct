@@ -356,7 +356,7 @@ impl ExecutionEngine {
                     mask
                 })
             }
-            _ => panic!(""),
+            _ => panic!("Unsupported expression node type"),
         }
     }
 }
