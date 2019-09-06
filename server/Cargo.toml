@@ -5,7 +5,6 @@ authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-hustle-parser = { path = "../parser" }
 hustle-resolver = { path = "../resolver" }
 hustle-transaction = { path = "../transaction" }
 hustle-execution = { path = "../execution" }

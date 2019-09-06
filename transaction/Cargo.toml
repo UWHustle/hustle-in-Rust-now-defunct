@@ -10,4 +10,4 @@ hustle-types = { path = "../types" }
 crossbeam = "0.7.1"
 
 [dev-dependencies]
-util = { path = "util" }
+hustle-transaction-test-util = { path = "util" }

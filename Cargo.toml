@@ -6,7 +6,6 @@ members = [
     "cli",
     "common",
     "execution",
-    "parser",
     "profiler",
     "resolver",
     "server",

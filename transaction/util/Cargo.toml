@@ -1,10 +1,9 @@
 [package]
-name = "util"
+name = "hustle-transaction-test-util"
 version = "0.1.0"
 authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 hustle-common = { path = "../../common" }
-hustle-parser = { path = "../../parser" }
 hustle-resolver = { path = "../../resolver" }
