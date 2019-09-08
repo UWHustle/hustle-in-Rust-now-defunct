@@ -59,6 +59,7 @@ GitHub has three key mechanisms to manage projects **Issues**, **Pull requests**
 2. Calling out your work.
 - Before starting to work on an issue, call out by simply noting "I'm on it" on the discussion page for that Issue. Assign the Issue to yourself (in the "Assignees" box on the right), if it is not already assigned to you.
 - Pick a "Project" tag in the box by the same name in the right panel of the Issue's page. **This action starts tracking the project in the Automation**, so it is crucial you do this. Now, the Projects page will show that the Issue has been picked up.
+- Go to the project page and drag your Issue from the **To do** column to the **In progress** column. The issues in the **In Progress** are the ones that you are working on. If you have nothing there, then it is surprising. If you have too many there, then you are spreading yourself too thin; consider pick only a few things to work on and/or breaking up an Issue into smaller more manageable issues.
 
 3. Raising a PR
 - When you are done with your work, raise a PR.
