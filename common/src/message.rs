@@ -8,18 +8,31 @@ use crate::plan::Plan;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Message {
-    CloseConnection { connection_id: u64 },
+    CloseConnection,
     ExecuteSql { sql: String },
-    ParseSql { sql: String, connection_id: u64 },
-    ResolveAst { ast: String, connection_id: u64 },
-    OptimizePlan { plan: Plan, connection_id: u64 },
-    TransactPlan { plan: Plan, connection_id: u64 },
-    ExecutePlan { plan: Plan, statement_id: u64, connection_id: u64 },
-    CompletePlan { statement_id: u64, connection_id: u64 },
-    Schema { schema: Vec<Column>, connection_id: u64 },
-    ReturnRow { row: Vec<Vec<u8>>, connection_id: u64 },
-    Success { connection_id: u64 },
-    Failure { reason: String, connection_id: u64 },
+    ParseSql { sql: String },
+    OptimizePlan { plan: Plan},
+    TransactPlan { plan: Plan },
+    ExecutePlan { plan: Plan, statement_id: u64 },
+    CompletePlan { statement_id: u64 },
+    Schema { schema: Vec<Column> },
+    ReturnRow { row: Vec<Vec<u8>> },
+    Success,
+    Failure { reason: String },
+}
+
+pub struct InternalMessage {
+    pub connection_id: u64,
+    pub inner: Message
+}
+
+impl InternalMessage {
+    pub fn new(connection_id: u64, inner: Message) -> Self {
+        InternalMessage {
+            connection_id,
+            inner,
+        }
+    }
 }
 
 impl Message {

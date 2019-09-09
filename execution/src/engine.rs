@@ -30,56 +30,20 @@ impl ExecutionEngine {
         Ok(table)
     }
 
-    pub fn listen(
-        &mut self,
-        execution_rx: Receiver<Message>,
-        transaction_tx: Sender<Message>,
-        completed_tx: Sender<Message>,
-    ) {
-        for message in execution_rx {
-            if let Message::ExecutePlan { plan, statement_id, connection_id } = message {
-                match self.execute_plan(plan) {
-                    Ok(relation) => {
+    pub fn get_rows(&self, table: Table, limit: usize, f: impl Fn(Vec<Vec<u8>>)) {
+        let mut row_ctr = 0;
 
-                        // The execution may have produced a result relation. If so, we send the
-                        // rows back to the user.
-                        if let Some(relation) = relation {
-
-                            // Send a message with the result schema.
-                            completed_tx.send(Message::Schema {
-                                schema: relation.columns.clone(),
-                                connection_id
-                            }).unwrap();
-
-                            // Send each row of the result.
-                            for &block_id in &relation.block_ids {
-                                let block = self.storage_manager.get_block(block_id).unwrap();
-                                for row in block.rows() {
-                                    completed_tx.send(Message::ReturnRow {
-                                        row: row.map(|value| value.to_vec()).collect(),
-                                        connection_id,
-                                    }).unwrap();
-                                }
-                            }
-                        }
-
-                        // Send a success message to indicate completion.
-                        completed_tx.send(Message::Success { connection_id }).unwrap();
-                    },
-
-                    Err(reason) => {
-                        completed_tx.send(Message::Failure {
-                            reason,
-                            connection_id,
-                        }).unwrap();
-                    },
-                };
-
-                // Notify the transaction manager that the plan execution has completed.
-                transaction_tx.send(Message::CompletePlan {
-                    statement_id,
-                    connection_id,
-                }).unwrap();
+        // Send each row of the result.
+        for block_id in table.block_ids {
+            let block = self.storage_manager.get_block(block_id).unwrap();
+            for row in block.rows() {
+                if row_ctr < limit {
+                    let row = row.map(|buf| buf.to_vec()).collect();
+                    f(row);
+                    row_ctr += 1;
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -224,4 +188,9 @@ impl ExecutionEngine {
             _ => panic!("Unsupported expression node type"),
         }
     }
+}
+
+pub struct TableIter {
+    table: Table,
+
 }

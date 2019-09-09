@@ -19,41 +19,48 @@ impl Resolver {
         }
     }
 
-    pub fn resolve(&mut self, stmt: Statement) -> Result<Plan, String> {
-        match stmt {
-            Statement::Query(q) => self.resolve_query(&*q),
-            Statement::Insert {
-                table_name,
-                columns: _,
-                source,
-            } => self.resolve_insert(table_name, source),
-            Statement::Update {
-                table_name,
-                assignments,
-                selection,
-            } => self.resolve_update(table_name, assignments, selection),
-            Statement::Delete {
-                table_name,
-                selection,
-            } => self.resolve_delete(table_name, selection),
-            Statement::CreateTable {
-                name,
-                columns,
-                constraints: _,
-                with_options: _,
-                external: _,
-                file_format: _, location: _,
-            } => self.resolve_create_table(name, columns),
-            Statement::Drop {
-                object_type,
-                if_exists,
-                names,
-                cascade,
-            } => self.resolve_drop(object_type, if_exists, names, cascade),
-            Statement::StartTransaction { modes} => self.resolve_start_transaction(modes),
-            Statement::Commit { chain } => self.resolve_commit(chain),
-            _ => Err(format!("Unrecognized AST type {}", stmt))
+    pub fn resolve(&mut self, stmts: &[Statement]) -> Result<Plan, String> {
+        if stmts.is_empty() {
+            Err("No statements were provided to the resolver".to_owned())
+        } else if stmts.len() > 1 {
+            Err("Nested queries are not yet supported".to_owned())
+        } else {
+            match &stmts[0] {
+                Statement::Query(q) => self.resolve_query(&*q),
+                Statement::Insert {
+                    table_name,
+                    columns: _,
+                    source,
+                } => self.resolve_insert(&table_name, source),
+                Statement::Update {
+                    table_name,
+                    assignments,
+                    selection,
+                } => self.resolve_update(table_name, assignments, selection),
+                Statement::Delete {
+                    table_name,
+                    selection,
+                } => self.resolve_delete(table_name, selection),
+                Statement::CreateTable {
+                    name,
+                    columns,
+                    constraints: _,
+                    with_options: _,
+                    external: _,
+                    file_format: _, location: _,
+                } => self.resolve_create_table(name, columns),
+                Statement::Drop {
+                    object_type,
+                    if_exists,
+                    names,
+                    cascade,
+                } => self.resolve_drop(object_type, *if_exists, names, *cascade),
+                Statement::StartTransaction { modes} => self.resolve_start_transaction(modes),
+                Statement::Commit { chain } => self.resolve_commit(*chain),
+                _ => Err(format!("Unrecognized AST type {}", stmts[0]))
+            }
         }
+
     }
 
     fn resolve_query(&self, query: &Query) -> Result<Plan, String> {
@@ -183,14 +190,14 @@ impl Resolver {
 
     fn resolve_insert(
         &self,
-        table_name: ObjectName,
-        source: Box<Query>
+        table_name: &ObjectName,
+        source: &Query
     ) -> Result<Plan, String> {
         let into_table = self.resolve_table(&table_name.to_string())?;
 
-        match source.body {
+        match &source.body {
             SetExpr::Values(values) => {
-                let values_vec = values.0;
+                let values_vec = &values.0;
                 if values_vec.len() == 1 {
                     let values = values_vec.first().unwrap();
                     if values.len() == into_table.columns.len() {
@@ -216,9 +223,9 @@ impl Resolver {
 
     fn resolve_update(
         &self,
-        table_name: ObjectName,
-        assignments: Vec<Assignment>,
-        selection: Option<Expr>
+        table_name: &ObjectName,
+        assignments: &[Assignment],
+        selection: &Option<Expr>
     ) -> Result<Plan, String> {
         let table = self.resolve_table(&table_name.to_string())?;
 
@@ -233,6 +240,7 @@ impl Resolver {
             .collect::<Result<Vec<_>, String>>()?;
 
         let filter = selection
+            .as_ref()
             .map(|expr| self.resolve_expr(&expr, &table.columns))
             .transpose()?
             .map(|filter| Box::new(filter));
@@ -244,9 +252,14 @@ impl Resolver {
         })
     }
 
-    fn resolve_delete(&self, table_name: ObjectName, selection: Option<Expr>) -> Result<Plan, String> {
+    fn resolve_delete(
+        &self,
+        table_name: &ObjectName,
+        selection: &Option<Expr>,
+    ) -> Result<Plan, String> {
         let from_table = self.resolve_table(&table_name.to_string())?;
         let filter = selection
+            .as_ref()
             .map(|expr| self.resolve_expr(&expr, &from_table.columns))
             .transpose()?
             .map(|filter| Box::new(filter));
@@ -257,7 +270,11 @@ impl Resolver {
         })
     }
 
-    fn resolve_create_table(&mut self, name: ObjectName, columns: Vec<ColumnDef>) -> Result<Plan, String> {
+    fn resolve_create_table(
+        &mut self,
+        name: &ObjectName,
+        columns: &[ColumnDef],
+    ) -> Result<Plan, String> {
         let name= name.to_string();
         if self.catalog.table_exists(&name) {
             Err(format!("Table {} already exists", &name))
@@ -292,12 +309,12 @@ impl Resolver {
 
     fn resolve_drop(
         &self,
-        object_type: ObjectType,
+        object_type: &ObjectType,
         if_exists: bool,
-        names: Vec<ObjectName>,
+        names: &[ObjectName],
         cascade: bool
     ) -> Result<Plan, String> {
-        if object_type == ObjectType::View {
+        if object_type == &ObjectType::View {
             Err("Views are not yet supported".to_owned())
         } else if if_exists {
             Err("If exists is not yet supported".to_owned())
@@ -312,7 +329,7 @@ impl Resolver {
     }
 
 
-    fn resolve_start_transaction(&self, _modes: Vec<TransactionMode>) -> Result<Plan, String> {
+    fn resolve_start_transaction(&self, _modes: &[TransactionMode]) -> Result<Plan, String> {
         Ok(Plan::BeginTransaction)
     }
 
