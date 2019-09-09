@@ -5,8 +5,8 @@ use std::sync::Arc;
 use sqlparser::ast::{Assignment, BinaryOperator, ColumnDef, DataType, Expr, ObjectName, ObjectType, Query, SelectItem, SetExpr, Statement, TableFactor, TableWithJoins, TransactionMode, Value};
 
 use hustle_catalog::{Catalog, Column, Table};
-use hustle_common::plan::{ComparativeVariant, Expression, Plan, Query as QueryPlan, QueryOperator};
-use hustle_types::{Bool, Char, Int64, TypeVariant};
+use hustle_common::plan::{Expression, Plan, Query as QueryPlan, QueryOperator};
+use hustle_types::{Bool, Char, Int64, TypeVariant, ComparativeVariant};
 
 pub struct Resolver {
     catalog: Arc<Catalog>,
@@ -85,7 +85,7 @@ impl Resolver {
             _ => Err(format!("Unsupported query type {}", query.body)),
         }?;
 
-        Ok(Plan::Query { query: query_plan })
+        Ok(Plan::Query(query_plan))
     }
 
     fn resolve_input(&self, from: &[TableWithJoins]) -> Result<QueryPlan, String> {
@@ -103,7 +103,7 @@ impl Resolver {
 
             Ok(QueryPlan {
                 output: table.columns.clone(),
-                operator: QueryOperator::TableReference { table }
+                operator: QueryOperator::TableReference(table)
             })
         } else {
             let tables = from.iter()
@@ -120,7 +120,7 @@ impl Resolver {
 
                     Ok(QueryPlan {
                         output: table.columns.clone(),
-                        operator: QueryOperator::TableReference { table },
+                        operator: QueryOperator::TableReference(table),
                     })
                 }).collect::<Result<Vec<QueryPlan>, String>>()?;
 
@@ -286,7 +286,7 @@ impl Resolver {
 
             let table = Table::new(name, columns);
             self.catalog.create_table(table.clone())?;
-            Ok(Plan::CreateTable { table })
+            Ok(Plan::CreateTable(table))
         }
     }
 
@@ -307,7 +307,7 @@ impl Resolver {
             Err("Cannot drop more than one table at a time".to_owned())
         } else {
             let table = self.resolve_table(&names[0].to_string())?;
-            Ok(Plan::DropTable { table })
+            Ok(Plan::DropTable(table))
         }
     }
 

@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 
-use hustle_common::{Message, Plan};
+use hustle_common::message::Message;
+use hustle_common::plan::Plan;
 
 use crate::policy::{Policy, ZeroConcurrencyPolicy};
 
 pub struct TransactionManager {
-    policy: Box<Policy + Send>,
+    policy: Box<dyn Policy + Send>,
     transaction_ids: HashMap<u64, u64>,
 }
 
@@ -38,43 +39,24 @@ impl TransactionManager {
                         ),
                         Plan::CommitTransaction => self.commit_transaction(
                             connection_id,
+                            &execution_tx,
                             &completed_tx,
-                            &|admit_plan, statement_id| Self::admit_statement(
-                                admit_plan,
-                                statement_id,
-                                connection_id,
-                                &execution_tx,
-                            ),
                         ),
                         _ => self.enqueue_statement(
                             plan,
                             connection_id,
-                            &|admit_plan, statement_id| Self::admit_statement(
-                                admit_plan,
-                                statement_id,
-                                connection_id,
-                                &execution_tx,
-                            )
+                            &execution_tx
                         ),
                     }
                 },
                 Message::CompletePlan { statement_id, connection_id } => self.complete_statement(
                     statement_id,
-                    &|admit_plan, statement_id| Self::admit_statement(
-                        admit_plan,
-                        statement_id,
-                        connection_id,
-                        &execution_tx
-                    ),
+                    connection_id,
+                    &execution_tx,
                 ),
                 Message::CloseConnection { connection_id } => self.close(
                     connection_id,
-                    &|admit_plan, statement_id| Self::admit_statement(
-                        admit_plan,
-                        statement_id,
-                        connection_id,
-                        &execution_tx
-                    ),
+                    &execution_tx,
                 ),
                 _ => completed_tx.send(buf).unwrap()
             };
@@ -98,11 +80,15 @@ impl TransactionManager {
     fn commit_transaction(
         &mut self,
         connection_id: u64,
+        execution_tx: &Sender<Vec<u8>>,
         completed_tx: &Sender<Vec<u8>>,
-        admit_statement: &Fn(Plan, u64),
     ) {
         let response = if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
-            self.policy.commit_transaction(transaction_id, admit_statement);
+            Self::admit_statements(
+                self.policy.commit_transaction(transaction_id),
+                connection_id,
+                execution_tx
+            );
             Message::Success { connection_id }
         } else {
             Message::Failure {
@@ -117,43 +103,65 @@ impl TransactionManager {
         &mut self,
         plan: Plan,
         connection_id: u64,
-        admit_statement: &Fn(Plan, u64),
+        execution_tx: &Sender<Vec<u8>>,
     ) {
         if let Some(transaction_id) = self.transaction_ids.get(&connection_id) {
-            self.policy.enqueue_statement(transaction_id.to_owned(), plan, admit_statement);
+            Self::admit_statements(
+                self.policy.enqueue_statement(transaction_id.to_owned(), plan),
+                connection_id,
+                execution_tx
+            );
         } else {
             let transaction_id = self.policy.begin_transaction();
-            self.policy.enqueue_statement(transaction_id, plan, admit_statement);
-            self.policy.commit_transaction(transaction_id, admit_statement);
+            Self::admit_statements(
+                self.policy.enqueue_statement(transaction_id, plan),
+                connection_id,
+                execution_tx,
+            );
+            Self::admit_statements(
+                self.policy.commit_transaction(transaction_id),
+                connection_id,
+                execution_tx,
+            );
         }
     }
 
     fn complete_statement(
         &mut self,
         statement_id: u64,
-        admit_statement: &Fn(Plan, u64),
+        connection_id: u64,
+        execution_tx: &Sender<Vec<u8>>,
     ) {
-        self.policy.complete_statement(statement_id, admit_statement);
+        Self::admit_statements(
+            self.policy.complete_statement(statement_id),
+            connection_id,
+            execution_tx,
+        );
     }
 
-    fn close(&mut self, connection_id: u64, admit_statement: &Fn(Plan, u64)) {
+    fn close(&mut self, connection_id: u64, execution_tx: &Sender<Vec<u8>>) {
         // TODO: Rollback transaction on connection close.
         // We don't support transaction rollback so when a connection closes we just commit.
         if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
-            self.policy.commit_transaction(transaction_id.to_owned(), admit_statement);
+            Self::admit_statements(
+                self.policy.commit_transaction(transaction_id.to_owned()),
+                connection_id,
+                execution_tx,
+            );
         }
     }
 
-    fn admit_statement(
-        plan: Plan,
-        statement_id: u64,
+    fn admit_statements(
+        statements: Vec<(Plan, u64)>,
         connection_id: u64,
-        execution_tx: &Sender<Vec<u8>>
+        execution_tx: &Sender<Vec<u8>>,
     ) {
-        execution_tx.send(Message::ExecutePlan {
-            plan,
-            statement_id,
-            connection_id,
-        }.serialize().unwrap()).unwrap();
+        for (plan, statement_id) in statements {
+            execution_tx.send(Message::ExecutePlan {
+                plan,
+                statement_id,
+                connection_id,
+            }.serialize().unwrap()).unwrap();
+        }
     }
 }

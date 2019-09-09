@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 hustle-common = { path = "../common" }
+hustle-catalog = { path = "../catalog" }
 hustle-types = { path = "../types" }
 crossbeam = "0.7.1"
 

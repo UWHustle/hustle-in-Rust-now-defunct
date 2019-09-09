@@ -86,8 +86,8 @@ impl ExecutionEngine {
 
     fn compile_plan(plan: Plan) -> Box<dyn Operator> {
         match plan {
-            Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
-            Plan::DropTable { table } => Box::new(DropTable::new(table)),
+            Plan::CreateTable(table) => Box::new(CreateTable::new(table)),
+            Plan::DropTable(table) => Box::new(DropTable::new(table)),
             Plan::Insert { into_table, bufs } => {
                 let router = BlockPoolDestinationRouter::with_block_ids(
                     into_table.block_ids,
@@ -103,7 +103,7 @@ impl ExecutionEngine {
                 let filter = filter.map(|f| Self::compile_filter(*f, &from_table.columns));
                 Box::new(Delete::new(filter, from_table.block_ids))
             },
-            Plan::Query { query } => {
+            Plan::Query(query) => {
                 let cols = query.output.clone();
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
@@ -117,7 +117,7 @@ impl ExecutionEngine {
     fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
         let router = BlockPoolDestinationRouter::new(query.output);
         match query.operator {
-            QueryOperator::TableReference { table } => {
+            QueryOperator::TableReference(table) => {
                 operators.push(Box::new(TableReference::new(table, block_tx)));
             },
             QueryOperator::Project { input, cols } => {

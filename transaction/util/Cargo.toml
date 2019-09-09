@@ -6,4 +6,7 @@ edition = "2018"
 
 [dependencies]
 hustle-common = { path = "../../common" }
+hustle-catalog = { path = "../../catalog" }
 hustle-resolver = { path = "../../resolver" }
+hustle-types = { path = "../../types" }
+sqlparser = "0.4.0"
