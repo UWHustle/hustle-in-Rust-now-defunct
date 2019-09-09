@@ -46,7 +46,7 @@ mod char_tests {
         char_type.set("aardvark", &mut buf_a);
         char_type.set("zyzzyvas", &mut buf_b);
 
-        assert!(char_type.eq(&char_type, &buf_a, &buf_a));
+        assert!(char_type.compare_eq(&char_type, &buf_a, &buf_a));
 
         assert!(char_type.lt(&char_type, &buf_a, &buf_b));
         assert!(char_type.le(&char_type, &buf_a, &buf_b));

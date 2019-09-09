@@ -43,7 +43,7 @@ impl HustleType for Bits {
 }
 
 impl CompareEq<Bits> for Bits {
-    fn eq(&self, other: &Bits, left: &[u8], right: &[u8]) -> bool {
+    fn compare_eq(&self, other: &Bits, left: &[u8], right: &[u8]) -> bool {
         self.len == other.len && left == right
     }
 }

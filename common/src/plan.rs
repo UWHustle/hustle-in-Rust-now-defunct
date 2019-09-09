@@ -1,5 +1,5 @@
 use hustle_catalog::{Column, Table};
-use hustle_types::TypeVariant;
+use hustle_types::{TypeVariant, ComparativeVariant};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {
@@ -71,11 +71,6 @@ pub enum Expression {
         buf: Vec<u8>,
     },
     ColumnReference(usize),
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ComparativeVariant {
-    Eq, Lt, Le, Gt, Ge
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -257,17 +257,17 @@ impl ColumnMajorBlock {
 
     pub fn filter_cols(
         &self,
-        left_col_i: usize,
-        right_col_i: usize,
+        l_col_i: usize,
+        r_col_i: usize,
         f: impl Fn(&[u8], &[u8]) -> bool
     ) -> RowMask {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
-                .zip(self.get_col_mut(left_col_i))
-                .zip(self.get_col_mut(right_col_i))
-                .map(|(((valid, ready), left_buf), right_buf)|
-                    valid && ready && f(left_buf, right_buf)
+                .zip(self.get_col_mut(l_col_i))
+                .zip(self.get_col_mut(r_col_i))
+                .map(|(((valid, ready), l_buf), r_buf)|
+                    valid && ready && f(l_buf, r_buf)
                 )
         );
 

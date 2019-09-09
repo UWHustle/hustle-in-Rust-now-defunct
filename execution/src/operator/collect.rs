@@ -28,7 +28,7 @@ impl Collect {
     }
 
     pub fn get_table(&self) -> Table {
-        Table::new(String::new(), self.cols.clone(), self.block_ids.lock().unwrap().clone())
+        Table::new(String::new(), self.cols.clone())
     }
 }
 

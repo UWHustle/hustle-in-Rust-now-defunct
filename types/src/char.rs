@@ -46,25 +46,25 @@ impl HustleType for Char {
 }
 
 impl CompareEq<Char> for Char {
-    fn eq(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
+    fn compare_eq(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
         left == right
     }
 }
 
 impl CompareOrd<Char> for Char {
-    fn lt(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
+    fn compare_lt(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
         left < right
     }
 
-    fn le(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
+    fn compare_le(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
         left <= right
     }
 
-    fn gt(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
+    fn compare_gt(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
         left > right
     }
 
-    fn ge(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
+    fn compare_ge(&self, _other: &Char, left: &[u8], right: &[u8]) -> bool {
         left >= right
     }
 }

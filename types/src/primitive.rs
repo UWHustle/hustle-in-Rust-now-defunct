@@ -34,25 +34,25 @@ macro_rules! make_primitive_type {
 macro_rules! make_compare {
     ($impl_ty:ty, $compare_ident:ident, $as_ty:ty) => {
         impl CompareEq<$compare_ident> for $impl_ty {
-            fn eq(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
+            fn compare_eq(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
                 unsafe { *(left.as_ptr() as *const $as_ty) == *(right.as_ptr() as *const $as_ty) }
             }
         }
 
         impl CompareOrd<$compare_ident> for $impl_ty {
-            fn lt(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
+            fn compare_lt(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
                 unsafe { *(left.as_ptr() as *const $as_ty) < *(right.as_ptr() as *const $as_ty) }
             }
 
-            fn le(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
+            fn compare_le(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
                 unsafe { *(left.as_ptr() as *const $as_ty) <= *(right.as_ptr() as *const $as_ty) }
             }
 
-            fn gt(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
+            fn compare_gt(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
                 unsafe { *(left.as_ptr() as *const $as_ty) > *(right.as_ptr() as *const $as_ty) }
             }
 
-            fn ge(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
+            fn compare_ge(&self, _other: &$compare_ident, left: &[u8], right: &[u8]) -> bool {
                 unsafe { *(left.as_ptr() as *const $as_ty) >= *(right.as_ptr() as *const $as_ty) }
             }
         }
