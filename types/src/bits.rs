@@ -40,6 +40,15 @@ impl HustleType for Bits {
     fn byte_len(&self) -> usize {
         self.byte_len
     }
+
+    fn to_string(&self, buf: &[u8]) -> String {
+        let mut s = String::new();
+        for bit_i in 0..self.len {
+            let b = if self.get(bit_i, buf) { '1' } else { '0' };
+            s.push(b);
+        }
+        s
+    }
 }
 
 impl CompareEq<Bits> for Bits {

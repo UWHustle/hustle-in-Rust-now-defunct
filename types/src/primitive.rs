@@ -27,6 +27,10 @@ macro_rules! make_primitive_type {
             fn byte_len(&self) -> usize {
                 size_of::<$primitive_ty>()
             }
+
+            fn to_string(&self, buf: &[u8]) -> String {
+                format!("{}", self.get(buf))
+            }
         }
     };
 }

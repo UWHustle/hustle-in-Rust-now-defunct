@@ -43,6 +43,10 @@ impl HustleType for Char {
     fn byte_len(&self) -> usize {
         self.len
     }
+
+    fn to_string(&self, buf: &[u8]) -> String {
+        self.get(buf).to_owned()
+    }
 }
 
 impl CompareEq<Char> for Char {

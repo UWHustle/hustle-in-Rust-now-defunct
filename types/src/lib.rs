@@ -42,6 +42,7 @@ impl TypeVariant {
 
 pub trait HustleType {
     fn byte_len(&self) -> usize;
+    fn to_string(&self, buf: &[u8]) -> String;
 }
 
 pub trait CompareEq<T> {
