@@ -125,7 +125,6 @@ impl Server {
                         Message::CompletePlan { statement_id } => {
                             let statements = transaction_manager.complete_statement(
                                 statement_id,
-                                message.connection_id,
                             );
                             for (plan, statement_id) in statements {
                                 execution_tx.send(InternalMessage::new(

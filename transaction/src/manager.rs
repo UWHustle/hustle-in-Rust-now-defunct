@@ -1,7 +1,5 @@
 use std::collections::HashMap;
-use std::sync::mpsc::{Receiver, Sender};
 
-use hustle_common::message::Message;
 use hustle_common::plan::Plan;
 
 use crate::policy::{Policy, ZeroConcurrencyPolicy};
@@ -30,11 +28,9 @@ impl TransactionManager {
     }
 
     pub fn commit_transaction(&mut self, connection_id: u64) -> Result<(), String> {
-        if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
-            Ok(())
-        } else {
-            Err("Cannot commit when no transaction is active".to_owned())
-        }
+        self.transaction_ids.remove(&connection_id)
+            .map(|_| ())
+            .ok_or("Cannot commit when no transaction is active".to_owned())
     }
 
     pub fn enqueue_statement(&mut self, plan: Plan, connection_id: u64) -> Vec<(Plan, u64)> {
@@ -48,11 +44,7 @@ impl TransactionManager {
         }
     }
 
-    pub fn complete_statement(
-        &mut self,
-        statement_id: u64,
-        connection_id: u64
-    ) -> Vec<(Plan, u64)> {
+    pub fn complete_statement(&mut self, statement_id: u64, ) -> Vec<(Plan, u64)> {
         self.policy.complete_statement(statement_id)
     }
 

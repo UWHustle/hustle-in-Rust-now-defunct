@@ -2,6 +2,7 @@ use std::io;
 use std::net::{TcpStream, ToSocketAddrs};
 
 use crate::HustleResult;
+use hustle_common::message::Message;
 
 pub struct HustleConnection {
     tcp_stream: TcpStream
@@ -20,22 +21,30 @@ impl HustleConnection {
 
         let response = Message::receive(&mut self.tcp_stream).unwrap();
         match response {
-            Message::Success { connection_id: _ } => Ok(None),
-            Message::Schema { schema, connection_id: _ } => {
+            Message::Success => Ok(None),
+            Message::Schema { schema } => {
+                let names = schema.iter()
+                    .map(|c| c.get_name().to_owned())
+                    .collect();
+
+                let types = schema.into_iter()
+                    .map(|c| c.into_type_variant().into_type())
+                    .collect();
+
                 let mut rows = vec![];
                 loop {
                     let response = Message::receive(&mut self.tcp_stream).unwrap();
                     match response {
-                        Message::Success { connection_id: _ } => break,
-                        Message::ReturnRow { row, connection_id: _ } => {
+                        Message::Success => break,
+                        Message::ReturnRow { row } => {
                             rows.push(row);
                         }
                         _ => panic!("Invalid message type sent to client")
                     };
                 };
-                Ok(Some(HustleResult::new(schema, rows)))
+                Ok(Some(HustleResult::new(names, types, rows)))
             },
-            Message::Failure { reason, connection_id: _ } => Err(reason),
+            Message::Failure { reason } => Err(reason),
             _ => panic!("Invalid message type sent to client")
         }
     }
