@@ -45,7 +45,7 @@ impl Cartesian {
 }
 
 impl Operator for Cartesian {
-    fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         let mut output_block = self.router.get_block(storage_manager);
 
         let mut table_block_ids = (0..self.n_tables).map(|_| vec![]).collect::<Vec<Vec<u64>>>();

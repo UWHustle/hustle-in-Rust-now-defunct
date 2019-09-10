@@ -1,8 +1,7 @@
 use std::sync::{Arc, mpsc};
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 
 use hustle_catalog::{Catalog, Column, Table};
-use hustle_common::message::Message;
 use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
@@ -25,8 +24,9 @@ impl ExecutionEngine {
 
     pub fn execute_plan(&self, plan: Plan) -> Result<Option<Table>, String> {
         let operator = Self::compile_plan(plan);
+        let result = operator.downcast_ref::<Collect>().map(|collect| collect.get_result());
         operator.execute(&self.storage_manager, &self.catalog);
-        let table = operator.downcast_ref::<Collect>().map(|collect| collect.get_table());
+        let table = result.map(|r| r.into_table());
         Ok(table)
     }
 
@@ -188,9 +188,4 @@ impl ExecutionEngine {
             _ => panic!("Unsupported expression node type"),
         }
     }
-}
-
-pub struct TableIter {
-    table: Table,
-
 }

@@ -19,7 +19,7 @@ impl Insert {
 }
 
 impl Operator for Insert {
-    fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         let output_block = self.router.get_block(storage_manager);
         output_block.insert_row(self.bufs.iter().map(|buf| buf.as_slice()));
         self.router.return_block(output_block);

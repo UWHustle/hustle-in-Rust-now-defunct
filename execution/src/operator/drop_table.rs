@@ -14,7 +14,7 @@ impl DropTable {
 }
 
 impl Operator for DropTable {
-    fn execute(&self, storage_manager: &StorageManager, catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog) {
         for &block_id in &self.table.block_ids {
             storage_manager.delete_block(block_id);
         }

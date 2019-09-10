@@ -64,10 +64,14 @@ pub struct Table {
 
 impl Table {
     pub fn new(name: String, columns: Vec<Column>) -> Self {
+        Self::with_block_ids(name, columns, vec![])
+    }
+
+    pub fn with_block_ids(name: String, columns: Vec<Column>, block_ids: Vec<u64>) -> Self {
         Table {
             name,
             columns,
-            block_ids: vec![],
+            block_ids,
         }
     }
 }

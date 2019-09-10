@@ -31,7 +31,7 @@ impl Select {
 }
 
 impl Operator for Select {
-    fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         let mut output_block = self.router.get_block(storage_manager);
 
         for input_block_id in &self.block_rx {

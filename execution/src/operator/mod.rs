@@ -26,7 +26,7 @@ pub mod collect;
 mod util;
 
 pub trait Operator: Downcast {
-    fn execute(&self, storage_manager: &StorageManager, catalog: &Catalog);
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog);
 }
 
 impl_downcast!(Operator);

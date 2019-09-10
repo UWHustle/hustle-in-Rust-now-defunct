@@ -25,7 +25,7 @@ impl Update {
 }
 
 impl Operator for Update {
-    fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         for &block_id in &self.block_ids {
             let block = storage_manager.get_block(block_id).unwrap();
             if let Some(filter) = &self.filter {
