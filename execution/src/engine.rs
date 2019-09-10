@@ -53,11 +53,12 @@ impl ExecutionEngine {
             Plan::CreateTable(table) => Box::new(CreateTable::new(table)),
             Plan::DropTable(table) => Box::new(DropTable::new(table)),
             Plan::Insert { into_table, bufs } => {
+                let table_name = into_table.name.clone();
                 let router = BlockPoolDestinationRouter::with_block_ids(
                     into_table.block_ids,
                     into_table.columns,
                 );
-                Box::new(Insert::new(bufs, router))
+                Box::new(Insert::new(table_name, bufs, router))
             },
             Plan::Update { table, assignments, filter } => {
                 let filter = filter.map(|f| Self::compile_filter(*f, &table.columns));

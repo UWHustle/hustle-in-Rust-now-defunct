@@ -2,7 +2,7 @@
 extern crate serde;
 
 use std::borrow::Borrow;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
@@ -14,13 +14,13 @@ const CATALOG_FILE_NAME: &str = "catalog.json";
 
 #[derive(Serialize, Deserialize)]
 pub struct Catalog {
-    tables: RwLock<HashSet<Table>>,
+    tables: RwLock<HashMap<String, Table>>,
 }
 
 impl Catalog {
     pub fn new() -> Self {
         Catalog {
-            tables: RwLock::new(HashSet::new()),
+            tables: RwLock::new(HashMap::new()),
         }
     }
 
@@ -30,7 +30,7 @@ impl Catalog {
     }
 
     pub fn table_exists(&self, name: &str) -> bool {
-        self.tables.read().unwrap().contains(name)
+        self.tables.read().unwrap().contains_key(name)
     }
 
     pub fn get_table(&self, name: &str) -> Option<Table> {
@@ -38,12 +38,20 @@ impl Catalog {
     }
 
     pub fn create_table(&self, table: Table) -> Result<(), String> {
-        self.tables.write().unwrap().insert(table);
+        self.tables.write().unwrap().insert(table.name.clone(), table);
         self.flush()
     }
 
     pub fn drop_table(&self, name: &str) -> Result<(), String> {
         self.tables.write().unwrap().remove(name);
+        self.flush()
+    }
+
+    pub fn append_block_id(&self, table_name: &str, block_id: u64) -> Result<(), String> {
+        self.tables.write().unwrap()
+            .get_mut(table_name)
+            .ok_or(format!("Table {} does not exist", table_name))?
+            .block_ids.push(block_id);
         self.flush()
     }
 

@@ -31,20 +31,19 @@ impl Project {
 
 impl Operator for Project {
     fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
-        let mut output_block = self.router.get_block(storage_manager);
-
         for input_block_id in &self.block_rx {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
-            let rows = input_block.project(&self.cols);
+            let mut rows = input_block.project(&self.cols);
             util::send_rows(
-                rows,
-                &mut output_block,
+                &mut rows,
                 &self.block_tx,
                 &self.router,
                 storage_manager,
             );
         }
 
-        self.block_tx.send(output_block.id).unwrap();
+        for block_id in self.router.get_all_block_ids() {
+            self.block_tx.send(block_id).unwrap()
+        }
     }
 }

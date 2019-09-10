@@ -46,8 +46,6 @@ impl Cartesian {
 
 impl Operator for Cartesian {
     fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
-        let mut output_block = self.router.get_block(storage_manager);
-
         let mut table_block_ids = (0..self.n_tables).map(|_| vec![]).collect::<Vec<Vec<u64>>>();
 
         for (received_table, received_block_id) in &self.block_rx {
@@ -63,13 +61,17 @@ impl Operator for Cartesian {
                     .map(|&block_id| storage_manager.get_block(block_id).unwrap())
                     .collect::<Vec<_>>();
 
-                let rows = blocks.iter()
+                let mut rows = blocks.iter()
                     .map(|block| block.rows())
                     .multi_cartesian_product()
                     .map(|row| row.into_iter().flat_map(|r| r.clone()));
 
-                util::send_rows(rows, &mut output_block, &self.block_tx, &self.router, storage_manager)
+                util::send_rows(&mut rows, &self.block_tx, &self.router, storage_manager)
             }
+        }
+
+        for block_id in self.router.get_all_block_ids() {
+            self.block_tx.send(block_id).unwrap()
         }
     }
 }
