@@ -8,6 +8,7 @@ use bit_vec::BitVec;
 use memmap::MmapMut;
 
 use hustle_types::{Bits, HustleType};
+use byteorder::{WriteBytesExt, ReadBytesExt, LittleEndian};
 
 pub struct RowMask {
     bits: BitVec
@@ -23,7 +24,6 @@ impl RowMask {
     }
 }
 
-#[derive(Serialize, Deserialize)]
 struct Header {
     col_sizes: Vec<usize>,
     n_flags: usize,
@@ -49,13 +49,19 @@ impl ColumnMajorBlock {
     pub fn new(col_sizes: Vec<usize>, n_flags: usize, mut mmap: MmapMut) -> Self {
         assert!(!col_sizes.is_empty(), "Cannot create a block with no columns");
 
-        let header = Header { col_sizes, n_flags };
-
         let data_offset = {
             let mut cursor = Cursor::new(mmap.as_mut());
-            serde_json::to_writer(&mut cursor, &header).unwrap();
+
+            cursor.write_u64::<LittleEndian>(col_sizes.len() as u64).unwrap();
+            for &col_size in &col_sizes {
+                cursor.write_u64::<LittleEndian>(col_size as u64).unwrap();
+            }
+            cursor.write_u64::<LittleEndian>(n_flags as u64).unwrap();
+
             cursor.position() as usize
         };
+
+        let header = Header { col_sizes, n_flags };
 
         let block = Self::with_header(header, data_offset, mmap);
 
@@ -67,7 +73,14 @@ impl ColumnMajorBlock {
     pub fn from_buf(mut mmap: MmapMut) -> Self {
         let (header, data_offset) = {
             let mut cursor = Cursor::new(mmap.as_mut());
-            let header = serde_json::from_reader(&mut cursor).unwrap();
+
+            let n_cols = cursor.read_u64::<LittleEndian>().unwrap() as usize;
+            let col_sizes = (0..n_cols)
+                .map(|_| cursor.read_u64::<LittleEndian>().unwrap() as usize)
+                .collect::<Vec<_>>();
+            let n_flags = cursor.read_u64::<LittleEndian>().unwrap() as usize;
+
+            let header = Header { col_sizes, n_flags };
             (header, cursor.position() as usize)
         };
 

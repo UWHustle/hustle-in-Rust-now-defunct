@@ -166,7 +166,7 @@ impl Server {
                                         )).unwrap();
 
                                         let connection_id = message.connection_id;
-                                        execution_engine.get_rows(table, 10, |row|
+                                        execution_engine.get_rows(table, |row|
                                             completed_tx_clone.send(InternalMessage::new(
                                                 connection_id,
                                                 Message::ReturnRow { row }

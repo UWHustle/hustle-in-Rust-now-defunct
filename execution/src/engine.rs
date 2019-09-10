@@ -30,20 +30,13 @@ impl ExecutionEngine {
         Ok(table)
     }
 
-    pub fn get_rows(&self, table: Table, limit: usize, f: impl Fn(Vec<Vec<u8>>)) {
-        let mut row_ctr = 0;
-
+    pub fn get_rows(&self, table: Table, f: impl Fn(Vec<Vec<u8>>)) {
         // Send each row of the result.
         for block_id in table.block_ids {
             let block = self.storage_manager.get_block(block_id).unwrap();
             for row in block.rows() {
-                if row_ctr < limit {
-                    let row = row.map(|buf| buf.to_vec()).collect();
-                    f(row);
-                    row_ctr += 1;
-                } else {
-                    break;
-                }
+                let row = row.map(|buf| buf.to_vec()).collect();
+                f(row);
             }
         }
     }

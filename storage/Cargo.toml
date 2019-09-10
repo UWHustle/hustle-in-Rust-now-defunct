@@ -7,9 +7,8 @@ authors = ["gaffneyk <kpgaffney@wisc.edu>"]
 hustle-types = { path = "../types" }
 omap = { git = "https://github.com/UWHustle/omap" }
 bit-vec = "0.6"
+byteorder = "1.3.2"
 memmap = "0.7.0"
-serde = { version = "1.0.92", features = ["derive"] }
-serde_json = "1.0.40"
 uuid = { version = "0.7", features = ["v4"] }
 
 [dev-dependencies]
