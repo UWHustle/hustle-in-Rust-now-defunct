@@ -43,7 +43,6 @@ install:
 - export DEBUG_FLAGS="-g0";
 - export RELEASE_FLAGS="-O0 -DNDEBUG";
 - export LINKER_FLAGS="-s"
-- sudo pip3 install -r requirements.txt
 
 before_script:
 - curl https://sh.rustup.rs -sSf | sh -s -- -y
