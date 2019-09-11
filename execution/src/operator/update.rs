@@ -67,7 +67,7 @@ mod update_tests {
             block.filter_col(0, |buf| Bool.get(buf))
         );
 
-        let update = Update::new(vec![(1, buf.clone())], Some(filter), vec![block.id]);
+        let update = Box::new(Update::new(vec![(1, buf.clone())], Some(filter), vec![block.id]));
         update.execute(&storage_manager, &catalog);
 
         assert_eq!(block.get_row_col(0, 0), Some(old_values[0][0].as_slice()));

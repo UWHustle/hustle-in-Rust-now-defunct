@@ -32,7 +32,6 @@ impl Operator for TableReference {
 
 #[cfg(test)]
 mod table_reference_tests {
-    use std::mem;
     use std::sync::mpsc;
 
     use super::*;
@@ -42,12 +41,11 @@ mod table_reference_tests {
         let storage_manager = StorageManager::with_unique_data_directory();
         let catalog = Catalog::new();
         let block_ids = vec![0, 1, 2];
-        let table = Table::new("table_reference".to_owned(), vec![], block_ids.clone());
+        let table = Table::with_block_ids("table_reference".to_owned(), vec![], block_ids.clone());
         let (block_tx, block_rx) = mpsc::channel();
 
-        let table_reference = TableReference::new(table.clone(), block_tx);
+        let table_reference = Box::new(TableReference::new(table.clone(), block_tx));
         table_reference.execute(&storage_manager, &catalog);
-        mem::drop(table_reference);
 
         assert_eq!(block_rx.iter().collect::<Vec<u64>>(), block_ids);
 

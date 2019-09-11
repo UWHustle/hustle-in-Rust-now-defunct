@@ -45,6 +45,7 @@ mod insert_tests {
         let storage_manager = StorageManager::with_unique_data_directory();
         let catalog = Catalog::new();
         let table = test_util::example_table();
+        catalog.create_table(table.clone()).unwrap();
         let router = BlockPoolDestinationRouter::new(table.columns);
 
         let bool_type = Bool;
@@ -61,21 +62,8 @@ mod insert_tests {
         int64_type.set(1, &mut bufs[1]);
         char_type.set("a", &mut bufs[2]);
 
-        let insert = Insert::new(bufs, router);
+        let insert = Box::new(Insert::new("insert".to_owned(), bufs.clone(), router));
         insert.execute(&storage_manager, &catalog);
-
-        let output_block_ids = insert.router.get_block_ids();
-        assert!(!output_block_ids.is_empty());
-
-        let output_block = storage_manager.get_block(*output_block_ids.first().unwrap()).unwrap();
-        let cols = (0..output_block.n_cols()).collect::<Vec<usize>>();
-        let mut rows = output_block.project(&cols);
-
-        for (actual_buf, expected_buf) in rows.next().unwrap().zip(insert.bufs) {
-            assert_eq!(actual_buf, expected_buf.as_slice());
-        }
-
-        assert!(rows.next().is_none());
 
         storage_manager.clear();
     }

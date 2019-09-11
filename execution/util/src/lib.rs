@@ -7,11 +7,25 @@ pub fn example_table() -> Table {
     Table::new(
         "insert".to_owned(),
         vec![
-            Column::new("col_bool".to_owned(), TypeVariant::Bool(Bool), false),
-            Column::new("col_int64".to_owned(), TypeVariant::Int64(Int64), false),
-            Column::new("col_char".to_owned(), TypeVariant::Char(Char::new(1)), false),
+            Column::new(
+                "col_bool".to_owned(),
+                "insert".to_owned(),
+                TypeVariant::Bool(Bool),
+                false,
+            ),
+            Column::new(
+                "col_int64".to_owned(),
+                "insert".to_owned(),
+                TypeVariant::Int64(Int64),
+                false,
+            ),
+            Column::new(
+                "col_char".to_owned(),
+                "insert".to_owned(),
+                TypeVariant::Char(Char::new(1)),
+                false,
+            ),
         ],
-        vec![],
     )
 }
 

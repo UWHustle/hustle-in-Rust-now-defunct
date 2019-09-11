@@ -29,15 +29,15 @@ mod primitive_tests {
         let false_buf = init_buf!(bool_type, false);
         let true_buf = init_buf!(bool_type, true);
 
-        assert!(bool_type.eq(&bool_type, &false_buf, &false_buf)); // false == false
-        assert!(bool_type.eq(&bool_type, &true_buf, &true_buf)); // true == true
-        assert!(!bool_type.eq(&bool_type, &false_buf, &true_buf)); // !(false == true)
-        assert!(bool_type.lt(&bool_type, &false_buf, &true_buf)); // false < true
-        assert!(bool_type.le(&bool_type, &false_buf, &true_buf)); // false <= true
-        assert!(bool_type.le(&bool_type, &false_buf, &false_buf)); // false <= false
-        assert!(bool_type.gt(&bool_type, &true_buf, &false_buf)); // true > false
-        assert!(bool_type.ge(&bool_type, &true_buf, &false_buf)); // true >= false
-        assert!(bool_type.ge(&bool_type, &true_buf, &true_buf)); // true >= true
+        assert!(bool_type.compare_eq(&bool_type, &false_buf, &false_buf)); // false == false
+        assert!(bool_type.compare_eq(&bool_type, &true_buf, &true_buf)); // true == true
+        assert!(!bool_type.compare_eq(&bool_type, &false_buf, &true_buf)); // !(false == true)
+        assert!(bool_type.compare_lt(&bool_type, &false_buf, &true_buf)); // false < true
+        assert!(bool_type.compare_le(&bool_type, &false_buf, &true_buf)); // false <= true
+        assert!(bool_type.compare_le(&bool_type, &false_buf, &false_buf)); // false <= false
+        assert!(bool_type.compare_gt(&bool_type, &true_buf, &false_buf)); // true > false
+        assert!(bool_type.compare_ge(&bool_type, &true_buf, &false_buf)); // true >= false
+        assert!(bool_type.compare_ge(&bool_type, &true_buf, &true_buf)); // true >= true
     }
 
     #[test]
@@ -63,24 +63,24 @@ mod primitive_tests {
         let int64_zero_buf = init_buf!(int64_type, 0i64);
         let int64_max_buf = init_buf!(int64_type, std::i64::MAX);
 
-        assert!(int8_type.lt(&int8_type, &int8_min_buf, &int8_zero_buf));
-        assert!(int8_type.lt(&int8_type, &int8_zero_buf, &int8_max_buf));
+        assert!(int8_type.compare_lt(&int8_type, &int8_min_buf, &int8_zero_buf));
+        assert!(int8_type.compare_lt(&int8_type, &int8_zero_buf, &int8_max_buf));
 
-        assert!(int16_type.lt(&int16_type, &int16_min_buf, &int16_zero_buf));
-        assert!(int16_type.lt(&int16_type, &int16_zero_buf, &int16_max_buf));
+        assert!(int16_type.compare_lt(&int16_type, &int16_min_buf, &int16_zero_buf));
+        assert!(int16_type.compare_lt(&int16_type, &int16_zero_buf, &int16_max_buf));
 
-        assert!(int32_type.lt(&int32_type, &int32_min_buf, &int32_zero_buf));
-        assert!(int32_type.lt(&int32_type, &int32_zero_buf, &int32_max_buf));
+        assert!(int32_type.compare_lt(&int32_type, &int32_min_buf, &int32_zero_buf));
+        assert!(int32_type.compare_lt(&int32_type, &int32_zero_buf, &int32_max_buf));
 
-        assert!(int64_type.lt(&int64_type, &int64_min_buf, &int64_zero_buf));
-        assert!(int64_type.lt(&int64_type, &int64_zero_buf, &int64_max_buf));
+        assert!(int64_type.compare_lt(&int64_type, &int64_min_buf, &int64_zero_buf));
+        assert!(int64_type.compare_lt(&int64_type, &int64_zero_buf, &int64_max_buf));
 
-        assert!(int8_type.gt(&int16_type, &int8_min_buf, &int16_min_buf));
-        assert!(int16_type.gt(&int32_type, &int16_min_buf, &int32_min_buf));
-        assert!(int32_type.gt(&int64_type, &int32_min_buf, &int64_min_buf));
+        assert!(int8_type.compare_gt(&int16_type, &int8_min_buf, &int16_min_buf));
+        assert!(int16_type.compare_gt(&int32_type, &int16_min_buf, &int32_min_buf));
+        assert!(int32_type.compare_gt(&int64_type, &int32_min_buf, &int64_min_buf));
 
-        assert!(int8_type.lt(&int16_type, &int8_max_buf, &int16_max_buf));
-        assert!(int16_type.lt(&int32_type, &int16_max_buf, &int32_max_buf));
-        assert!(int32_type.lt(&int64_type, &int32_max_buf, &int64_max_buf));
+        assert!(int8_type.compare_lt(&int16_type, &int8_max_buf, &int16_max_buf));
+        assert!(int16_type.compare_lt(&int32_type, &int16_max_buf, &int32_max_buf));
+        assert!(int32_type.compare_lt(&int64_type, &int32_max_buf, &int64_max_buf));
     }
 }

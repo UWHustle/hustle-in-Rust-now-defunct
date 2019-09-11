@@ -6,9 +6,9 @@ mod resolver_tests {
     use sqlparser::parser::Parser;
 
     use hustle_catalog::{Catalog, Column, Table};
-    use hustle_common::plan::{ComparativeVariant, Expression, Plan, Query, QueryOperator};
+    use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
     use hustle_resolver::Resolver;
-    use hustle_types::{Bool, Char, Int64, TypeVariant};
+    use hustle_types::{Bool, Char, Int64, TypeVariant, ComparativeVariant};
 
     #[test]
     fn select_1() {
@@ -23,18 +23,16 @@ mod resolver_tests {
             .find(|c| c.get_name() == "b")
             .unwrap().clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![column_a, column_b],
                 operator: QueryOperator::Project {
                     input: Box::new(Query {
                         output: table.columns.clone(),
-                        operator: QueryOperator::TableReference { table },
+                        operator: QueryOperator::TableReference(table),
                     }),
                     cols: vec![0, 1],
                 },
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -54,18 +52,16 @@ mod resolver_tests {
             .find(|c| c.get_name() == "b")
             .unwrap().clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![column_a, column_b],
                 operator: QueryOperator::Project {
                     input: Box::new(Query {
                         output: table.columns.clone(),
-                        operator: QueryOperator::TableReference { table },
+                        operator: QueryOperator::TableReference(table),
                     }),
                     cols: vec![0, 1],
                 },
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -81,8 +77,7 @@ mod resolver_tests {
         let table = catalog.get_table("T").unwrap().clone();
         let columns = table.columns.clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![
                     columns[0].clone(),
                     columns[1].clone()
@@ -137,14 +132,13 @@ mod resolver_tests {
                             }),
                             input: Box::new(Query {
                                 output: columns,
-                                operator: QueryOperator::TableReference { table },
+                                operator: QueryOperator::TableReference(table),
                             })
                         }
                     }),
                     cols: vec![0, 1],
                 },
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -159,8 +153,7 @@ mod resolver_tests {
         let table = catalog.get_table("T").unwrap().clone();
         let columns = table.columns.clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![
                     columns[0].clone(),
                     columns[1].clone()
@@ -215,14 +208,13 @@ mod resolver_tests {
                             }),
                             input: Box::new(Query {
                                 output: columns,
-                                operator: QueryOperator::TableReference { table },
+                                operator: QueryOperator::TableReference(table),
                             })
                         }
                     }),
                     cols: vec![0, 1],
                 },
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -238,8 +230,7 @@ mod resolver_tests {
         let table_t = catalog.get_table("T").unwrap().clone();
         let table_r = catalog.get_table("R").unwrap().clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![
                     Column::new("a".to_string(), "T".to_string(), TypeVariant::Bool(Bool), false),
                     Column::new("e".to_string(), "R".to_string(), TypeVariant::Int64(Int64), false),
@@ -251,19 +242,18 @@ mod resolver_tests {
                             inputs: vec![
                                 Query {
                                     output: table_t.columns.clone(),
-                                    operator: QueryOperator::TableReference {table: table_t},
+                                    operator: QueryOperator::TableReference(table_t),
                                 },
                                 Query {
                                     output: table_r.columns.clone(),
-                                    operator: QueryOperator::TableReference {table: table_r},
+                                    operator: QueryOperator::TableReference(table_r),
                                 }
                             ],
                         }
                     }),
                     cols: vec![0, 4],
                 }
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -279,8 +269,7 @@ mod resolver_tests {
         let table_t = catalog.get_table("T").unwrap().clone();
         let table_r = catalog.get_table("R").unwrap().clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![
                     Column::new("a".to_string(), "T".to_string(), TypeVariant::Bool(Bool), false),
                     Column::new("e".to_string(), "R".to_string(), TypeVariant::Int64(Int64), false),
@@ -292,19 +281,18 @@ mod resolver_tests {
                             inputs: vec![
                                 Query {
                                     output: table_t.columns.clone(),
-                                    operator: QueryOperator::TableReference {table: table_t},
+                                    operator: QueryOperator::TableReference(table_t),
                                 },
                                 Query {
                                     output: table_r.columns.clone(),
-                                    operator: QueryOperator::TableReference {table: table_r},
+                                    operator: QueryOperator::TableReference(table_r),
                                 }
                             ],
                         }
                     }),
                     cols: vec![0, 4],
                 }
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -313,15 +301,14 @@ mod resolver_tests {
 
     /// join
     #[test]
-    fn select7() {
+    fn select_7() {
         let sql = "SELECT T.a, R.e FROM T, R WHERE T.b = R.d;";
         let (plan, catalog) = resolve(sql);
 
         let table_t = catalog.get_table("T").unwrap().clone();
         let table_r = catalog.get_table("R").unwrap().clone();
 
-        let expected = Plan::Query {
-            query: Query {
+        let expected = Plan::Query(Query {
                 output: vec![
                     Column::new("a".to_string(), "T".to_string(), TypeVariant::Bool(Bool), false),
                     Column::new("e".to_string(), "R".to_string(), TypeVariant::Int64(Int64), false),
@@ -336,11 +323,11 @@ mod resolver_tests {
                                     inputs: vec![
                                         Query {
                                             output: table_t.columns.clone(),
-                                            operator: QueryOperator::TableReference { table: table_t },
+                                            operator: QueryOperator::TableReference(table_t),
                                         },
                                         Query {
                                             output: table_r.columns.clone(),
-                                            operator: QueryOperator::TableReference { table: table_r },
+                                            operator: QueryOperator::TableReference(table_r),
                                         }
                                     ],
                                 }
@@ -354,8 +341,7 @@ mod resolver_tests {
                     }),
                     cols: vec![0, 4],
                 }
-            }
-        };
+        });
 
         assert_eq!(plan, expected);
 
@@ -477,16 +463,14 @@ mod resolver_tests {
         let sql = "CREATE TABLE U (a BOOLEAN, b INT, c CHAR(8));";
         let (plan, _catalog) = resolve(sql);
 
-        let expected = Plan::CreateTable {
-            table: Table::new(
+        let expected = Plan::CreateTable(Table::new(
                 "U".to_string(),
                 vec![
                     Column::new("a".to_string(), "T".to_string(), TypeVariant::Bool(Bool), false),
                     Column::new("b".to_string(), "T".to_string(), TypeVariant::Int64(Int64), false),
                     Column::new("c".to_string(), "T".to_string(), TypeVariant::Char(Char::new(8)), false),
                 ]
-            )
-        };
+        ));
 
         assert_eq!(plan, expected);
     }
@@ -498,7 +482,7 @@ mod resolver_tests {
 
         let table = catalog.get_table("T").unwrap().clone();
 
-        let expected = Plan::DropTable { table };
+        let expected = Plan::DropTable(table);
 
         assert_eq!(plan, expected);
     }
@@ -550,7 +534,7 @@ mod resolver_tests {
         let mut resolver = Resolver::new(catalog.clone());
         let dialect = GenericDialect {};
         let ast = Parser::parse_sql(&dialect, sql.to_string()).unwrap()[0].clone();
-        let plan = resolver.resolve(ast).unwrap();
+        let plan = resolver.resolve(&[ast]).unwrap();
 
         (plan, catalog)
     }
