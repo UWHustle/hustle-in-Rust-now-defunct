@@ -2,10 +2,10 @@
 
 members = [
     "api",
+    "catalog",
     "cli",
     "common",
     "execution",
-    "parser",
     "profiler",
     "resolver",
     "server",

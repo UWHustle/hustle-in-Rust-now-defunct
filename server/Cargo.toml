@@ -5,13 +5,14 @@ authors = ["gaffneyk <kgaff33@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-hustle-parser = { path = "../parser" }
+hustle-common = { path = "../common" }
+hustle-types = { path = "../types" }
+hustle-catalog = { path = "../catalog" }
 hustle-resolver = { path = "../resolver" }
 hustle-transaction = { path = "../transaction" }
 hustle-execution = { path = "../execution" }
-hustle-common = { path = "../common" }
-hustle-types = { path = "../types" }
 hustle-profiler = { path = "../profiler" }
+sqlparser = "0.4.0"
 crossbeam-utils = "0.6.5"
 byteorder = "1.3.1"
 serde = { version = "1.0.92", features = ["derive"] }

@@ -1,16 +1,17 @@
 [package]
 name = "hustle-execution"
 version = "0.1.0"
-authors = ["Robert Claus <robertclaus@gmail.com>"]
+authors = ["gaffneyk <kgaff33@gmail.com>"]
+edition = "2018"
 
 [dependencies]
+hustle-catalog = { path = "../catalog" }
 hustle-common = { path = "../common" }
-hustle-types = { path = "../types" }
 hustle-storage = { path = "../storage" }
-hustle-profiler = { path = "../profiler" }
-rand = "0.5.5"
-memmap = "0.6.2"
-sqlite = "0.23.9"
-csv = "1"
-serde_json = "1.0"
-byteorder = "1.3.1"
+hustle-types = { path = "../types" }
+bit-vec = "0.6"
+downcast-rs = "1.0.4"
+itertools = "0.8.0"
+
+[dev-dependencies]
+hustle-execution-test-util = { path = "util" }

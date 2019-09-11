@@ -1,36 +1,68 @@
-use key_value_storage_engine::KeyValueStorageEngine;
-use relational_storage_engine::RelationalStorageEngine;
+use block::BlockReference;
 use buffer_manager::BufferManager;
-use std::sync::Arc;
+use uuid::Uuid;
 
-pub const TEMP_PREFIX: char = '$';
 const DEFAULT_BUFFER_CAPACITY: usize = 1000;
+const DEFAULT_DATA_DIRECTORY: &str = "data";
 
-/// Hustle's storage manager. Manages both unstructured key-value pairs and structured relational
-/// data using dedicated engines.
+/// Hustle's storage manager. The `StorageManager` uses the `BufferManager` to read and write blocks
+/// to and from a specified data directory.
 pub struct StorageManager {
-    key_value_engine: KeyValueStorageEngine,
-    relational_engine: RelationalStorageEngine,
+    buffer_manager: BufferManager,
 }
 
 impl StorageManager {
-    pub fn new() -> Self {
+    /// Creates a new `StorageManager` with the default data directory and default buffer capacity.
+    pub fn default() -> Self {
         Self::with_buffer_capacity(DEFAULT_BUFFER_CAPACITY)
     }
 
+    /// Creates a new `StorageManager` with the default data directory and specified buffer
+    /// capacity.
     pub fn with_buffer_capacity(buffer_capacity: usize) -> Self {
-        let buffer_manager = Arc::new(BufferManager::with_capacity(buffer_capacity));
         StorageManager {
-            key_value_engine: KeyValueStorageEngine::new(buffer_manager.clone()),
-            relational_engine: RelationalStorageEngine::new(buffer_manager),
+            buffer_manager: BufferManager::with_capacity_and_directory(
+                buffer_capacity,
+                DEFAULT_DATA_DIRECTORY.to_owned(),
+            ),
         }
     }
 
-    pub fn relational_engine(&self) -> &RelationalStorageEngine {
-        &self.relational_engine
+    /// Creates a new `StorageManager` with the specified data directory and default buffer
+    /// capacity.
+    pub fn with_data_directory(dir: String) -> Self {
+        StorageManager {
+            buffer_manager: BufferManager::with_capacity_and_directory(
+                DEFAULT_BUFFER_CAPACITY,
+                dir,
+            )
+        }
     }
 
-    pub fn key_value_engine(&self) -> &KeyValueStorageEngine {
-        &self.key_value_engine
+    /// Creates a new `StorageManager` with the default buffer capacity and an automatically
+    /// generated UUID data directory. This is useful for temporary databases and testing.
+    pub fn with_unique_data_directory() -> Self {
+        Self::with_data_directory(Uuid::new_v4().to_string())
+    }
+
+    /// Creates a new block with the specified `col_sizes` and the number of bit flags.
+    pub fn create_block(&self, col_sizes: Vec<usize>, n_flags: usize) -> BlockReference {
+        self.buffer_manager.create(col_sizes, n_flags)
+    }
+
+    /// Returns a reference to the block with the specified `block_id`.
+    pub fn get_block(&self, block_id: u64) -> Option<BlockReference> {
+        self.buffer_manager.get(block_id)
+    }
+
+    /// Erases the block with the specified `block_id` from memory and storage.
+    pub fn delete_block(&self, block_id: u64) {
+        self.buffer_manager.erase(block_id);
+    }
+
+    /// Deletes all blocks from memory and storage and removes the data directory from the file
+    /// system.
+    pub fn clear(&self) {
+        self.buffer_manager.clear();
     }
 }

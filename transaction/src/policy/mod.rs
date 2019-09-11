@@ -1,22 +1,20 @@
-use std::collections::{VecDeque, HashMap};
+use std::collections::{HashMap, VecDeque};
 
 pub use direct_predicate::DirectPredicatePolicy;
-use hustle_common::Plan;
+use hustle_common::plan::Plan;
 pub use zero_concurrency::ZeroConcurrencyPolicy;
 
 use crate::statement::Statement;
 use crate::transaction::Transaction;
-use std::ptr;
-use std::mem::ManuallyDrop;
 
 mod zero_concurrency;
 mod direct_predicate;
 
 pub trait Policy {
     fn begin_transaction(&mut self) -> u64;
-    fn commit_transaction(&mut self, transaction_id: u64, callback: &Fn(Plan, u64));
-    fn enqueue_statement(&mut self, transaction_id: u64, plan: Plan, callback: &Fn(Plan, u64));
-    fn complete_statement(&mut self, statement_id: u64, callback: &Fn(Plan, u64));
+    fn commit_transaction(&mut self, transaction_id: u64) -> Vec<(Plan, u64)>;
+    fn enqueue_statement(&mut self, transaction_id: u64, plan: Plan) -> Vec<(Plan, u64)>;
+    fn complete_statement(&mut self, statement_id: u64) -> Vec<(Plan, u64)>;
 }
 
 pub struct PolicyHelper {
@@ -77,7 +75,7 @@ impl PolicyHelper {
 }
 
 pub struct ColumnManager {
-    column_ids: HashMap<(String, String), u64>,
+    column_ids: HashMap<String, HashMap<String, u64>>,
     column_ctr: u64,
 }
 
@@ -89,17 +87,21 @@ impl ColumnManager {
         }
     }
 
-    pub fn get_column_id(&mut self, table: &String, column: &String) -> u64 {
-        let key = unsafe {
-            ManuallyDrop::new((ptr::read(table), ptr::read(column)))
-        };
-
-        if let Some(column_id) = self.column_ids.get(&key) {
+    pub fn get_column_id(&mut self, table: &str, column: &str) -> u64 {
+        if let Some(column_id) = self.column_ids.get(table)
+            .and_then(|columns| columns.get(column))
+        {
             column_id.to_owned()
         } else {
             let column_id = self.column_ctr;
             self.column_ctr = self.column_ctr.wrapping_add(1);
-            self.column_ids.insert((table.to_owned(), column.to_owned()), column_id);
+            if let Some(columns) = self.column_ids.get_mut(table) {
+                columns.insert(column.to_owned(), column_id);
+            } else {
+                let mut columns = HashMap::new();
+                columns.insert(column.to_owned(), column_id);
+                self.column_ids.insert(table.to_owned(), columns);
+            }
             column_id
         }
     }
