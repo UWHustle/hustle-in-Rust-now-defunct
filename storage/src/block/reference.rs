@@ -3,6 +3,7 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use block::ColumnMajorBlock;
 
+/// A reference to a `ColumnMajorBlock` that includes the `id` and a reference count.
 pub struct BlockReference {
     pub id: u64,
     block: Arc<ColumnMajorBlock>,

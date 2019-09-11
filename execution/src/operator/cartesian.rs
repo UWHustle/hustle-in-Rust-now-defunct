@@ -51,6 +51,8 @@ impl Operator for Cartesian {
         for (received_table, received_block_id) in &self.block_rx {
             table_block_ids[received_table].push(received_block_id);
 
+            // Get the cartesian product of all received blocks prior, only considering the block
+            // that has just been received.
             let block_ids_product = table_block_ids.iter()
                 .map(|table_block_ids| table_block_ids.iter().cloned())
                 .multi_cartesian_product()
@@ -61,6 +63,7 @@ impl Operator for Cartesian {
                     .map(|&block_id| storage_manager.get_block(block_id).unwrap())
                     .collect::<Vec<_>>();
 
+                // Get the cartesian product of the rows from the blocks.
                 let mut rows = blocks.iter()
                     .map(|block| block.rows())
                     .multi_cartesian_product()

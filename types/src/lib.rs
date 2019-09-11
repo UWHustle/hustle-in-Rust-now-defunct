@@ -15,6 +15,8 @@ pub mod bits;
 pub mod char;
 pub mod primitive;
 
+/// An enum wrapper around each struct the implements `HustleType` to allow matching, serialization,
+/// and deserialization.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TypeVariant {
     Bool(Bool),
@@ -40,15 +42,18 @@ impl TypeVariant {
     }
 }
 
+/// The main trait that all types must implement.
 pub trait HustleType {
     fn byte_len(&self) -> usize;
     fn to_string(&self, buf: &[u8]) -> String;
 }
 
+/// A trait that allows a type to specify whether it is equal to another.
 pub trait CompareEq<T> {
     fn compare_eq(&self, other: &T, left: &[u8], right: &[u8]) -> bool;
 }
 
+/// A trait the allows a type to specify whether it is ordered with respect to another.
 pub trait CompareOrd<T> {
     fn compare_lt(&self, other: &T, left: &[u8], right: &[u8]) -> bool;
     fn compare_le(&self, other: &T, left: &[u8], right: &[u8]) -> bool;
@@ -65,6 +70,8 @@ pub enum ComparativeVariant {
     Ge,
 }
 
+/// A convenience function that matches two `TypeVariant`s and compares their buffers via the
+/// specified `comparative_variant`. An `Err` is returned if the types are not comparable.
 pub fn compare(
     comparative_variant: ComparativeVariant,
     l_type_variant: &TypeVariant,

@@ -9,12 +9,16 @@ use hustle_storage::StorageManager;
 use crate::operator::{Cartesian, Collect, CreateTable, Delete, DropTable, Insert, Operator, Project, Select, TableReference, Update};
 use crate::router::BlockPoolDestinationRouter;
 
+/// Hustle's execution engine. The `ExecutionEngine` is responsible for executing the plans
+/// produced by the resolver/optimizer.
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
     catalog: Arc<Catalog>,
 }
 
 impl ExecutionEngine {
+    /// Returns a new `ExecutionEngine` with a reference to the `catalog` and the default storage
+    /// manager configuration.
     pub fn new(catalog: Arc<Catalog>) -> Self {
         ExecutionEngine {
             storage_manager: StorageManager::default(),
@@ -22,6 +26,8 @@ impl ExecutionEngine {
         }
     }
 
+    /// Executes the specified `plan` and optionally returns an output `Table` if the plan is a
+    /// query.
     pub fn execute_plan(&self, plan: Plan) -> Result<Option<Table>, String> {
         let operator = Self::compile_plan(plan);
         let result = operator.downcast_ref::<Collect>().map(|collect| collect.get_result());
@@ -30,6 +36,8 @@ impl ExecutionEngine {
         Ok(table)
     }
 
+    /// Iterates through the rows of the specified `table`, calling the function `f` on each row.
+    /// This is used to return the rows of an output table to a client.
     pub fn get_rows(&self, table: Table, f: impl Fn(Vec<Vec<u8>>)) {
         // Send each row of the result.
         for block_id in table.block_ids {
@@ -160,7 +168,7 @@ impl ExecutionEngine {
                     let mut compiled_terms_iter = compiled_terms.iter();
                     let mut mask = (compiled_terms_iter.next().unwrap())(block);
                     for compiled_term in compiled_terms_iter {
-                        mask.and(&(compiled_term)(block));
+                        mask.intersect(&(compiled_term)(block));
                     }
                     mask
                 })
@@ -174,7 +182,7 @@ impl ExecutionEngine {
                     let mut compiled_terms_iter = compiled_terms.iter();
                     let mut mask = (compiled_terms_iter.next().unwrap())(block);
                     for compiled_term in compiled_terms_iter {
-                        mask.or(&(compiled_term)(block));
+                        mask.union(&(compiled_term)(block));
                     }
                     mask
                 })

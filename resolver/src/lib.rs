@@ -6,19 +6,24 @@ use sqlparser::ast::{Assignment, BinaryOperator, ColumnDef, DataType, Expr, Obje
 
 use hustle_catalog::{Catalog, Column, Table};
 use hustle_common::plan::{Expression, Plan, Query as QueryPlan, QueryOperator};
-use hustle_types::{Bool, Char, Int64, TypeVariant, ComparativeVariant};
+use hustle_types::{Bool, Char, ComparativeVariant, Int64, TypeVariant};
 
+/// Hustle's resolver. The main duties of the resolver are to ensure the validity of the syntax
+/// tree produced by the parser and produce a logical plan that can be consumed by the optimizer or
+/// execution engine.
 pub struct Resolver {
     catalog: Arc<Catalog>,
 }
 
 impl Resolver {
+    /// Return a new `Resolver` with a reference to the `catalog`.
     pub fn new(catalog: Arc<Catalog>) -> Self {
         Resolver {
             catalog,
         }
     }
 
+    /// Resolve the `stmts` and produce a `Plan` if they are valid.
     pub fn resolve(&mut self, stmts: &[Statement]) -> Result<Plan, String> {
         if stmts.is_empty() {
             Err("No statements were provided to the resolver".to_owned())

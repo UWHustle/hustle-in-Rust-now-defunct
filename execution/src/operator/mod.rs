@@ -1,17 +1,17 @@
-use hustle_storage::StorageManager;
-use hustle_catalog::Catalog;
-
-pub use create_table::CreateTable;
-pub use drop_table::DropTable;
-pub use insert::Insert;
-pub use update::Update;
-pub use delete::Delete;
-pub use select::Select;
-pub use project::Project;
-pub use cartesian::Cartesian;
-pub use table_reference::TableReference;
-pub use collect::Collect;
 use downcast_rs::Downcast;
+
+pub use cartesian::Cartesian;
+pub use collect::Collect;
+pub use create_table::CreateTable;
+pub use delete::Delete;
+pub use drop_table::DropTable;
+use hustle_catalog::Catalog;
+use hustle_storage::StorageManager;
+pub use insert::Insert;
+pub use project::Project;
+pub use select::Select;
+pub use table_reference::TableReference;
+pub use update::Update;
 
 pub mod create_table;
 pub mod drop_table;

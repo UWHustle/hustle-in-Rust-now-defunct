@@ -15,12 +15,15 @@ use hustle_execution::ExecutionEngine;
 use hustle_resolver::Resolver;
 use hustle_transaction::TransactionManager;
 
+/// Hustle`s server. Clients connect to the server via TCP.
 pub struct Server {
     tcp_listener: TcpListener,
     connection_ctr: u64
 }
 
 impl Server {
+    /// Binds the `Server` to the specified `addr` and returns a `Server` if the binding is
+    /// successful.
     pub fn bind<A: ToSocketAddrs>(addr: A) -> Result<Server, Error> {
         TcpListener::bind(addr)
             .map(|tcp_listener| {
@@ -31,16 +34,20 @@ impl Server {
             })
     }
 
+    /// Listen for new TCP connections and fulfill the requests of clients.
     pub fn listen(&mut self) {
+        // A set of message transmitters to each client connection, indexed on connection ID.
         let connections: Arc<RwLock<HashMap<u64, Mutex<Sender<InternalMessage>>>>> = Arc::new(
             RwLock::new(HashMap::new())
         );
 
+        // Construct the major components of Hustle.
         let catalog = Arc::new(Catalog::try_from_file().unwrap_or(Catalog::new()));
         let mut resolver = Resolver::new(catalog.clone());
         let mut transaction_manager = TransactionManager::new();
         let execution_engine = ExecutionEngine::new(catalog);
 
+        // Construct channels to pass messages between the major components.
         let (parser_tx, parser_rx) = mpsc::channel::<InternalMessage>();
         let (transaction_tx, transaction_rx) = mpsc::channel();
         let (execution_tx, execution_rx) = mpsc::channel();
