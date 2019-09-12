@@ -154,13 +154,36 @@ impl ColumnMajorBlock {
         *self.metadata.n_rows.lock().unwrap() == self.metadata.row_cap
     }
 
+    /// Returns an iterator over the buffers in the row with the specified `row_i`, if the row is
+    /// valid and in bounds.
+    pub fn get_row(&self, row_i: usize) -> Option<RowIter> {
+        if row_i < self.metadata.row_cap
+            && self.get_valid_flag_for_row(row_i)
+            && self.get_ready_flag_for_row(row_i)
+        {
+            Some(RowIter::new(row_i, &self.metadata.col_indices, self))
+        } else {
+            None
+        }
+    }
+
+    /// Returns an iterator over tuples containing the row ID and buffer in the column with the
+    /// specified `col_i`, if the column is valid.
+    pub fn get_col(&self, col_i: usize) -> Option<ColIter> {
+        if col_i < self.n_cols() {
+            Some(ColIter::new(col_i, self))
+        } else {
+            None
+        }
+    }
+
     /// Returns the buffer at the specified `row_i` and `col_i`, if the row is valid and the row and
     /// column are in bounds of the `ColumnMajorBlock`.
     pub fn get_row_col(&self, row_i: usize, col_i: usize) -> Option<&[u8]> {
-        if self.get_valid_flag_for_row(row_i)
-            && self.get_ready_flag_for_row(row_i)
-            && row_i < self.metadata.row_cap
+        if row_i < self.metadata.row_cap
             && col_i < self.n_cols()
+            && self.get_valid_flag_for_row(row_i)
+            && self.get_ready_flag_for_row(row_i)
         {
             Some(self.get_row_col_unchecked(row_i, col_i))
         } else {
@@ -276,7 +299,7 @@ impl ColumnMajorBlock {
 
     /// Sets the value of the column specified by `col_i` to `value`.
     pub fn update_col(&self, col_i: usize, value: &[u8]) {
-        for buf in self.get_col_unchecked_mut(col_i) {
+        for buf in ColIterUncheckedMut::new(col_i, self) {
             buf.copy_from_slice(value);
         }
     }
@@ -284,7 +307,7 @@ impl ColumnMajorBlock {
     /// Sets the value of the column specified by `col_i` to `value`, only updating the rows
     /// specified by `mask`.
     pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: &RowMask) {
-        let bufs = self.get_col_unchecked_mut(col_i)
+        let bufs = ColIterUncheckedMut::new(col_i, self)
             .zip(mask.bits.iter())
             .filter(|&(_, bit)| bit);
 
@@ -299,7 +322,7 @@ impl ColumnMajorBlock {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
-                .zip(self.get_col_unchecked_mut(col_i))
+                .zip(ColIterUncheckedMut::new(col_i, self))
                 .map(|((valid, ready), buf)| valid && ready && f(buf))
         );
 
@@ -318,8 +341,8 @@ impl ColumnMajorBlock {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
-                .zip(self.get_col_unchecked_mut(l_col_i))
-                .zip(self.get_col_unchecked_mut(r_col_i))
+                .zip(ColIterUncheckedMut::new(l_col_i, self))
+                .zip(ColIterUncheckedMut::new(r_col_i, self))
                 .map(|(((valid, ready), l_buf), r_buf)|
                     valid && ready && f(l_buf, r_buf)
                 )
@@ -342,10 +365,6 @@ impl ColumnMajorBlock {
     fn get_row_unchecked_mut(&self, row_i: usize) -> impl Iterator<Item = &mut [u8]> {
         (0..self.metadata.n_cols)
             .map(move |col_i| self.get_row_col_unchecked_mut(row_i, col_i))
-    }
-
-    fn get_col_unchecked_mut(&self, col_i: usize) -> impl Iterator<Item = &mut [u8]> {
-        ColIterUncheckedMut::new(col_i, self)
     }
 
     fn get_rows_with_mask_mut(
@@ -593,7 +612,6 @@ impl<'a> Iterator for ColIterUncheckedMut<'a> {
 
 pub struct ColIter<'a> {
     iter: Enumerate<Zip<Zip<ColIterUncheckedMut<'a>, FlagIter<'a>>, FlagIter<'a>>>,
-    block: &'a ColumnMajorBlock,
 }
 
 impl<'a> ColIter<'a> {
@@ -605,7 +623,6 @@ impl<'a> ColIter<'a> {
 
         ColIter {
             iter,
-            block,
         }
     }
 }

@@ -6,7 +6,39 @@ mod block_tests {
     use hustle_storage::StorageManager;
 
     #[test]
-    fn project() {
+    fn get_row() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
+
+        insert_row(&[b"a"], &block);
+
+        let mut row = block.get_row(0).unwrap();
+        assert_eq!(row.next().unwrap(), b"a");
+        assert!(row.next().is_none());
+
+        assert!(block.get_row(1).is_none());
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn get_col() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
+
+        insert_row(&[b"a"], &block);
+
+        let mut col = block.get_col(0).unwrap();
+        assert_eq!(col.next().unwrap(), (0, b"a" as &[u8]));
+        assert!(col.next().is_none());
+
+        assert!(block.get_col(1).is_none());
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn rows() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1, 2], 0);
 
@@ -19,10 +51,27 @@ mod block_tests {
             insert_row(row, &block);
         }
 
-        for (row, expected_row) in block.project(&[0, 1]).zip(&rows) {
+        for (row, expected_row) in block.rows().zip(&rows) {
             for (val, &expected_val) in row.zip(expected_row.iter()) {
                 assert_eq!(val, expected_val);
             }
+        }
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn project() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1, 2], 0);
+
+        let rows: Vec<Vec<&[u8]>> = vec![
+            vec![b"a", b"bb"],
+            vec![b"c", b"dd"],
+        ];
+
+        for row in &rows {
+            insert_row(row, &block);
         }
 
         let mut projection = block.project(&[1]);
