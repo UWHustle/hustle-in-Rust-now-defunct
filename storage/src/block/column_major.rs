@@ -1,6 +1,6 @@
 use std::io::Cursor;
-use std::iter::{FromIterator, Zip};
-use std::ops::Range;
+use std::iter::{FromIterator, Zip, Take, StepBy, Enumerate};
+use std::ops::{Range, RangeFrom};
 use std::slice;
 use std::sync::Mutex;
 
@@ -276,7 +276,7 @@ impl ColumnMajorBlock {
 
     /// Sets the value of the column specified by `col_i` to `value`.
     pub fn update_col(&self, col_i: usize, value: &[u8]) {
-        for buf in self.get_col_mut(col_i) {
+        for buf in self.get_col_unchecked_mut(col_i) {
             buf.copy_from_slice(value);
         }
     }
@@ -284,7 +284,7 @@ impl ColumnMajorBlock {
     /// Sets the value of the column specified by `col_i` to `value`, only updating the rows
     /// specified by `mask`.
     pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: &RowMask) {
-        let bufs = self.get_col_mut(col_i)
+        let bufs = self.get_col_unchecked_mut(col_i)
             .zip(mask.bits.iter())
             .filter(|&(_, bit)| bit);
 
@@ -299,7 +299,7 @@ impl ColumnMajorBlock {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
-                .zip(self.get_col_mut(col_i))
+                .zip(self.get_col_unchecked_mut(col_i))
                 .map(|((valid, ready), buf)| valid && ready && f(buf))
         );
 
@@ -318,8 +318,8 @@ impl ColumnMajorBlock {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
-                .zip(self.get_col_mut(l_col_i))
-                .zip(self.get_col_mut(r_col_i))
+                .zip(self.get_col_unchecked_mut(l_col_i))
+                .zip(self.get_col_unchecked_mut(r_col_i))
                 .map(|(((valid, ready), l_buf), r_buf)|
                     valid && ready && f(l_buf, r_buf)
                 )
@@ -344,15 +344,8 @@ impl ColumnMajorBlock {
             .map(move |col_i| self.get_row_col_unchecked_mut(row_i, col_i))
     }
 
-    fn get_col_mut(&self, col_i: usize) -> impl Iterator<Item = &mut [u8]> {
-        let col_offset = self.metadata.col_offsets[col_i];
-        let col_size = self.header.col_sizes[col_i];
-        (col_offset..)
-            .step_by(col_size)
-            .take(self.metadata.row_cap)
-            .map(move |offset| unsafe {
-                slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size)
-            })
+    fn get_col_unchecked_mut(&self, col_i: usize) -> impl Iterator<Item = &mut [u8]> {
+        ColIterUncheckedMut::new(col_i, self)
     }
 
     fn get_rows_with_mask_mut(
@@ -557,6 +550,74 @@ impl<'a> Iterator for MaskedRowsIter<'a> {
             if let Some((row_i, bit)) = self.iter.next() {
                 if bit {
                     break Some(RowIter::new(row_i, self.cols, self.block))
+                }
+            } else {
+                break None
+            }
+        }
+    }
+}
+
+struct ColIterUncheckedMut<'a> {
+    col_size: usize,
+    iter: Take<StepBy<RangeFrom<usize>>>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> ColIterUncheckedMut<'a> {
+    fn new(col_i: usize, block: &'a ColumnMajorBlock) -> Self {
+        let col_offset = block.metadata.col_offsets[col_i];
+        let col_size = block.header.col_sizes[col_i];
+        let iter = (col_offset..)
+            .step_by(col_size)
+            .take(block.metadata.row_cap);
+
+        ColIterUncheckedMut {
+            col_size,
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for ColIterUncheckedMut<'a> {
+    type Item = &'a mut [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+            .map(|offset| unsafe {
+                slice::from_raw_parts_mut(self.block.data.offset(offset as isize), self.col_size)
+            })
+    }
+}
+
+pub struct ColIter<'a> {
+    iter: Enumerate<Zip<Zip<ColIterUncheckedMut<'a>, FlagIter<'a>>, FlagIter<'a>>>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> ColIter<'a> {
+    fn new(col_i: usize, block: &'a ColumnMajorBlock) -> Self {
+        let iter = ColIterUncheckedMut::new(col_i, block)
+            .zip(block.get_valid_flag_for_rows())
+            .zip(block.get_ready_flag_for_rows())
+            .enumerate();
+
+        ColIter {
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for ColIter<'a> {
+    type Item = (usize, &'a [u8]);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some((row_i, ((buf, valid), ready))) = self.iter.next() {
+                if valid && ready {
+                    break Some((row_i, &buf[..]))
                 }
             } else {
                 break None
