@@ -3,6 +3,8 @@ mod statement_tests {
     use hustle_transaction::statement::Statement;
     use hustle_transaction::policy::PolicyHelper;
 
+    use hustle_transaction_test_util as test_util;
+
     // DELETE tests.
 
     #[test]
@@ -202,7 +204,7 @@ mod statement_tests {
 
     pub fn generate_statements(sqls: &[&str]) -> Vec<Statement> {
         let mut policy_helper = PolicyHelper::new();
-        util::generate_plans(sqls)
+        test_util::generate_plans(sqls)
             .into_iter()
             .map(|plan| policy_helper.new_statement(0, plan))
             .collect()

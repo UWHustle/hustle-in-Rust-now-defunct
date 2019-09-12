@@ -14,7 +14,7 @@ impl CreateTable {
 }
 
 impl Operator for CreateTable {
-    fn execute(&self, _storage_manager: &StorageManager, catalog: &Catalog) {
+    fn execute(self: Box<Self>, _storage_manager: &StorageManager, catalog: &Catalog) {
         catalog.create_table(self.table.clone()).unwrap();
     }
 }
@@ -25,11 +25,11 @@ mod create_table_tests {
 
     #[test]
     fn create_table() {
-        let storage_manager = StorageManager::default();
+        let storage_manager = StorageManager::with_unique_data_directory();
         let catalog = Catalog::new();
-        let table = Table::new("create_table".to_owned(), vec![], vec![]);
+        let table = Table::new("create_table".to_owned(), vec![]);
 
-        let create_table = CreateTable::new(table);
+        let create_table = Box::new(CreateTable::new(table));
         create_table.execute(&storage_manager, &catalog);
 
         assert!(catalog.table_exists("create_table"));

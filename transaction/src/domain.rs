@@ -1,70 +1,113 @@
-use hustle_types::operators::Comparator::{self, *};
-use hustle_types::Value;
+use hustle_types::{self as types, ComparativeVariant::{self, *}, TypeVariant};
 
 #[derive(Clone, Debug)]
-pub struct Domain {
-    domain: Option<(Comparator, Box<Value>)>,
-}
+pub struct Domain(Option<(ComparativeVariant, TypeVariant, Vec<u8>)>);
 
 impl Domain {
-    pub fn new(comparator: Comparator, value: Box<Value>) -> Self {
-        Self::with_domain(Some((comparator, value)))
+    pub fn new(
+        comparative_variant: ComparativeVariant,
+        type_variant: TypeVariant,
+        buf: Vec<u8>,
+    ) -> Self {
+        Domain(Some((comparative_variant, type_variant, buf)))
     }
 
     pub fn any() -> Self {
-        Self::with_domain(None)
+        Domain(None)
     }
 
     pub fn is_any(&self) -> bool {
-        self.domain.is_none()
-    }
-
-    fn with_domain(domain: Option<(Comparator, Box<Value>)>) -> Self {
-        Domain {
-            domain
-        }
+        self.0.is_none()
     }
 
     pub fn intersects(&self, other: &Self) -> bool {
-        self.domain.as_ref().and_then(|(self_comparator, self_value)| {
-            match self_comparator {
-                Eq => other.domain.as_ref().map(|(other_comparator, other_value)|
-                    self_value.compare(&**other_value, other_comparator.clone())
-                ),
-                Lt => other.domain.as_ref().map(|(other_comparator, other_value)|
-                    match other_comparator {
-                        Eq | Gt | Ge => self_value.compare(&**other_value, Gt),
-                        Lt | Le => true,
-                    }
-                ),
-                Le => other.domain.as_ref().map(|(other_comparator, other_value)|
-                    match other_comparator {
-                        Eq | Ge => self_value.compare(&**other_value, Ge),
-                        Gt => self_value.compare(&**other_value, Gt),
-                        Lt | Le => true,
-                    }
-                ),
-                Gt => other.domain.as_ref().map(|(other_comparator, other_value)|
-                    match other_comparator {
-                        Eq | Lt | Le => self_value.compare(&**other_value, Lt),
-                        Gt | Ge => true,
-                    }
-                ),
-                Ge => other.domain.as_ref().map(|(other_comparator, other_value)|
-                    match other_comparator {
-                        Eq | Le => self_value.compare(&**other_value, Le),
-                        Lt => self_value.compare(&**other_value, Lt),
-                        Gt | Ge => true,
-                    }
-                ),
-            }
-        }).unwrap_or(true)
+        self.0.as_ref()
+            .and_then(|(l_comparative_variant, l_type_variant, l_buf)| {
+                match l_comparative_variant {
+                    Eq => other.0.as_ref()
+                        .map(|(r_comparative_variant, r_type_variant, r_buf)|
+                            types::compare(
+                                *r_comparative_variant,
+                                l_type_variant,
+                                r_type_variant,
+                                l_buf,
+                                r_buf
+                            ).unwrap()
+                        ),
+                    Lt => other.0.as_ref()
+                        .map(|(r_comparative_variant, r_type_variant, r_buf)|
+                            match r_comparative_variant {
+                                Eq | Gt | Ge => types::compare(
+                                    Gt,
+                                    l_type_variant,
+                                    r_type_variant,
+                                    l_buf,
+                                    r_buf,
+                                ).unwrap(),
+                                Lt | Le => true,
+                            }
+                        ),
+                    Le => other.0.as_ref()
+                        .map(|(r_comparative_variant, r_type_variant, r_buf)|
+                            match r_comparative_variant {
+                                Eq | Ge => types::compare(
+                                    Ge,
+                                    l_type_variant,
+                                    r_type_variant,
+                                    l_buf,
+                                    r_buf,
+                                ).unwrap(),
+                                Gt => types::compare(
+                                    Gt,
+                                    l_type_variant,
+                                    r_type_variant,
+                                    l_buf,
+                                    r_buf,
+                                ).unwrap(),
+                                Lt | Le => true,
+                            }
+                        ),
+                    Gt => other.0.as_ref()
+                        .map(|(r_comparative_variant, r_type_variant, r_buf)|
+                            match r_comparative_variant {
+                                Eq | Lt | Le => types::compare(
+                                    Lt,
+                                    l_type_variant,
+                                    r_type_variant,
+                                    l_buf,
+                                    r_buf,
+                                ).unwrap(),
+                                Gt | Ge => true,
+                            }
+                        ),
+                    Ge => other.0.as_ref()
+                        .map(|(r_comparative_variant, r_type_variant, r_buf)|
+                            match r_comparative_variant {
+                                Eq | Le => types::compare(
+                                    Le,
+                                    l_type_variant,
+                                    r_type_variant,
+                                    l_buf,
+                                    r_buf,
+                                ).unwrap(),
+                                Lt => types::compare(
+                                    Lt,
+                                    l_type_variant,
+                                    r_type_variant,
+                                    l_buf,
+                                    r_buf,
+                                ).unwrap(),
+                                Gt | Ge => true,
+                            }
+                        ),
+                }
+            }).unwrap_or(true)
     }
 }
 
 #[cfg(test)]
 mod domain_tests {
-    use hustle_types::integer::Int1;
+    use hustle_types::Int8;
 
     use super::*;
 
@@ -73,9 +116,10 @@ mod domain_tests {
         // Construct the test domains.
         let mut ds = vec![];
         for cmp in &[Eq, Lt, Le, Gt, Ge] {
-            for value in &[1, 2] {
-                let v = Box::new(Int1::new(*value, false)) as Box<Value + Send>;
-                ds.push(Domain::new(cmp.clone(), v));
+            for val in &[1, 2] {
+                let int8_type = Int8;
+                let buf = int8_type.new_buf(*val);
+                ds.push(Domain::new(cmp.clone(), TypeVariant::Int8(int8_type), buf));
             }
         }
 

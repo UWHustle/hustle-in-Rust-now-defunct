@@ -25,7 +25,7 @@ impl Update {
 }
 
 impl Operator for Update {
-    fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         for &block_id in &self.block_ids {
             let block = storage_manager.get_block(block_id).unwrap();
             if let Some(filter) = &self.filter {
@@ -67,7 +67,7 @@ mod update_tests {
             block.filter_col(0, |buf| Bool.get(buf))
         );
 
-        let update = Update::new(vec![(1, buf.clone())], Some(filter), vec![block.id]);
+        let update = Box::new(Update::new(vec![(1, buf.clone())], Some(filter), vec![block.id]));
         update.execute(&storage_manager, &catalog);
 
         assert_eq!(block.get_row_col(0, 0), Some(old_values[0][0].as_slice()));

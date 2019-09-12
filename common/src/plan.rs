@@ -5,15 +5,9 @@ use hustle_types::{TypeVariant, ComparativeVariant};
 pub enum Plan {
     BeginTransaction,
     CommitTransaction,
-    Query {
-        query: Query,
-    },
-    CreateTable {
-        table: Table,
-    },
-    DropTable {
-        table: Table,
-    },
+    Query(Query),
+    CreateTable(Table),
+    DropTable(Table),
     Insert {
         into_table: Table,
         bufs: Vec<Vec<u8>>,
@@ -48,9 +42,7 @@ pub enum QueryOperator {
         input: Box<Query>,
         filter: Box<Expression>,
     },
-    TableReference {
-        table: Table,
-    },
+    TableReference(Table),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

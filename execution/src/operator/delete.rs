@@ -21,7 +21,7 @@ impl Delete {
 }
 
 impl Operator for Delete {
-    fn execute(&self, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         for &block_id in &self.block_ids {
             let block = storage_manager.get_block(block_id).unwrap();
             if let Some(filter) = &self.filter {
@@ -46,7 +46,7 @@ mod delete_tests {
         let catalog = Catalog::new();
         let block = test_util::example_block(&storage_manager);
 
-        let delete = Delete::new(None, vec![block.id]);
+        let delete = Box::new(Delete::new(None, vec![block.id]));
         delete.execute(&storage_manager, &catalog);
 
         assert!(block.project(&[0, 1, 2]).next().is_none());
@@ -64,7 +64,7 @@ mod delete_tests {
             block.filter_col(0, |buf| Bool.get(buf))
         );
 
-        let delete = Delete::new(Some(filter), vec![block.id]);
+        let delete = Box::new(Delete::new(Some(filter), vec![block.id]));
         delete.execute(&storage_manager, &catalog);
 
         assert!(block.project(&[0, 1, 2]).next().is_some());

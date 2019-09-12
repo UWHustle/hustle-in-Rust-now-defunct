@@ -1,29 +1,23 @@
 extern crate hustle_storage;
 
-#[macro_use]
-extern crate lazy_static;
-
 #[cfg(test)]
 mod storage_manager_tests {
     use hustle_storage::StorageManager;
 
-    lazy_static! {
-        static ref STORAGE_MANAGER: StorageManager = {
-            StorageManager::new()
-        };
-    }
-
     #[test]
     fn create_block() {
-        let block_id = STORAGE_MANAGER.create_block(vec![1], 0).id;
-        assert!(STORAGE_MANAGER.get_block(block_id).is_some());
-        STORAGE_MANAGER.delete_block(block_id);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block_id = storage_manager.create_block(vec![1], 0).id;
+        assert!(storage_manager.get_block(block_id).is_some());
+        storage_manager.clear();
     }
 
     #[test]
     fn delete_block() {
-        let block_id = STORAGE_MANAGER.create_block(vec![1], 0).id;
-        STORAGE_MANAGER.delete_block(block_id);
-        assert!(STORAGE_MANAGER.get_block(block_id).is_none());
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block_id = storage_manager.create_block(vec![1], 0).id;
+        storage_manager.delete_block(block_id);
+        assert!(storage_manager.get_block(block_id).is_none());
+        storage_manager.clear();
     }
 }

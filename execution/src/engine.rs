@@ -1,8 +1,7 @@
 use std::sync::{Arc, mpsc};
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 
 use hustle_catalog::{Catalog, Column, Table};
-use hustle_common::message::Message;
 use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
@@ -10,12 +9,16 @@ use hustle_storage::StorageManager;
 use crate::operator::{Cartesian, Collect, CreateTable, Delete, DropTable, Insert, Operator, Project, Select, TableReference, Update};
 use crate::router::BlockPoolDestinationRouter;
 
+/// Hustle's execution engine. The `ExecutionEngine` is responsible for executing the plans
+/// produced by the resolver/optimizer.
 pub struct ExecutionEngine {
     storage_manager: StorageManager,
     catalog: Arc<Catalog>,
 }
 
 impl ExecutionEngine {
+    /// Returns a new `ExecutionEngine` with a reference to the `catalog` and the default storage
+    /// manager configuration.
     pub fn new(catalog: Arc<Catalog>) -> Self {
         ExecutionEngine {
             storage_manager: StorageManager::default(),
@@ -23,77 +26,40 @@ impl ExecutionEngine {
         }
     }
 
+    /// Executes the specified `plan` and optionally returns an output `Table` if the plan is a
+    /// query.
     pub fn execute_plan(&self, plan: Plan) -> Result<Option<Table>, String> {
         let operator = Self::compile_plan(plan);
+        let result = operator.downcast_ref::<Collect>().map(|collect| collect.get_result());
         operator.execute(&self.storage_manager, &self.catalog);
-        let table = operator.downcast_ref::<Collect>().map(|collect| collect.get_table());
+        let table = result.map(|r| r.into_table());
         Ok(table)
     }
 
-    pub fn listen(
-        &mut self,
-        execution_rx: Receiver<Message>,
-        transaction_tx: Sender<Message>,
-        completed_tx: Sender<Message>,
-    ) {
-        for message in execution_rx {
-            if let Message::ExecutePlan { plan, statement_id, connection_id } = message {
-                match self.execute_plan(plan) {
-                    Ok(relation) => {
-
-                        // The execution may have produced a result relation. If so, we send the
-                        // rows back to the user.
-                        if let Some(relation) = relation {
-
-                            // Send a message with the result schema.
-                            completed_tx.send(Message::Schema {
-                                schema: relation.columns.clone(),
-                                connection_id
-                            }).unwrap();
-
-                            // Send each row of the result.
-                            for &block_id in &relation.block_ids {
-                                let block = self.storage_manager.get_block(block_id).unwrap();
-                                for row in block.rows() {
-                                    completed_tx.send(Message::ReturnRow {
-                                        row: row.map(|value| value.to_vec()).collect(),
-                                        connection_id,
-                                    }).unwrap();
-                                }
-                            }
-                        }
-
-                        // Send a success message to indicate completion.
-                        completed_tx.send(Message::Success { connection_id }).unwrap();
-                    },
-
-                    Err(reason) => {
-                        completed_tx.send(Message::Failure {
-                            reason,
-                            connection_id,
-                        }).unwrap();
-                    },
-                };
-
-                // Notify the transaction manager that the plan execution has completed.
-                transaction_tx.send(Message::CompletePlan {
-                    statement_id,
-                    connection_id,
-                }).unwrap();
+    /// Iterates through the rows of the specified `table`, calling the function `f` on each row.
+    /// This is used to return the rows of an output table to a client.
+    pub fn get_rows(&self, table: Table, f: impl Fn(Vec<Vec<u8>>)) {
+        // Send each row of the result.
+        for block_id in table.block_ids {
+            let block = self.storage_manager.get_block(block_id).unwrap();
+            for row in block.rows() {
+                let row = row.map(|buf| buf.to_vec()).collect();
+                f(row);
             }
         }
     }
 
     fn compile_plan(plan: Plan) -> Box<dyn Operator> {
         match plan {
-            Plan::CreateTable { table } => Box::new(CreateTable::new(table)),
-            Plan::DropTable { table } => Box::new(DropTable::new(table)),
+            Plan::CreateTable(table) => Box::new(CreateTable::new(table)),
+            Plan::DropTable(table) => Box::new(DropTable::new(table)),
             Plan::Insert { into_table, bufs } => {
+                let table_name = into_table.name.clone();
                 let router = BlockPoolDestinationRouter::with_block_ids(
                     into_table.block_ids,
                     into_table.columns,
                 );
-                Box::new(Insert::new(bufs, router))
+                Box::new(Insert::new(table_name, bufs, router))
             },
             Plan::Update { table, assignments, filter } => {
                 let filter = filter.map(|f| Self::compile_filter(*f, &table.columns));
@@ -103,7 +69,7 @@ impl ExecutionEngine {
                 let filter = filter.map(|f| Self::compile_filter(*f, &from_table.columns));
                 Box::new(Delete::new(filter, from_table.block_ids))
             },
-            Plan::Query { query } => {
+            Plan::Query(query) => {
                 let cols = query.output.clone();
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
@@ -117,7 +83,7 @@ impl ExecutionEngine {
     fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
         let router = BlockPoolDestinationRouter::new(query.output);
         match query.operator {
-            QueryOperator::TableReference { table } => {
+            QueryOperator::TableReference(table) => {
                 operators.push(Box::new(TableReference::new(table, block_tx)));
             },
             QueryOperator::Project { input, cols } => {
@@ -202,7 +168,7 @@ impl ExecutionEngine {
                     let mut compiled_terms_iter = compiled_terms.iter();
                     let mut mask = (compiled_terms_iter.next().unwrap())(block);
                     for compiled_term in compiled_terms_iter {
-                        mask.and(&(compiled_term)(block));
+                        mask.intersect(&(compiled_term)(block));
                     }
                     mask
                 })
@@ -216,7 +182,7 @@ impl ExecutionEngine {
                     let mut compiled_terms_iter = compiled_terms.iter();
                     let mut mask = (compiled_terms_iter.next().unwrap())(block);
                     for compiled_term in compiled_terms_iter {
-                        mask.or(&(compiled_term)(block));
+                        mask.union(&(compiled_term)(block));
                     }
                     mask
                 })

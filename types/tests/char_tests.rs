@@ -48,9 +48,9 @@ mod char_tests {
 
         assert!(char_type.compare_eq(&char_type, &buf_a, &buf_a));
 
-        assert!(char_type.lt(&char_type, &buf_a, &buf_b));
-        assert!(char_type.le(&char_type, &buf_a, &buf_b));
-        assert!(char_type.gt(&char_type, &buf_b, &buf_a));
-        assert!(char_type.ge(&char_type, &buf_b, &buf_a));
+        assert!(char_type.compare_lt(&char_type, &buf_a, &buf_b));
+        assert!(char_type.compare_le(&char_type, &buf_a, &buf_b));
+        assert!(char_type.compare_gt(&char_type, &buf_b, &buf_a));
+        assert!(char_type.compare_ge(&char_type, &buf_b, &buf_a));
     }
 }

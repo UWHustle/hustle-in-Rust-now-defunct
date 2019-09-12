@@ -1,21 +1,46 @@
 extern crate hustle_storage;
-#[macro_use]
-extern crate lazy_static;
 
 #[cfg(test)]
 mod block_tests {
     use hustle_storage::block::BlockReference;
     use hustle_storage::StorageManager;
 
-    lazy_static! {
-        static ref STORAGE_MANAGER: StorageManager = {
-            StorageManager::new()
-        };
+    #[test]
+    fn get_row() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
+
+        insert_row(&[b"a"], &block);
+
+        let mut row = block.get_row(0).unwrap();
+        assert_eq!(row.next().unwrap(), b"a");
+        assert!(row.next().is_none());
+
+        assert!(block.get_row(1).is_none());
+
+        storage_manager.clear();
     }
 
     #[test]
-    fn project() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1, 2], 0);
+    fn get_col() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
+
+        insert_row(&[b"a"], &block);
+
+        let mut col = block.get_col(0).unwrap();
+        assert_eq!(col.next().unwrap(), (0, b"a" as &[u8]));
+        assert!(col.next().is_none());
+
+        assert!(block.get_col(1).is_none());
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn rows() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1, 2], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a", b"bb"],
@@ -26,10 +51,27 @@ mod block_tests {
             insert_row(row, &block);
         }
 
-        for (row, expected_row) in block.project(&[0, 1]).zip(&rows) {
+        for (row, expected_row) in block.rows().zip(&rows) {
             for (val, &expected_val) in row.zip(expected_row.iter()) {
                 assert_eq!(val, expected_val);
             }
+        }
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn project() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1, 2], 0);
+
+        let rows: Vec<Vec<&[u8]>> = vec![
+            vec![b"a", b"bb"],
+            vec![b"c", b"dd"],
+        ];
+
+        for row in &rows {
+            insert_row(row, &block);
         }
 
         let mut projection = block.project(&[1]);
@@ -41,12 +83,13 @@ mod block_tests {
 
         assert!(projection.next().is_none());
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     #[test]
     fn project_with_mask() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a"],
@@ -58,29 +101,31 @@ mod block_tests {
         }
 
         let mask = block.filter_col(0, |buf| buf == b"b");
-        let mut rows = block.project_with_mask(&[0], mask);
+        let mut rows = block.project_with_mask(&[0], &mask);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     #[test]
     fn delete_rows() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
 
         insert_row(&[b"a"], &block);
         block.delete_rows();
 
         assert!(block.project(&[0]).next().is_none());
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     #[test]
     fn delete_rows_with_mask() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a"],
@@ -92,18 +137,19 @@ mod block_tests {
         }
 
         let mask = block.filter_col(0, |buf| buf == b"a");
-        block.delete_rows_with_mask(mask);
+        block.delete_rows_with_mask(&mask);
         let mut rows = block.project(&[0]);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     #[test]
     fn update_col() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1, 2], 0);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1, 2], 0);
 
         insert_row(&[b"a", b"bb"], &block);
         block.update_col(0, b"c");
@@ -118,12 +164,13 @@ mod block_tests {
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"dd");
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     #[test]
     fn update_col_with_mask() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a"],
@@ -135,19 +182,20 @@ mod block_tests {
         }
 
         let mask = block.filter_col(0, |buf| buf == b"a");
-        block.update_col_with_mask(0, b"c", mask);
+        block.update_col_with_mask(0, b"c", &mask);
         let mut rows = block.project(&[0]);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"c");
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     #[test]
     fn insert_rows() {
-        let block: BlockReference = STORAGE_MANAGER.create_block(vec![1], 0);
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a"],
@@ -157,7 +205,7 @@ mod block_tests {
 
         block.insert_rows(&mut rows.iter().map(|row| row.iter().map(|&buf| buf)));
 
-        STORAGE_MANAGER.delete_block(block.id);
+        storage_manager.clear();
     }
 
     fn insert_row(row: &[&[u8]], block: &BlockReference) {
