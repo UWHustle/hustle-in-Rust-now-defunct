@@ -1,6 +1,6 @@
 use std::io::Cursor;
-use std::iter::{FromIterator, Zip};
-use std::ops::Range;
+use std::iter::{FromIterator, Zip, Take, StepBy};
+use std::ops::{Range, RangeFrom};
 use std::slice;
 use std::sync::Mutex;
 
@@ -126,6 +126,18 @@ impl ColumnMajorBlock {
 
     pub fn is_full(&self) -> bool {
         *self.metadata.n_rows.lock().unwrap() == self.metadata.row_cap
+    }
+
+    pub fn get_row(&self, row_i: usize) -> Option<RowIter> {
+        if self.get_valid_flag_for_row(row_i) && self.get_ready_flag_for_row(row_i) {
+            Some(RowIter::new(row_i, &self.metadata.col_indices, self))
+        } else {
+            None
+        }
+    }
+
+    pub fn get_col(&self, col_i: usize) -> ColIter {
+        ColIter::new(col_i, self)
     }
 
     pub fn get_row_col(&self, row_i: usize, col_i: usize) -> Option<&[u8]> {
@@ -290,15 +302,8 @@ impl ColumnMajorBlock {
             .map(move |col_i| self.get_row_col_unchecked_mut(row_i, col_i))
     }
 
-    fn get_col_mut(&self, col_i: usize) -> impl Iterator<Item = &mut [u8]> {
-        let col_offset = self.metadata.col_offsets[col_i];
-        let col_size = self.header.col_sizes[col_i];
-        (col_offset..)
-            .step_by(col_size)
-            .take(self.metadata.row_cap)
-            .map(move |offset| unsafe {
-                slice::from_raw_parts_mut(self.data.offset(offset as isize), col_size)
-            })
+    fn get_col_mut(&self, col_i: usize) -> ColIterMut {
+        ColIterMut::new(col_i, self)
     }
 
     fn get_rows_with_mask_mut(
@@ -447,6 +452,62 @@ impl<'a> Iterator for RowIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
             .map(|&col_i| self.block.get_row_col_unchecked(self.row_i, col_i))
+    }
+}
+
+pub struct ColIterMut<'a> {
+    col_size: usize,
+    iter: Take<StepBy<RangeFrom<usize>>>,
+    block: &'a ColumnMajorBlock,
+}
+
+impl<'a> ColIterMut<'a> {
+    fn new(col_i: usize, block: &'a ColumnMajorBlock) -> Self {
+        let col_offset = block.metadata.col_offsets[col_i];
+        let col_size = block.header.col_sizes[col_i];
+        let iter = (col_offset..)
+            .step_by(col_size)
+            .take(block.metadata.row_cap);
+
+        ColIterMut {
+            col_size,
+            iter,
+            block,
+        }
+    }
+}
+
+impl<'a> Iterator for ColIterMut<'a> {
+    type Item = &'a mut [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+            .map(move |offset| unsafe {
+                slice::from_raw_parts_mut(self.block.data.offset(offset as isize), self.col_size)
+            })
+    }
+}
+
+pub struct ColIter<'a> {
+    iter: ColIterMut<'a>,
+}
+
+impl<'a> ColIter<'a> {
+    fn new(col_i: usize, block: &'a ColumnMajorBlock) -> Self {
+        let iter = ColIterMut::new(col_i, block);
+
+        ColIter {
+            iter,
+        }
+    }
+}
+
+impl<'a> Iterator for ColIter<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+            .map(|buf| &buf[..])
     }
 }
 
