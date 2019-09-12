@@ -896,6 +896,16 @@ pub enum PhysicalPlan {
         groups_from_fact_table: Vec<usize>,
         output_schema: Vec<OutputSource>,
     },
+    StarJoinAggregateSort {
+        fact_table: Box<PhysicalPlan>,
+        fact_table_filter: Option<Predicate>,
+        fact_table_join_column_ids: Vec<usize>,
+        dim_tables: Vec<JoinContext>,
+        aggregate_context: AggregateContext,
+        group: DataSource,
+        constant_groups: Vec<(usize, Literal)>,
+        output_schema: Vec<OutputSource>,
+    },
     Selection {
         table: Box<PhysicalPlan>,
         filter: Option<Predicate>,
@@ -947,6 +957,11 @@ impl JoinHashTables {
 #[derive(Clone)]
 pub enum AggregateState {
     SingleStates(Arc<Vec<std::sync::atomic::AtomicI64>>),
+    GroupByStatesInt(
+        i32,
+        Vec<(usize, Literal)>,
+        Arc<Vec<std::sync::atomic::AtomicI64>>,
+    ),
     GroupByStatesDashMap(Arc<DashMap<Vec<Literal>, i64>>),
     // GroupByStatesOpt(i32, Arc<DashMap<Vec<&str>, Vec<i64>>>),
 }

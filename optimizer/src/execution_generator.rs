@@ -274,6 +274,141 @@ impl ExecutionGenerator {
                     _ => unreachable!(),
                 };
             }
+            PhysicalPlan::StarJoinAggregateSort {
+                fact_table,
+                fact_table_filter,
+                fact_table_join_column_ids,
+                dim_tables,
+                aggregate_context,
+                group,
+                constant_groups,
+                output_schema,
+            } => {
+                let re = self.storage_manager.relational_engine();
+
+                let num_dim_tables = dim_tables.len();
+                let mut build_hash_op_indices = Vec::with_capacity(num_dim_tables);
+                let mut join_hash_tables = Vec::with_capacity(num_dim_tables);
+                for i in 0..num_dim_tables {
+                    let dim_table = &dim_tables[i];
+
+                    let join_hash_table;
+                    let max_count = dim_table.max_count;
+                    let payload_columns = &dim_table.payload_columns;
+                    if payload_columns.is_empty() {
+                        join_hash_table = JoinHashTable::Existence(Arc::new(
+                            (0..max_count)
+                                .map(|_| Mutex::new(false))
+                                .collect::<Vec<Mutex<bool>>>(),
+                        ));
+                    } else if payload_columns.len() == 1 {
+                        let payload_column = payload_columns.first().unwrap();
+                        join_hash_table = match payload_column.column__type {
+                            ColumnType::I32 => JoinHashTable::PrimaryIntKeyIntPayload(Arc::new(
+                                (0..max_count)
+                                    .map(|_| Mutex::new(0))
+                                    .collect::<Vec<Mutex<i32>>>(),
+                            )),
+                            ColumnType::Char(_) | ColumnType::VarChar(_) => {
+                                JoinHashTable::PrimaryIntKeyStringPayload(Arc::new(
+                                    (0..max_count)
+                                        .map(|_| Mutex::new(String::from("")))
+                                        .collect::<Vec<Mutex<String>>>(),
+                                ))
+                            }
+                            _ => unimplemented!(),
+                        };
+                    } else {
+                        unimplemented!()
+                    }
+
+                    let input_table_name = dim_table.table_name.as_str();
+                    debug_assert!(re.exists(input_table_name));
+                    let input_physical_relation = re.get(input_table_name).unwrap();
+                    let block_ids = input_physical_relation.block_ids();
+                    let build_hash_index = query_plan.num_operators();
+                    let build_hash_op = Box::new(BuildHash::new(
+                        build_hash_index,
+                        dim_table.clone(),
+                        join_hash_table.clone(),
+                        block_ids.clone(),
+                        true,
+                    ));
+                    query_plan.add_operator(build_hash_op);
+                    query_plan_dag.add_node();
+
+                    join_hash_tables.push(join_hash_table);
+                    build_hash_op_indices.push(build_hash_index);
+                }
+
+                Self::generate_plan_helper(self, fact_table, query_plan, query_plan_dag);
+                match self
+                    .physical_to_output_relation_map
+                    .get(&*fact_table)
+                    .unwrap()
+                {
+                    OperatorOuputInfo::Relation(input_table, producer_op_index) => {
+                        let re = self.storage_manager.relational_engine();
+                        debug_assert!(re.exists(input_table));
+                        let input_physical_relation = re.get(input_table).unwrap();
+                        let block_ids = input_physical_relation.block_ids();
+
+                        let aggr_index = query_plan.num_operators();
+                        let min = 1992;
+                        let max = 1998;
+                        let ordered_table = Arc::new(
+                            (min..(max + 1))
+                                .map(|_| AtomicI64::new(0))
+                                .collect::<Vec<AtomicI64>>(),
+                        );
+                        let aggregate_state = AggregateState::GroupByStatesInt(
+                            1992,
+                            constant_groups.clone(),
+                            ordered_table,
+                        );
+
+                        let mut input_non_group_by_join_column_ids = vec![];
+                        for i in 0..fact_table_join_column_ids.len() {
+                            input_non_group_by_join_column_ids.push(i);
+                        }
+                        let aggr_op = Box::new(StarJoinAggregate::new(
+                            aggr_index,
+                            input_table.as_str(),
+                            fact_table_filter.clone(),
+                            fact_table_join_column_ids.clone(),
+                            input_non_group_by_join_column_ids,
+                            JoinHashTables::new(join_hash_tables),
+                            vec![group.clone()],
+                            aggregate_context.clone(),
+                            aggregate_state.clone(),
+                            Rc::new(vec![]),
+                            Rc::new(vec![]),
+                            block_ids.clone(),
+                            producer_op_index.is_none(),
+                        ));
+                        query_plan.add_operator(aggr_op);
+                        query_plan_dag.add_node();
+
+                        if let Some(input_index) = producer_op_index {
+                            query_plan_dag.add_direct_dependency(aggr_index, *input_index);
+                        }
+
+                        for index in build_hash_op_indices {
+                            query_plan_dag.add_direct_dependency(aggr_index, index);
+                        }
+
+                        self.physical_to_output_relation_map.insert(
+                            plan.clone(),
+                            OperatorOuputInfo::Aggregate(
+                                aggr_index,
+                                output_schema.clone(),
+                                aggregate_state.clone(),
+                            ),
+                        );
+                    }
+                    _ => unreachable!(),
+                };
+            }
             PhysicalPlan::TableReference { table, .. } => {
                 self.physical_to_output_relation_map.insert(
                     plan.clone(),

@@ -203,6 +203,30 @@ impl PlanVisualizer {
                 let child_id = self.node_id_map.get(&*fact_table).unwrap();
                 self.edges.push(EdgeInfo::new(*child_id, node_id));
             }
+            PhysicalPlan::StarJoinAggregateSort {
+                fact_table,
+                fact_table_filter: _,
+                fact_table_join_column_ids: _,
+                dim_tables,
+                ..
+            } => {
+                node.labels.push("StarJoinAggregateSort".to_string());
+
+                node.color = "pink".to_string();
+
+                for dim_table in dim_tables {
+                    let dim_node_id = self.nodes.len();
+                    self.nodes.push(NodeInfo::new(dim_node_id));
+                    let mut dim_node = self.nodes.last_mut().unwrap();
+                    dim_node.labels.push(dim_table.table_name.clone());
+                    self.edges.push(EdgeInfo::new(dim_node_id, node_id));
+                    dim_node.color = "skyblue".to_string();
+                }
+
+                Self::visit_helper(self, &*fact_table);
+                let child_id = self.node_id_map.get(&*fact_table).unwrap();
+                self.edges.push(EdgeInfo::new(*child_id, node_id));
+            }
             PhysicalPlan::Sort { input, .. } => {
                 node.labels.push("Sort".to_string());
                 Self::visit_helper(self, &*input);

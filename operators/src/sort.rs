@@ -135,7 +135,9 @@ impl super::WorkOrder for SortWorkOrder {
                             }
                         }
                     }
-                    AggregateState::SingleStates(_) => unreachable!(),
+                    AggregateState::SingleStates(_) | AggregateState::GroupByStatesInt(..) => {
+                        unreachable!()
+                    }
                 };
             }
         }

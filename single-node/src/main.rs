@@ -5,11 +5,11 @@ use std::sync::Arc;
 
 use hustle_common::{
     get_column_len, AggregateContext, AggregateFunction, BinaryOperation, Column, ColumnAnnotation,
-    ColumnType, Comparison, Database, JoinContext, Literal, Message, OutputSource, PhysicalPlan,
-    Predicate, Scalar, Table, CUSTOMER_FILENAME, C_RELATION_NAME, DDATE_FILENAME, D_RELATION_NAME,
-    LINEORDER_FILENAME, LO_RELATION_NAME, NUM_CUSTOMER, NUM_DDATE, NUM_LINEORDER, NUM_PART_BASE,
-    NUM_SUPPLIER, PART_FILENAME, P_RELATION_NAME, SCALE_FACTOR, SSB_CUSTOMER, SSB_DDATE,
-    SSB_LINEORDER, SSB_PART, SSB_SUPPLIER, SUPPLIER_FILENAME, S_RELATION_NAME,
+    ColumnType, Comparison, DataSource, Database, JoinContext, Literal, Message, OutputSource,
+    PhysicalPlan, Predicate, Scalar, Table, CUSTOMER_FILENAME, C_RELATION_NAME, DDATE_FILENAME,
+    D_RELATION_NAME, LINEORDER_FILENAME, LO_RELATION_NAME, NUM_CUSTOMER, NUM_DDATE, NUM_LINEORDER,
+    NUM_PART_BASE, NUM_SUPPLIER, PART_FILENAME, P_RELATION_NAME, SCALE_FACTOR, SSB_CUSTOMER,
+    SSB_DDATE, SSB_LINEORDER, SSB_PART, SSB_SUPPLIER, SUPPLIER_FILENAME, S_RELATION_NAME,
 };
 use hustle_storage::StorageManager;
 
@@ -54,11 +54,12 @@ fn main() {
             q1(&database);
             q2(&database);
             q3(&database);
-         */
             q4(&database);
+            q5(&database);
+            q6(&database);
+         */
+            q6opt(&database);
         /*
-           q5(&database);
-           q6(&database);
            q7(&database);
            q8(&database);
            q9(&database);
@@ -946,6 +947,112 @@ fn q6(database: &Database) -> Box<PhysicalPlan> {
     });
     Box::new(PhysicalPlan::TopLevelPlan {
         plan: sort,
+        shared_subplans: vec![],
+    })
+}
+
+#[allow(dead_code)]
+fn q6opt(database: &Database) -> Box<PhysicalPlan> {
+    let lo = database.find_table(LO_RELATION_NAME).unwrap();
+    let lo_revenue = lo
+        .get_column_by_id(SSB_LINEORDER::LO_REVENUE as usize)
+        .unwrap();
+    let fact_table = Box::new(PhysicalPlan::TableReference {
+        table: lo.clone(),
+        alias: None,
+        attribute_list: vec![/*FIXME*/],
+    });
+
+    let mut dim_tables = vec![];
+    {
+        let part_factor = (SCALE_FACTOR as f64).log2() as usize;
+        let max_count = NUM_PART_BASE * (1 + part_factor) + 1;
+
+        let p = database.find_table(P_RELATION_NAME).unwrap();
+        let p_brand1 = p.get_column_by_id(SSB_PART::P_BRAND1 as usize).unwrap();
+
+        let left = Box::new(Scalar::ScalarAttribute(p_brand1.clone()));
+        let right = Box::new(Scalar::ScalarLiteral(Literal::Char(
+            "MFGR#2221".to_string(),
+        )));
+        let predicate = Some(Predicate::Comparison {
+            comparison: Comparison::Equal,
+            left,
+            right,
+        });
+
+        dim_tables.push(JoinContext::new(
+            P_RELATION_NAME,
+            SSB_PART::P_PARTKEY as usize,
+            max_count,
+            predicate,
+            vec![],
+        ));
+    }
+
+    {
+        let s = database.find_table(S_RELATION_NAME).unwrap();
+        let s_region = s.get_column_by_id(SSB_SUPPLIER::S_REGION as usize).unwrap();
+        let s_region_len = get_column_len(&s_region.column__type);
+
+        let mut str_literal = String::from("EUROPE");
+        while str_literal.len() < s_region_len {
+            str_literal.push(PLACEHOLDER);
+        }
+        let operand = Box::new(Scalar::ScalarAttribute(s_region.clone()));
+        let right = Box::new(Scalar::ScalarLiteral(Literal::Char(str_literal)));
+
+        let predicate = Some(Predicate::Comparison {
+            comparison: Comparison::Equal,
+            left: operand,
+            right,
+        });
+
+        dim_tables.push(JoinContext::new(
+            S_RELATION_NAME,
+            SSB_SUPPLIER::S_SUPPKEY as usize,
+            NUM_SUPPLIER + 1,
+            predicate,
+            vec![],
+        ));
+    }
+
+    let aggregate_context = AggregateContext::new(
+        AggregateFunction::Sum,
+        Scalar::ScalarAttribute(lo_revenue.clone()),
+        false,
+    );
+
+    let lo_orderdate = lo
+        .get_column_by_id(SSB_LINEORDER::LO_ORDERDATE as usize)
+        .unwrap();
+    let left = Box::new(Scalar::ScalarAttribute(lo_orderdate.clone()));
+    let right = Box::new(Scalar::ScalarLiteral(Literal::Int32(10000)));
+
+    let output_schema = vec![
+        OutputSource::Payload(0),
+        OutputSource::Key(0),
+        OutputSource::Key(1),
+    ];
+    let plan = Box::new(PhysicalPlan::StarJoinAggregateSort {
+        fact_table,
+        fact_table_filter: None,
+        fact_table_join_column_ids: vec![
+            SSB_LINEORDER::LO_PARTKEY as usize,
+            SSB_LINEORDER::LO_SUPPKEY as usize,
+        ],
+        dim_tables,
+        aggregate_context,
+        group: DataSource::BaseRelation(Scalar::BinaryExpression {
+            operation: BinaryOperation::Divide,
+            left,
+            right,
+        }),
+        constant_groups: vec![(1, Literal::Char("MFGR#2221".to_string()))],
+        output_schema,
+    });
+    Box::new(PhysicalPlan::TopLevelPlan {
+        plan,
         shared_subplans: vec![],
     })
 }

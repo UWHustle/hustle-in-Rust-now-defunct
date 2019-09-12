@@ -33,7 +33,7 @@ impl crate::rules::Rule for RewritePredicate {
                 PhysicalPlan::Sort { input, .. } => {
                     apply_to_node(database, input);
                 }
-                _ => unimplemented!(),
+                _ => (),
             }
         }
     }

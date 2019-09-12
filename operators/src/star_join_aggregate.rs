@@ -378,6 +378,20 @@ impl super::WorkOrder for StarJoinAggregateWorkOrder {
                     }
                 }
             }
+            AggregateState::GroupByStatesInt(min_value, _const_groups, ordered_table) => {
+                for rid in 0..block.get_n_rows() {
+                    if let Some((keys, aggr)) = Self::execute_aggregate(self, &block, rid) {
+                        debug_assert_eq!(1, keys.len());
+                        if let Literal::Int32(i) = keys.first().unwrap() {
+                            debug_assert!(*i >= *min_value);
+                            ordered_table[(*i - *min_value) as usize]
+                                .fetch_add(aggr, Ordering::Relaxed);
+                        } else {
+                            unreachable!()
+                        }
+                    }
+                }
+            }
         }
     }
 }

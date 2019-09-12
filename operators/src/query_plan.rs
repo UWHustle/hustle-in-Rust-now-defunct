@@ -1,7 +1,7 @@
 use crate::Operator;
 
 use hustle_common::{AggregateState, Literal, OutputSource, QueryResult};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
 #[derive(Debug)]
@@ -90,6 +90,36 @@ impl QueryPlan {
                             print!("{}", states[i].load(Ordering::Relaxed));
                         }
                         println!();
+                    }
+                    AggregateState::GroupByStatesInt(int_min_value, constant_keys, payloads) => {
+                        let mut key_indexes = HashMap::new();
+                        for (i, literal) in constant_keys {
+                            key_indexes.insert(*i, literal.clone());
+                        }
+
+                        for i in 0..payloads.len() {
+                            for j in 0..num_columns {
+                                if j != 0 {
+                                    print!(" ");
+                                }
+
+                                match &self.output_schema[j] {
+                                    OutputSource::Key(k) => {
+                                        if *k == 0 {
+                                            print!("{}", i as i32 + *int_min_value);
+                                        } else if let Some(literal) = key_indexes.get(k) {
+                                            print_literal(literal);
+                                        } else {
+                                            unreachable!()
+                                        }
+                                    }
+                                    OutputSource::Payload(_) => {
+                                        print!("{}", payloads[i].load(Ordering::Relaxed));
+                                    }
+                                }
+                            }
+                            println!();
+                        }
                     }
                     AggregateState::GroupByStatesDashMap(hash_table) => {
                         for r in hash_table.iter() {
