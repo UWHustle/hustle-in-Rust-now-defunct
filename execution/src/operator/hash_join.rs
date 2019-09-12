@@ -69,11 +69,15 @@ impl Operator for Hash_Join {
                     let matched_result = hash_table.get(&col_value);
                     if let Some(&matched_ids) = matched_result {
                         for (row_id, block_id) in matched_ids.iter() {
-                            let mut output_row = Vec::new();
+
                             let block_with_match = storage_manager.get_block(*block_id).unwrap();
 
-                            output_row.extend(block_with_match.get_row(*row_id));
-                            output_row.extend(input_block.get_row(input_row_id));
+                            let mut output_row = Vec::with_capacity(
+                                block_with_match.n_cols() + input_block.n_cols()
+                            );
+
+                            output_row.extend(block_with_match.get_row(*row_id).unwrap());
+                            output_row.extend(input_block.get_row(input_row_id).unwrap());
 
                             join_result.push(output_row);
                         }
