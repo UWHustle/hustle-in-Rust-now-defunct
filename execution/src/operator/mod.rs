@@ -21,6 +21,7 @@ pub mod delete;
 pub mod select;
 pub mod project;
 pub mod cartesian;
+pub mod hash_join;
 pub mod table_reference;
 pub mod collect;
 mod util;
