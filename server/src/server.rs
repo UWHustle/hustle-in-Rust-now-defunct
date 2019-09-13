@@ -87,6 +87,16 @@ impl Server {
             // Spawn transaction manager thread.
             let completed_tx_clone = completed_tx.clone();
             s.builder().name("transaction".to_string()).spawn(move |_| {
+
+                let execute_statements = |statements, connection_id| {
+                    for (plan, statement_id) in statements {
+                        execution_tx.send(InternalMessage::new(
+                            connection_id,
+                            Message::ExecutePlan { plan, statement_id }
+                        )).unwrap();
+                    }
+                };
+
                 for message in transaction_rx {
                     match message.inner {
                         Message::TransactPlan { plan } => {
@@ -105,10 +115,13 @@ impl Server {
                                 },
                                 Plan::CommitTransaction => {
                                     match transaction_manager.commit_transaction(message.connection_id) {
-                                        Ok(_) => completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Success,
-                                        )).unwrap(),
+                                        Ok(statements) => {
+                                            completed_tx_clone.send(InternalMessage::new(
+                                                message.connection_id,
+                                                Message::Success,
+                                            )).unwrap();
+                                            execute_statements(statements, message.connection_id);
+                                        },
                                         Err(reason) => completed_tx_clone.send(InternalMessage::new(
                                             message.connection_id,
                                             Message::Failure { reason },
@@ -120,12 +133,7 @@ impl Server {
                                         plan,
                                         message.connection_id,
                                     );
-                                    for (plan, statement_id) in statements {
-                                        execution_tx.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::ExecutePlan { plan, statement_id }
-                                        )).unwrap();
-                                    }
+                                    execute_statements(statements, message.connection_id);
                                 },
                             }
                         },
@@ -133,21 +141,11 @@ impl Server {
                             let statements = transaction_manager.complete_statement(
                                 statement_id,
                             );
-                            for (plan, statement_id) in statements {
-                                execution_tx.send(InternalMessage::new(
-                                    message.connection_id,
-                                    Message::ExecutePlan { plan, statement_id }
-                                )).unwrap();
-                            }
+                            execute_statements(statements, message.connection_id);
                         },
                         Message::CloseConnection => {
                             let statements = transaction_manager.close_connection(message.connection_id);
-                            for (plan, statement_id) in statements {
-                                execution_tx.send(InternalMessage::new(
-                                    message.connection_id,
-                                    Message::ExecutePlan { plan, statement_id }
-                                )).unwrap();
-                            }
+                            execute_statements(statements, message.connection_id);
                         },
                         _ => (),
                     }

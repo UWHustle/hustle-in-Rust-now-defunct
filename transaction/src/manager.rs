@@ -27,10 +27,12 @@ impl TransactionManager {
         }
     }
 
-    pub fn commit_transaction(&mut self, connection_id: u64) -> Result<(), String> {
-        self.transaction_ids.remove(&connection_id)
-            .map(|_| ())
-            .ok_or("Cannot commit when no transaction is active".to_owned())
+    pub fn commit_transaction(&mut self, connection_id: u64) -> Result<Vec<(Plan, u64)>, String> {
+        if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
+            Ok(self.policy.commit_transaction(transaction_id))
+        } else {
+            Err("Cannot commit when no transaction is active".to_owned())
+        }
     }
 
     pub fn enqueue_statement(&mut self, plan: Plan, connection_id: u64) -> Vec<(Plan, u64)> {
@@ -44,7 +46,7 @@ impl TransactionManager {
         }
     }
 
-    pub fn complete_statement(&mut self, statement_id: u64, ) -> Vec<(Plan, u64)> {
+    pub fn complete_statement(&mut self, statement_id: u64) -> Vec<(Plan, u64)> {
         self.policy.complete_statement(statement_id)
     }
 
