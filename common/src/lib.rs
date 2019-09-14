@@ -916,7 +916,12 @@ pub enum PhysicalPlan {
         plan: Box<PhysicalPlan>,
         shared_subplans: Vec<PhysicalPlan>,
     },
-    TriangleCount {},
+    TriangleCounting {
+        input: Box<PhysicalPlan>,
+        row_info: Vec<(usize, (usize, usize))>,
+        block_row: Vec<usize>,
+        num_rows: usize,
+    },
     Update {
         table: Table,
         columns: Vec<Column>,
@@ -961,4 +966,5 @@ pub enum SortInput {
 pub enum QueryResult {
     Aggregate(AggregateState),
     Sort(Arc<Mutex<BTreeMap<Vec<Literal>, Vec<Literal>>>>),
+    SingleValue(Arc<std::sync::atomic::AtomicI64>),
 }

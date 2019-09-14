@@ -7,7 +7,7 @@ use memmap::MmapMut;
 
 use buffer_manager::BufferManager;
 
-const BLOCK_SIZE: usize = 64 * 1024 * 1024;
+const BLOCK_SIZE: usize = 4 * 1024;
 
 #[derive(Clone)]
 struct Header {

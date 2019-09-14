@@ -1,5 +1,6 @@
 pub mod aggregate;
 pub mod build_hash;
+pub mod count_triangles;
 pub mod query_plan;
 pub mod sort;
 pub mod star_join_aggregate;
@@ -7,6 +8,7 @@ pub mod work_orders_container;
 
 pub use aggregate::Aggregate;
 pub use build_hash::BuildHash;
+pub use count_triangles::CountTriangles;
 pub use query_plan::{QueryPlan, QueryPlanDag};
 pub use sort::Sort;
 pub use star_join_aggregate::StarJoinAggregate;

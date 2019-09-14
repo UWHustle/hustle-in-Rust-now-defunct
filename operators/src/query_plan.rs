@@ -130,6 +130,9 @@ impl QueryPlan {
                         println!();
                     }
                 }
+                QueryResult::SingleValue(atomic) => {
+                    print!("{}", atomic.load(Ordering::Relaxed));
+                }
             }
         }
     }

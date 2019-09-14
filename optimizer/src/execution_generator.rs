@@ -9,10 +9,13 @@ use hustle_common::{
     PhysicalPlan, QueryResult, SortInput,
 };
 use hustle_operators::build_hash::BuildHash;
-use hustle_operators::{Aggregate, QueryPlan, QueryPlanDag, Sort, StarJoinAggregate};
+use hustle_operators::{
+    Aggregate, CountTriangles, QueryPlan, QueryPlanDag, Sort, StarJoinAggregate,
+};
 use hustle_storage::StorageManager;
 
 use dashmap::DashMap;
+use hustle_common::PhysicalPlan::TriangleCounting;
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -24,6 +27,7 @@ enum OperatorOuputInfo {
         Vec<OutputSource>,
         Arc<Mutex<BTreeMap<Vec<Literal>, Vec<Literal>>>>,
     ),
+    SingleValue(usize, Arc<AtomicI64>),
 }
 
 pub struct ExecutionGenerator {
@@ -55,16 +59,20 @@ impl ExecutionGenerator {
 
             let (query_result, schema) =
                 match &self.physical_to_output_relation_map.get(plan).unwrap() {
-                    OperatorOuputInfo::Aggregate(_, schema, aggregate_state) => {
-                        (QueryResult::Aggregate(aggregate_state.clone()), schema)
-                    }
+                    OperatorOuputInfo::Aggregate(_, schema, aggregate_state) => (
+                        QueryResult::Aggregate(aggregate_state.clone()),
+                        schema.clone(),
+                    ),
                     OperatorOuputInfo::Sort(_, schema, ordered_table) => {
-                        (QueryResult::Sort(ordered_table.clone()), schema)
+                        (QueryResult::Sort(ordered_table.clone()), schema.clone())
+                    }
+                    OperatorOuputInfo::SingleValue(_, atomic) => {
+                        (QueryResult::SingleValue(atomic.clone()), vec![])
                     }
                     _ => unreachable!(),
                 };
 
-            query_plan.set_query_result(query_result, schema.clone());
+            query_plan.set_query_result(query_result, schema);
         } else {
             panic!("Ill-formed plan");
         }
@@ -279,6 +287,36 @@ impl ExecutionGenerator {
                     plan.clone(),
                     OperatorOuputInfo::Relation(table.name.clone(), None),
                 );
+            }
+            PhysicalPlan::TriangleCounting {
+                input,
+                row_info,
+                block_row,
+                num_rows,
+            } => {
+                Self::generate_plan_helper(self, input, query_plan, query_plan_dag);
+                match self.physical_to_output_relation_map.get(&*input).unwrap() {
+                    OperatorOuputInfo::Relation(input_table, producer_op_index) => {
+                        let tc_index = query_plan.num_operators();
+                        let count = Arc::new(AtomicI64::new(0));
+                        let tc_op = Box::new(CountTriangles::new(
+                            tc_index,
+                            input_table.clone(),
+                            row_info,
+                            block_row,
+                            *num_rows,
+                            Arc::clone(&count),
+                        ));
+                        query_plan.add_operator(tc_op);
+                        query_plan_dag.add_node();
+
+                        self.physical_to_output_relation_map.insert(
+                            plan.clone(),
+                            OperatorOuputInfo::SingleValue(tc_index, Arc::clone(&count)),
+                        );
+                    }
+                    _ => unimplemented!(),
+                }
             }
             PhysicalPlan::Sort {
                 input,

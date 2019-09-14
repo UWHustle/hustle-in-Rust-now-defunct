@@ -1,8 +1,10 @@
 extern crate core_affinity;
+extern crate reqwest;
 
 use std::sync::mpsc;
 use std::sync::Arc;
 
+use hustle_common::SSB_PART::P_BRAND1;
 use hustle_common::{
     get_column_len, AggregateContext, AggregateFunction, BinaryOperation, Column, ColumnAnnotation,
     ColumnType, Comparison, Database, JoinContext, Literal, Message, OutputSource, PhysicalPlan,
@@ -17,146 +19,237 @@ const DATA_DIRECTORY: &str = "/mnt/disk/data/ssb-sf1";
 
 const PLACEHOLDER: char = ' ';
 
+const MMIO_FILES: &'static [(&'static str, &'static str)] = &[
+    ("amazon0302", "https://graphchallenge.s3.amazonaws.com/snap/amazon0302/amazon0302_adj.mmio"),
+    ("amazon0312", "https://graphchallenge.s3.amazonaws.com/snap/amazon0312/amazon0312_adj.mmio"),
+    ("amazon0505", "https://graphchallenge.s3.amazonaws.com/snap/amazon0505/amazon0505_adj.mmio"),
+    ("amazon0601", "https://graphchallenge.s3.amazonaws.com/snap/amazon0601/amazon0601_adj.mmio"),
+    ("as-caida20071105", "https://graphchallenge.s3.amazonaws.com/snap/as-caida20071105/as-caida20071105_adj.mmio"),
+    ("as20000102", "https://graphchallenge.s3.amazonaws.com/snap/as20000102/as20000102_adj.mmio"),
+    ("ca-AstroPh", "https://graphchallenge.s3.amazonaws.com/snap/ca-AstroPh/ca-AstroPh_adj.mmio"),
+    ("ca-CondMat", "https://graphchallenge.s3.amazonaws.com/snap/ca-CondMat/ca-CondMat_adj.mmio"),
+    ("ca-GrQc", "https://graphchallenge.s3.amazonaws.com/snap/ca-GrQc/ca-GrQc_adj.mmio"),
+    ("ca-HepPh", "https://graphchallenge.s3.amazonaws.com/snap/ca-HepPh/ca-HepPh_adj.mmio"),
+    ("ca-HepTh", "https://graphchallenge.s3.amazonaws.com/snap/ca-HepTh/ca-HepTh_adj.mmio"),
+    ("cit-HepPh", "https://graphchallenge.s3.amazonaws.com/snap/cit-HepPh/cit-HepPh_adj.mmio"),
+    // ("cit-HepPh-dates", ""),
+    ("cit-HepTh", "https://graphchallenge.s3.amazonaws.com/snap/cit-HepTh/cit-HepTh_adj.mmio"),
+    // ("cit-HepTh-dates", ""),
+    // Error ("cit-Patents", "https://graphchallenge.s3.amazonaws.com/snap/cit-Patents/cit-Patents_adj.mmio",),
+    ("email-Enron", "https://graphchallenge.s3.amazonaws.com/snap/email-Enron/email-Enron_adj.mmio"),
+    ("email-EuAll", "https://graphchallenge.s3.amazonaws.com/snap/email-EuAll/email-EuAll_adj.mmio"),
+    ("loc-brightkite_edges", "https://graphchallenge.s3.amazonaws.com/snap/loc-brightkite_edges/loc-brightkite_edges_adj.mmio"),
+    ("loc-gowalla_edges", "https://graphchallenge.s3.amazonaws.com/snap/loc-gowalla_edges/loc-gowalla_edges_adj.mmio"),
+    ("oregon1_010331", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010331/oregon1_010331_adj.mmio"),
+    ("oregon1_010407", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010407/oregon1_010407_adj.mmio"),
+    ("oregon1_010414", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010414/oregon1_010414_adj.mmio"),
+    ("oregon1_010421", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010421/oregon1_010421_adj.mmio"),
+    ("oregon1_010428", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010428/oregon1_010428_adj.mmio"),
+    ("oregon1_010505", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010505/oregon1_010505_adj.mmio"),
+    ("oregon1_010512", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010512/oregon1_010512_adj.mmio"),
+    ("oregon1_010519", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010519/oregon1_010519_adj.mmio"),
+    ("oregon1_010526", "https://graphchallenge.s3.amazonaws.com/snap/oregon1_010526/oregon1_010526_adj.mmio"),
+    ("oregon2_010331", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010331/oregon2_010331_adj.mmio"),
+    ("oregon2_010407", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010407/oregon2_010407_adj.mmio"),
+    ("oregon2_010414", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010414/oregon2_010414_adj.mmio"),
+    ("oregon2_010421", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010421/oregon2_010421_adj.mmio"),
+    ("oregon2_010428", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010428/oregon2_010428_adj.mmio"),
+    ("oregon2_010505", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010505/oregon2_010505_adj.mmio"),
+    ("oregon2_010512", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010512/oregon2_010512_adj.mmio"),
+    ("oregon2_010519", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010519/oregon2_010519_adj.mmio"),
+    ("oregon2_010526", "https://graphchallenge.s3.amazonaws.com/snap/oregon2_010526/oregon2_010526_adj.mmio"),
+    ("p2p-Gnutella04", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella04/p2p-Gnutella04_adj.mmio"),
+    ("p2p-Gnutella05", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella05/p2p-Gnutella05_adj.mmio"),
+    ("p2p-Gnutella06", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella06/p2p-Gnutella06_adj.mmio"),
+    ("p2p-Gnutella08", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella08/p2p-Gnutella08_adj.mmio"),
+    ("p2p-Gnutella09", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella09/p2p-Gnutella09_adj.mmio"),
+    ("p2p-Gnutella24", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella24/p2p-Gnutella24_adj.mmio"),
+    ("p2p-Gnutella25", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella25/p2p-Gnutella25_adj.mmio"),
+    ("p2p-Gnutella30", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella30/p2p-Gnutella30_adj.mmio"),
+    ("p2p-Gnutella31", "https://graphchallenge.s3.amazonaws.com/snap/p2p-Gnutella31/p2p-Gnutella31_adj.mmio"),
+    ("roadNet-CA", "https://graphchallenge.s3.amazonaws.com/snap/roadNet-CA/roadNet-CA_adj.mmio"),
+    ("roadNet-PA", "https://graphchallenge.s3.amazonaws.com/snap/roadNet-PA/roadNet-PA_adj.mmio"),
+    ("roadNet-TX", "https://graphchallenge.s3.amazonaws.com/snap/roadNet-TX/roadNet-TX_adj.mmio"),
+    ("soc-Epinions1", "https://graphchallenge.s3.amazonaws.com/snap/soc-Epinions1/soc-Epinions1_adj.mmio"),
+    ("soc-Slashdot0811", "https://graphchallenge.s3.amazonaws.com/snap/soc-Slashdot0811/soc-Slashdot0811_adj.mmio"),
+    ("soc-Slashdot0902", "https://graphchallenge.s3.amazonaws.com/snap/soc-Slashdot0902/soc-Slashdot0902_adj.mmio"),
+    // ("soc-sign-Slashdot081106", ""),
+    // ("soc-sign-Slashdot090216", ""),
+    // ("soc-sign-Slashdot090221", ""),
+    // ("soc-sign-epinions", ""),
+    // ("web-Google", ""),
+    // ("web-NotreDame", ""),
+    // ("wiki-Vote", ""),
+];
+
+const RUNS: usize = 1; // 5
+
 fn main() {
     let core_ids = core_affinity::get_core_ids().unwrap();
     let num_workers = core_ids.len();
     // core_affinity::set_for_current(*core_ids.last().unwrap());
 
-    let mut database = Database::new();
-    add_ssb_schemas(&mut database);
-
     let sm = Arc::new(hustle_storage::StorageManager::new());
     let re = sm.relational_engine();
 
-    if !re.exists(LO_RELATION_NAME) {
-        load_lo(&*sm, &database);
-    }
+    println!("dataset, num_edges, num_triangles, num_nodes");
+    for (name, url) in MMIO_FILES {
+        let dst = Column::new2("dst", ColumnType::I32, 0, name, None);
 
-    if !re.exists(P_RELATION_NAME) {
-        load_p(&*sm, &database);
-    }
+        let edge_table = Table::new(name, vec![dst]);
+        let mut database = Database::new();
+        database.add_table(name, edge_table);
+        // add_ssb_schemas(&mut database);
 
-    if !re.exists(S_RELATION_NAME) {
-        load_s(&*sm, &database);
-    }
+        if re.exists(name) {
+            re.drop(name);
+        }
+        let (row_info, block_row, num_rows, num_edges) =
+            load_edge_table(&*sm, &mut database, name, url);
+        // load_edge_table_local(&*sm, &mut database, name, "snap/cit-Patents_adj.mmio");
 
-    if !re.exists(C_RELATION_NAME) {
-        load_c(&*sm, &database);
-    }
-
-    if !re.exists(D_RELATION_NAME) {
-        load_d(&*sm, &database);
-    }
-
-    for query_id in 0..5 {
-        let mut plan =
         /*
-            q1(&database);
-            q2(&database);
-            q3(&database);
-         */
-            q4(&database);
-        /*
-           q5(&database);
-           q6(&database);
-           q7(&database);
-           q8(&database);
-           q9(&database);
-           q10(&database);
-           q11(&database);
-           q12(&database);
-           q13(&database);
+        if !re.exists(LO_RELATION_NAME) {
+            load_lo(&*sm, &database);
+        }
+
+        if !re.exists(P_RELATION_NAME) {
+            load_p(&*sm, &database);
+        }
+
+        if !re.exists(S_RELATION_NAME) {
+            load_s(&*sm, &database);
+        }
+
+        if !re.exists(C_RELATION_NAME) {
+            load_c(&*sm, &database);
+        }
+
+        if !re.exists(D_RELATION_NAME) {
+            load_d(&*sm, &database);
+        }
         */
 
-        // println!("{:#?}", plan);
+        for query_id in 0..RUNS {
+            /*
+            let mut plan =
+            /*
+                q1(&database);
+                q2(&database);
+                q3(&database);
+                q4(&database);
+                q5(&database);
+                q6(&database);
+             */
+                q6opt(&database);
+            /*
+               q7(&database);
+               q8(&database);
+               q9(&database);
+               q10(&database);
+               q11(&database);
+               q12(&database);
+               q13(&database);
+            */
 
-        let physical_generator = hustle_optimizer::PhysicalGenerator::new();
-        physical_generator.optimize_plan(&database, &mut plan, query_id == 0);
+            // println!("{:#?}", plan);
 
-        let mut query_plan = hustle_operators::QueryPlan::new(query_id);
-        let mut query_plan_dag = hustle_operators::QueryPlanDag::new();
+            let physical_generator = hustle_optimizer::PhysicalGenerator::new();
+            physical_generator.optimize_plan(&database, &mut plan, query_id == 0);
+            */
 
-        let mut execution_generator = hustle_optimizer::ExecutionGenerator::new(Arc::clone(&sm));
-        execution_generator.generate_plan(&plan, &mut query_plan, &mut query_plan_dag);
+            let mut plan = triangle_counting(&database, name, &row_info, &block_row, num_rows);
+            let mut query_plan = hustle_operators::QueryPlan::new(query_id);
+            let mut query_plan_dag = hustle_operators::QueryPlanDag::new();
 
-        // println!("{:#?}", query_plan);
-        // println!("{:#?}", query_plan_dag);
+            let mut execution_generator =
+                hustle_optimizer::ExecutionGenerator::new(Arc::clone(&sm));
+            execution_generator.generate_plan(&plan, &mut query_plan, &mut query_plan_dag);
 
-        let mut execution_state =
-            hustle_scheduling::ExecutionState::new(query_plan, &query_plan_dag);
+            // println!("{:#?}", query_plan);
+            // println!("{:#?}", query_plan_dag);
 
-        let (scheduler_tx, scheduler_rx) = mpsc::channel();
-        let mut worker_txs = Vec::with_capacity(num_workers);
-        let mut core_id_index = 0;
-        for id in 0..num_workers {
-            let (worker_tx, worker_rx) = mpsc::channel();
-            worker_txs.push(worker_tx);
-            let mut worker = hustle_scheduling::worker::Worker::new(
-                id,
-                worker_rx,
-                scheduler_tx.clone(),
-                Arc::clone(&sm),
-            );
-            let core_id = core_ids[core_id_index];
-            core_id_index += 1;
-            std::thread::spawn(move || {
-                core_affinity::set_for_current(core_id);
-                worker.run();
-            });
-        }
+            let mut execution_state =
+                hustle_scheduling::ExecutionState::new(query_plan, &query_plan_dag);
 
-        let start_time = std::time::Instant::now();
-        let mut id = 0usize;
-        let work_orders = execution_state.get_next_work_orders();
-        for (work_order, op_index) in work_orders {
-            let request = construct_work_order_message(query_id, op_index, work_order);
-            worker_txs[id].send(request.serialize().unwrap()).unwrap();
-            id += 1;
-            if id == num_workers {
-                id = 0;
+            let (scheduler_tx, scheduler_rx) = mpsc::channel();
+            let mut worker_txs = Vec::with_capacity(num_workers);
+            let mut core_id_index = 0;
+            for id in 0..num_workers {
+                let (worker_tx, worker_rx) = mpsc::channel();
+                worker_txs.push(worker_tx);
+                let mut worker = hustle_scheduling::worker::Worker::new(
+                    id,
+                    worker_rx,
+                    scheduler_tx.clone(),
+                    Arc::clone(&sm),
+                );
+                let core_id = core_ids[core_id_index];
+                core_id_index += 1;
+                std::thread::spawn(move || {
+                    core_affinity::set_for_current(core_id);
+                    worker.run();
+                });
             }
-        }
 
-        loop {
-            let response = Message::deserialize(&scheduler_rx.recv().unwrap()).unwrap();
-            match response {
-                Message::WorkOrderCompletion {
-                    query_id,
-                    op_index,
-                    is_normal_work_order: _,
-                    worker_id,
-                } => {
-                    execution_state.mark_work_order_completion(op_index);
+            let start_time = std::time::Instant::now();
+            let mut id = 0usize;
+            let work_orders = execution_state.get_next_work_orders();
+            for (work_order, op_index) in work_orders {
+                let request = construct_work_order_message(query_id, op_index, work_order);
+                worker_txs[id].send(request.serialize().unwrap()).unwrap();
+                id += 1;
+                if id == num_workers {
+                    id = 0;
+                }
+            }
 
-                    if execution_state.check_normal_execution_completion(op_index) {
-                        execution_state.mark_operator_completion(op_index, &query_plan_dag);
+            loop {
+                let response = Message::deserialize(&scheduler_rx.recv().unwrap()).unwrap();
+                match response {
+                    Message::WorkOrderCompletion {
+                        query_id,
+                        op_index,
+                        is_normal_work_order: _,
+                        worker_id,
+                    } => {
+                        execution_state.mark_work_order_completion(op_index);
 
-                        let mut id = worker_id;
-                        let work_orders = execution_state.get_next_work_orders();
-                        for (work_order, op_index) in work_orders {
-                            let request =
-                                construct_work_order_message(query_id, op_index, work_order);
-                            worker_txs[id].send(request.serialize().unwrap()).unwrap();
-                            id += 1;
-                            if id == num_workers {
-                                id = 0;
+                        if execution_state.check_normal_execution_completion(op_index) {
+                            execution_state.mark_operator_completion(op_index, &query_plan_dag);
+
+                            let mut id = worker_id;
+                            let work_orders = execution_state.get_next_work_orders();
+                            for (work_order, op_index) in work_orders {
+                                let request =
+                                    construct_work_order_message(query_id, op_index, work_order);
+                                worker_txs[id].send(request.serialize().unwrap()).unwrap();
+                                id += 1;
+                                if id == num_workers {
+                                    id = 0;
+                                }
                             }
                         }
-                    }
 
-                    if execution_state.done() {
-                        let duration = start_time.elapsed();
-                        eprintln!("rs-{} {:?} ns", query_id, duration.as_nanos());
-                        eprintln!("rs-{} {:?} ms", query_id, duration.as_millis());
-                        eprintln!("rs-{} {:?} s", query_id, duration.as_secs());
+                        if execution_state.done() {
+                            let duration = start_time.elapsed();
+                            eprintln!("{}-{} {:?} ns", name, query_id, duration.as_nanos());
+                            eprintln!("{}-{} {:?} ms", name, query_id, duration.as_millis());
+                            eprintln!("{}-{} {:?} s", name, query_id, duration.as_secs());
 
-                        execution_state.display();
-                        break;
+                            if query_id == 0 {
+                                print!("{} , {},  ", name, num_edges);
+                                execution_state.display();
+                                println!(", {}", num_rows);
+                            }
+                            break;
+                        }
                     }
-                }
-                _ => println!("Unexpected message {:?}", response),
-            };
+                    _ => println!("Unexpected message {:?}", response),
+                };
+            }
         }
+        re.drop(name);
     }
 }
 
@@ -3172,4 +3265,222 @@ fn load_d(sm: &StorageManager, database: &Database) {
     let raw = rows.as_ptr() as *const u8;
     let buf = unsafe { std::slice::from_raw_parts(raw, rows.len()) };
     physical_relation.bulk_write(buf);
+}
+
+#[allow(dead_code)]
+fn load_edge_table(
+    sm: &StorageManager,
+    database: &mut Database,
+    name: &str,
+    url: &str,
+) -> (Vec<(usize, (usize, usize))>, Vec<usize>, usize, usize) {
+    // println!("Loading {} at {}", name, url);
+    let mmio = reqwest::get(url).unwrap().text().unwrap();
+    let mut lines = mmio.lines();
+
+    let first_line = lines.next().unwrap();
+    let header = first_line.split_whitespace().collect::<Vec<&str>>();
+    debug_assert_eq!(5, header.len());
+    debug_assert_eq!("%%MatrixMarket", header[0]);
+    debug_assert_eq!("matrix", header[1]);
+    debug_assert_eq!("coordinate", header[2]);
+    debug_assert_eq!("real", header[3]);
+    debug_assert_eq!("symmetric", header[4]);
+
+    let num_rows: usize;
+    let num_cols: usize;
+    let num_edges: usize;
+    loop {
+        let line = lines.next().unwrap();
+        if line.chars().next().unwrap() != '%' {
+            let ints = line.split_whitespace().collect::<Vec<&str>>();
+            debug_assert_eq!(3, ints.len());
+            num_rows = ints[0].parse().unwrap();
+            num_cols = ints[1].parse().unwrap();
+            debug_assert_eq!(num_rows, num_cols);
+            num_edges = ints[2].parse().unwrap();
+            // println!("{} {} {}", num_rows, num_cols, num_edges * 2);
+            break;
+        }
+    }
+
+    let mut rows: Vec<u8> = Vec::with_capacity(num_edges * 4);
+
+    let mut row_info = vec![(0usize, (0usize, 0usize)); num_rows as usize + 1];
+    for line in lines {
+        let edge_info = line;
+        let ints = edge_info.split_whitespace().collect::<Vec<&str>>();
+        debug_assert_eq!(3, ints.len());
+        let u = ints[0].parse::<u32>().unwrap();
+        let v = ints[1].parse::<u32>().unwrap();
+        debug_assert!(v < u);
+        // let _w = ints[2].parse::<u32>().unwrap();
+
+        row_info[v as usize].0 += 1;
+
+        let mut data = vec![];
+        data.extend(u.to_ne_bytes().iter());
+        rows.append(&mut data);
+    }
+
+    process(sm, name, &mut rows, &mut row_info, num_rows, num_edges * 2)
+}
+
+#[allow(dead_code)]
+fn load_edge_table_local(
+    sm: &StorageManager,
+    database: &mut Database,
+    name: &str,
+    path: &str,
+) -> (Vec<(usize, (usize, usize))>, Vec<usize>, usize, usize) {
+    use std::io::BufRead;
+    let file = std::fs::File::open(path).unwrap();
+    let mut lines = std::io::BufReader::new(file).lines();
+
+    let first_line = lines.next().unwrap().unwrap();
+    let header = first_line.split_whitespace().collect::<Vec<&str>>();
+    debug_assert_eq!(5, header.len());
+    debug_assert_eq!("%%MatrixMarket", header[0]);
+    debug_assert_eq!("matrix", header[1]);
+    debug_assert_eq!("coordinate", header[2]);
+    debug_assert_eq!("real", header[3]);
+    debug_assert_eq!("symmetric", header[4]);
+
+    let num_rows: usize;
+    let num_cols: usize;
+    let num_edges: usize;
+    loop {
+        let line = lines.next().unwrap().unwrap();
+        if line.chars().next().unwrap() != '%' {
+            let ints = line.split_whitespace().collect::<Vec<&str>>();
+            debug_assert_eq!(3, ints.len());
+            num_rows = ints[0].parse().unwrap();
+            num_cols = ints[1].parse().unwrap();
+            num_edges = ints[2].parse().unwrap();
+            // println!("{} {} {}", num_rows, num_cols, num_edges * 2);
+            break;
+        }
+    }
+
+    let mut rows: Vec<u8> = Vec::with_capacity(num_edges * 4);
+
+    let mut row_info = vec![(0usize, (0usize, 0usize)); num_rows as usize + 1];
+    for line in lines {
+        let edge_info = line.unwrap();
+        let ints = edge_info.split_whitespace().collect::<Vec<&str>>();
+        debug_assert_eq!(3, ints.len());
+        let u = ints[0].parse::<u32>().unwrap();
+        let v = ints[1].parse::<u32>().unwrap();
+        debug_assert!(v < u);
+        // let _w = ints[2].parse::<u32>().unwrap();
+
+        row_info[v as usize].0 += 1;
+
+        let mut data = vec![];
+        data.extend(u.to_ne_bytes().iter());
+        rows.append(&mut data);
+    }
+
+    process(sm, name, &mut rows, &mut row_info, num_rows, num_edges * 2)
+}
+
+fn process(
+    sm: &StorageManager,
+    name: &str,
+    rows: &mut Vec<u8>,
+    row_info: &mut Vec<(usize, (usize, usize))>,
+    num_rows: usize,
+    num_edges: usize,
+) -> (Vec<(usize, (usize, usize))>, Vec<usize>, usize, usize) {
+    let re = sm.relational_engine();
+    let mut physical_relation = re.create(name, vec![4]);
+
+    let raw = rows.as_ptr() as *const u8;
+    let buf = unsafe { std::slice::from_raw_parts(raw, rows.len()) };
+    physical_relation.bulk_write(buf);
+
+    let block_ids = physical_relation.block_ids();
+
+    let mut block_row = vec![0; block_ids.len()];
+    let mut v = 1usize;
+    let mut row_offset = 0usize;
+    for i in 0..block_ids.len() {
+        let block_id = block_ids[i];
+        let block = re.get_block(name, block_id).unwrap();
+        debug_assert_eq!(1, block.get_n_cols());
+        let block_rows = block.get_n_rows();
+
+        if block_rows <= row_offset {
+            row_offset -= block_rows;
+            continue;
+        }
+        debug_assert!(row_offset < block_rows);
+        let mut row_id = row_offset;
+
+        while row_info[v].0 == 0 {
+            v += 1;
+        }
+
+        debug_assert!(row_info[v].0 > 0);
+        block_row[i] = v as usize;
+        while row_id < block_rows {
+            row_info[v].1 = (block_id, row_id);
+            row_id += row_info[v].0;
+
+            v += 1;
+        }
+
+        if block_rows <= row_id {
+            row_offset = row_id - block_rows;
+        } else {
+            debug_assert_eq!(block_ids.len() - 1, i);
+        }
+    }
+
+    /*
+    for i in 1..num_rows {
+        if row_info[i].0 != 0 {
+            println!(
+                "{}: {}, {}, {}",
+                i,
+                row_info[i].0,
+                (row_info[i].1).0,
+                (row_info[i].1).1
+            );
+        }
+    }
+
+    for i in 0..block_row.len() {
+        println!("{} starts from {}", i, block_row[i]);
+    }
+    */
+
+    (row_info.clone(), block_row.clone(), num_rows, num_edges)
+}
+
+fn triangle_counting(
+    database: &Database,
+    name: &str,
+    row_info: &Vec<(usize, (usize, usize))>,
+    block_row: &Vec<usize>,
+    num_rows: usize,
+) -> Box<PhysicalPlan> {
+    let edge_table = database.find_table(name).unwrap();
+    let input = Box::new(PhysicalPlan::TableReference {
+        table: edge_table.clone(),
+        alias: None,
+        attribute_list: vec![],
+    });
+
+    let plan = Box::new(PhysicalPlan::TriangleCounting {
+        input,
+        row_info: row_info.clone(),
+        block_row: block_row.clone(),
+        num_rows,
+    });
+
+    Box::new(PhysicalPlan::TopLevelPlan {
+        plan,
+        shared_subplans: vec![],
+    })
 }
