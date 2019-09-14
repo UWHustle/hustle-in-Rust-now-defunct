@@ -9,6 +9,7 @@ pub struct Worker {
     worker_rx: Receiver<Vec<u8>>,
     scheduler_tx: Sender<Vec<u8>>,
     storage_manager: Arc<StorageManager>,
+    lookup: Vec<u32>,
 }
 
 impl Worker {
@@ -23,6 +24,7 @@ impl Worker {
             worker_rx,
             scheduler_tx,
             storage_manager,
+            lookup: vec![],
         }
     }
 
@@ -40,7 +42,7 @@ impl Worker {
                     } => {
                         let mut work_order: Box<Box<dyn hustle_operators::WorkOrder>> =
                             unsafe { Box::from_raw(work_order as *mut _) };
-                        work_order.execute(Arc::clone(&self.storage_manager));
+                        work_order.execute(Arc::clone(&self.storage_manager), &mut self.lookup);
                         Message::WorkOrderCompletion {
                             query_id,
                             op_index,

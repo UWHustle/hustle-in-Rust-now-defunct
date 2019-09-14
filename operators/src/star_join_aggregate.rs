@@ -328,7 +328,7 @@ impl StarJoinAggregateWorkOrder {
 }
 
 impl super::WorkOrder for StarJoinAggregateWorkOrder {
-    fn execute(&mut self, storage_manager: std::sync::Arc<StorageManager>) {
+    fn execute(&mut self, storage_manager: std::sync::Arc<StorageManager>, _lookup: &mut Vec<u32>) {
         let re = storage_manager.relational_engine();
         let block = re
             .get_block(self.probe_table_name.as_str(), self.probe_block_id)

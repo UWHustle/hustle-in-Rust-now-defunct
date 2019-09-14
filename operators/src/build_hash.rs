@@ -96,7 +96,11 @@ impl BuildHashWorkOrder {
 }
 
 impl WorkOrder for BuildHashWorkOrder {
-    fn execute(&mut self, storage_manager: std::sync::Arc<hustle_storage::StorageManager>) {
+    fn execute(
+        &mut self,
+        storage_manager: std::sync::Arc<hustle_storage::StorageManager>,
+        _lookup: &mut Vec<u32>,
+    ) {
         let re = storage_manager.relational_engine();
         let block = re
             .get_block(self.join_context.table_name.as_str(), self.input_block_id)

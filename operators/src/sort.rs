@@ -91,7 +91,7 @@ impl SortWorkOrder {
 }
 
 impl super::WorkOrder for SortWorkOrder {
-    fn execute(&mut self, _storage_manager: Arc<StorageManager>) {
+    fn execute(&mut self, _storage_manager: Arc<StorageManager>, _lookup: &mut Vec<u32>) {
         match &self.input {
             SortInput::Aggregate(aggrgate_state) => {
                 match aggrgate_state {

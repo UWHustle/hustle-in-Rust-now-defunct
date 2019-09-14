@@ -131,7 +131,7 @@ impl AggregateWorkOrder {
 }
 
 impl WorkOrder for AggregateWorkOrder {
-    fn execute(&mut self, storage_manager: Arc<StorageManager>) {
+    fn execute(&mut self, storage_manager: Arc<StorageManager>, _lookup: &mut Vec<u32>) {
         let re = storage_manager.relational_engine();
         let block = re
             .get_block(self.input_table_name.as_str(), self.input_block_id)

@@ -35,7 +35,11 @@ pub trait Operator /*: std::fmt::Debug*/ {
 }
 
 pub trait WorkOrder {
-    fn execute(&mut self, storage_manager: std::sync::Arc<hustle_storage::StorageManager>);
+    fn execute(
+        &mut self,
+        storage_manager: std::sync::Arc<hustle_storage::StorageManager>,
+        lookup: &mut Vec<u32>,
+    );
 }
 
 fn evaluate_scalar(scalar: &Scalar, block: &RelationalBlock, rid: usize) -> Literal {

@@ -74,7 +74,6 @@ pub struct CountTrianglesWorkOrder {
     num_rows: usize,
     block_id: usize,
     triangle_count: Arc<AtomicI64>,
-    lookup: Vec<usize>,
 }
 
 impl CountTrianglesWorkOrder {
@@ -93,11 +92,16 @@ impl CountTrianglesWorkOrder {
             num_rows,
             block_id,
             triangle_count,
-            lookup: vec![0; num_rows + 1],
         }
     }
 
-    fn count_triangle(&mut self, storage_manager: &Arc<StorageManager>, u: usize, count: &mut i64) {
+    fn count_triangle(
+        &mut self,
+        storage_manager: &Arc<StorageManager>,
+        lookup: &mut Vec<u32>,
+        u: usize,
+        count: &mut i64,
+    ) {
         let u_info = self.row_info[u];
         let num_rows = u_info.0;
         debug_assert!(num_rows > 1);
@@ -119,7 +123,7 @@ impl CountTrianglesWorkOrder {
 
         for r in rid..rid_end {
             let bytes = block.get_row_col(r, 0).unwrap();
-            self.lookup[unsafe { *(bytes.as_ptr() as *const i32) } as usize] = u;
+            lookup[unsafe { *(bytes.as_ptr() as *const i32) } as usize] = u as u32;
         }
 
         if extra_blocks {
@@ -132,7 +136,7 @@ impl CountTrianglesWorkOrder {
                     .unwrap();
                 for r in 0..block_rows {
                     let bytes = block.get_row_col(r, 0).unwrap();
-                    self.lookup[unsafe { *(bytes.as_ptr() as *const i32) } as usize] = u;
+                    lookup[unsafe { *(bytes.as_ptr() as *const i32) } as usize] = u as u32;
                 }
                 block_id += 1;
             }
@@ -142,12 +146,12 @@ impl CountTrianglesWorkOrder {
                 .unwrap();
             for r in 0..num_rows_left {
                 let bytes = block.get_row_col(r, 0).unwrap();
-                self.lookup[unsafe { *(bytes.as_ptr() as *const i32) } as usize] = u;
+                lookup[unsafe { *(bytes.as_ptr() as *const i32) } as usize] = u as u32;
             }
             for r in 0..num_rows_left {
                 let bytes = block.get_row_col(r, 0).unwrap();
                 let v = unsafe { *(bytes.as_ptr() as *const i32) } as usize;
-                Self::count_triangle_helper(self, storage_manager, u, v, block_rows, count);
+                Self::count_triangle_helper(self, storage_manager, lookup, u, v, block_rows, count);
             }
 
             let mut num_rows_left = num_rows + rid - block_rows;
@@ -160,7 +164,15 @@ impl CountTrianglesWorkOrder {
                 for r in 0..block_rows {
                     let bytes = block.get_row_col(r, 0).unwrap();
                     let v = unsafe { *(bytes.as_ptr() as *const i32) } as usize;
-                    Self::count_triangle_helper(self, storage_manager, u, v, block_rows, count);
+                    Self::count_triangle_helper(
+                        self,
+                        storage_manager,
+                        lookup,
+                        u,
+                        v,
+                        block_rows,
+                        count,
+                    );
                 }
                 block_id += 1;
             }
@@ -169,13 +181,14 @@ impl CountTrianglesWorkOrder {
         for r in rid..rid_end {
             let bytes = block.get_row_col(r, 0).unwrap();
             let v = unsafe { *(bytes.as_ptr() as *const i32) } as usize;
-            Self::count_triangle_helper(self, storage_manager, u, v, block_rows, count);
+            Self::count_triangle_helper(self, storage_manager, lookup, u, v, block_rows, count);
         }
     }
 
     fn count_triangle_helper(
         &self,
         storage_manager: &Arc<StorageManager>,
+        lookup: &Vec<u32>,
         u: usize,
         v: usize,
         block_rows: usize,
@@ -204,7 +217,7 @@ impl CountTrianglesWorkOrder {
             let w =
                 unsafe { *(v_block.get_row_col(r, 0).unwrap().as_ptr() as *const i32) } as usize;
             debug_assert!(v < w);
-            if self.lookup[w] == u {
+            if lookup[w] == u as u32 {
                 *count += 1;
             }
         }
@@ -222,7 +235,7 @@ impl CountTrianglesWorkOrder {
                     let w = unsafe { *(block.get_row_col(r, 0).unwrap().as_ptr() as *const i32) }
                         as usize;
                     debug_assert!(v < w);
-                    if self.lookup[w] == u {
+                    if lookup[w] == u as u32 {
                         *count += 1;
                     }
                 }
@@ -237,7 +250,7 @@ impl CountTrianglesWorkOrder {
                 let w =
                     unsafe { *(block.get_row_col(r, 0).unwrap().as_ptr() as *const i32) } as usize;
                 debug_assert!(v < w);
-                if self.lookup[w] == u {
+                if lookup[w] == u as u32 {
                     *count += 1;
                 }
             }
@@ -246,7 +259,11 @@ impl CountTrianglesWorkOrder {
 }
 
 impl WorkOrder for CountTrianglesWorkOrder {
-    fn execute(&mut self, storage_manager: Arc<StorageManager>) {
+    fn execute(&mut self, storage_manager: Arc<StorageManager>, lookup: &mut Vec<u32>) {
+        if lookup.is_empty() {
+            lookup.resize(self.num_rows + 1, 0);
+        }
+
         let mut count = 0i64;
 
         let mut row = self.row_id;
@@ -256,7 +273,7 @@ impl WorkOrder for CountTrianglesWorkOrder {
             if row_info.0 < 2 {
                 row += 1;
             } else if (row_info.1).0 == self.block_id {
-                Self::count_triangle(self, &storage_manager, row, &mut count);
+                Self::count_triangle(self, &storage_manager, lookup, row, &mut count);
                 row += 1;
             } else {
                 break;
