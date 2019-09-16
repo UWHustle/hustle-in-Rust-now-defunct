@@ -124,32 +124,23 @@ mod zero_concurrency_policy_tests {
         let mut admitted = VecDeque::new();
 
         // Enqueue the begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 0,
-            transaction_id: 0,
-            plan: Plan::BeginTransaction,
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(policy.active_transaction_id, Some(0));
         assert_eq!(admitted.len(), 1);
 
         // Enqueue the second statement in the transaction.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 1,
-            transaction_id: 0,
-            plan: test_util::generate_plan("SELECT a FROM T"),
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(
+            1,
+            0, test_util::generate_plan("SELECT a FROM T"),
+        )));
 
         assert_eq!(policy.sidetracked_statements.len(), 1);
         assert_eq!(admitted.len(), 1);
 
         // Enqueue the commit transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 2,
-            transaction_id: 0,
-            plan: Plan::CommitTransaction,
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(2, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.sidetracked_statements.len(), 2);
         assert_eq!(admitted.len(), 1);
@@ -189,11 +180,7 @@ mod zero_concurrency_policy_tests {
         let mut admitted = VecDeque::new();
 
         // Enqueue the first begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 0,
-            transaction_id: 0,
-            plan: Plan::BeginTransaction,
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
 
         assert_eq!(policy.active_transaction_id, Some(0));
         assert_eq!(admitted.len(), 1);
@@ -205,31 +192,23 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the second begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 1,
-            transaction_id: 1,
-            plan: Plan::BeginTransaction,
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(1, 1, Plan::BeginTransaction)));
 
         assert_eq!(policy.sidetracked_statements.len(), 1);
         assert!(admitted.is_empty());
 
         // Enqueue the second statement in the second transaction.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 3,
-            transaction_id: 1,
-            plan: test_util::generate_plan("SELECT a FROM T"),
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(
+            3,
+            1,
+            test_util::generate_plan("SELECT a FROM T"),
+        )));
 
         assert_eq!(policy.sidetracked_statements.len(), 2);
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the first transaction.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 4,
-            transaction_id: 0,
-            plan: Plan::CommitTransaction,
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(4, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);
@@ -256,11 +235,7 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the second transaction.
-        admitted.extend(policy.enqueue_statement(Statement {
-            id: 5,
-            transaction_id: 1,
-            plan: Plan::CommitTransaction,
-        }));
+        admitted.extend(policy.enqueue_statement(Statement::new(5, 1, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);

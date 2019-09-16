@@ -33,7 +33,7 @@ impl TransactionStatement {
             column_manager,
         );
 
-        let inner = Statement { id, transaction_id, plan };
+        let inner = Statement::new(id, transaction_id, plan);
 
         TransactionStatement {
             inner,

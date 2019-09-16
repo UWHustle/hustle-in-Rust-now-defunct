@@ -112,10 +112,7 @@ impl Server {
                             execute_statements(statements, message.connection_id);
                         },
                         Message::CompleteStatement { statement } => {
-                            let statements = transaction_manager.complete_statement(
-                                statement,
-                                message.connection_id,
-                            );
+                            let statements = transaction_manager.complete_statement(statement);
                             execute_statements(statements, message.connection_id);
                         },
                         Message::CloseConnection => {
@@ -155,10 +152,12 @@ impl Server {
                                     }
 
                                     // Send a success message to indicate completion.
-                                    completed_tx_clone.send(InternalMessage::new(
-                                        message.connection_id,
-                                        Message::Success,
-                                    )).unwrap();
+                                    if !statement.silent {
+                                        completed_tx_clone.send(InternalMessage::new(
+                                            message.connection_id,
+                                            Message::Success,
+                                        )).unwrap();
+                                    }
                                 },
                                 Err(reason) => completed_tx_clone.send(InternalMessage::new(
                                     message.connection_id,
