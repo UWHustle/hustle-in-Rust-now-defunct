@@ -1,5 +1,12 @@
 use hustle_catalog::{Column, Table};
-use hustle_types::{TypeVariant, ComparativeVariant};
+use hustle_types::{ComparativeVariant, TypeVariant};
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Statement {
+    pub id: u64,
+    pub transaction_id: u64,
+    pub plan: Plan,
+}
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Plan {

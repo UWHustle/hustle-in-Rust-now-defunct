@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
-use hustle_common::plan::{Plan, Expression, Query, QueryOperator};
+use hustle_common::plan::{Plan, Expression, Query, QueryOperator, Statement};
 
 use crate::Domain;
 use crate::policy::ColumnManager;
@@ -11,17 +11,15 @@ use hustle_types::ComparativeVariant;
 
 type IndexedDomain = HashMap<u64, Vec<Domain>>;
 
-#[derive(Debug)]
-pub struct Statement {
-    pub id: u64,
-    pub transaction_id: u64,
-    pub plan: Plan,
+#[derive(Clone, Debug)]
+pub struct TransactionStatement {
+    pub inner: Statement,
     read_domain: IndexedDomain,
     write_domain: IndexedDomain,
     filter_domain: IndexedDomain,
 }
 
-impl Statement {
+impl TransactionStatement {
     pub fn new(id: u64, transaction_id: u64, plan: Plan, column_manager: &mut ColumnManager) -> Self {
         let mut read_domain = IndexedDomain::new();
         let mut write_domain = IndexedDomain::new();
@@ -35,10 +33,10 @@ impl Statement {
             column_manager,
         );
 
-        Statement {
-            id,
-            transaction_id,
-            plan,
+        let inner = Statement { id, transaction_id, plan };
+
+        TransactionStatement {
+            inner,
             read_domain,
             write_domain,
             filter_domain,
@@ -414,22 +412,22 @@ impl Statement {
     }
 }
 
-impl PartialEq for Statement {
+impl PartialEq for TransactionStatement {
     fn eq(&self, other: &Self) -> bool {
-        self.id.eq(&other.id)
+        self.inner.id.eq(&other.inner.id)
     }
 }
 
-impl Eq for Statement {}
+impl Eq for TransactionStatement {}
 
-impl Hash for Statement {
+impl Hash for TransactionStatement {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.inner.id.hash(state);
     }
 }
 
-impl Borrow<u64> for Statement {
+impl Borrow<u64> for TransactionStatement {
     fn borrow(&self) -> &u64 {
-        &self.id
+        &self.inner.id
     }
 }

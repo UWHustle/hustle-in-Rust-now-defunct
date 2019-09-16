@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod statement_tests {
-    use hustle_transaction::statement::Statement;
-    use hustle_transaction::policy::PolicyHelper;
-
+    use hustle_transaction::policy::ColumnManager;
+    use hustle_transaction::statement::TransactionStatement;
     use hustle_transaction_test_util as test_util;
 
     // DELETE tests.
@@ -202,11 +201,11 @@ mod statement_tests {
         assert!(!stmts[0].conflicts(&stmts[1]));
     }
 
-    pub fn generate_statements(sqls: &[&str]) -> Vec<Statement> {
-        let mut policy_helper = PolicyHelper::new();
+    pub fn generate_statements(sqls: &[&str]) -> Vec<TransactionStatement> {
+        let mut column_manager = ColumnManager::new();
         test_util::generate_plans(sqls)
             .into_iter()
-            .map(|plan| policy_helper.new_statement(0, plan))
+            .map(|plan| TransactionStatement::new(0, 0, plan, &mut column_manager))
             .collect()
     }
 }
