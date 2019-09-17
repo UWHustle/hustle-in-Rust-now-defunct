@@ -75,17 +75,20 @@ impl Policy for ZeroConcurrencyPolicy {
 
     fn complete_statement(&mut self, statement: Statement) -> Vec<Statement> {
         // Ensure the running statement has the correct statement ID.
-        let running_statement = self.running_statement.take()
+        let completed_statement = self.running_statement.take()
             .filter(|s| s.id == statement.id)
             .expect(&format!("Statement with ID {} was not running", statement.id));
 
-        if running_statement.plan == Plan::CommitTransaction {
+        if completed_statement.plan == Plan::CommitTransaction {
             // The statement is a commit transaction statement. Remove the active transaction ID.
             self.active_transaction_id.take()
                 .expect("Cannot commit when no transaction is active");
         }
 
+        // Examine the sidetrack to find the next statement to admit.
         if let Some(active_transaction_id) = self.active_transaction_id {
+            // There is currently an active transaction. Check if the sidetrack contains a statement
+            // belonging to this transaction.
             if let Some(sidetracked_statement) = self.sidetracked_statements.iter()
                 .position(|s| s.transaction_id == active_transaction_id)
                 .and_then(|p| self.sidetracked_statements.remove(p))
@@ -133,7 +136,8 @@ mod zero_concurrency_policy_tests {
         // Enqueue the second statement in the transaction.
         admitted.extend(policy.enqueue_statement(Statement::new(
             1,
-            0, test_util::generate_plan("SELECT a FROM T"),
+            0,
+            test_util::generate_plan("SELECT a FROM T"),
         )));
 
         assert_eq!(policy.sidetracked_statements.len(), 1);
@@ -199,7 +203,7 @@ mod zero_concurrency_policy_tests {
 
         // Enqueue the second statement in the second transaction.
         admitted.extend(policy.enqueue_statement(Statement::new(
-            3,
+            2,
             1,
             test_util::generate_plan("SELECT a FROM T"),
         )));
@@ -208,7 +212,7 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the first transaction.
-        admitted.extend(policy.enqueue_statement(Statement::new(4, 0, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(3, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);
@@ -235,7 +239,7 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the second transaction.
-        admitted.extend(policy.enqueue_statement(Statement::new(5, 1, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(4, 1, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);

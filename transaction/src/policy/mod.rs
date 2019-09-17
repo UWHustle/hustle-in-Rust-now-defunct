@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use hustle_common::plan::Statement;
+pub use predicate_comparison::PredicateComparisonPolicy;
 pub use zero_concurrency::ZeroConcurrencyPolicy;
 
+mod predicate_comparison;
 mod zero_concurrency;
 
 pub trait Policy {
