@@ -8,7 +8,7 @@ use crate::router::BlockPoolDestinationRouter;
 
 use std::collections::HashMap;
 
-pub struct Hash_Join {
+pub struct HashJoin {
     router: BlockPoolDestinationRouter,
     block_rx_table_1: Receiver<(u64)>,
     block_rx_table_2: Receiver<(u64)>,
@@ -17,7 +17,7 @@ pub struct Hash_Join {
     join_attribute_table_2: usize,
 }
 
-impl Hash_Join {
+impl HashJoin {
     pub fn new(
         router: BlockPoolDestinationRouter,
         block_rx_table_1: Receiver<u64>,
@@ -26,7 +26,7 @@ impl Hash_Join {
         join_attribute_table_1: usize,
         join_attribute_table_2: usize,
     ) -> Self {
-        Hash_Join {
+        HashJoin {
             router,
             block_rx_table_1,
             block_rx_table_2,
@@ -37,7 +37,7 @@ impl Hash_Join {
     }
 }
 
-impl Operator for Hash_Join {
+impl Operator for HashJoin {
     fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
         let mut hash_table = HashMap::new();
 
@@ -52,11 +52,8 @@ impl Operator for Hash_Join {
         }
 
         // PROBE PHASE
-//        let mut join_result = Vec::new();
-
         for input_block_id in &self.block_rx_table_2 {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
-         //   let block_with_match = &mut input_block.clone();
 
             // transform vector<(row id of table 1, block id of table 1)> to (row id of table 2, vector<(row id of table 1, block id of table 1)>)
             let row_ids = input_block.get_col(self.join_attribute_table_2).unwrap()
@@ -70,7 +67,7 @@ impl Operator for Hash_Join {
                     .map(|&(row_id, block_id)| (row_id, storage_manager.get_block(block_id).unwrap()))
                     .collect::<Vec<_>>();
 
-                let input_row = input_block.get_row(input_row_id).unwrap();
+                //let input_row = input_block.get_row(input_row_id).unwrap();
 
                 let mut rows = matched_row_ids.iter()
                     .map(|(matched_row_id, block_with_match)|
@@ -95,7 +92,7 @@ mod hash_join_tests {
     use hustle_storage::StorageManager;
     use std::sync::mpsc;
     use std::mem;
-    use crate::operator::hash_join::Hash_Join;
+    use crate::operator::hash_join::HashJoin;
     use crate::router::BlockPoolDestinationRouter;
     use hustle_execution_test_util as test_util;
     use crate::operator::Operator;
@@ -104,7 +101,6 @@ mod hash_join_tests {
     #[test]
     fn test_hash_join() {
         let storage_manager = StorageManager::with_unique_data_directory();
-        println!("a");
         let (input_block_tx_1, input_block_rx_1) = mpsc::channel();
         let (input_block_tx_2, input_block_rx_2) = mpsc::channel();
         let (output_block_tx, output_block_rx) = mpsc::channel();
@@ -114,27 +110,29 @@ mod hash_join_tests {
         let mut table = test_util::example_table();
         let mut output_schema = table.columns.clone();
         output_schema.append(&mut table.columns);
-        // router takes output schema as argument
         let router = BlockPoolDestinationRouter::new(output_schema);
         input_block_tx_1.send(block_1.id);
         input_block_tx_2.send(block_2.id);
         mem::drop(input_block_tx_1);
         mem::drop(input_block_tx_2);
 
-        let hash_join = Box::new(Hash_Join::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 1,1));
+        let hash_join = Box::new(HashJoin::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 1, 1));
         hash_join.execute(&storage_manager, &catalog);
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
 
         assert_eq!(output_block.get_row_col(0, 0), block_1.get_row_col(0, 0));
         assert_eq!(output_block.get_row_col(0, 1), block_1.get_row_col(0, 1));
         assert_eq!(output_block.get_row_col(0, 2), block_1.get_row_col(0, 2));
+
         assert_eq!(output_block.get_row_col(0, 3), block_2.get_row_col(0, 0));
         assert_eq!(output_block.get_row_col(0, 4), block_2.get_row_col(0, 1));
         assert_eq!(output_block.get_row_col(0, 5), block_2.get_row_col(0, 2));
         assert_eq!(output_block.get_row_col(0, 6), None);
+
         assert_eq!(output_block.get_row_col(1, 0), block_1.get_row_col(1, 0));
         assert_eq!(output_block.get_row_col(1, 1), block_1.get_row_col(1, 1));
         assert_eq!(output_block.get_row_col(1, 2), block_1.get_row_col(1, 2));
+
         assert_eq!(output_block.get_row_col(1, 3), block_2.get_row_col(1, 0));
         assert_eq!(output_block.get_row_col(1, 4), block_2.get_row_col(1, 1));
         assert_eq!(output_block.get_row_col(1, 5), block_2.get_row_col(1, 2));
@@ -145,7 +143,6 @@ mod hash_join_tests {
     #[test]
     fn test_hash_join_with_more_rows() {
         let storage_manager = StorageManager::with_unique_data_directory();
-        println!("a");
         let (input_block_tx_1, input_block_rx_1) = mpsc::channel();
         let (input_block_tx_2, input_block_rx_2) = mpsc::channel();
         let (output_block_tx, output_block_rx) = mpsc::channel();
@@ -155,14 +152,13 @@ mod hash_join_tests {
         let mut table = test_util::example_table();
         let mut output_schema = table.columns.clone();
         output_schema.append(&mut table.columns);
-        // router takes output schema as argument
         let router = BlockPoolDestinationRouter::new(output_schema);
         input_block_tx_1.send(block_1.id);
         input_block_tx_2.send(block_2.id);
         mem::drop(input_block_tx_1);
         mem::drop(input_block_tx_2);
 
-        let hash_join = Box::new(Hash_Join::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 0,0));
+        let hash_join = Box::new(HashJoin::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 0, 0));
         hash_join.execute(&storage_manager, &catalog);
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
 
