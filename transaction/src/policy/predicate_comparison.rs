@@ -65,18 +65,25 @@ impl Policy for PredicateComparisonPolicy {
         );
 
         if self.safe_to_admit(&enqueued_statement) {
+            // The statement is safe to admit. Include it in the running statements.
             self.running_statements.insert(enqueued_statement.inner.id, enqueued_statement);
             if !self.completed_statements.contains_key(&statement.transaction_id) {
+                // This is a new transaction ID, so the statement must be a begin transaction
+                // statement.
                 assert_eq!(
                     statement.plan,
                     Plan::BeginTransaction,
                     "Transaction not found for statement with ID {}",
                     statement.id,
                 );
+                // Insert an empty vector that will be used to collect completed statements.
                 self.completed_statements.insert(statement.transaction_id, vec![]);
             }
+            // Admit the statement.
             vec![statement]
         } else {
+            // This statement conflicts with some running or completed statement. Sidetrack this
+            // statement.
             self.sidetracked_statements.push_back(enqueued_statement);
             vec![]
         }
