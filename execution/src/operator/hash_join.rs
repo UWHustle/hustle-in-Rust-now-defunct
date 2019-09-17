@@ -112,10 +112,10 @@ mod hash_join_tests {
         let block_2 = test_util::example_block(&storage_manager);
         let catalog = Catalog::new();
         let mut table = test_util::example_table();
-        let mut schema = table.columns.clone();
-        schema.append(&mut table.columns);
+        let mut output_schema = table.columns.clone();
+        output_schema.append(&mut table.columns);
         // router takes output schema as argument
-        let router = BlockPoolDestinationRouter::new(schema);
+        let router = BlockPoolDestinationRouter::new(output_schema);
         input_block_tx_1.send(block_1.id);
         input_block_tx_2.send(block_2.id);
         mem::drop(input_block_tx_1);
@@ -140,6 +140,105 @@ mod hash_join_tests {
         assert_eq!(output_block.get_row_col(1, 5), block_2.get_row_col(1, 2));
         assert_eq!(output_block.get_row_col(1, 6), None);
         assert_eq!(output_block.get_row_col(2, 0), None);
+    }
+
+    #[test]
+    fn test_hash_join_with_more_rows() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        println!("a");
+        let (input_block_tx_1, input_block_rx_1) = mpsc::channel();
+        let (input_block_tx_2, input_block_rx_2) = mpsc::channel();
+        let (output_block_tx, output_block_rx) = mpsc::channel();
+        let block_1 = test_util::example_block_with_more_rows(&storage_manager);
+        let block_2 = test_util::example_block_with_more_rows(&storage_manager);
+        let catalog = Catalog::new();
+        let mut table = test_util::example_table();
+        let mut output_schema = table.columns.clone();
+        output_schema.append(&mut table.columns);
+        // router takes output schema as argument
+        let router = BlockPoolDestinationRouter::new(output_schema);
+        input_block_tx_1.send(block_1.id);
+        input_block_tx_2.send(block_2.id);
+        mem::drop(input_block_tx_1);
+        mem::drop(input_block_tx_2);
+
+        let hash_join = Box::new(Hash_Join::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 0,0));
+        hash_join.execute(&storage_manager, &catalog);
+        let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
+
+        assert_eq!(output_block.get_row_col(0, 0), block_1.get_row_col(0, 0));
+        assert_eq!(output_block.get_row_col(0, 1), block_1.get_row_col(0, 1));
+        assert_eq!(output_block.get_row_col(0, 2), block_1.get_row_col(0, 2));
+
+        assert_eq!(output_block.get_row_col(0, 3), block_2.get_row_col(0, 0));
+        assert_eq!(output_block.get_row_col(0, 4), block_2.get_row_col(0, 1));
+        assert_eq!(output_block.get_row_col(0, 5), block_2.get_row_col(0, 2));
+        assert_eq!(output_block.get_row_col(0, 6), None);
+
+        assert_eq!(output_block.get_row_col(1, 0), block_1.get_row_col(3, 0));
+        assert_eq!(output_block.get_row_col(1, 1), block_1.get_row_col(3, 1));
+        assert_eq!(output_block.get_row_col(1, 2), block_1.get_row_col(3, 2));
+
+        assert_eq!(output_block.get_row_col(1, 3), block_2.get_row_col(0, 0));
+        assert_eq!(output_block.get_row_col(1, 4), block_2.get_row_col(0, 1));
+        assert_eq!(output_block.get_row_col(1, 5), block_2.get_row_col(0, 2));
+        assert_eq!(output_block.get_row_col(1, 6), None);
+
+        assert_eq!(output_block.get_row_col(2, 0), block_1.get_row_col(1, 0));
+        assert_eq!(output_block.get_row_col(2, 1), block_1.get_row_col(1, 1));
+        assert_eq!(output_block.get_row_col(2, 2), block_1.get_row_col(1, 2));
+
+        assert_eq!(output_block.get_row_col(2, 3), block_2.get_row_col(1, 0));
+        assert_eq!(output_block.get_row_col(2, 4), block_2.get_row_col(1, 1));
+        assert_eq!(output_block.get_row_col(2, 5), block_2.get_row_col(1, 2));
+        assert_eq!(output_block.get_row_col(2, 6), None);
+
+        assert_eq!(output_block.get_row_col(3, 0), block_1.get_row_col(2, 0));
+        assert_eq!(output_block.get_row_col(3, 1), block_1.get_row_col(2, 1));
+        assert_eq!(output_block.get_row_col(3, 2), block_1.get_row_col(2, 2));
+
+        assert_eq!(output_block.get_row_col(3, 3), block_2.get_row_col(1, 0));
+        assert_eq!(output_block.get_row_col(3, 4), block_2.get_row_col(1, 1));
+        assert_eq!(output_block.get_row_col(3, 5), block_2.get_row_col(1, 2));
+        assert_eq!(output_block.get_row_col(3, 6), None);
+
+        assert_eq!(output_block.get_row_col(4, 0), block_1.get_row_col(1, 0));
+        assert_eq!(output_block.get_row_col(4, 1), block_1.get_row_col(1, 1));
+        assert_eq!(output_block.get_row_col(4, 2), block_1.get_row_col(1, 2));
+
+        assert_eq!(output_block.get_row_col(4, 3), block_2.get_row_col(2, 0));
+        assert_eq!(output_block.get_row_col(4, 4), block_2.get_row_col(2, 1));
+        assert_eq!(output_block.get_row_col(4, 5), block_2.get_row_col(2, 2));
+        assert_eq!(output_block.get_row_col(4, 6), None);
+
+        assert_eq!(output_block.get_row_col(5, 0), block_1.get_row_col(2, 0));
+        assert_eq!(output_block.get_row_col(5, 1), block_1.get_row_col(2, 1));
+        assert_eq!(output_block.get_row_col(5, 2), block_1.get_row_col(2, 2));
+
+        assert_eq!(output_block.get_row_col(5, 3), block_2.get_row_col(2, 0));
+        assert_eq!(output_block.get_row_col(5, 4), block_2.get_row_col(2, 1));
+        assert_eq!(output_block.get_row_col(5, 5), block_2.get_row_col(2, 2));
+        assert_eq!(output_block.get_row_col(5, 6), None);
+
+        assert_eq!(output_block.get_row_col(6, 0), block_1.get_row_col(0, 0));
+        assert_eq!(output_block.get_row_col(6, 1), block_1.get_row_col(0, 1));
+        assert_eq!(output_block.get_row_col(6, 2), block_1.get_row_col(0, 2));
+
+        assert_eq!(output_block.get_row_col(6, 3), block_2.get_row_col(3, 0));
+        assert_eq!(output_block.get_row_col(6, 4), block_2.get_row_col(3, 1));
+        assert_eq!(output_block.get_row_col(6, 5), block_2.get_row_col(3, 2));
+        assert_eq!(output_block.get_row_col(6, 6), None);
+
+        assert_eq!(output_block.get_row_col(7, 0), block_1.get_row_col(3, 0));
+        assert_eq!(output_block.get_row_col(7, 1), block_1.get_row_col(3, 1));
+        assert_eq!(output_block.get_row_col(7, 2), block_1.get_row_col(3, 2));
+
+        assert_eq!(output_block.get_row_col(7, 3), block_2.get_row_col(3, 0));
+        assert_eq!(output_block.get_row_col(7, 4), block_2.get_row_col(3, 1));
+        assert_eq!(output_block.get_row_col(7, 5), block_2.get_row_col(3, 2));
+        assert_eq!(output_block.get_row_col(7, 6), None);
+
+        assert_eq!(output_block.get_row_col(8, 0), None);
     }
 
 }
