@@ -1,6 +1,7 @@
 use downcast_rs::Downcast;
 
 pub use cartesian::Cartesian;
+pub use hash_join::HashJoin;
 pub use collect::Collect;
 pub use create_table::CreateTable;
 pub use delete::Delete;
@@ -21,6 +22,7 @@ pub mod delete;
 pub mod select;
 pub mod project;
 pub mod cartesian;
+pub mod hash_join;
 pub mod table_reference;
 pub mod collect;
 mod util;
