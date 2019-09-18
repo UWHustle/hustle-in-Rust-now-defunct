@@ -62,3 +62,49 @@ pub fn example_block(storage_manager: &StorageManager) -> BlockReference {
 
     block
 }
+
+pub fn example_block_with_more_rows(storage_manager: &StorageManager) -> BlockReference {
+    let table = example_table();
+
+    let col_sizes = table.columns.into_iter()
+        .map(|c| c.into_type_variant().into_type().byte_len())
+        .collect();
+
+    let block = storage_manager.create_block(col_sizes, 0);
+
+    let bool_type = Bool;
+    let int64_type = Int64;
+    let char_type = Char::new(1);
+
+    let mut bufs = vec![
+        vec![0; bool_type.byte_len()],
+        vec![0; int64_type.byte_len()],
+        vec![0; char_type.byte_len()],
+    ];
+
+    bool_type.set(false, &mut bufs[0]);
+    int64_type.set(1, &mut bufs[1]);
+    char_type.set("a", &mut bufs[2]);
+
+    block.insert_row(bufs.iter().map(|buf| buf.as_slice()));
+
+    bool_type.set(true, &mut bufs[0]);
+    int64_type.set(2, &mut bufs[1]);
+    char_type.set("b", &mut bufs[2]);
+
+    block.insert_row(bufs.iter().map(|buf| buf.as_slice()));
+
+    bool_type.set(true, &mut bufs[0]);
+    int64_type.set(3, &mut bufs[1]);
+    char_type.set("a", &mut bufs[2]);
+
+    block.insert_row(bufs.iter().map(|buf| buf.as_slice()));
+
+    bool_type.set(false, &mut bufs[0]);
+    int64_type.set(4, &mut bufs[1]);
+    char_type.set("b", &mut bufs[2]);
+
+    block.insert_row(bufs.iter().map(|buf| buf.as_slice()));
+
+    block
+}
