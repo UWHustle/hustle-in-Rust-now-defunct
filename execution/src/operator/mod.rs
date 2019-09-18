@@ -2,6 +2,7 @@ use downcast_rs::Downcast;
 
 pub use begin_transaction::BeginTransaction;
 pub use cartesian::Cartesian;
+pub use hash_join::HashJoin;
 pub use collect::Collect;
 pub use commit_transaction::CommitTransaction;
 pub use create_table::CreateTable;
@@ -25,6 +26,7 @@ pub mod drop_table;
 pub mod insert;
 pub mod project;
 pub mod select;
+pub mod hash_join;
 pub mod table_reference;
 pub mod update;
 
