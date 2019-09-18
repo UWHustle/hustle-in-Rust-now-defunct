@@ -1,8 +1,10 @@
 use downcast_rs::Downcast;
 
+pub use begin_transaction::BeginTransaction;
 pub use cartesian::Cartesian;
 pub use hash_join::HashJoin;
 pub use collect::Collect;
+pub use commit_transaction::CommitTransaction;
 pub use create_table::CreateTable;
 pub use delete::Delete;
 pub use drop_table::DropTable;
@@ -14,17 +16,20 @@ pub use select::Select;
 pub use table_reference::TableReference;
 pub use update::Update;
 
+pub mod begin_transaction;
+pub mod cartesian;
+pub mod collect;
+pub mod commit_transaction;
 pub mod create_table;
+pub mod delete;
 pub mod drop_table;
 pub mod insert;
-pub mod update;
-pub mod delete;
-pub mod select;
 pub mod project;
-pub mod cartesian;
+pub mod select;
 pub mod hash_join;
 pub mod table_reference;
-pub mod collect;
+pub mod update;
+
 mod util;
 
 pub trait Operator: Downcast {

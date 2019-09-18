@@ -28,7 +28,7 @@ impl Resolver {
         if stmts.is_empty() {
             Err("No statements were provided to the resolver".to_owned())
         } else if stmts.len() > 1 {
-            Err("Nested queries are not yet supported".to_owned())
+            Err("Multiple queries are not yet supported".to_owned())
         } else {
             match &stmts[0] {
                 Statement::Query(q) => self.resolve_query(&*q),
@@ -332,7 +332,6 @@ impl Resolver {
             Ok(Plan::DropTable(table))
         }
     }
-
 
     fn resolve_start_transaction(&self, _modes: &[TransactionMode]) -> Result<Plan, String> {
         Ok(Plan::BeginTransaction)

@@ -6,7 +6,7 @@ use hustle_common::plan::{Expression, Plan, Query, QueryOperator};
 use hustle_storage::block::{BlockReference, RowMask};
 use hustle_storage::StorageManager;
 
-use crate::operator::{Cartesian, Collect, CreateTable, Delete, DropTable, Insert, Operator, Project, Select, TableReference, Update};
+use crate::operator::{BeginTransaction, Cartesian, Collect, CommitTransaction, CreateTable, Delete, DropTable, Insert, Operator, Project, Select, TableReference, Update};
 use crate::router::BlockPoolDestinationRouter;
 
 /// Hustle's execution engine. The `ExecutionEngine` is responsible for executing the plans
@@ -51,6 +51,8 @@ impl ExecutionEngine {
 
     fn compile_plan(plan: Plan) -> Box<dyn Operator> {
         match plan {
+            Plan::BeginTransaction => Box::new(BeginTransaction),
+            Plan::CommitTransaction => Box::new(CommitTransaction),
             Plan::CreateTable(table) => Box::new(CreateTable::new(table)),
             Plan::DropTable(table) => Box::new(DropTable::new(table)),
             Plan::Insert { into_table, bufs } => {
@@ -76,7 +78,6 @@ impl ExecutionEngine {
                 Self::compile_query(query, block_tx, &mut operators);
                 Box::new(Collect::new(operators, cols, block_rx))
             },
-            _ => panic!("Unsupported plan: {:?}", plan),
         }
     }
 

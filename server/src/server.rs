@@ -10,7 +10,6 @@ use sqlparser::parser::Parser;
 
 use hustle_catalog::Catalog;
 use hustle_common::message::{InternalMessage, Message};
-use hustle_common::plan::Plan;
 use hustle_execution::ExecutionEngine;
 use hustle_resolver::Resolver;
 use hustle_transaction::TransactionManager;
@@ -60,7 +59,6 @@ impl Server {
             s.builder().name("parser".to_string()).spawn(move |_| {
                 let dialect = GenericDialect {};
                 for message in parser_rx {
-
                     if let Message::ParseSql { sql } = message.inner {
                         match Parser::parse_sql(&dialect, sql) {
                             Ok(stmts) => {
@@ -87,67 +85,39 @@ impl Server {
             // Spawn transaction manager thread.
             let completed_tx_clone = completed_tx.clone();
             s.builder().name("transaction".to_string()).spawn(move |_| {
+                let execute_statements = |statements, connection_id| {
+                    match statements {
+                        Ok(statements) => {
+                            for statement in statements {
+                                execution_tx.send(InternalMessage::new(
+                                    connection_id,
+                                    Message::ExecuteStatement { statement }
+                                )).unwrap();
+                            }
+                        },
+                        Err(reason) => completed_tx_clone.send(InternalMessage::new(
+                            connection_id,
+                            Message::Failure { reason },
+                        )).unwrap(),
+                    }
+                };
+
                 for message in transaction_rx {
                     match message.inner {
                         Message::TransactPlan { plan } => {
-                            match plan {
-                                Plan::BeginTransaction => {
-                                    match transaction_manager.begin_transaction(message.connection_id) {
-                                        Ok(_) => completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Success,
-                                        )).unwrap(),
-                                        Err(reason) => completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Failure { reason },
-                                        )).unwrap(),
-                                    }
-                                },
-                                Plan::CommitTransaction => {
-                                    match transaction_manager.commit_transaction(message.connection_id) {
-                                        Ok(_) => completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Success,
-                                        )).unwrap(),
-                                        Err(reason) => completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Failure { reason },
-                                        )).unwrap(),
-                                    }
-                                },
-                                _ => {
-                                    let statements = transaction_manager.enqueue_statement(
-                                        plan,
-                                        message.connection_id,
-                                    );
-                                    for (plan, statement_id) in statements {
-                                        execution_tx.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::ExecutePlan { plan, statement_id }
-                                        )).unwrap();
-                                    }
-                                },
-                            }
-                        },
-                        Message::CompletePlan { statement_id } => {
-                            let statements = transaction_manager.complete_statement(
-                                statement_id,
+                            let statements = transaction_manager.transact_plan(
+                                plan,
+                                message.connection_id,
                             );
-                            for (plan, statement_id) in statements {
-                                execution_tx.send(InternalMessage::new(
-                                    message.connection_id,
-                                    Message::ExecutePlan { plan, statement_id }
-                                )).unwrap();
-                            }
+                            execute_statements(statements, message.connection_id);
+                        },
+                        Message::CompleteStatement { statement } => {
+                            let statements = transaction_manager.complete_statement(statement);
+                            execute_statements(statements, message.connection_id);
                         },
                         Message::CloseConnection => {
                             let statements = transaction_manager.close_connection(message.connection_id);
-                            for (plan, statement_id) in statements {
-                                execution_tx.send(InternalMessage::new(
-                                    message.connection_id,
-                                    Message::ExecutePlan { plan, statement_id }
-                                )).unwrap();
-                            }
+                            execute_statements(Ok(statements), message.connection_id);
                         },
                         _ => (),
                     }
@@ -160,8 +130,8 @@ impl Server {
             s.builder().name("execution".to_string()).spawn(move |_| {
                 for message in execution_rx {
                     match message.inner {
-                        Message::ExecutePlan { plan, statement_id } => {
-                            match execution_engine.execute_plan(plan) {
+                        Message::ExecuteStatement { statement } => {
+                            match execution_engine.execute_plan(statement.plan.clone()) {
                                 Ok(table) => {
                                     // The execution may have produced a result table. If so, we send the
                                     // rows back to the user.
@@ -182,10 +152,12 @@ impl Server {
                                     }
 
                                     // Send a success message to indicate completion.
-                                    completed_tx_clone.send(InternalMessage::new(
-                                        message.connection_id,
-                                        Message::Success,
-                                    )).unwrap();
+                                    if !statement.silent {
+                                        completed_tx_clone.send(InternalMessage::new(
+                                            message.connection_id,
+                                            Message::Success,
+                                        )).unwrap();
+                                    }
                                 },
                                 Err(reason) => completed_tx_clone.send(InternalMessage::new(
                                     message.connection_id,
@@ -196,7 +168,7 @@ impl Server {
                             // Notify the transaction manager that the plan execution has completed.
                             transaction_tx_clone.send(InternalMessage::new(
                                 message.connection_id,
-                                Message::CompletePlan { statement_id }
+                                Message::CompleteStatement { statement }
                             )).unwrap();
                         },
                         _ => (),

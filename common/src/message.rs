@@ -4,17 +4,18 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
 use hustle_catalog::Column;
-use crate::plan::Plan;
+
+use crate::plan::{Plan, Statement};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Message {
     CloseConnection,
     ExecuteSql { sql: String },
     ParseSql { sql: String },
-    OptimizePlan { plan: Plan},
+    OptimizePlan { plan: Plan },
     TransactPlan { plan: Plan },
-    ExecutePlan { plan: Plan, statement_id: u64 },
-    CompletePlan { statement_id: u64 },
+    ExecuteStatement { statement: Statement },
+    CompleteStatement { statement: Statement },
     Schema { schema: Vec<Column> },
     ReturnRow { row: Vec<Vec<u8>> },
     Success,

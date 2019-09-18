@@ -1,44 +1,47 @@
-use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
 
-use hustle_common::plan::{Plan, Expression, Query, QueryOperator};
+use hustle_catalog::{Column, Table};
+use hustle_common::plan::{Expression, Plan, Query, QueryOperator, Statement};
+use hustle_types::ComparativeVariant;
 
 use crate::Domain;
 use crate::policy::ColumnManager;
-use hustle_catalog::{Table, Column};
-use hustle_types::ComparativeVariant;
 
 type IndexedDomain = HashMap<u64, Vec<Domain>>;
 
-#[derive(Debug)]
-pub struct Statement {
-    pub id: u64,
-    pub transaction_id: u64,
-    pub plan: Plan,
+#[derive(Clone, Debug)]
+pub struct StatementDomain {
+    pub inner: Statement,
     read_domain: IndexedDomain,
     write_domain: IndexedDomain,
     filter_domain: IndexedDomain,
 }
 
-impl Statement {
-    pub fn new(id: u64, transaction_id: u64, plan: Plan, column_manager: &mut ColumnManager) -> Self {
+impl StatementDomain {
+    pub fn new(
+        id: u64,
+        transaction_id: u64,
+        plan: Plan,
+        column_manager: &mut ColumnManager
+    ) -> Self {
+        Self::from_statement(Statement::new(id, transaction_id, plan), column_manager)
+    }
+
+    pub fn from_statement(statement: Statement, column_manager: &mut ColumnManager) -> Self {
         let mut read_domain = IndexedDomain::new();
         let mut write_domain = IndexedDomain::new();
         let mut filter_domain = IndexedDomain::new();
 
         Self::parse_domain(
-            &plan,
+            &statement.plan,
             &mut read_domain,
             &mut write_domain,
             &mut filter_domain,
             column_manager,
         );
 
-        Statement {
-            id,
-            transaction_id,
-            plan,
+        StatementDomain {
+            inner: statement,
             read_domain,
             write_domain,
             filter_domain,
@@ -414,22 +417,22 @@ impl Statement {
     }
 }
 
-impl PartialEq for Statement {
-    fn eq(&self, other: &Self) -> bool {
-        self.id.eq(&other.id)
-    }
-}
-
-impl Eq for Statement {}
-
-impl Hash for Statement {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-    }
-}
-
-impl Borrow<u64> for Statement {
-    fn borrow(&self) -> &u64 {
-        &self.id
-    }
-}
+//impl PartialEq for StatementDomain {
+//    fn eq(&self, other: &Self) -> bool {
+//        self.inner.id.eq(&other.inner.id)
+//    }
+//}
+//
+//impl Eq for StatementDomain {}
+//
+//impl Hash for StatementDomain {
+//    fn hash<H: Hasher>(&self, state: &mut H) {
+//        self.inner.id.hash(state);
+//    }
+//}
+//
+//impl Borrow<u64> for StatementDomain {
+//    fn borrow(&self) -> &u64 {
+//        &self.inner.id
+//    }
+//}

@@ -1,45 +1,42 @@
-use hustle_common::plan::Plan;
+use std::collections::VecDeque;
 
-use crate::{policy::Policy, Statement};
-use crate::policy::PolicyHelper;
+use hustle_common::plan::{Plan, Statement};
+
+use crate::policy::Policy;
 
 pub struct ZeroConcurrencyPolicy {
-    policy_helper: PolicyHelper,
-    running_statement: bool,
-
+    running_statement: Option<Statement>,
+    active_transaction_id: Option<u64>,
+    sidetracked_statements: VecDeque<Statement>,
 }
 
 impl ZeroConcurrencyPolicy {
     pub fn new() -> Self {
         ZeroConcurrencyPolicy {
-            policy_helper: PolicyHelper::new(),
-            running_statement: false,
+            running_statement: None,
+            active_transaction_id: None,
+            sidetracked_statements: VecDeque::new(),
         }
     }
 
-    fn safe_to_admit(&mut self, statement: &Statement) -> bool {
-        !self.running_statement
-            && self.policy_helper.sidetracked.front().unwrap().id == statement.transaction_id
-    }
+    fn admit_front(&mut self) -> Vec<Statement> {
+        // This should only be called when no statement is running and no transaction is active.
+        assert!(self.running_statement.is_none());
+        assert!(self.active_transaction_id.is_none());
 
-    fn admit_sidetracked(&mut self) -> Vec<(Plan, u64)> {
-        let sidetracked = self.policy_helper.sidetracked_mut();
-        while sidetracked.front()
-            .map(|t| t.committed && t.statements.is_empty())
-            .unwrap_or(false)
-        {
-            sidetracked.pop_front();
-        }
+        if let Some(sidetracked_statement) = self.sidetracked_statements.pop_front() {
+            // The sidetracked statement must be a begin transaction statement.
+            assert_eq!(
+                sidetracked_statement.plan,
+                Plan::BeginTransaction,
+                "Transaction not found for statement with ID {}",
+                sidetracked_statement.id,
+            );
 
-        if !self.running_statement {
-            if let Some(statement) = sidetracked.front_mut()
-                .and_then(|t| t.statements.pop_front())
-            {
-                self.running_statement = true;
-                vec![(statement.plan, statement.id)]
-            } else {
-                vec![]
-            }
+            // Admit the sidetracked statement.
+            self.running_statement = Some(sidetracked_statement.clone());
+            self.active_transaction_id = Some(sidetracked_statement.transaction_id);
+            vec![sidetracked_statement]
         } else {
             vec![]
         }
@@ -47,46 +44,74 @@ impl ZeroConcurrencyPolicy {
 }
 
 impl Policy for ZeroConcurrencyPolicy {
-    fn begin_transaction(&mut self) -> u64 {
-        self.policy_helper.new_transaction()
-    }
-
-    fn commit_transaction(&mut self, transaction_id: u64) -> Vec<(Plan, u64)> {
-        let transaction = self.policy_helper.get_transaction_mut(transaction_id);
-        transaction.committed = true;
-        if transaction.statements.is_empty() {
-            self.admit_sidetracked()
-        } else {
+    fn enqueue_statement(&mut self, statement: Statement) -> Vec<Statement> {
+        if self.running_statement.is_some() {
+            // A statement is currently running. Sidetrack this statement to admit later.
+            self.sidetracked_statements.push_back(statement);
             vec![]
+        } else {
+            // No statement is currently running. Check the active transaction ID to determine
+            // whether this statement can be admitted.
+            if let Some(active_transaction_id) = self.active_transaction_id {
+                if statement.transaction_id == active_transaction_id {
+                    // The statement is part of the active transaction. It can be admitted
+                    // immediately.
+                    self.running_statement = Some(statement.clone());
+                    vec![statement]
+                } else {
+                    // The statement is not part of the active transaction. Sidetrack it to admit
+                    // later.
+                    self.sidetracked_statements.push_back(statement);
+                    vec![]
+                }
+            } else {
+                // No transaction is currently active. Sidetrack this statement, then admit from the
+                // front of the sidetracked statements.
+                self.sidetracked_statements.push_back(statement);
+                self.admit_front()
+            }
         }
     }
 
-    fn enqueue_statement(&mut self, transaction_id: u64, plan: Plan) -> Vec<(Plan, u64)> {
-        let statement = self.policy_helper.new_statement(transaction_id, plan);
-        if self.safe_to_admit(&statement) {
-            // TODO: Use a reference instead. Cloning the plan is inefficient.
-            let plan = statement.plan.clone();
-            self.running_statement = true;
-            vec![(plan, statement.id)]
-        } else {
-            self.policy_helper.enqueue_statement(statement);
-            vec![]
-        }
-    }
+    fn complete_statement(&mut self, statement: Statement) -> Vec<Statement> {
+        // Ensure the running statement has the correct statement ID.
+        let completed_statement = self.running_statement.take()
+            .filter(|s| s.id == statement.id)
+            .expect(&format!("Statement with ID {} was not running", statement.id));
 
-    fn complete_statement(&mut self, _statement_id: u64) -> Vec<(Plan, u64)> {
-        self.running_statement = false;
-        self.admit_sidetracked()
+        if completed_statement.plan == Plan::CommitTransaction {
+            // The statement is a commit transaction statement. Remove the active transaction ID.
+            self.active_transaction_id.take()
+                .expect("Cannot commit when no transaction is active");
+        }
+
+        // Examine the sidetrack to find the next statement to admit.
+        if let Some(active_transaction_id) = self.active_transaction_id {
+            // There is currently an active transaction. Check if the sidetrack contains a statement
+            // belonging to this transaction.
+            if let Some(sidetracked_statement) = self.sidetracked_statements.iter()
+                .position(|s| s.transaction_id == active_transaction_id)
+                .and_then(|p| self.sidetracked_statements.remove(p))
+            {
+                // The sidetracked statement is part of the active transaction. Remove it from the
+                // sidetrack and admit it.
+                self.running_statement = Some(sidetracked_statement.clone());
+                vec![sidetracked_statement]
+            } else {
+                // No statements on the sidetrack are part of the active transaction.
+                vec![]
+            }
+        } else {
+            // No transaction is currently active. Admit from the front of the sidetracked
+            // statements.
+            self.admit_front()
+        }
     }
 }
 
 #[cfg(test)]
 mod zero_concurrency_policy_tests {
-    use std::collections::VecDeque;
-
-    use hustle_catalog::Table;
-    use hustle_common::plan::{Plan, Query};
-    use hustle_common::plan::QueryOperator::TableReference;
+    use hustle_transaction_test_util as test_util;
 
     use super::*;
 
@@ -95,49 +120,55 @@ mod zero_concurrency_policy_tests {
         // Initialize the policy.
         let mut policy = ZeroConcurrencyPolicy::new();
 
-        assert!(!policy.running_statement);
-        assert!(policy.policy_helper.sidetracked.is_empty());
-
-        // Begin a transaction.
-        let transaction_id = policy.begin_transaction();
-
-        assert_eq!(policy.policy_helper.sidetracked.len(), 1);
+        assert_eq!(policy.running_statement, None);
+        assert_eq!(policy.active_transaction_id, None);
+        assert!(policy.sidetracked_statements.is_empty());
 
         let mut admitted = VecDeque::new();
 
-        let plan = Plan::Query(Query {
-            operator: TableReference(Table::new("T".to_owned(), vec![])),
-            output: vec![],
-        });
+        // Enqueue the begin transaction statement.
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
 
-        // Enqueue the first statement in the transaction.
-        collect_admitted(policy.enqueue_statement(transaction_id, plan.clone()), &mut admitted);
-
-        assert!(policy.running_statement);
-        assert_eq!(admitted.front(), Some(&0));
-
-        // Enqueue the second statement in the transaction.
-        collect_admitted(policy.enqueue_statement(transaction_id, plan), &mut admitted);
-
+        assert_eq!(policy.running_statement.as_ref(), admitted.front());
+        assert_eq!(policy.active_transaction_id, Some(0));
         assert_eq!(admitted.len(), 1);
 
-        // Complete the first statement.
-        let statement_id = admitted.pop_front().unwrap();
-        collect_admitted(policy.complete_statement(statement_id), &mut admitted);
+        // Enqueue the second statement in the transaction.
+        admitted.extend(policy.enqueue_statement(Statement::new(
+            1,
+            0,
+            test_util::generate_plan("SELECT a FROM T"),
+        )));
 
-        assert_eq!(admitted.front(), Some(&1));
+        assert_eq!(policy.sidetracked_statements.len(), 1);
+        assert_eq!(admitted.len(), 1);
+
+        // Enqueue the commit transaction statement.
+        admitted.extend(policy.enqueue_statement(Statement::new(2, 0, Plan::CommitTransaction)));
+
+        assert_eq!(policy.sidetracked_statements.len(), 2);
+        assert_eq!(admitted.len(), 1);
+
+        // Complete the begin transaction statement.
+        let begin = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(begin));
+
+        assert_eq!(policy.sidetracked_statements.len(), 1);
+        assert_eq!(admitted.len(), 1);
 
         // Complete the second statement.
-        let statement_id = admitted.pop_front().unwrap();
-        collect_admitted(policy.complete_statement(statement_id), &mut admitted);
+        let statement = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(statement));
 
-        assert!(!policy.running_statement);
-        assert!(admitted.is_empty());
+        assert!(policy.sidetracked_statements.is_empty());
+        assert_eq!(admitted.len(), 1);
 
-        // Commit the transaction.
-        collect_admitted(policy.commit_transaction(transaction_id), &mut admitted);
+        // Complete the commit transaction statement.
+        let commit = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(commit));
 
-        assert!(policy.policy_helper.sidetracked.is_empty());
+        assert_eq!(policy.running_statement, None);
+        assert_eq!(policy.active_transaction_id, None);
         assert!(admitted.is_empty());
     }
 
@@ -146,76 +177,79 @@ mod zero_concurrency_policy_tests {
         // Initialize the policy.
         let mut policy = ZeroConcurrencyPolicy::new();
 
-        assert!(!policy.running_statement);
-        assert!(policy.policy_helper.sidetracked.is_empty());
-
-        // Begin the first transaction.
-        let first_transaction_id = policy.begin_transaction();
-
-        assert_eq!(policy.policy_helper.sidetracked.len(), 1);
-
-        // Begin the second transaction.
-        let second_transaction_id = policy.begin_transaction();
-
-        assert_eq!(policy.policy_helper.sidetracked.len(), 2);
+        assert_eq!(policy.running_statement, None);
+        assert_eq!(policy.active_transaction_id, None);
+        assert!(policy.sidetracked_statements.is_empty());
 
         let mut admitted = VecDeque::new();
 
-        let plan = Plan::Query(Query {
-            operator: TableReference(Table::new("T".to_owned(), vec![])),
-            output: vec![],
-        });
+        // Enqueue the first begin transaction statement.
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
 
-        // Enqueue the first statement in the first transaction.
-        collect_admitted(policy.enqueue_statement(first_transaction_id, plan.clone()), &mut admitted);
+        assert_eq!(policy.active_transaction_id, Some(0));
+        assert_eq!(admitted.len(), 1);
 
-        assert!(policy.running_statement);
-        assert_eq!(admitted.front(), Some(&0));
+        // Complete the first begin transaction statement.
+        let begin = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(begin));
+
+        assert!(admitted.is_empty());
+
+        // Enqueue the second begin transaction statement.
+        admitted.extend(policy.enqueue_statement(Statement::new(1, 1, Plan::BeginTransaction)));
+
+        assert_eq!(policy.sidetracked_statements.len(), 1);
+        assert!(admitted.is_empty());
 
         // Enqueue the second statement in the second transaction.
-        collect_admitted(policy.enqueue_statement(second_transaction_id, plan.clone()), &mut admitted);
+        admitted.extend(policy.enqueue_statement(Statement::new(
+            2,
+            1,
+            test_util::generate_plan("SELECT a FROM T"),
+        )));
 
+        assert_eq!(policy.sidetracked_statements.len(), 2);
+        assert!(admitted.is_empty());
+
+        // Enqueue the commit transaction statement in the first transaction.
+        admitted.extend(policy.enqueue_statement(Statement::new(3, 0, Plan::CommitTransaction)));
+
+        assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);
 
-        // Enqueue the third statement in the first transaction.
-        collect_admitted(policy.enqueue_statement(first_transaction_id, plan), &mut admitted);
+        // Complete the commit transaction statement in the first transaction.
+        let commit = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(commit));
 
+        assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);
 
-        // Complete the first statement.
-        let statement_id = admitted.pop_front().unwrap();
-        collect_admitted(policy.complete_statement(statement_id), &mut admitted);
+        // Complete the begin transaction statement in the second transaction.
+        let begin = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(begin));
 
-        assert_eq!(admitted.front(), Some(&2));
+        assert_eq!(policy.running_statement.as_ref(), admitted.front());
+        assert_eq!(admitted.len(), 1);
 
-        // Complete the third statement.
-        let statement_id = admitted.pop_front().unwrap();
-        collect_admitted(policy.complete_statement(statement_id), &mut admitted);
+        // Complete the second statement in the second transaction.
+        let statement = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(statement));
 
+        assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert!(admitted.is_empty());
 
-        // Commit the first transaction.
-        collect_admitted(policy.commit_transaction(first_transaction_id), &mut admitted);
+        // Enqueue the commit transaction statement in the second transaction.
+        admitted.extend(policy.enqueue_statement(Statement::new(4, 1, Plan::CommitTransaction)));
 
-        assert_eq!(policy.policy_helper.sidetracked.len(), 1);
-        assert_eq!(admitted.front(), Some(&1));
+        assert_eq!(policy.running_statement.as_ref(), admitted.front());
+        assert_eq!(admitted.len(), 1);
 
-        // Complete the second statement.
-        let statement_id = admitted.pop_front().unwrap();
-        collect_admitted(policy.complete_statement(statement_id), &mut admitted);
+        // Complete the commit transaction statement in the second transaction.
+        let commit = admitted.pop_front().unwrap();
+        admitted.extend(policy.complete_statement(commit));
 
-        assert!(!policy.running_statement);
+        assert_eq!(policy.running_statement, None);
+        assert_eq!(policy.active_transaction_id, None);
         assert!(admitted.is_empty());
-
-        collect_admitted(policy.commit_transaction(second_transaction_id), &mut admitted);
-
-        assert!(policy.policy_helper.sidetracked.is_empty());
-        assert!(admitted.is_empty());
-    }
-
-    fn collect_admitted(statements: Vec<(Plan, u64)>, admitted: &mut VecDeque<u64>) {
-        for (_, statement_id) in statements {
-            admitted.push_back(statement_id);
-        }
     }
 }
