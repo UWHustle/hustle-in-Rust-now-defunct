@@ -8,6 +8,7 @@ use crate::router::BlockPoolDestinationRouter;
 
 use std::collections::HashMap;
 
+#[allow(unused)]
 pub struct HashJoin {
     router: BlockPoolDestinationRouter,
     block_rx_table_1: Receiver<(u64)>,
@@ -18,6 +19,7 @@ pub struct HashJoin {
 }
 
 impl HashJoin {
+    #[allow(unused)]
     pub fn new(
         router: BlockPoolDestinationRouter,
         block_rx_table_1: Receiver<u64>,
@@ -111,8 +113,8 @@ mod hash_join_tests {
         let mut output_schema = table.columns.clone();
         output_schema.append(&mut table.columns);
         let router = BlockPoolDestinationRouter::new(output_schema);
-        input_block_tx_1.send(block_1.id);
-        input_block_tx_2.send(block_2.id);
+        input_block_tx_1.send(block_1.id).unwrap();
+        input_block_tx_2.send(block_2.id).unwrap();
         mem::drop(input_block_tx_1);
         mem::drop(input_block_tx_2);
 
@@ -138,6 +140,8 @@ mod hash_join_tests {
         assert_eq!(output_block.get_row_col(1, 5), block_2.get_row_col(1, 2));
         assert_eq!(output_block.get_row_col(1, 6), None);
         assert_eq!(output_block.get_row_col(2, 0), None);
+
+        storage_manager.clear();
     }
 
     #[test]
@@ -153,8 +157,8 @@ mod hash_join_tests {
         let mut output_schema = table.columns.clone();
         output_schema.append(&mut table.columns);
         let router = BlockPoolDestinationRouter::new(output_schema);
-        input_block_tx_1.send(block_1.id);
-        input_block_tx_2.send(block_2.id);
+        input_block_tx_1.send(block_1.id).unwrap();
+        input_block_tx_2.send(block_2.id).unwrap();
         mem::drop(input_block_tx_1);
         mem::drop(input_block_tx_2);
 
@@ -235,6 +239,7 @@ mod hash_join_tests {
         assert_eq!(output_block.get_row_col(7, 6), None);
 
         assert_eq!(output_block.get_row_col(8, 0), None);
-    }
 
+        storage_manager.clear();
+    }
 }

@@ -8,11 +8,12 @@ pub fn send_rows<'a>(
     router: &BlockPoolDestinationRouter,
     storage_manager: &StorageManager,
 ) {
+    let mut rows = rows.peekable();
     let mut output_block = router.get_block(storage_manager);
     loop {
-        output_block.insert_rows(rows);
+        output_block.insert_rows(&mut rows);
 
-        if output_block.is_full() {
+        if rows.peek().is_some() {
             block_tx.send(output_block.id).unwrap();
             output_block = router.get_block(storage_manager);
         } else {

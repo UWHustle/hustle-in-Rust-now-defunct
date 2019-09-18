@@ -4,6 +4,7 @@ extern crate hustle_types;
 extern crate memmap;
 extern crate omap;
 extern crate uuid;
+extern crate core;
 
 pub use storage_manager::StorageManager;
 

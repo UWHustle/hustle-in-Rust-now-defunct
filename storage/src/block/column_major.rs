@@ -1,8 +1,7 @@
-use std::io::Cursor;
-use std::iter::{FromIterator, Zip, Take, StepBy, Enumerate};
-use std::ops::{Range, RangeFrom};
 use std::slice;
-use std::sync::Mutex;
+use std::io::Cursor;
+use std::iter::{Enumerate, FromIterator, StepBy, Take, Zip};
+use std::ops::{Range, RangeFrom};
 
 use bit_vec::BitVec;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -33,7 +32,6 @@ struct Header {
 }
 
 struct Metadata {
-    n_rows: Mutex<usize>,
     n_cols: usize,
     row_cap: usize,
     col_indices: Vec<usize>,
@@ -97,7 +95,6 @@ impl ColumnMajorBlock {
     }
 
     fn with_header(mut header: Header, data_offset: usize, mut mmap: MmapMut) -> Self {
-        let n_rows = Mutex::new(0);
         let n_cols = header.col_sizes.len();
 
         let (data, data_len) = {
@@ -126,7 +123,6 @@ impl ColumnMajorBlock {
             .collect::<Vec<usize>>();
 
         let metadata = Metadata {
-            n_rows,
             n_cols,
             row_cap,
             col_indices,
@@ -145,13 +141,6 @@ impl ColumnMajorBlock {
     /// Returns the number of columns in the `ColumnMajorBlock`.
     pub fn n_cols(&self) -> usize {
         self.metadata.n_cols
-    }
-
-    /// Returns whether the `ColumnMajorBlock` is at capacity. If this is `false`, at least one row
-    /// can be inserted safely into the block. However, the thread must ensure that no other thread
-    /// has inserted rows into the block in the time it took to return `is_full`.
-    pub fn is_full(&self) -> bool {
-        *self.metadata.n_rows.lock().unwrap() == self.metadata.row_cap
     }
 
     /// Returns an iterator over the buffers in the row with the specified `row_i`, if the row is
@@ -224,18 +213,12 @@ impl ColumnMajorBlock {
     /// will occur if the block is full or the size of each slice does not equal the size of its
     /// corresponding column.
     pub fn insert_row<'a>(&self, row: impl Iterator<Item = &'a [u8]>) {
-        // Acquire a lock on the row counter so no other thread can write to the same row.
-        let mut n_rows = self.metadata.n_rows.lock().unwrap();
-
         // Find the index of the first row with the state (!valid, ready).
         let (row_i, _) = self.get_valid_flag_for_rows()
             .zip(self.get_ready_flag_for_rows())
             .enumerate()
             .find(|&(_, (valid, ready))| !valid && ready)
             .expect("Cannot insert a row into a full block");
-
-        // Increment the number of rows.
-        *n_rows += 1;
 
         // Set the row state to (valid, ready).
         self.set_valid_flag_for_row(row_i, true);
@@ -250,9 +233,6 @@ impl ColumnMajorBlock {
     /// exhausted or the block is full. A `panic!` will occur if the size of each slice does not
     /// equal the size of its corresponding column.
     pub fn insert_rows<'a>(&self, rows: &mut impl Iterator<Item = impl Iterator<Item = &'a [u8]>>) {
-        // Acquire a lock on the row counter so no other thread can write to the same rows.
-        let mut n_rows = self.metadata.n_rows.lock().unwrap();
-
         // Build a mask where the "on" bits represent the indices of the rows with state
         // (!valid, ready).
         let bits = BitVec::from_iter(
@@ -264,8 +244,6 @@ impl ColumnMajorBlock {
 
         // Iterate over the rows with this mask.
         for ((row_i, dst_row), src_row) in self.get_rows_with_mask_mut(mask).zip(rows) {
-            // Increment the number of rows.
-            *n_rows += 1;
 
             // Set the row state to (valid, ready).
             self.set_valid_flag_for_row(row_i, true);
@@ -281,7 +259,6 @@ impl ColumnMajorBlock {
     pub fn delete_rows(&self) {
         self.set_valid_flag_for_rows(false);
         self.set_ready_flag_for_rows(true);
-        *self.metadata.n_rows.lock().unwrap() = 0;
     }
 
     /// Deletes the rows in the `ColumnMajorBlock` specified by the `mask`.
@@ -293,7 +270,6 @@ impl ColumnMajorBlock {
         for (row_i, _) in row_is {
             self.set_valid_flag_for_row(row_i, false);
             self.set_ready_flag_for_row(row_i, true);
-            *self.metadata.n_rows.lock().unwrap() -= 1;
         }
     }
 
