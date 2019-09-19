@@ -46,5 +46,6 @@ mod drop_table_tests {
         assert!(!catalog.table_exists("drop_table"));
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }

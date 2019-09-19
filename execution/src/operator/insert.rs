@@ -86,5 +86,6 @@ mod insert_tests {
         insert.execute(&storage_manager, &log_manager, &catalog);
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }

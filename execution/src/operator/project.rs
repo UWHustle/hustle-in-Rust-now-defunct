@@ -98,6 +98,7 @@ mod project_tests {
         assert_eq!(output_block.get_row_col(0, 1), None);
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }
 

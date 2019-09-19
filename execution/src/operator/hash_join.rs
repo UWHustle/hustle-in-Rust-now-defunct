@@ -150,6 +150,7 @@ mod hash_join_tests {
         assert_eq!(output_block.get_row_col(2, 0), None);
 
         storage_manager.clear();
+        log_manager.clear();
     }
 
     #[test]
@@ -250,5 +251,6 @@ mod hash_join_tests {
         assert_eq!(output_block.get_row_col(8, 0), None);
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }

@@ -56,5 +56,6 @@ mod table_reference_tests {
         assert_eq!(block_rx.iter().collect::<Vec<u64>>(), block_ids);
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }

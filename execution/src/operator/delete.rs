@@ -94,5 +94,6 @@ mod delete_tests {
         assert_eq!(block.get_row_col(1, 0), None);
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }

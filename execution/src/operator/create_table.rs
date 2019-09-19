@@ -40,6 +40,7 @@ mod create_table_tests {
 
         assert!(catalog.table_exists("create_table"));
 
-        storage_manager.clear()
+        storage_manager.clear();
+        log_manager.clear();
     }
 }

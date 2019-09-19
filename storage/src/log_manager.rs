@@ -72,6 +72,7 @@ impl<D> UpdateLogEntry<D> where D: Deref<Target = [u8]> {
 }
 
 pub struct LogManager {
+    dir: String,
     transaction_log: Mutex<File>,
     insert_log: Mutex<File>,
     delete_log: Mutex<File>,
@@ -80,15 +81,15 @@ pub struct LogManager {
 
 impl LogManager {
     pub fn default() -> Self {
-        Self::with_log_directory(DEFAULT_LOG_DIRECTORY)
+        Self::with_log_directory(DEFAULT_LOG_DIRECTORY.to_owned())
     }
 
     pub fn with_unique_log_directory() -> Self {
-        Self::with_log_directory(&Uuid::new_v4().to_string())
+        Self::with_log_directory(Uuid::new_v4().to_string())
     }
 
-    fn with_log_directory(dir: &str) -> Self {
-        let path = Path::new(dir);
+    fn with_log_directory(dir: String) -> Self {
+        let path = Path::new(&dir);
         if !path.exists() {
             fs::create_dir(&dir).unwrap();
         }
@@ -99,6 +100,7 @@ impl LogManager {
         let update_log = Mutex::new(Self::file(&dir, UPDATE_LOG_FILE_NAME));
 
         LogManager {
+            dir,
             transaction_log,
             insert_log,
             delete_log,
@@ -182,5 +184,9 @@ impl LogManager {
             .create(true)
             .open(path)
             .unwrap()
+    }
+
+    pub fn clear(&self) {
+        fs::remove_dir_all(&self.dir).unwrap();
     }
 }

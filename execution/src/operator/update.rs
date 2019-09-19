@@ -108,5 +108,6 @@ mod update_tests {
         assert_eq!(block.get_row_col(1, 2), Some(old_values[1][2].as_slice()));
 
         storage_manager.clear();
+        log_manager.clear();
     }
 }
