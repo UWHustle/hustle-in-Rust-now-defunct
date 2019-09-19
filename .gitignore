@@ -11,6 +11,7 @@ cmake-build-debug
 Cargo.lock
 **/.DS_Store
 *.hsl
+*.log
 /venv
 *.pb.bin
 commandhistory.txt
