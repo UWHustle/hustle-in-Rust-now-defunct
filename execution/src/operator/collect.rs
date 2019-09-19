@@ -1,8 +1,8 @@
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Receiver;
-use std::sync::{Mutex, Arc};
 
 use hustle_catalog::{Catalog, Column, Table};
-use hustle_storage::StorageManager;
+use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::Operator;
 
@@ -36,9 +36,14 @@ impl Collect {
 }
 
 impl Operator for Collect {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        log_manager: &LogManager,
+        catalog: &Catalog,
+    ) {
         for operator in self.operators {
-            operator.execute(storage_manager, catalog);
+            operator.execute(storage_manager, log_manager, catalog);
         }
 
         *self.block_ids.lock().unwrap() = self.block_rx.iter().collect();

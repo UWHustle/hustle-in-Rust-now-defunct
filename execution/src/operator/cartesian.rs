@@ -5,7 +5,7 @@ use std::thread;
 use itertools::Itertools;
 
 use hustle_catalog::Catalog;
-use hustle_storage::StorageManager;
+use hustle_storage::{StorageManager, LogManager};
 
 use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
@@ -45,7 +45,12 @@ impl Cartesian {
 }
 
 impl Operator for Cartesian {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        _log_manager: &LogManager,
+        _catalog: &Catalog,
+    ) {
         let mut table_block_ids = (0..self.n_tables).map(|_| vec![]).collect::<Vec<Vec<u64>>>();
 
         for (received_table, received_block_id) in &self.block_rx {

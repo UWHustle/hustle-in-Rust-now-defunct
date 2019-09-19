@@ -2,14 +2,14 @@ use downcast_rs::Downcast;
 
 pub use begin_transaction::BeginTransaction;
 pub use cartesian::Cartesian;
-pub use hash_join::HashJoin;
 pub use collect::Collect;
 pub use commit_transaction::CommitTransaction;
 pub use create_table::CreateTable;
 pub use delete::Delete;
 pub use drop_table::DropTable;
+pub use hash_join::HashJoin;
 use hustle_catalog::Catalog;
-use hustle_storage::StorageManager;
+use hustle_storage::{LogManager, StorageManager};
 pub use insert::Insert;
 pub use project::Project;
 pub use select::Select;
@@ -33,7 +33,12 @@ pub mod update;
 mod util;
 
 pub trait Operator: Downcast {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog);
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        log_manager: &LogManager,
+        catalog: &Catalog,
+    );
 }
 
 impl_downcast!(Operator);

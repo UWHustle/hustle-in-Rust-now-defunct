@@ -1,8 +1,8 @@
 use std::sync::mpsc::{Receiver, Sender};
 
 use hustle_catalog::Catalog;
+use hustle_storage::{LogManager, StorageManager};
 use hustle_storage::block::{BlockReference, RowMask};
-use hustle_storage::StorageManager;
 
 use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
@@ -31,7 +31,12 @@ impl Select {
 }
 
 impl Operator for Select {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        _log_manager: &LogManager,
+        _catalog: &Catalog
+    ) {
         for input_block_id in &self.block_rx {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
             let mask = (self.filter)(&input_block);
@@ -65,6 +70,7 @@ mod select_tests {
     #[test]
     fn select() {
         let storage_manager = StorageManager::with_unique_data_directory();
+        let log_manager = LogManager::with_unique_log_directory();
         let catalog = Catalog::new();
         let table = test_util::example_table();
         let input_block = test_util::example_block(&storage_manager);
@@ -81,7 +87,7 @@ mod select_tests {
         );
 
         let select = Box::new(Select::new(filter, router, input_block_rx, output_block_tx));
-        select.execute(&storage_manager, &catalog);
+        select.execute(&storage_manager, &log_manager, &catalog);
 
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
 

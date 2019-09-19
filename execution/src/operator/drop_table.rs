@@ -1,5 +1,5 @@
 use hustle_catalog::{Catalog, Table};
-use hustle_storage::StorageManager;
+use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::Operator;
 
@@ -14,7 +14,12 @@ impl DropTable {
 }
 
 impl Operator for DropTable {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        _log_manager: &LogManager,
+        catalog: &Catalog
+    ) {
         for &block_id in &self.table.block_ids {
             storage_manager.delete_block(block_id);
         }
@@ -30,12 +35,13 @@ mod drop_table_tests {
     #[test]
     fn drop_table() {
         let storage_manager = StorageManager::with_unique_data_directory();
+        let log_manager = LogManager::with_unique_log_directory();
         let catalog = Catalog::new();
         let table = Table::new("drop_table".to_owned(), vec![]);
         catalog.create_table(table.clone()).unwrap();
 
         let drop_table = Box::new(DropTable::new(table));
-        drop_table.execute(&storage_manager, &catalog);
+        drop_table.execute(&storage_manager, &log_manager, &catalog);
 
         assert!(!catalog.table_exists("drop_table"));
 

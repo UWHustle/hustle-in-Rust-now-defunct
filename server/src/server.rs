@@ -131,7 +131,7 @@ impl Server {
                 for message in execution_rx {
                     match message.inner {
                         Message::ExecuteStatement { statement } => {
-                            match execution_engine.execute_plan(statement.plan.clone()) {
+                            match execution_engine.execute_statement(statement.clone()) {
                                 Ok(table) => {
                                     // The execution may have produced a result table. If so, we send the
                                     // rows back to the user.

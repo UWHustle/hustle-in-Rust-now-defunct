@@ -1,12 +1,11 @@
+use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 
 use hustle_catalog::Catalog;
-use hustle_storage::StorageManager;
+use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
-
-use std::collections::HashMap;
 
 #[allow(unused)]
 pub struct HashJoin {
@@ -40,7 +39,12 @@ impl HashJoin {
 }
 
 impl Operator for HashJoin {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        _log_manager: &LogManager,
+        _catalog: &Catalog
+    ) {
         let mut hash_table = HashMap::new();
 
         // BUILD PHASE
@@ -91,18 +95,22 @@ impl Operator for HashJoin {
 
 #[cfg(test)]
 mod hash_join_tests {
-    use hustle_storage::StorageManager;
-    use std::sync::mpsc;
     use std::mem;
-    use crate::operator::hash_join::HashJoin;
-    use crate::router::BlockPoolDestinationRouter;
+    use std::sync::mpsc;
+
     use hustle_execution_test_util as test_util;
+    use hustle_storage::StorageManager;
+
+    use crate::operator::hash_join::HashJoin;
     use crate::operator::Operator;
+    use crate::router::BlockPoolDestinationRouter;
+
     use super::*;
 
     #[test]
     fn test_hash_join() {
         let storage_manager = StorageManager::with_unique_data_directory();
+        let log_manager = LogManager::with_unique_log_directory();
         let (input_block_tx_1, input_block_rx_1) = mpsc::channel();
         let (input_block_tx_2, input_block_rx_2) = mpsc::channel();
         let (output_block_tx, output_block_rx) = mpsc::channel();
@@ -119,7 +127,7 @@ mod hash_join_tests {
         mem::drop(input_block_tx_2);
 
         let hash_join = Box::new(HashJoin::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 1, 1));
-        hash_join.execute(&storage_manager, &catalog);
+        hash_join.execute(&storage_manager, &log_manager, &catalog);
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
 
         assert_eq!(output_block.get_row_col(0, 0), block_1.get_row_col(0, 0));
@@ -147,6 +155,7 @@ mod hash_join_tests {
     #[test]
     fn test_hash_join_with_more_rows() {
         let storage_manager = StorageManager::with_unique_data_directory();
+        let log_manager = LogManager::with_unique_log_directory();
         let (input_block_tx_1, input_block_rx_1) = mpsc::channel();
         let (input_block_tx_2, input_block_rx_2) = mpsc::channel();
         let (output_block_tx, output_block_rx) = mpsc::channel();
@@ -163,7 +172,7 @@ mod hash_join_tests {
         mem::drop(input_block_tx_2);
 
         let hash_join = Box::new(HashJoin::new(router, input_block_rx_1, input_block_rx_2, output_block_tx, 0, 0));
-        hash_join.execute(&storage_manager, &catalog);
+        hash_join.execute(&storage_manager, &log_manager, &catalog);
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
 
         assert_eq!(output_block.get_row_col(0, 0), block_1.get_row_col(0, 0));

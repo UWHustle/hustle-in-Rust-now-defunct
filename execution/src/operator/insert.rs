@@ -1,5 +1,5 @@
 use hustle_catalog::Catalog;
-use hustle_storage::StorageManager;
+use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::Operator;
 use crate::router::BlockPoolDestinationRouter;
@@ -8,24 +8,40 @@ pub struct Insert {
     table_name: String,
     bufs: Vec<Vec<u8>>,
     router: BlockPoolDestinationRouter,
+    transaction_id: u64,
 }
 
 impl Insert {
-    pub fn new(table_name: String, bufs: Vec<Vec<u8>>, router: BlockPoolDestinationRouter) -> Self {
+    pub fn new(
+        table_name: String,
+        bufs: Vec<Vec<u8>>,
+        router: BlockPoolDestinationRouter,
+        transaction_id: u64,
+    ) -> Self {
         Insert {
             table_name,
             bufs,
             router,
+            transaction_id,
         }
     }
 }
 
 impl Operator for Insert {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        log_manager: &LogManager,
+        catalog: &Catalog
+    ) {
         let output_block = self.router.get_block(storage_manager);
         output_block.tentative_insert_row(
                 self.bufs.iter().map(|buf| buf.as_slice()),
-                |_| (), // TODO: Write the row ID to storage.
+                |row_id| log_manager.log_insert(
+                    self.transaction_id,
+                    output_block.id,
+                    row_id as u64
+                )
         );
 
         for block_id in self.router.get_created_block_ids() {
@@ -46,6 +62,7 @@ mod insert_tests {
     #[test]
     fn insert() {
         let storage_manager = StorageManager::with_unique_data_directory();
+        let log_manager = LogManager::with_unique_log_directory();
         let catalog = Catalog::new();
         let table = test_util::example_table();
         catalog.create_table(table.clone()).unwrap();
@@ -65,8 +82,8 @@ mod insert_tests {
         int64_type.set(1, &mut bufs[1]);
         char_type.set("a", &mut bufs[2]);
 
-        let insert = Box::new(Insert::new("insert".to_owned(), bufs.clone(), router));
-        insert.execute(&storage_manager, &catalog);
+        let insert = Box::new(Insert::new("insert".to_owned(), bufs.clone(), router, 0));
+        insert.execute(&storage_manager, &log_manager, &catalog);
 
         storage_manager.clear();
     }

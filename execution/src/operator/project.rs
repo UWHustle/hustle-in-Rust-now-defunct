@@ -1,7 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
 
 use hustle_catalog::Catalog;
-use hustle_storage::StorageManager;
+use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
@@ -30,7 +30,12 @@ impl Project {
 }
 
 impl Operator for Project {
-    fn execute(self: Box<Self>, storage_manager: &StorageManager, _catalog: &Catalog) {
+    fn execute(
+        self: Box<Self>,
+        storage_manager: &StorageManager,
+        _log_manager: &LogManager,
+        _catalog: &Catalog
+    ) {
         for input_block_id in &self.block_rx {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
             let mut rows = input_block.project(&self.cols);
@@ -62,6 +67,7 @@ mod project_tests {
     #[test]
     fn project() {
         let storage_manager = StorageManager::with_unique_data_directory();
+        let log_manager = LogManager::with_unique_log_directory();
         let catalog = Catalog::new();
         let project_table = Table::new(
             "project".to_owned(),
@@ -82,7 +88,7 @@ mod project_tests {
         mem::drop(input_block_tx);
 
         let project = Box::new(Project::new(vec![1], router, input_block_rx, output_block_tx));
-        project.execute(&storage_manager, &catalog);
+        project.execute(&storage_manager, &log_manager, &catalog);
 
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
 

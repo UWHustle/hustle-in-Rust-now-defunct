@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 const DEFAULT_LOG_DIRECTORY: &str = "data";
 
 enum TransactionState {
@@ -12,9 +14,11 @@ pub struct LogManager {
 
 impl LogManager {
     pub fn default() -> Self {
-        LogManager {
-            dir: DEFAULT_LOG_DIRECTORY.to_owned(),
-        }
+        LogManager { dir: DEFAULT_LOG_DIRECTORY.to_owned() }
+    }
+
+    pub fn with_unique_log_directory() -> Self {
+        LogManager { dir: Uuid::new_v4().to_string() }
     }
 
     pub fn log_begin_transaction(&self, id: u64) {
