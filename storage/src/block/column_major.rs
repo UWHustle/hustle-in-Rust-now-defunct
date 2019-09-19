@@ -307,9 +307,21 @@ impl ColumnMajorBlock {
     }
 
     /// Sets the value of the column specified by `col_i` to `value`.
-    pub fn update_col(&self, col_i: usize, value: &[u8]) {
-        for (row_i, buf) in ColIterUncheckedMut::new(col_i, self).enumerate() {
+    pub fn update_col(
+        &self,
+        col_i: usize,
+        value: &[u8],
+        mut before_update: impl FnMut(usize, &[u8]),
+    ) {
+        let bufs = ColIterUncheckedMut::new(col_i, self)
+            .zip(self.get_valid_flag_for_rows())
+            .zip(self.get_ready_flag_for_rows())
+            .enumerate()
+            .filter(|&(_, ((_, valid), ready))| valid && ready);
+
+        for (row_i, ((buf, _), _)) in bufs {
             self.set_ready_flag_for_row(row_i, false);
+            before_update(row_i, buf);
             buf.copy_from_slice(value);
             self.set_ready_flag_for_row(row_i, true);
         }
@@ -317,7 +329,13 @@ impl ColumnMajorBlock {
 
     /// Sets the value of the column specified by `col_i` to `value`, only updating the rows
     /// specified by `mask`.
-    pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: &RowMask) {
+    pub fn update_col_with_mask(
+        &self,
+        col_i: usize,
+        value: &[u8],
+        mask: &RowMask,
+        mut before_update: impl FnMut(usize, &[u8]),
+    ) {
         let bufs = ColIterUncheckedMut::new(col_i, self)
             .zip(mask.bits.iter())
             .enumerate()
@@ -325,6 +343,7 @@ impl ColumnMajorBlock {
 
         for (row_i, (buf, _)) in bufs {
             self.set_ready_flag_for_row(row_i, false);
+            before_update(row_i, buf);
             buf.copy_from_slice(value);
             self.set_ready_flag_for_row(row_i, true);
         }

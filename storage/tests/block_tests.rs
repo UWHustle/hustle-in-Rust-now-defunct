@@ -152,13 +152,19 @@ mod block_tests {
         let block = storage_manager.create_block(vec![1, 2], 0);
 
         insert_row(&[b"a", b"bb"], &block);
-        block.update_col(0, b"c");
+        block.update_col(0, b"c", |row_i, buf| {
+            assert_eq!(row_i, 0);
+            assert_eq!(buf, b"a");
+        });
 
         let mut row = block.project(&[0, 1]).next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"bb");
 
-        block.update_col(1, b"dd");
+        block.update_col(1, b"dd", |row_i, buf| {
+            assert_eq!(row_i, 0);
+            assert_eq!(buf, b"bb");
+        });
 
         let mut row = block.project(&[0, 1]).next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
@@ -182,7 +188,10 @@ mod block_tests {
         }
 
         let mask = block.filter_col(0, |buf| buf == b"a");
-        block.update_col_with_mask(0, b"c", &mask);
+        block.update_col_with_mask(0, b"c", &mask, |row_i, buf| {
+            assert_eq!(row_i, 0);
+            assert_eq!(buf, b"a");
+        });
         let mut rows = block.project(&[0]);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"c");
