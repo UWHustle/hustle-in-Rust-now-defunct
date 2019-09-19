@@ -306,7 +306,8 @@ impl ColumnMajorBlock {
         }
     }
 
-    /// Sets the value of the column specified by `col_i` to `value`.
+    /// Sets the value of the column specified by `col_i` to `value`. The function `before_update`
+    /// is called with the row ID of the updated row and the old value before the column is updated.
     pub fn update_col(
         &self,
         col_i: usize,
@@ -328,7 +329,8 @@ impl ColumnMajorBlock {
     }
 
     /// Sets the value of the column specified by `col_i` to `value`, only updating the rows
-    /// specified by `mask`.
+    /// specified by `mask`. The function `before_update` is called with the row ID of the updated
+    /// row and the old value before the column is updated.
     pub fn update_col_with_mask(
         &self,
         col_i: usize,

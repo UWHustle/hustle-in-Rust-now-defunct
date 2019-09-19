@@ -31,11 +31,20 @@ impl Operator for Update {
             if let Some(filter) = &self.filter {
                 let mask = (filter)(&block);
                 for (col_i, assignment) in &self.assignments {
-                    block.update_col_with_mask(*col_i, assignment, &mask);
+                    block.update_col_with_mask(
+                        *col_i,
+                        assignment,
+                        &mask,
+                        |_row_i, _buf| () // TODO: Write the row ID and old value to storage.
+                    );
                 }
             } else {
                 for (col_i, assignment) in &self.assignments {
-                    block.update_col(*col_i, assignment);
+                    block.update_col(
+                        *col_i,
+                        assignment,
+                        |_row_i, _buf| () // TODO: Write the row ID and old value to storage.
+                    );
                 }
             }
         }
