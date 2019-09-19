@@ -110,12 +110,12 @@ mod block_tests {
     }
 
     #[test]
-    fn delete_rows() {
+    fn tentative_delete_rows() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1], 0);
 
         insert_row(&[b"a"], &block);
-        block.delete_rows();
+        block.tentative_delete_rows(|row_i| assert_eq!(row_i, 0));
 
         assert!(block.project(&[0]).next().is_none());
 
@@ -123,7 +123,7 @@ mod block_tests {
     }
 
     #[test]
-    fn delete_rows_with_mask() {
+    fn tentative_delete_rows_with_mask() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1], 0);
 
@@ -137,7 +137,7 @@ mod block_tests {
         }
 
         let mask = block.filter_col(0, |buf| buf == b"a");
-        block.delete_rows_with_mask(&mask);
+        block.tentative_delete_rows_with_mask(&mask, |row_i| assert_eq!(row_i, 0));
         let mut rows = block.project(&[0]);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
@@ -188,6 +188,28 @@ mod block_tests {
         assert_eq!(rows.next().unwrap().next().unwrap(), b"c");
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
+
+        storage_manager.clear();
+    }
+
+    #[test]
+    fn tentative_insert_row() {
+        let storage_manager = StorageManager::with_unique_data_directory();
+        let block = storage_manager.create_block(vec![1], 0);
+
+        let mut inserted_row_i = None;
+        let row: &[&[u8]] = &[b"a"];
+
+        block.tentative_insert_row(
+            row.iter().map(|&buf| buf),
+            |row_i| inserted_row_i = Some(row_i),
+        );
+
+        assert!(block.rows().next().is_none());
+
+        block.finalize_row(inserted_row_i.unwrap());
+
+        assert_eq!(block.rows().next().unwrap().next().unwrap(), b"a");
 
         storage_manager.clear();
     }

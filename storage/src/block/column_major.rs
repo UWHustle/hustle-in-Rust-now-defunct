@@ -71,7 +71,8 @@ impl ColumnMajorBlock {
 
         let block = Self::with_header(header, data_offset, mmap);
 
-        block.delete_rows();
+        block.set_valid_flag_for_rows(false);
+        block.set_ready_flag_for_rows(true);
 
         block
     }
@@ -214,25 +215,50 @@ impl ColumnMajorBlock {
     /// corresponding column.
     pub fn insert_row<'a>(&self, row: impl Iterator<Item = &'a [u8]>) {
         // Find the index of the first row with the state (!valid, ready).
-        let (row_i, _) = self.get_valid_flag_for_rows()
-            .zip(self.get_ready_flag_for_rows())
-            .enumerate()
-            .find(|&(_, (valid, ready))| !valid && ready)
-            .expect("Cannot insert a row into a full block");
-
-        // Set the row state to (valid, ready).
-        self.set_valid_flag_for_row(row_i, true);
+        let row_i = self.next_available_row_id();
 
         // Write the data to the row.
         for (dst_buf, src_buf) in self.get_row_unchecked_mut(row_i).zip(row) {
             dst_buf.copy_from_slice(src_buf);
         }
+
+        // Set the row state to (valid, ready).
+        self.set_valid_flag_for_row(row_i, true);
+    }
+
+    /// Tentatively inserts a new row into the `ColumnMajorBlock` at the earliest available
+    /// location. The function `before_insert` is called with the row ID of the inserted row, and
+    /// `finalize` must be called with this row ID before the row is externally visible. A `panic!`
+    /// will occur if the block is full or the size of each slice does not equal the size of its
+    /// corresponding column.
+    pub fn tentative_insert_row<'a>(
+        &self,
+        row: impl Iterator<Item = &'a [u8]>,
+        mut before_insert: impl FnMut(usize),
+    ) {
+        // Find the index of the first row with the state (!valid, ready).
+        let row_i = self.next_available_row_id();
+
+        // Notify the caller of the row ID that is about to be inserted.
+        before_insert(row_i);
+
+        // Write the data to the row.
+        for (dst_buf, src_buf) in self.get_row_unchecked_mut(row_i).zip(row) {
+            dst_buf.copy_from_slice(src_buf);
+        }
+
+        // Set the row state to (valid, !ready).
+        self.set_ready_flag_for_row(row_i, false);
+        self.set_valid_flag_for_row(row_i, true);
     }
 
     /// Inserts rows into the `ColumnMajorBlock`, advancing the `rows` iterator until it is
     /// exhausted or the block is full. A `panic!` will occur if the size of each slice does not
     /// equal the size of its corresponding column.
-    pub fn insert_rows<'a>(&self, rows: &mut impl Iterator<Item = impl Iterator<Item = &'a [u8]>>) {
+    pub fn insert_rows<'a>(
+        &self,
+        rows: &mut impl Iterator<Item = impl Iterator<Item = &'a [u8]>>
+    ) {
         // Build a mask where the "on" bits represent the indices of the rows with state
         // (!valid, ready).
         let bits = BitVec::from_iter(
@@ -244,39 +270,48 @@ impl ColumnMajorBlock {
 
         // Iterate over the rows with this mask.
         for ((row_i, dst_row), src_row) in self.get_rows_with_mask_mut(mask).zip(rows) {
-
-            // Set the row state to (valid, ready).
-            self.set_valid_flag_for_row(row_i, true);
-
             // Write the data to the row.
             for (dst_buf, src_buf) in dst_row.zip(src_row) {
                 dst_buf.copy_from_slice(src_buf);
             }
+
+            // Set the row state to (valid, ready).
+            self.set_valid_flag_for_row(row_i, true);
         }
     }
 
-    /// Deletes all rows in the `ColumnMajorBlock`.
-    pub fn delete_rows(&self) {
-        self.set_valid_flag_for_rows(false);
-        self.set_ready_flag_for_rows(true);
+    /// Tentatively deletes all rows in the `ColumnMajorBlock`. The function `before_delete` is
+    /// called with the row ID of each deleted row, and `finalize` must be called with this row ID
+    /// before the space can be used again.
+    pub fn tentative_delete_rows(&self, before_delete: impl FnMut(usize) + Copy) {
+        for row_i in self.row_ids() {
+            self.tentative_delete_row_unchecked(row_i, before_delete);
+        }
     }
 
-    /// Deletes the rows in the `ColumnMajorBlock` specified by the `mask`.
-    pub fn delete_rows_with_mask(&self, mask: &RowMask) {
+    /// Tentatively deletes the rows in the `ColumnMajorBlock` specified by the `mask`. The function
+    /// `before_delete` is called with the row ID of each deleted row, and `finalize` must be called
+    /// with this row ID before the space can be used again.
+    pub fn tentative_delete_rows_with_mask(
+        &self,
+        mask: &RowMask,
+        before_delete: impl FnMut(usize) + Copy,
+    ) {
         let row_is = mask.bits.iter()
             .enumerate()
             .filter(|&(_, bit)| bit);
 
         for (row_i, _) in row_is {
-            self.set_valid_flag_for_row(row_i, false);
-            self.set_ready_flag_for_row(row_i, true);
+            self.tentative_delete_row_unchecked(row_i, before_delete);
         }
     }
 
     /// Sets the value of the column specified by `col_i` to `value`.
     pub fn update_col(&self, col_i: usize, value: &[u8]) {
-        for buf in ColIterUncheckedMut::new(col_i, self) {
+        for (row_i, buf) in ColIterUncheckedMut::new(col_i, self).enumerate() {
+            self.set_ready_flag_for_row(row_i, false);
             buf.copy_from_slice(value);
+            self.set_ready_flag_for_row(row_i, true);
         }
     }
 
@@ -285,10 +320,13 @@ impl ColumnMajorBlock {
     pub fn update_col_with_mask(&self, col_i: usize, value: &[u8], mask: &RowMask) {
         let bufs = ColIterUncheckedMut::new(col_i, self)
             .zip(mask.bits.iter())
-            .filter(|&(_, bit)| bit);
+            .enumerate()
+            .filter(|&(_, (_, bit))| bit);
 
-        for (buf, _) in bufs {
+        for (row_i, (buf, _)) in bufs {
+            self.set_ready_flag_for_row(row_i, false);
             buf.copy_from_slice(value);
+            self.set_ready_flag_for_row(row_i, true);
         }
     }
 
@@ -327,6 +365,10 @@ impl ColumnMajorBlock {
         RowMask { bits }
     }
 
+    pub fn finalize_row(&self, row_i: usize) {
+        self.set_ready_flag_for_row(row_i, true);
+    }
+
     fn get_row_col_unchecked_mut(&self, row_i: usize, col_i: usize) -> &mut [u8] {
         let col_offset = self.metadata.col_offsets[col_i];
         let col_size = self.header.col_sizes[col_i];
@@ -351,6 +393,22 @@ impl ColumnMajorBlock {
             .zip(mask.bits.into_iter())
             .filter(|&(_, bit)| bit)
             .map(move |(row_i, _)| (row_i, self.get_row_unchecked_mut(row_i)))
+    }
+
+    fn next_available_row_id(&self) -> usize {
+        // Find the index of the first row with the state (!valid, ready).
+        self.get_valid_flag_for_rows()
+            .zip(self.get_ready_flag_for_rows())
+            .enumerate()
+            .find(|&(_, (valid, ready))| !valid && ready)
+            .expect("Cannot insert a row into a full block")
+            .0
+    }
+
+    fn tentative_delete_row_unchecked(&self, row_i: usize, mut before_delete: impl FnMut(usize)) {
+        before_delete(row_i);
+        self.set_ready_flag_for_row(row_i, false);
+        self.set_valid_flag_for_row(row_i, false);
     }
 
     fn get_flag_for_row(&self, flag_i: usize, row_i: usize) -> bool {

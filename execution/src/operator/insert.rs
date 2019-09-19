@@ -23,7 +23,10 @@ impl Insert {
 impl Operator for Insert {
     fn execute(self: Box<Self>, storage_manager: &StorageManager, catalog: &Catalog) {
         let output_block = self.router.get_block(storage_manager);
-        output_block.insert_row(self.bufs.iter().map(|buf| buf.as_slice()));
+        output_block.tentative_insert_row(
+                self.bufs.iter().map(|buf| buf.as_slice()),
+                |_| (), // TODO: Write the row ID to storage.
+        );
 
         for block_id in self.router.get_created_block_ids() {
             catalog.append_block_id(&self.table_name, block_id).unwrap();

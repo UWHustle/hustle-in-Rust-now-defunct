@@ -26,9 +26,14 @@ impl Operator for Delete {
             let block = storage_manager.get_block(block_id).unwrap();
             if let Some(filter) = &self.filter {
                 let mask = (filter)(&block);
-                block.delete_rows_with_mask(&mask);
+                block.tentative_delete_rows_with_mask(
+                    &mask,
+                    |_| (), // TODO: Write the row ID to storage.
+                );
             } else {
-                block.delete_rows();
+                block.tentative_delete_rows(
+                    |_| (), // TODO: Write the row ID to storage.
+                );
             }
         }
     }
