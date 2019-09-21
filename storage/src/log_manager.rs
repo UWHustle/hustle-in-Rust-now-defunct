@@ -8,7 +8,7 @@ use std::sync::Mutex;
 use byteorder::{LittleEndian, WriteBytesExt};
 use uuid::Uuid;
 
-const DEFAULT_LOG_DIRECTORY: &str = "data";
+const DEFAULT_LOG_DIRECTORY: &str = "logs";
 const TRANSACTION_LOG_FILE_NAME: &str = "transaction";
 const INSERT_LOG_FILE_NAME: &str = "insert";
 const DELETE_LOG_FILE_NAME: &str = "delete";

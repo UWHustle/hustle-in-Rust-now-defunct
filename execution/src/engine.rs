@@ -1,20 +1,24 @@
-use std::sync::{Arc, mpsc};
+use std::collections::HashMap;
+use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::Sender;
 
 use hustle_catalog::{Catalog, Column, Table};
 use hustle_common::plan::{Expression, Plan, Query, QueryOperator, Statement};
+use hustle_storage::{LogManager, StorageManager};
 use hustle_storage::block::{BlockReference, RowMask};
-use hustle_storage::{StorageManager, LogManager};
 
 use crate::operator::{BeginTransaction, Cartesian, Collect, CommitTransaction, CreateTable, Delete, DropTable, Insert, Operator, Project, Select, TableReference, Update};
 use crate::router::BlockPoolDestinationRouter;
 
+pub type FinalizeRowIds = Arc<Mutex<HashMap<u64, HashMap<u64, Vec<u64>>>>>;
+
 /// Hustle's execution engine. The `ExecutionEngine` is responsible for executing the plans
 /// produced by the resolver/optimizer.
 pub struct ExecutionEngine {
+    catalog: Arc<Catalog>,
     storage_manager: StorageManager,
     log_manager: LogManager,
-    catalog: Arc<Catalog>,
+    finalize_row_ids: FinalizeRowIds,
 }
 
 impl ExecutionEngine {
@@ -22,16 +26,17 @@ impl ExecutionEngine {
     /// manager configuration.
     pub fn new(catalog: Arc<Catalog>) -> Self {
         ExecutionEngine {
+            catalog,
             storage_manager: StorageManager::default(),
             log_manager: LogManager::default(),
-            catalog
+            finalize_row_ids: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// Executes the specified `plan` and optionally returns an output `Table` if the plan is a
     /// query.
     pub fn execute_statement(&self, statement: Statement) -> Result<Option<Table>, String> {
-        let operator = Self::compile_statement(statement);
+        let operator = self.compile_statement(statement);
         let result = operator.downcast_ref::<Collect>().map(|collect| collect.get_result());
         operator.execute(&self.storage_manager, &self.log_manager, &self.catalog);
         let table = result.map(|r| r.into_table());
@@ -51,10 +56,13 @@ impl ExecutionEngine {
         }
     }
 
-    fn compile_statement(statement: Statement) -> Box<dyn Operator> {
+    fn compile_statement(&self, statement: Statement) -> Box<dyn Operator> {
         match statement.plan {
             Plan::BeginTransaction => Box::new(BeginTransaction::new(statement.transaction_id)),
-            Plan::CommitTransaction => Box::new(CommitTransaction::new(statement.transaction_id)),
+            Plan::CommitTransaction => Box::new(CommitTransaction::new(
+                statement.transaction_id,
+                self.finalize_row_ids.clone()
+            )),
             Plan::CreateTable(table) => Box::new(CreateTable::new(table)),
             Plan::DropTable(table) => Box::new(DropTable::new(table)),
             Plan::Insert { into_table, bufs } => {
@@ -63,7 +71,13 @@ impl ExecutionEngine {
                     into_table.block_ids,
                     into_table.columns,
                 );
-                Box::new(Insert::new(table_name, bufs, router, statement.transaction_id))
+                Box::new(Insert::new(
+                    table_name,
+                    bufs,
+                    router,
+                    statement.transaction_id,
+                    self.finalize_row_ids.clone(),
+                ))
             },
             Plan::Update { table, assignments, filter } => {
                 let filter = filter.map(|f| Self::compile_filter(*f, &table.columns));
@@ -76,7 +90,12 @@ impl ExecutionEngine {
             },
             Plan::Delete { from_table, filter } => {
                 let filter = filter.map(|f| Self::compile_filter(*f, &from_table.columns));
-                Box::new(Delete::new(filter, from_table.block_ids, statement.transaction_id))
+                Box::new(Delete::new(
+                    filter,
+                    from_table.block_ids,
+                    statement.transaction_id,
+                    self.finalize_row_ids.clone(),
+                ))
             },
             Plan::Query(query) => {
                 let cols = query.output.clone();

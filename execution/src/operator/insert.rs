@@ -1,6 +1,7 @@
 use hustle_catalog::Catalog;
 use hustle_storage::{LogManager, StorageManager};
 
+use crate::engine::FinalizeRowIds;
 use crate::operator::Operator;
 use crate::router::BlockPoolDestinationRouter;
 
@@ -9,6 +10,7 @@ pub struct Insert {
     bufs: Vec<Vec<u8>>,
     router: BlockPoolDestinationRouter,
     transaction_id: u64,
+    finalize_row_ids: FinalizeRowIds,
 }
 
 impl Insert {
@@ -17,12 +19,14 @@ impl Insert {
         bufs: Vec<Vec<u8>>,
         router: BlockPoolDestinationRouter,
         transaction_id: u64,
+        finalize_row_ids: FinalizeRowIds,
     ) -> Self {
         Insert {
             table_name,
             bufs,
             router,
             transaction_id,
+            finalize_row_ids,
         }
     }
 }
@@ -37,11 +41,20 @@ impl Operator for Insert {
         let output_block = self.router.get_block(storage_manager);
         output_block.tentative_insert_row(
                 self.bufs.iter().map(|buf| buf.as_slice()),
-                |row_id| log_manager.log_insert(
-                    self.transaction_id,
-                    output_block.id,
-                    row_id as u64
-                )
+                |row_id| {
+                    log_manager.log_insert(
+                        self.transaction_id,
+                        output_block.id,
+                        row_id as u64
+                    );
+
+                    self.finalize_row_ids.lock().unwrap()
+                        .entry(self.transaction_id)
+                        .or_default()
+                        .entry(output_block.id)
+                        .or_default()
+                        .push(row_id as u64);
+                }
         );
 
         for block_id in self.router.get_created_block_ids() {
