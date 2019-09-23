@@ -3,6 +3,7 @@ use downcast_rs::Downcast;
 pub use begin_transaction::BeginTransaction;
 pub use cartesian::Cartesian;
 pub use hash_join::HashJoin;
+pub use nested_loop_join::NestedJoin;
 pub use collect::Collect;
 pub use commit_transaction::CommitTransaction;
 pub use create_table::CreateTable;
@@ -27,6 +28,7 @@ pub mod insert;
 pub mod project;
 pub mod select;
 pub mod hash_join;
+pub mod nested_loop_join;
 pub mod table_reference;
 pub mod update;
 
