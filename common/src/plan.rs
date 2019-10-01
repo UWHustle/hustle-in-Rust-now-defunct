@@ -5,17 +5,18 @@ use hustle_types::{ComparativeVariant, TypeVariant};
 pub struct Statement {
     pub id: u64,
     pub transaction_id: u64,
+    pub connection_id: u64,
     pub plan: Plan,
     pub silent: bool,
 }
 
 impl Statement {
-    pub fn new(id: u64, transaction_id: u64, plan: Plan) -> Self {
-        Statement { id, transaction_id, plan, silent: false }
+    pub fn new(id: u64, transaction_id: u64, connection_id: u64, plan: Plan) -> Self {
+        Statement { id, transaction_id, connection_id, plan, silent: false }
     }
 
-    pub fn silent(id: u64, transaction_id: u64, plan: Plan) -> Self {
-        Statement { id, transaction_id, plan, silent: true }
+    pub fn silent(id: u64, transaction_id: u64, connection_id: u64, plan: Plan) -> Self {
+        Statement { id, transaction_id, connection_id, plan, silent: true }
     }
 }
 

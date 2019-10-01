@@ -13,6 +13,7 @@ use hustle_common::message::{InternalMessage, Message};
 use hustle_execution::ExecutionEngine;
 use hustle_resolver::Resolver;
 use hustle_transaction::TransactionManager;
+use hustle_common::plan::Statement;
 
 /// Hustle`s server. Clients connect to the server via TCP.
 pub struct Server {
@@ -85,15 +86,19 @@ impl Server {
             // Spawn transaction manager thread.
             let completed_tx_clone = completed_tx.clone();
             s.builder().name("transaction".to_string()).spawn(move |_| {
-                let execute_statements = |statements, connection_id| {
+                let execute_statements = |statements: Vec<Statement>| {
+                    for statement in statements {
+                        execution_tx.send(InternalMessage::new(
+                            statement.connection_id,
+                            Message::ExecuteStatement { statement }
+                        )).unwrap();
+                    }
+                };
+
+                let handle_result = |statements: Result<Vec<Statement>, String>, connection_id| {
                     match statements {
                         Ok(statements) => {
-                            for statement in statements {
-                                execution_tx.send(InternalMessage::new(
-                                    connection_id,
-                                    Message::ExecuteStatement { statement }
-                                )).unwrap();
-                            }
+                            execute_statements(statements)
                         },
                         Err(reason) => completed_tx_clone.send(InternalMessage::new(
                             connection_id,
@@ -109,15 +114,15 @@ impl Server {
                                 plan,
                                 message.connection_id,
                             );
-                            execute_statements(statements, message.connection_id);
+                            handle_result(statements, message.connection_id);
                         },
                         Message::CompleteStatement { statement } => {
                             let statements = transaction_manager.complete_statement(statement);
-                            execute_statements(statements, message.connection_id);
+                            handle_result(statements, message.connection_id);
                         },
                         Message::CloseConnection => {
                             let statements = transaction_manager.close_connection(message.connection_id);
-                            execute_statements(Ok(statements), message.connection_id);
+                            execute_statements(statements);
                         },
                         _ => (),
                     }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use hustle_common::plan::{Plan, Statement};
 
-use crate::policy::{Policy, ZeroConcurrencyPolicy};
+use crate::policy::{Policy, PredicateComparisonPolicy};
 
 pub struct TransactionManager {
     policy: Box<dyn Policy + Send>,
@@ -14,7 +14,7 @@ pub struct TransactionManager {
 impl TransactionManager {
     pub fn new() -> Self {
         TransactionManager {
-            policy: Box::new(ZeroConcurrencyPolicy::new()),
+            policy: Box::new(PredicateComparisonPolicy::new()),
             transaction_ids: HashMap::new(),
             statement_ctr: 0,
             transaction_ctr: 0,
@@ -31,17 +31,28 @@ impl TransactionManager {
                 if self.transaction_ids.contains_key(&connection_id) {
                     Err("Cannot begin a transaction within a transaction".to_owned())
                 } else {
-                    let statement_id = self.new_statement_id();
                     let transaction_id = self.new_transaction_id();
-                    let statement = Statement::new(statement_id, transaction_id, plan);
+
+                    let statement = Statement::new(
+                        self.new_statement_id(),
+                        transaction_id,
+                        connection_id,
+                        plan,
+                    );
+
                     self.transaction_ids.insert(connection_id, transaction_id);
                     Ok(self.policy.enqueue_statement(statement))
                 }
             },
             Plan::CommitTransaction => {
                 if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
-                    let statement_id = self.new_statement_id();
-                    let statement = Statement::new(statement_id, transaction_id, plan);
+                    let statement = Statement::new(
+                        self.new_statement_id(),
+                        transaction_id,
+                        connection_id,
+                        plan,
+                    );
+
                     Ok(self.policy.enqueue_statement(statement))
                 } else {
                     Err("Cannot commit when no transaction is active".to_owned())
@@ -49,7 +60,13 @@ impl TransactionManager {
             },
             _ => {
                 if let Some(&transaction_id) = self.transaction_ids.get(&connection_id) {
-                    let statement = Statement::new(self.new_statement_id(), transaction_id, plan);
+                    let statement = Statement::new(
+                        self.new_statement_id(),
+                        transaction_id,
+                        connection_id,
+                        plan,
+                    );
+
                     Ok(self.policy.enqueue_statement(statement))
                 } else {
                     let transaction_id = self.new_transaction_id();
@@ -57,25 +74,28 @@ impl TransactionManager {
                     let begin = Statement::silent(
                         self.new_statement_id(),
                         transaction_id,
+                        connection_id,
                         Plan::BeginTransaction,
                     );
 
                     let statement = Statement::new(
                         self.new_statement_id(),
                         transaction_id,
+                        connection_id,
                         plan,
                     );
 
                     let commit = Statement::silent(
                         self.new_statement_id(),
                         transaction_id,
+                        connection_id,
                         Plan::CommitTransaction,
                     );
 
                     Ok(self.policy.enqueue_statement(begin).into_iter()
-                        .chain(self.policy.enqueue_statement(statement))
-                        .chain(self.policy.enqueue_statement(commit))
-                        .collect())
+                            .chain(self.policy.enqueue_statement(statement))
+                            .chain(self.policy.enqueue_statement(commit))
+                            .collect())
                 }
             }
         }
@@ -92,6 +112,7 @@ impl TransactionManager {
             let commit = Statement::new(
                 self.new_statement_id(),
                 transaction_id,
+                connection_id,
                 Plan::CommitTransaction,
             );
             self.policy.enqueue_statement(commit)
