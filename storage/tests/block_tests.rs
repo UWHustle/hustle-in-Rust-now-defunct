@@ -4,6 +4,7 @@ extern crate hustle_storage;
 mod block_tests {
     use hustle_storage::block::BlockReference;
     use hustle_storage::StorageManager;
+    use std::collections::HashSet;
 
     #[test]
     fn get_row() {
@@ -41,6 +42,7 @@ mod block_tests {
     fn rows() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1, 2], 0);
+        let include_tentative = HashSet::new();
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a", b"bb"],
@@ -51,7 +53,7 @@ mod block_tests {
             insert_row(row, &block);
         }
 
-        for (row, expected_row) in block.rows().zip(&rows) {
+        for (row, expected_row) in block.rows(&include_tentative).zip(&rows) {
             for (val, &expected_val) in row.zip(expected_row.iter()) {
                 assert_eq!(val, expected_val);
             }
@@ -64,6 +66,7 @@ mod block_tests {
     fn project() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1, 2], 0);
+        let include_tentative = HashSet::new();
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a", b"bb"],
@@ -74,7 +77,7 @@ mod block_tests {
             insert_row(row, &block);
         }
 
-        let mut projection = block.project(&[1]);
+        let mut projection = block.project(&[1], &include_tentative);
         let mut row = projection.next().unwrap();
         assert_eq!(row.next().unwrap(), b"bb");
 
@@ -113,11 +116,12 @@ mod block_tests {
     fn tentative_delete_rows() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1], 0);
+        let include_tentative = HashSet::new();
 
         insert_row(&[b"a"], &block);
-        block.tentative_delete_rows(|row_i| assert_eq!(row_i, 0));
+        block.tentative_delete_rows(&include_tentative, |row_i| assert_eq!(row_i, 0));
 
-        assert!(block.project(&[0]).next().is_none());
+        assert!(block.project(&[0], &include_tentative).next().is_none());
 
         storage_manager.clear();
     }
@@ -126,6 +130,7 @@ mod block_tests {
     fn tentative_delete_rows_with_mask() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1], 0);
+        let include_tentative = HashSet::new();
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a"],
@@ -138,7 +143,7 @@ mod block_tests {
 
         let mask = block.filter_col(0, |buf| buf == b"a");
         block.tentative_delete_rows_with_mask(&mask, |row_i| assert_eq!(row_i, 0));
-        let mut rows = block.project(&[0]);
+        let mut rows = block.project(&[0], &include_tentative);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
         assert!(rows.next().is_none());
@@ -150,6 +155,7 @@ mod block_tests {
     fn update_col() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1, 2], 0);
+        let include_tentative = HashSet::new();
 
         insert_row(&[b"a", b"bb"], &block);
         block.update_col(0, b"c", |row_i, buf| {
@@ -157,7 +163,7 @@ mod block_tests {
             assert_eq!(buf, b"a");
         });
 
-        let mut row = block.project(&[0, 1]).next().unwrap();
+        let mut row = block.project(&[0, 1], &include_tentative).next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"bb");
 
@@ -166,7 +172,7 @@ mod block_tests {
             assert_eq!(buf, b"bb");
         });
 
-        let mut row = block.project(&[0, 1]).next().unwrap();
+        let mut row = block.project(&[0, 1], &include_tentative).next().unwrap();
         assert_eq!(row.next().unwrap(), b"c");
         assert_eq!(row.next().unwrap(), b"dd");
 
@@ -177,6 +183,7 @@ mod block_tests {
     fn update_col_with_mask() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1], 0);
+        let include_tentative = HashSet::new();
 
         let rows: Vec<Vec<&[u8]>> = vec![
             vec![b"a"],
@@ -192,7 +199,7 @@ mod block_tests {
             assert_eq!(row_i, 0);
             assert_eq!(buf, b"a");
         });
-        let mut rows = block.project(&[0]);
+        let mut rows = block.project(&[0], &include_tentative);
 
         assert_eq!(rows.next().unwrap().next().unwrap(), b"c");
         assert_eq!(rows.next().unwrap().next().unwrap(), b"b");
@@ -205,6 +212,7 @@ mod block_tests {
     fn tentative_insert_row() {
         let storage_manager = StorageManager::with_unique_data_directory();
         let block = storage_manager.create_block(vec![1], 0);
+        let include_tentative = HashSet::new();
 
         let mut inserted_row_i = None;
         let row: &[&[u8]] = &[b"a"];
@@ -214,11 +222,11 @@ mod block_tests {
             |row_i| inserted_row_i = Some(row_i),
         );
 
-        assert!(block.rows().next().is_none());
+        assert!(block.rows(&include_tentative).next().is_none());
 
         block.finalize_row(inserted_row_i.unwrap());
 
-        assert_eq!(block.rows().next().unwrap().next().unwrap(), b"a");
+        assert_eq!(block.rows(&include_tentative).next().unwrap().next().unwrap(), b"a");
 
         storage_manager.clear();
     }

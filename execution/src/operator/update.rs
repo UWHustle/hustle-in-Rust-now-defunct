@@ -73,6 +73,8 @@ impl Operator for Update {
 
 #[cfg(test)]
 mod update_tests {
+    use std::collections::HashSet;
+
     use hustle_execution_test_util as test_util;
     use hustle_types::{Bool, HustleType, Int64};
 
@@ -85,7 +87,7 @@ mod update_tests {
         let catalog = Catalog::new();
         let block = test_util::example_block(&storage_manager);
 
-        let old_values = block.project(&[0, 1, 2])
+        let old_values = block.project(&[0, 1, 2], &HashSet::new())
             .map(|row| row.map(|buf| buf.to_vec()).collect::<Vec<Vec<u8>>>())
             .collect::<Vec<Vec<Vec<u8>>>>();
 

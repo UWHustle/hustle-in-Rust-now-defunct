@@ -62,6 +62,8 @@ impl Operator for Delete {
 
 #[cfg(test)]
 mod delete_tests {
+    use std::collections::HashSet;
+
     use hustle_execution_test_util as test_util;
     use hustle_types::Bool;
 
@@ -74,12 +76,18 @@ mod delete_tests {
         let catalog = Catalog::new();
         let block = test_util::example_block(&storage_manager);
 
-        let delete = Box::new(Delete::new(None, vec![block.id], 0));
+        let delete = Box::new(Delete::new(
+            None,
+            vec![block.id],
+            Arc::new(TransactionState::new(0)),
+        ));
+
         delete.execute(&storage_manager, &log_manager, &catalog);
 
-        assert!(block.project(&[0, 1, 2]).next().is_none());
+        assert!(block.project(&[0, 1, 2], &HashSet::new()).next().is_none());
 
         storage_manager.clear();
+        log_manager.clear();
     }
 
     #[test]
@@ -93,10 +101,15 @@ mod delete_tests {
             block.filter_col(0, |buf| Bool.get(buf))
         );
 
-        let delete = Box::new(Delete::new(Some(filter), vec![block.id], 0));
+        let delete = Box::new(Delete::new(
+            Some(filter),
+            vec![block.id],
+            Arc::new(TransactionState::new(0)),
+        ));
+
         delete.execute(&storage_manager, &log_manager, &catalog);
 
-        assert!(block.project(&[0, 1, 2]).next().is_some());
+        assert!(block.project(&[0, 1, 2], &HashSet::new()).next().is_some());
         assert_eq!(block.get_row_col(1, 0), None);
 
         storage_manager.clear();

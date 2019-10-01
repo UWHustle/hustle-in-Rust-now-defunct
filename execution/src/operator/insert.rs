@@ -94,7 +94,13 @@ mod insert_tests {
         int64_type.set(1, &mut bufs[1]);
         char_type.set("a", &mut bufs[2]);
 
-        let insert = Box::new(Insert::new("insert".to_owned(), bufs.clone(), router, 0));
+        let insert = Box::new(Insert::new(
+            "insert".to_owned(),
+            bufs.clone(),
+            router,
+            Arc::new(TransactionState::new(0)),
+        ));
+
         insert.execute(&storage_manager, &log_manager, &catalog);
 
         storage_manager.clear();

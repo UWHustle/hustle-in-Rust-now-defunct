@@ -93,7 +93,14 @@ mod project_tests {
         input_block_tx.send(input_block.id).unwrap();
         mem::drop(input_block_tx);
 
-        let project = Box::new(Project::new(vec![1], router, input_block_rx, output_block_tx));
+        let project = Box::new(Project::new(
+            vec![1],
+            router,
+            input_block_rx,
+            output_block_tx,
+            Arc::new(TransactionState::new(0)),
+        ));
+
         project.execute(&storage_manager, &log_manager, &catalog);
 
         let output_block = storage_manager.get_block(output_block_rx.recv().unwrap()).unwrap();
