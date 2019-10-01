@@ -1,16 +1,17 @@
+use std::sync::Arc;
+
 use hustle_catalog::Catalog;
 use hustle_storage::{LogManager, StorageManager};
 
-use crate::engine::FinalizeRowIds;
 use crate::operator::Operator;
 use crate::router::BlockPoolDestinationRouter;
+use crate::state::TransactionState;
 
 pub struct Insert {
     table_name: String,
     bufs: Vec<Vec<u8>>,
     router: BlockPoolDestinationRouter,
-    transaction_id: u64,
-    finalize_row_ids: FinalizeRowIds,
+    transaction_state: Arc<TransactionState>,
 }
 
 impl Insert {
@@ -18,15 +19,13 @@ impl Insert {
         table_name: String,
         bufs: Vec<Vec<u8>>,
         router: BlockPoolDestinationRouter,
-        transaction_id: u64,
-        finalize_row_ids: FinalizeRowIds,
+        transaction_state: Arc<TransactionState>,
     ) -> Self {
         Insert {
             table_name,
             bufs,
             router,
-            transaction_id,
-            finalize_row_ids,
+            transaction_state,
         }
     }
 }
@@ -39,21 +38,21 @@ impl Operator for Insert {
         catalog: &Catalog
     ) {
         let output_block = self.router.get_block(storage_manager);
+
+        let mut tentative = self.transaction_state.lock_tentative_for_block(output_block.id);
+        let mut inserted = self.transaction_state.lock_inserted_for_block(output_block.id);
+
         output_block.tentative_insert_row(
                 self.bufs.iter().map(|buf| buf.as_slice()),
                 |row_id| {
                     log_manager.log_insert(
-                        self.transaction_id,
+                        self.transaction_state.id,
                         output_block.id,
                         row_id as u64
                     );
 
-                    self.finalize_row_ids.lock().unwrap()
-                        .entry(self.transaction_id)
-                        .or_default()
-                        .entry(output_block.id)
-                        .or_default()
-                        .push(row_id as u64);
+                    tentative.push(row_id);
+                    inserted.insert(row_id);
                 }
         );
 

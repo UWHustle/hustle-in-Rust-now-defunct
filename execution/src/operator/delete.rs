@@ -1,29 +1,28 @@
+use std::sync::Arc;
+
 use hustle_catalog::Catalog;
 use hustle_storage::{LogManager, StorageManager};
 use hustle_storage::block::{BlockReference, RowMask};
 
 use crate::operator::Operator;
-use crate::engine::FinalizeRowIds;
+use crate::state::TransactionState;
 
 pub struct Delete {
     filter: Option<Box<dyn Fn(&BlockReference) -> RowMask>>,
     block_ids: Vec<u64>,
-    transaction_id: u64,
-    finalize_row_ids: FinalizeRowIds,
+    transaction_state: Arc<TransactionState>,
 }
 
 impl Delete {
     pub fn new(
         filter: Option<Box<dyn Fn(&BlockReference) -> RowMask>>,
         block_ids: Vec<u64>,
-        transaction_id: u64,
-        finalize_row_ids: FinalizeRowIds,
+        transaction_state: Arc<TransactionState>,
     ) -> Self {
         Delete {
             filter,
             block_ids,
-            transaction_id,
-            finalize_row_ids,
+            transaction_state,
         }
     }
 }
@@ -35,31 +34,27 @@ impl Operator for Delete {
         log_manager: &LogManager,
         _catalog: &Catalog
     ) {
-        let before_delete = |row_id, block_id| {
-            log_manager.log_delete(
-                self.transaction_id,
-                block_id,
-                row_id as u64,
-            );
-
-            self.finalize_row_ids.lock().unwrap()
-                .entry(self.transaction_id)
-                .or_default()
-                .entry(block_id)
-                .or_default()
-                .push(row_id as u64);
-        };
-
         for &block_id in &self.block_ids {
             let block = storage_manager.get_block(block_id).unwrap();
+            let mut tentative = self.transaction_state.lock_tentative_for_block(block.id);
             if let Some(filter) = &self.filter {
                 let mask = (filter)(&block);
                 block.tentative_delete_rows_with_mask(
                     &mask,
-                    |row_id| before_delete(row_id, block_id)
+                    |row_id| {
+                        log_manager.log_delete(self.transaction_state.id, block_id, row_id as u64);
+                        tentative.push(row_id);
+                    }
                 );
             } else {
-                block.tentative_delete_rows(|row_id| before_delete(row_id, block_id));
+                let include_tentative = self.transaction_state.lock_inserted_for_block(block.id);
+                block.tentative_delete_rows(
+                    &include_tentative,
+                    |row_id| {
+                        log_manager.log_delete(self.transaction_state.id, block_id, row_id as u64);
+                        tentative.push(row_id);
+                    }
+                );
             }
         }
     }

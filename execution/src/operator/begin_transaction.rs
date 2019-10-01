@@ -2,15 +2,17 @@ use hustle_catalog::Catalog;
 use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::Operator;
+use crate::state::TransactionState;
+use std::sync::Arc;
 
 pub struct BeginTransaction {
-    transaction_id: u64,
+    transaction_state: Arc<TransactionState>,
 }
 
 impl BeginTransaction {
-    pub fn new(transaction_id: u64) -> Self {
+    pub fn new(transaction_state: Arc<TransactionState>) -> Self {
         BeginTransaction {
-            transaction_id,
+            transaction_state,
         }
     }
 }
@@ -22,6 +24,6 @@ impl Operator for BeginTransaction {
         log_manager: &LogManager,
         _catalog: &Catalog
     ) {
-        log_manager.log_begin_transaction(self.transaction_id);
+        log_manager.log_begin_transaction(self.transaction_state.id);
     }
 }

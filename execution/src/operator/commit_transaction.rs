@@ -1,21 +1,19 @@
-use std::collections::HashMap;
+use std::sync::Arc;
 
 use hustle_catalog::Catalog;
 use hustle_storage::{LogManager, StorageManager};
 
-use crate::engine::FinalizeRowIds;
 use crate::operator::Operator;
+use crate::state::TransactionState;
 
 pub struct CommitTransaction {
-    transaction_id: u64,
-    finalize_row_ids: FinalizeRowIds,
+    transaction_state: Arc<TransactionState>,
 }
 
 impl CommitTransaction {
-    pub fn new(transaction_id: u64, finalize_row_ids: FinalizeRowIds) -> Self {
+    pub fn new(transaction_state: Arc<TransactionState>) -> Self {
         CommitTransaction {
-            transaction_id,
-            finalize_row_ids,
+            transaction_state,
         }
     }
 }
@@ -27,21 +25,15 @@ impl Operator for CommitTransaction {
         log_manager: &LogManager,
         _catalog: &Catalog,
     ) {
-        log_manager.log_commit_transaction(self.transaction_id);
+        log_manager.log_commit_transaction(self.transaction_state.id);
 
-        if let Some(finalize_row_ids) = self.finalize_row_ids
-            .lock()
-            .unwrap()
-            .remove(&self.transaction_id)
-        {
-            for (block_id, row_ids) in finalize_row_ids {
-                let block = storage_manager.get_block(block_id).unwrap();
-                for row_id in row_ids {
-                    block.finalize_row(row_id as usize);
-                }
+        for (&block_id, row_ids) in &*self.transaction_state.get_tentative().lock().unwrap() {
+            let block = storage_manager.get_block(block_id).unwrap();
+            for &row_id in &*row_ids.lock().unwrap() {
+                block.finalize_row(row_id as usize);
             }
         }
 
-        log_manager.log_complete_transaction(self.transaction_id);
+        log_manager.log_complete_transaction(self.transaction_state.id);
     }
 }

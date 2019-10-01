@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use std::sync::{Arc, mpsc, Mutex};
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, mpsc};
 use std::sync::mpsc::Sender;
 
 use hustle_catalog::{Catalog, Column, Table};
@@ -9,8 +9,7 @@ use hustle_storage::block::{BlockReference, RowMask};
 
 use crate::operator::{BeginTransaction, Cartesian, Collect, CommitTransaction, CreateTable, Delete, DropTable, Insert, Operator, Project, Select, TableReference, Update};
 use crate::router::BlockPoolDestinationRouter;
-
-pub type FinalizeRowIds = Arc<Mutex<HashMap<u64, HashMap<u64, Vec<u64>>>>>;
+use crate::state::TransactionState;
 
 /// Hustle's execution engine. The `ExecutionEngine` is responsible for executing the plans
 /// produced by the resolver/optimizer.
@@ -18,7 +17,7 @@ pub struct ExecutionEngine {
     catalog: Arc<Catalog>,
     storage_manager: StorageManager,
     log_manager: LogManager,
-    finalize_row_ids: FinalizeRowIds,
+    transaction_states: HashMap<u64, Arc<TransactionState>>,
 }
 
 impl ExecutionEngine {
@@ -29,13 +28,13 @@ impl ExecutionEngine {
             catalog,
             storage_manager: StorageManager::default(),
             log_manager: LogManager::default(),
-            finalize_row_ids: Arc::new(Mutex::new(HashMap::new())),
+            transaction_states: HashMap::new(),
         }
     }
 
     /// Executes the specified `plan` and optionally returns an output `Table` if the plan is a
     /// query.
-    pub fn execute_statement(&self, statement: Statement) -> Result<Option<Table>, String> {
+    pub fn execute_statement(&mut self, statement: Statement) -> Result<Option<Table>, String> {
         let operator = self.compile_statement(statement);
         let result = operator.downcast_ref::<Collect>().map(|collect| collect.get_result());
         operator.execute(&self.storage_manager, &self.log_manager, &self.catalog);
@@ -49,20 +48,25 @@ impl ExecutionEngine {
         // Send each row of the result.
         for block_id in table.block_ids {
             let block = self.storage_manager.get_block(block_id).unwrap();
-            for row in block.rows() {
+            for row in block.rows(&HashSet::new()) {
                 let row = row.map(|buf| buf.to_vec()).collect();
                 f(row);
             }
         }
     }
 
-    fn compile_statement(&self, statement: Statement) -> Box<dyn Operator> {
+    fn compile_statement(&mut self, statement: Statement) -> Box<dyn Operator> {
+        let transaction_state = self.transaction_states
+            .entry(statement.transaction_id)
+            .or_insert(Arc::new(TransactionState::new(statement.transaction_id)))
+            .clone();
+
         match statement.plan {
-            Plan::BeginTransaction => Box::new(BeginTransaction::new(statement.transaction_id)),
-            Plan::CommitTransaction => Box::new(CommitTransaction::new(
-                statement.transaction_id,
-                self.finalize_row_ids.clone()
-            )),
+            Plan::BeginTransaction => {
+                self.transaction_states.insert(statement.transaction_id, transaction_state.clone());
+                Box::new(BeginTransaction::new(transaction_state))
+            },
+            Plan::CommitTransaction => Box::new(CommitTransaction::new(transaction_state)),
             Plan::CreateTable(table) => Box::new(CreateTable::new(table)),
             Plan::DropTable(table) => Box::new(DropTable::new(table)),
             Plan::Insert { into_table, bufs } => {
@@ -75,8 +79,7 @@ impl ExecutionEngine {
                     table_name,
                     bufs,
                     router,
-                    statement.transaction_id,
-                    self.finalize_row_ids.clone(),
+                    transaction_state,
                 ))
             },
             Plan::Update { table, assignments, filter } => {
@@ -93,21 +96,25 @@ impl ExecutionEngine {
                 Box::new(Delete::new(
                     filter,
                     from_table.block_ids,
-                    statement.transaction_id,
-                    self.finalize_row_ids.clone(),
+                    transaction_state,
                 ))
             },
             Plan::Query(query) => {
                 let cols = query.output.clone();
                 let (block_tx, block_rx) = mpsc::channel();
                 let mut operators = Vec::new();
-                Self::compile_query(query, block_tx, &mut operators);
+                Self::compile_query(query, block_tx, &mut operators, transaction_state);
                 Box::new(Collect::new(operators, cols, block_rx))
             },
         }
     }
 
-    fn compile_query(query: Query, block_tx: Sender<u64>, operators: &mut Vec<Box<dyn Operator>>) {
+    fn compile_query(
+        query: Query,
+        block_tx: Sender<u64>,
+        operators: &mut Vec<Box<dyn Operator>>,
+        transaction_state: Arc<TransactionState>,
+    ) {
         let router = BlockPoolDestinationRouter::new(query.output);
         match query.operator {
             QueryOperator::TableReference(table) => {
@@ -115,15 +122,15 @@ impl ExecutionEngine {
             },
             QueryOperator::Project { input, cols } => {
                 let (child_block_tx, block_rx) = mpsc::channel();
-                Self::compile_query(*input, child_block_tx, operators);
+                Self::compile_query(*input, child_block_tx, operators, transaction_state.clone());
 
-                let project = Project::new(cols, router, block_rx, block_tx);
+                let project = Project::new(cols, router, block_rx, block_tx, transaction_state);
                 operators.push(Box::new(project));
             },
             QueryOperator::Select { input, filter } => {
                 let filter = Self::compile_filter(*filter, &input.output);
                 let (child_block_tx, block_rx) = mpsc::channel();
-                Self::compile_query(*input, child_block_tx, operators);
+                Self::compile_query(*input, child_block_tx, operators, transaction_state);
 
                 let select = Select::new(filter, router, block_rx, block_tx);
                 operators.push(Box::new(select));
@@ -132,12 +139,13 @@ impl ExecutionEngine {
                 let block_rxs = inputs.into_iter()
                     .map(|input| {
                         let (child_block_tx, block_rx) = mpsc::channel();
-                        Self::compile_query(input, child_block_tx, operators);
+                        let transaction_state = transaction_state.clone();
+                        Self::compile_query(input, child_block_tx, operators, transaction_state);
                         block_rx
                     })
                     .collect::<Vec<_>>();
 
-                let cartesian = Cartesian::new(router, block_rxs, block_tx);
+                let cartesian = Cartesian::new(router, block_rxs, block_tx, transaction_state);
                 operators.push(Box::new(cartesian));
             },
         }

@@ -1,7 +1,8 @@
-use std::slice;
+use std::collections::HashSet;
 use std::io::Cursor;
 use std::iter::{Enumerate, FromIterator, StepBy, Take, Zip};
 use std::ops::{Range, RangeFrom};
+use std::slice;
 
 use bit_vec::BitVec;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -181,21 +182,20 @@ impl ColumnMajorBlock {
         }
     }
 
-    /// Returns an iterator over the valid row IDs in the `ColumnMajorBlock`.
-    pub fn row_ids(&self) -> RowIdIter {
-        RowIdIter::new(self)
-    }
-
     /// Returns a row-major iterator over the rows of the `ColumnMajorBlock`. The item of the
     /// returned iterator is itself an iterator over the current row.
-    pub fn rows(&self) -> RowsIter {
-        self.project(&self.metadata.col_indices)
+    pub fn rows<'a>(&'a self, include_tentative: &'a HashSet<usize>) -> RowsIter {
+        self.project(&self.metadata.col_indices, include_tentative)
     }
 
     /// Returns a row-major iterator over the rows of the `ColumnMajorBlock` which only includes the
     /// specified columns.
-    pub fn project<'a>(&'a self, cols: &'a [usize]) -> RowsIter {
-        RowsIter::new(cols, self)
+    pub fn project<'a>(
+        &'a self,
+        cols: &'a [usize],
+        include_tentative: &'a HashSet<usize>,
+    ) -> RowsIter {
+        RowsIter::new(cols, include_tentative, self)
     }
 
     /// Returns a row-major iterator over the rows of the `ColumnMajorBlock` which only includes the
@@ -283,9 +283,13 @@ impl ColumnMajorBlock {
     /// Tentatively deletes all rows in the `ColumnMajorBlock`. The function `before_delete` is
     /// called with the row ID of each deleted row, and `finalize` must be called with this row ID
     /// before the space can be used again.
-    pub fn tentative_delete_rows(&self, before_delete: impl FnMut(usize) + Copy) {
-        for row_i in self.row_ids() {
-            self.tentative_delete_row_unchecked(row_i, before_delete);
+    pub fn tentative_delete_rows<'a>(
+        &'a self,
+        include_tentative: &'a HashSet<usize>,
+        mut before_delete: impl FnMut(usize),
+    ) {
+        for row_i in RowIdIter::new(include_tentative, self) {
+            self.tentative_delete_row_unchecked(row_i, &mut before_delete);
         }
     }
 
@@ -295,14 +299,14 @@ impl ColumnMajorBlock {
     pub fn tentative_delete_rows_with_mask(
         &self,
         mask: &RowMask,
-        before_delete: impl FnMut(usize) + Copy,
+        mut before_delete: impl FnMut(usize),
     ) {
         let row_is = mask.bits.iter()
             .enumerate()
             .filter(|&(_, bit)| bit);
 
         for (row_i, _) in row_is {
-            self.tentative_delete_row_unchecked(row_i, before_delete);
+            self.tentative_delete_row_unchecked(row_i, &mut before_delete);
         }
     }
 
@@ -426,7 +430,7 @@ impl ColumnMajorBlock {
             .0
     }
 
-    fn tentative_delete_row_unchecked(&self, row_i: usize, mut before_delete: impl FnMut(usize)) {
+    fn tentative_delete_row_unchecked(&self, row_i: usize, before_delete: &mut impl FnMut(usize)) {
         before_delete(row_i);
         self.set_ready_flag_for_row(row_i, false);
         self.set_valid_flag_for_row(row_i, false);
@@ -514,15 +518,17 @@ impl<'a> Iterator for FlagIter<'a> {
 
 #[derive(Clone)]
 pub struct RowIdIter<'a> {
+    include_tentative: &'a HashSet<usize>,
     iter: Zip<Zip<Range<usize>, FlagIter<'a>>, FlagIter<'a>>,
 }
 
 impl<'a> RowIdIter<'a> {
-    fn new(block: &'a ColumnMajorBlock) -> Self {
+    fn new(include_tentative: &'a HashSet<usize>, block: &'a ColumnMajorBlock) -> Self {
         let iter = (0..block.metadata.row_cap)
             .zip(block.get_valid_flag_for_rows())
             .zip(block.get_ready_flag_for_rows());
         RowIdIter {
+            include_tentative,
             iter,
         }
     }
@@ -534,7 +540,7 @@ impl<'a> Iterator for RowIdIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some(((row_i, valid), ready)) = self.iter.next() {
-                if valid && ready {
+                if valid && (ready || self.include_tentative.contains(&row_i)) {
                     break Some(row_i)
                 }
             } else {
@@ -574,15 +580,17 @@ impl<'a> Iterator for RowIter<'a> {
 #[derive(Clone)]
 pub struct RowsIter<'a> {
     cols: &'a [usize],
+    include_tentative: &'a HashSet<usize>,
     iter: RowIdIter<'a>,
     block: &'a ColumnMajorBlock,
 }
 
 impl<'a> RowsIter<'a> {
-    fn new(cols: &'a [usize], block: &'a ColumnMajorBlock) -> Self {
-        let iter = block.row_ids();
+    fn new(cols: &'a [usize], include_tentative: &'a HashSet<usize>, block: &'a ColumnMajorBlock) -> Self {
+        let iter = RowIdIter::new(include_tentative, block);
         RowsIter {
             cols,
+            include_tentative,
             iter,
             block,
         }
@@ -605,7 +613,11 @@ pub struct MaskedRowsIter<'a> {
 }
 
 impl<'a> MaskedRowsIter<'a> {
-    fn new(mask: &'a RowMask, cols: &'a [usize], block: &'a ColumnMajorBlock) -> Self {
+    fn new(
+        mask: &'a RowMask,
+        cols: &'a [usize],
+        block: &'a ColumnMajorBlock,
+    ) -> Self {
         let iter = (0..block.metadata.row_cap)
             .zip(&mask.bits);
         MaskedRowsIter {

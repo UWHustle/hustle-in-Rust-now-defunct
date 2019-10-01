@@ -44,7 +44,7 @@ impl Server {
         let catalog = Arc::new(Catalog::try_from_file().unwrap_or(Catalog::new()));
         let mut resolver = Resolver::new(catalog.clone());
         let mut transaction_manager = TransactionManager::new();
-        let execution_engine = ExecutionEngine::new(catalog);
+        let mut execution_engine = ExecutionEngine::new(catalog);
 
         // Construct channels to pass messages between the major components.
         let (parser_tx, parser_rx) = mpsc::channel::<InternalMessage>();

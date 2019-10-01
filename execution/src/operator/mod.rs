@@ -15,7 +15,6 @@ pub use project::Project;
 pub use select::Select;
 pub use table_reference::TableReference;
 pub use update::Update;
-use hustle_storage::block::BlockReference;
 
 pub mod begin_transaction;
 pub mod cartesian;

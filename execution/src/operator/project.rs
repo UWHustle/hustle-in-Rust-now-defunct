@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 
 use hustle_catalog::Catalog;
@@ -5,12 +6,14 @@ use hustle_storage::{LogManager, StorageManager};
 
 use crate::operator::{Operator, util};
 use crate::router::BlockPoolDestinationRouter;
+use crate::state::TransactionState;
 
 pub struct Project {
     cols: Vec<usize>,
     router: BlockPoolDestinationRouter,
     block_rx: Receiver<u64>,
     block_tx: Sender<u64>,
+    transaction_state: Arc<TransactionState>,
 }
 
 impl Project {
@@ -19,12 +22,14 @@ impl Project {
         router: BlockPoolDestinationRouter,
         block_rx: Receiver<u64>,
         block_tx: Sender<u64>,
+        transaction_state: Arc<TransactionState>,
     ) -> Self {
         Project {
             cols,
             router,
             block_rx,
             block_tx,
+            transaction_state,
         }
     }
 }
@@ -38,7 +43,8 @@ impl Operator for Project {
     ) {
         for input_block_id in &self.block_rx {
             let input_block = storage_manager.get_block(input_block_id).unwrap();
-            let mut rows = input_block.project(&self.cols);
+            let include_tentative = self.transaction_state.lock_inserted_for_block(input_block.id);
+            let mut rows = input_block.project(&self.cols, &include_tentative);
             util::send_rows(
                 &mut rows,
                 &self.block_tx,
