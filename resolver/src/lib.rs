@@ -6,7 +6,7 @@ use sqlparser::ast::{Assignment, BinaryOperator, ColumnDef, DataType, Expr, Obje
 
 use hustle_catalog::{Catalog, Column, Table};
 use hustle_common::plan::{Expression, Plan, Query as QueryPlan, QueryOperator};
-use hustle_types::{Bool, Char, ComparativeVariant, Int64, TypeVariant};
+use hustle_types::{Bool, Char, ComparativeVariant, Int64, Int8, TypeVariant};
 
 /// Hustle's resolver. The main duties of the resolver are to ensure the validity of the syntax
 /// tree produced by the parser and produce a logical plan that can be consumed by the optimizer or
@@ -287,6 +287,7 @@ impl Resolver {
             let columns = columns.iter().map(|column| {
                 let type_variant = match column.data_type {
                     DataType::Boolean => Ok(TypeVariant::Bool(Bool)),
+                    DataType::SmallInt => Ok(TypeVariant::Int8(Int8)),
                     DataType::Int => Ok(TypeVariant::Int64(Int64)),
                     DataType::Char(len) => {
                         if let Some(len) = len {
