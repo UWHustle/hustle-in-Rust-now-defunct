@@ -8,6 +8,7 @@ use crate::router::BlockPoolDestinationRouter;
 
 use std::collections::HashMap;
 
+#[allow(unused)]
 pub struct HashJoin {
     router: BlockPoolDestinationRouter,
     block_rx_table_1: Receiver<(u64)>,
@@ -18,7 +19,7 @@ pub struct HashJoin {
 }
 
 impl HashJoin {
-    pub fn new(
+    pub fn _new(
         router: BlockPoolDestinationRouter,
         block_rx_table_1: Receiver<u64>,
         block_rx_table_2: Receiver<u64>,
