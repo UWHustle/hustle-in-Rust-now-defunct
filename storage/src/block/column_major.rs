@@ -357,12 +357,20 @@ impl ColumnMajorBlock {
 
     /// Returns a new `RowMask` by applying the predicate `f` on each buffer in the column specified
     /// by `col_i`.
-    pub fn filter_col(&self, col_i: usize, f: impl Fn(&[u8]) -> bool) -> RowMask {
+    pub fn filter_col(
+        &self,
+        col_i: usize,
+        include_tentative: &HashSet<usize>,
+        f: impl Fn(&[u8]) -> bool,
+    ) -> RowMask {
         let bits = BitVec::from_iter(
             self.get_valid_flag_for_rows()
                 .zip(self.get_ready_flag_for_rows())
                 .zip(ColIterUncheckedMut::new(col_i, self))
-                .map(|((valid, ready), buf)| valid && ready && f(buf))
+                .enumerate()
+                .map(|(row_id, ((valid, ready), buf))|
+                    valid && (ready || include_tentative.contains(&row_id)) && f(buf)
+                )
         );
 
         RowMask { bits }
@@ -375,6 +383,7 @@ impl ColumnMajorBlock {
         &self,
         l_col_i: usize,
         r_col_i: usize,
+        include_tentative: &HashSet<usize>,
         f: impl Fn(&[u8], &[u8]) -> bool
     ) -> RowMask {
         let bits = BitVec::from_iter(
@@ -382,8 +391,9 @@ impl ColumnMajorBlock {
                 .zip(self.get_ready_flag_for_rows())
                 .zip(ColIterUncheckedMut::new(l_col_i, self))
                 .zip(ColIterUncheckedMut::new(r_col_i, self))
-                .map(|(((valid, ready), l_buf), r_buf)|
-                    valid && ready && f(l_buf, r_buf)
+                .enumerate()
+                .map(|(row_id, (((valid, ready), l_buf), r_buf))|
+                    valid && (ready || include_tentative.contains(&row_id)) && f(l_buf, r_buf)
                 )
         );
 

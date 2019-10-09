@@ -154,6 +154,7 @@ impl ExecutionEngine {
     fn compile_filter(
         filter: Expression,
         columns: &[Column],
+        transaction_state: Arc<TransactionState>,
     ) -> Box<dyn Fn(&BlockReference) -> RowMask> {
         match filter {
             Expression::Comparative { variant: comparative_variant, left, right } => {
