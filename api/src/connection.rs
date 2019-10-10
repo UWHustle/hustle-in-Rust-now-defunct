@@ -17,9 +17,9 @@ impl HustleConnection {
 
     pub fn execute(&mut self, sql: String) -> Result<Option<HustleResult>, String> {
         let request = Message::ExecuteSql { sql };
-        request.send(&mut self.tcp_stream).unwrap();
+        request.send(&mut self.tcp_stream)?;
 
-        let response = Message::receive(&mut self.tcp_stream).unwrap();
+        let response = Message::receive(&mut self.tcp_stream)?;
         match response {
             Message::Success => Ok(None),
             Message::Schema { schema } => {

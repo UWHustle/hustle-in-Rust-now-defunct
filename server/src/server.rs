@@ -184,11 +184,10 @@ impl Server {
             let connections_clone = connections.clone();
             s.builder().name("completed".to_string()).spawn(move |_| {
                 for message in completed_rx {
-                    connections_clone
+                    let _ = connections_clone
                         .read().unwrap()[&message.connection_id]
                         .lock().unwrap()
-                        .send(message)
-                        .unwrap();
+                        .send(message);
                 }
             }).unwrap();
 
