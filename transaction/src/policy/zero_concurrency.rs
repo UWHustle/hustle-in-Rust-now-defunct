@@ -127,7 +127,7 @@ mod zero_concurrency_policy_tests {
         let mut admitted = VecDeque::new();
 
         // Enqueue the begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, 0, Plan::BeginTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(policy.active_transaction_id, Some(0));
@@ -137,6 +137,7 @@ mod zero_concurrency_policy_tests {
         admitted.extend(policy.enqueue_statement(Statement::new(
             1,
             0,
+            0,
             test_util::generate_plan("SELECT a FROM T"),
         )));
 
@@ -144,7 +145,7 @@ mod zero_concurrency_policy_tests {
         assert_eq!(admitted.len(), 1);
 
         // Enqueue the commit transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(2, 0, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(2, 0, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.sidetracked_statements.len(), 2);
         assert_eq!(admitted.len(), 1);
@@ -184,7 +185,7 @@ mod zero_concurrency_policy_tests {
         let mut admitted = VecDeque::new();
 
         // Enqueue the first begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, 0, Plan::BeginTransaction)));
 
         assert_eq!(policy.active_transaction_id, Some(0));
         assert_eq!(admitted.len(), 1);
@@ -196,7 +197,7 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the second begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(1, 1, Plan::BeginTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(1, 1, 1, Plan::BeginTransaction)));
 
         assert_eq!(policy.sidetracked_statements.len(), 1);
         assert!(admitted.is_empty());
@@ -205,6 +206,7 @@ mod zero_concurrency_policy_tests {
         admitted.extend(policy.enqueue_statement(Statement::new(
             2,
             1,
+            1,
             test_util::generate_plan("SELECT a FROM T"),
         )));
 
@@ -212,7 +214,7 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the first transaction.
-        admitted.extend(policy.enqueue_statement(Statement::new(3, 0, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(3, 0, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);
@@ -239,7 +241,7 @@ mod zero_concurrency_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the second transaction.
-        admitted.extend(policy.enqueue_statement(Statement::new(4, 1, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(4, 1, 1, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statement.as_ref(), admitted.front());
         assert_eq!(admitted.len(), 1);

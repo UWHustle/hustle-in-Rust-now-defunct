@@ -33,7 +33,12 @@ impl TransactionManager {
                 } else {
                     let statement_id = self.new_statement_id();
                     let transaction_id = self.new_transaction_id();
-                    let statement = Statement::new(statement_id, transaction_id, plan);
+                    let statement = Statement::new(
+                        statement_id,
+                        transaction_id,
+                        connection_id,
+                        plan,
+                    );
                     self.transaction_ids.insert(connection_id, transaction_id);
                     Ok(self.policy.enqueue_statement(statement))
                 }
@@ -41,7 +46,12 @@ impl TransactionManager {
             Plan::CommitTransaction => {
                 if let Some(transaction_id) = self.transaction_ids.remove(&connection_id) {
                     let statement_id = self.new_statement_id();
-                    let statement = Statement::new(statement_id, transaction_id, plan);
+                    let statement = Statement::new(
+                        statement_id,
+                        transaction_id,
+                        connection_id,
+                        plan,
+                    );
                     Ok(self.policy.enqueue_statement(statement))
                 } else {
                     Err("Cannot commit when no transaction is active".to_owned())
@@ -49,7 +59,12 @@ impl TransactionManager {
             },
             _ => {
                 if let Some(&transaction_id) = self.transaction_ids.get(&connection_id) {
-                    let statement = Statement::new(self.new_statement_id(), transaction_id, plan);
+                    let statement = Statement::new(
+                        self.new_statement_id(),
+                        transaction_id,
+                        connection_id,
+                        plan,
+                    );
                     Ok(self.policy.enqueue_statement(statement))
                 } else {
                     let transaction_id = self.new_transaction_id();
@@ -57,18 +72,21 @@ impl TransactionManager {
                     let begin = Statement::silent(
                         self.new_statement_id(),
                         transaction_id,
+                        connection_id,
                         Plan::BeginTransaction,
                     );
 
                     let statement = Statement::new(
                         self.new_statement_id(),
                         transaction_id,
+                        connection_id,
                         plan,
                     );
 
                     let commit = Statement::silent(
                         self.new_statement_id(),
                         transaction_id,
+                        connection_id,
                         Plan::CommitTransaction,
                     );
 
@@ -92,6 +110,7 @@ impl TransactionManager {
             let commit = Statement::new(
                 self.new_statement_id(),
                 transaction_id,
+                connection_id,
                 Plan::CommitTransaction,
             );
             self.policy.enqueue_statement(commit)
