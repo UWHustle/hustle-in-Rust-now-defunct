@@ -205,7 +205,7 @@ mod statement_tests {
         let mut column_manager = ColumnManager::new();
         test_util::generate_plans(sqls)
             .into_iter()
-            .map(|plan| StatementDomain::new(0, 0, plan, &mut column_manager))
+            .map(|plan| StatementDomain::new(0, 0, 0, plan, &mut column_manager))
             .collect()
     }
 }

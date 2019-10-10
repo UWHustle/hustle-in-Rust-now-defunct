@@ -21,10 +21,14 @@ impl StatementDomain {
     pub fn new(
         id: u64,
         transaction_id: u64,
+        connection_id: u64,
         plan: Plan,
         column_manager: &mut ColumnManager
     ) -> Self {
-        Self::from_statement(Statement::new(id, transaction_id, plan), column_manager)
+        Self::from_statement(
+            Statement::new(id, transaction_id, connection_id, plan),
+            column_manager
+        )
     }
 
     pub fn from_statement(statement: Statement, column_manager: &mut ColumnManager) -> Self {

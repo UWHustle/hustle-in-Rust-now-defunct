@@ -151,7 +151,7 @@ mod predicate_comparison_policy_tests {
         let mut admitted = VecDeque::new();
 
         // Enqueue the begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, 0, Plan::BeginTransaction)));
 
         assert_eq!(policy.running_statements.len(), 1);
         assert!(policy.completed_statements[&0].is_empty());
@@ -161,6 +161,7 @@ mod predicate_comparison_policy_tests {
         admitted.extend(policy.enqueue_statement(Statement::new(
             1,
             0,
+            0,
             test_util::generate_plan("SELECT a FROM T"),
         )));
 
@@ -168,7 +169,7 @@ mod predicate_comparison_policy_tests {
         assert_eq!(admitted.len(), 2);
 
         // Enqueue the commit transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(2, 0, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(2, 0, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statements.len(), 3);
         assert_eq!(admitted.len(), 3);
@@ -210,7 +211,7 @@ mod predicate_comparison_policy_tests {
         let mut admitted = VecDeque::new();
 
         // Enqueue the first begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, Plan::BeginTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(0, 0, 0, Plan::BeginTransaction)));
 
         assert_eq!(policy.running_statements.len(), 1);
         assert!(policy.completed_statements[&0].is_empty());
@@ -225,7 +226,7 @@ mod predicate_comparison_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the second begin transaction statement.
-        admitted.extend(policy.enqueue_statement(Statement::new(1, 1, Plan::BeginTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(1, 1, 1, Plan::BeginTransaction)));
 
         assert_eq!(policy.running_statements.len(), 1);
         assert!(policy.completed_statements[&1].is_empty());
@@ -242,6 +243,7 @@ mod predicate_comparison_policy_tests {
         // Enqueue the second statement in the first transaction.
         admitted.extend(policy.enqueue_statement(Statement::new(
             2,
+            0,
             0,
             test_util::generate_plan("SELECT a FROM T"),
         )));
@@ -261,13 +263,14 @@ mod predicate_comparison_policy_tests {
         admitted.extend(policy.enqueue_statement(Statement::new(
             3,
             1,
+            1,
             test_util::generate_plan("UPDATE T SET a = 1"),
         )));
 
         assert_eq!(policy.sidetracked_statements.len(), 1);
 
         // Enqueue the commit transaction statement in the first transaction.
-        admitted.extend(policy.enqueue_statement(Statement::new(4, 0, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(4, 0, 0, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statements.len(), 1);
         assert_eq!(admitted.len(), 1);
@@ -289,7 +292,7 @@ mod predicate_comparison_policy_tests {
         assert!(admitted.is_empty());
 
         // Enqueue the commit transaction statement in the second transaction.
-        admitted.extend(policy.enqueue_statement(Statement::new(5, 1, Plan::CommitTransaction)));
+        admitted.extend(policy.enqueue_statement(Statement::new(5, 1, 1, Plan::CommitTransaction)));
 
         assert_eq!(policy.running_statements.len(), 1);
         assert_eq!(admitted.len(), 1);
