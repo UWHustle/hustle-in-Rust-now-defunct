@@ -321,15 +321,17 @@ impl Resolver {
     ) -> Result<Plan, String> {
         if object_type == &ObjectType::View {
             Err("Views are not yet supported".to_owned())
-        } else if if_exists {
-            Err("If exists is not yet supported".to_owned())
         } else if cascade {
             Err("Cascading drop is not yet supported".to_owned())
         } else if names.len() != 1 {
             Err("Cannot drop more than one table at a time".to_owned())
         } else {
-            let table = self.resolve_table(&names[0].to_string())?;
-            Ok(Plan::DropTable(table))
+            let mut table = self.resolve_table(&names[0].to_string());
+            if if_exists && table.is_err() {
+                // TODO: Bypass the rest of execution entirely instead of creating a dummy table.
+                table = Ok(Table::new(String::new(), Vec::new()));
+            }
+            Ok(Plan::DropTable(table?))
         }
     }
 
