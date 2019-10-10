@@ -6,3 +6,5 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.92", features = ["derive"] }
+downcast-rs = "1.1.0"
+

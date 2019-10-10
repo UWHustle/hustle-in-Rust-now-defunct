@@ -1,5 +1,31 @@
 use std::fmt;
 use hustle_types::HustleType;
+use hustle_types::Int64;
+
+pub struct HustleRow<'a> {
+    types: &'a [Box<dyn HustleType>],
+    row: &'a [Vec<u8>],
+}
+
+impl<'a> HustleRow<'a> {
+    fn new(types: &'a [Box<dyn HustleType>], row: &'a [Vec<u8>]) -> Self {
+        HustleRow {
+            types,
+            row,
+        }
+    }
+
+    pub fn get_i64(&self, col: usize) -> Option<i64> {
+        self.types.get(col)
+            .and_then(|t|
+                t.downcast_ref::<Int64>()
+                    .and_then(|v|
+                        self.row.get(col)
+                            .map(|buf| v.get(buf))
+                    )
+            )
+    }
+}
 
 pub struct HustleResult {
     names: Vec<String>,
@@ -18,6 +44,11 @@ impl HustleResult {
             types,
             rows,
         }
+    }
+
+    pub fn get_row(&self, row: usize) -> Option<HustleRow> {
+        self.rows.get(row)
+            .map(|row| HustleRow::new(&self.types, row))
     }
 }
 

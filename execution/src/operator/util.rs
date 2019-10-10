@@ -3,7 +3,7 @@ use std::sync::mpsc::Sender;
 use crate::router::BlockPoolDestinationRouter;
 
 pub fn send_rows<'a>(
-    rows: &mut impl Iterator<Item = impl Iterator<Item = &'a [u8]>>,
+    rows: impl Iterator<Item = impl Iterator<Item = &'a [u8]>>,
     block_tx: &Sender<u64>,
     router: &BlockPoolDestinationRouter,
     storage_manager: &StorageManager,

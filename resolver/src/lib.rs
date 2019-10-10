@@ -6,7 +6,7 @@ use sqlparser::ast::{Assignment, BinaryOperator, ColumnDef, DataType, Expr, Obje
 
 use hustle_catalog::{Catalog, Column, Table};
 use hustle_common::plan::{Expression, Plan, Query as QueryPlan, QueryOperator};
-use hustle_types::{Bool, Char, ComparativeVariant, Int64, TypeVariant};
+use hustle_types::{Bool, Char, ComparativeVariant, Int16, Int64, TypeVariant};
 
 /// Hustle's resolver. The main duties of the resolver are to ensure the validity of the syntax
 /// tree produced by the parser and produce a logical plan that can be consumed by the optimizer or
@@ -207,7 +207,14 @@ impl Resolver {
                     let values = values_vec.first().unwrap();
                     if values.len() == into_table.columns.len() {
                         let bufs = values.iter()
-                            .map(|expr| self.resolve_literal(expr))
+                            .zip(&into_table.columns)
+                            .map(|(expr, column)| {
+                                if let Expr::Value(value) = expr {
+                                    self.resolve_value(value, column.get_type_variant())
+                                } else {
+                                    Err("Only inserting literal values is supported".to_owned())
+                                }
+                            })
                             .collect::<Result<Vec<_>, String>>()?;
 
                         Ok(Plan::Insert { into_table, bufs })
@@ -287,6 +294,7 @@ impl Resolver {
             let columns = columns.iter().map(|column| {
                 let type_variant = match column.data_type {
                     DataType::Boolean => Ok(TypeVariant::Bool(Bool)),
+                    DataType::SmallInt => Ok(TypeVariant::Int16(Int16)),
                     DataType::Int => Ok(TypeVariant::Int64(Int64)),
                     DataType::Char(len) => {
                         if let Some(len) = len {
@@ -321,15 +329,17 @@ impl Resolver {
     ) -> Result<Plan, String> {
         if object_type == &ObjectType::View {
             Err("Views are not yet supported".to_owned())
-        } else if if_exists {
-            Err("If exists is not yet supported".to_owned())
         } else if cascade {
             Err("Cascading drop is not yet supported".to_owned())
         } else if names.len() != 1 {
             Err("Cannot drop more than one table at a time".to_owned())
         } else {
-            let table = self.resolve_table(&names[0].to_string())?;
-            Ok(Plan::DropTable(table))
+            let mut table = self.resolve_table(&names[0].to_string());
+            if if_exists && table.is_err() {
+                // TODO: Bypass the rest of execution entirely instead of creating a dummy table.
+                table = Ok(Table::new(String::new(), Vec::new()));
+            }
+            Ok(Plan::DropTable(table?))
         }
     }
 
@@ -470,6 +480,26 @@ impl Resolver {
             },
 
             _ => Err(format!("Unsupported expression type {}", expr)),
+        }
+    }
+
+    fn resolve_value(&self, value: &Value, type_variant: &TypeVariant) -> Result<Vec<u8>, String> {
+        match (value, type_variant) {
+            (Value::Boolean(v), TypeVariant::Bool(t)) => Ok(t.new_buf(*v)),
+            (Value::Long(v), TypeVariant::Int8(t)) => i8::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::Long(v), TypeVariant::Int16(t)) => i16::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::Long(v), TypeVariant::Int32(t)) => i32::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::Long(v), TypeVariant::Int64(t)) => i64::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::SingleQuotedString(v), TypeVariant::Char(t)) => Ok(t.new_buf(v)),
+            _ => Err(format!("Cannot convert {} to {:?}", value, type_variant)),
         }
     }
 

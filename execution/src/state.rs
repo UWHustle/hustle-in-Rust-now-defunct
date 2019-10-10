@@ -35,6 +35,7 @@ impl TransactionState {
     }
 
     pub fn lock_inserted_for_block(&self, block_id: u64) -> BlockInsertedGuard {
+        println!("lock_inserted_for_block {}", block_id);
         OwningHandle::new_with_fn(
             self.inserted.lock().unwrap().entry(block_id).or_default().clone(),
             |t| unsafe { (*t).lock().unwrap() },

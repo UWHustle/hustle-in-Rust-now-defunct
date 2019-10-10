@@ -259,6 +259,8 @@ impl ColumnMajorBlock {
         &self,
         rows: &mut impl Iterator<Item = impl Iterator<Item = &'a [u8]>>
     ) {
+        println!("insert_rows");
+
         // Build a mask where the "on" bits represent the indices of the rows with state
         // (!valid, ready).
         let bits = BitVec::from_iter(

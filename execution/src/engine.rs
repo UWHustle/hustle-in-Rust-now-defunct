@@ -35,6 +35,7 @@ impl ExecutionEngine {
     /// Executes the specified `plan` and optionally returns an output `Table` if the plan is a
     /// query.
     pub fn execute_statement(&mut self, statement: Statement) -> Result<Option<Table>, String> {
+        println!("{:?}", statement);
         let operator = self.compile_statement(statement);
         let result = operator.downcast_ref::<Collect>().map(|collect| collect.get_result());
         operator.execute(&self.storage_manager, &self.log_manager, &self.catalog);
@@ -83,7 +84,9 @@ impl ExecutionEngine {
                 ))
             },
             Plan::Update { table, assignments, filter } => {
-                let filter = filter.map(|f| Self::compile_filter(*f, &table.columns));
+                let filter = filter.map(|f|
+                    Self::compile_filter(*f, &table.columns, transaction_state)
+                );
                 Box::new(Update::new(
                     assignments,
                     filter,
@@ -92,7 +95,9 @@ impl ExecutionEngine {
                 ))
             },
             Plan::Delete { from_table, filter } => {
-                let filter = filter.map(|f| Self::compile_filter(*f, &from_table.columns));
+                let filter = filter.map(|f|
+                    Self::compile_filter(*f, &from_table.columns, transaction_state.clone())
+                );
                 Box::new(Delete::new(
                     filter,
                     from_table.block_ids,
@@ -128,7 +133,11 @@ impl ExecutionEngine {
                 operators.push(Box::new(project));
             },
             QueryOperator::Select { input, filter } => {
-                let filter = Self::compile_filter(*filter, &input.output);
+                let filter = Self::compile_filter(
+                    *filter,
+                    &input.output,
+                    transaction_state.clone(),
+                );
                 let (child_block_tx, block_rx) = mpsc::channel();
                 Self::compile_query(*input, child_block_tx, operators, transaction_state);
 
@@ -167,29 +176,36 @@ impl ExecutionEngine {
                 match *right {
                     Expression::Literal { buf: r_buf, type_variant: r_type_variant } => {
                         Box::new(move |block|
-                            block.filter_col(l_col_i, |l_buf|
-                                hustle_types::compare(
-                                    comparative_variant,
-                                    &l_type_variant,
-                                    &r_type_variant,
-                                    l_buf,
-                                    &r_buf,
-                                ).unwrap()
-                            )
+                            block.filter_col(
+                                l_col_i,
+                                &*transaction_state.lock_inserted_for_block(block.id),
+                                |l_buf|
+                                    hustle_types::compare(
+                                        comparative_variant,
+                                        &l_type_variant,
+                                        &r_type_variant,
+                                        l_buf,
+                                        &r_buf,
+                                    ).unwrap()
+                                ),
                         )
                     },
                     Expression::ColumnReference(r_col_i) => {
                         let r_type_variant = columns[r_col_i].get_type_variant().clone();
                         Box::new(move |block|
-                            block.filter_cols(l_col_i, r_col_i, |l_buf, r_buf|
-                                hustle_types::compare(
-                                    comparative_variant,
-                                    &l_type_variant,
-                                    &r_type_variant,
-                                    l_buf,
-                                    r_buf,
-                                ).unwrap()
-                            )
+                            block.filter_cols(
+                                l_col_i,
+                                r_col_i,
+                                &*transaction_state.lock_inserted_for_block(block.id),
+                                |l_buf, r_buf|
+                                    hustle_types::compare(
+                                        comparative_variant,
+                                        &l_type_variant,
+                                        &r_type_variant,
+                                        l_buf,
+                                        r_buf,
+                                    ).unwrap()
+                                ),
                         )
                     },
                     _ => panic!("")
@@ -197,7 +213,7 @@ impl ExecutionEngine {
             },
             Expression::Conjunctive { terms } => {
                 let compiled_terms = terms.into_iter()
-                    .map(|term| Self::compile_filter(term, columns))
+                    .map(|term| Self::compile_filter(term, columns, transaction_state.clone()))
                     .collect::<Vec<_>>();
 
                 Box::new(move |block| {
@@ -211,7 +227,7 @@ impl ExecutionEngine {
             },
             Expression::Disjunctive { terms } => {
                 let compiled_terms = terms.into_iter()
-                    .map(|term| Self::compile_filter(term, columns))
+                    .map(|term| Self::compile_filter(term, columns, transaction_state.clone()))
                     .collect::<Vec<_>>();
 
                 Box::new(move |block| {

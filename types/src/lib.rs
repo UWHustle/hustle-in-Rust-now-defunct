@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate serde;
 
+#[macro_use]
+extern crate downcast_rs;
+
 pub use crate::bits::Bits;
 pub use crate::char::Char;
 pub use crate::primitive::{
@@ -10,6 +13,7 @@ pub use crate::primitive::{
     Int64,
     Int8,
 };
+use downcast_rs::Downcast;
 
 pub mod bits;
 pub mod char;
@@ -43,10 +47,12 @@ impl TypeVariant {
 }
 
 /// The main trait that all types must implement.
-pub trait HustleType {
+pub trait HustleType: Downcast {
     fn byte_len(&self) -> usize;
     fn to_string(&self, buf: &[u8]) -> String;
 }
+
+impl_downcast!(HustleType);
 
 /// A trait that allows a type to specify whether it is equal to another.
 pub trait CompareEq<T> {

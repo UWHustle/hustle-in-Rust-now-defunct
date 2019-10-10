@@ -3,4 +3,3 @@ pub use result::HustleResult;
 
 pub mod connection;
 pub mod result;
-

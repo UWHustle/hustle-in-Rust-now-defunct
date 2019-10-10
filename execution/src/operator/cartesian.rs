@@ -55,9 +55,12 @@ impl Operator for Cartesian {
         _log_manager: &LogManager,
         _catalog: &Catalog,
     ) {
+        println!("execute cartesian");
+
         let mut table_block_ids = (0..self.n_tables).map(|_| vec![]).collect::<Vec<Vec<u64>>>();
 
         for (received_table, received_block_id) in &self.block_rx {
+            println!("{}", received_block_id);
             table_block_ids[received_table].push(received_block_id);
 
             // Get the cartesian product of all received blocks prior, only considering the block
@@ -76,15 +79,21 @@ impl Operator for Cartesian {
                     .map(|&block_id| self.transaction_state.lock_inserted_for_block(block_id))
                     .collect::<Vec<_>>();
 
+                println!("included_tentatives");
+
                 // Get the cartesian product of the rows from the blocks.
                 let mut rows = blocks.iter().zip(&include_tentatives)
                     .map(|(block, include_tentative)| block.rows(include_tentative))
                     .multi_cartesian_product()
                     .map(|row| row.into_iter().flat_map(|r| r.clone()));
 
-                util::send_rows(&mut rows, &self.block_tx, &self.router, storage_manager)
+                util::send_rows(rows, &self.block_tx, &self.router, storage_manager);
+                println!("sent rows");
             }
         }
+
+        println!("sending remaining");
+
 
         for block_id in self.router.get_all_block_ids() {
             self.block_tx.send(block_id).unwrap()

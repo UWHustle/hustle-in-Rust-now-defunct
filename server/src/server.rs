@@ -214,6 +214,7 @@ impl Server {
                             loop {
                                 match Message::receive(&mut tcp_stream) {
                                     Ok(request) => {
+//                                        println!("{:?}", request);
                                         match request {
                                             Message::ExecuteSql { sql } => parser_tx.send(
                                                 InternalMessage::new(
