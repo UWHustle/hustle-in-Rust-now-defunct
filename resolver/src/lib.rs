@@ -207,7 +207,14 @@ impl Resolver {
                     let values = values_vec.first().unwrap();
                     if values.len() == into_table.columns.len() {
                         let bufs = values.iter()
-                            .map(|expr| self.resolve_literal(expr))
+                            .zip(&into_table.columns)
+                            .map(|(expr, column)|
+                                if let Expr::Value(value) = expr {
+                                    self.resolve_value(value, column.get_type_variant())
+                                } else {
+                                    Err("Only inserting literal values is supported".to_owned())
+                                }
+                            )
                             .collect::<Result<Vec<_>, String>>()?;
 
                         Ok(Plan::Insert { into_table, bufs })
@@ -472,6 +479,26 @@ impl Resolver {
             },
 
             _ => Err(format!("Unsupported expression type {}", expr)),
+        }
+    }
+
+    fn resolve_value(&self, value: &Value, type_variant: &TypeVariant) -> Result<Vec<u8>, String> {
+        match (value, type_variant) {
+            (Value::Boolean(v), TypeVariant::Bool(t)) => Ok(t.new_buf(*v)),
+            (Value::Long(v), TypeVariant::Int8(t)) => i8::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::Long(v), TypeVariant::Int16(t)) => i16::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::Long(v), TypeVariant::Int32(t)) => i32::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::Long(v), TypeVariant::Int64(t)) => i64::try_from(*v)
+                .map(|v| t.new_buf(v))
+                .map_err(|e| e.to_string()),
+            (Value::SingleQuotedString(v), TypeVariant::Char(t)) => Ok(t.new_buf(v)),
+            _ => Err(format!("Cannot convert {} to {:?}", value, type_variant)),
         }
     }
 
