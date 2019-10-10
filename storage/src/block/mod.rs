@@ -4,4 +4,4 @@ pub use self::reference::BlockReference;
 mod reference;
 mod column_major;
 
-pub const BLOCK_SIZE: usize = 2^20;
+pub const BLOCK_SIZE: usize = 1_048_576; // 1 MB
