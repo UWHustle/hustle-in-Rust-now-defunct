@@ -53,9 +53,14 @@ impl StatementDomain {
     }
 
     pub fn conflicts(&self, other: &Self) -> bool {
-        !(self.is_read_only() && other.is_read_only())
+        (self.inner.transaction_id == other.inner.transaction_id
+            && self.inner.plan == Plan::BeginTransaction
+                || self.inner.plan == Plan::CommitTransaction
+                || other.inner.plan == Plan::BeginTransaction
+                || other.inner.plan == Plan::CommitTransaction)
+        || ((!self.is_read_only() || !other.is_read_only())
             && !self.filter_guarantees_no_conflict(other)
-            && self.domains_intersect(other)
+            && self.domains_intersect(other))
     }
 
     pub fn is_read_only(&self) -> bool {

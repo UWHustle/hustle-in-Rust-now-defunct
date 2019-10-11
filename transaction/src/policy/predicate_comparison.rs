@@ -59,7 +59,6 @@ impl PredicateComparisonPolicy {
 
 impl Policy for PredicateComparisonPolicy {
     fn enqueue_statement(&mut self, statement: Statement) -> Vec<Statement> {
-        println!("enqueue statement {:?}", statement);
         let enqueued_statement = StatementDomain::from_statement(
             statement.clone(),
             &mut self.column_manager
@@ -91,7 +90,6 @@ impl Policy for PredicateComparisonPolicy {
     }
 
     fn complete_statement(&mut self, statement: Statement) -> Vec<Statement> {
-        println!("complete statement {:?}", statement);
         // Ensure there is a running statement with the correct statement ID.
         let completed_statement = self.running_statements.remove(&statement.id)
             .expect(&format!("Statement with ID {} was not running", statement.id));
