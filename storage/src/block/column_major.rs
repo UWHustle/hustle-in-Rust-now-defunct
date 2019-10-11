@@ -50,7 +50,7 @@ pub struct ColumnMajorBlock {
     _mmap: MmapMut,
 }
 
-impl ColumnMajorBlock {z
+impl ColumnMajorBlock {
     /// Returns a new `ColumnMajorBlock` with the specified `col_sizes` and number of bit flags,
     /// using `mmap` as the backing memory buffer. This should only be called with newly constructed
     /// `MmapMut` buffers.
