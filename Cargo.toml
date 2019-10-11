@@ -8,6 +8,7 @@ members = [
     "execution",
     "profiler",
     "resolver",
+    "scheduler",
     "server",
     "storage",
     "transaction",

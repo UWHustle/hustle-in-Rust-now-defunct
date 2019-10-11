@@ -4,5 +4,5 @@ extern crate downcast_rs;
 pub use engine::ExecutionEngine;
 
 mod engine;
-mod operator;
-mod router;
+pub mod operator;
+pub mod router;

@@ -1,0 +1,17 @@
+[package]
+name = "hustle-scheduler"
+version = "0.1.0"
+authors = ["lichengxihuang <lhuang236@wisc.edu>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+hustle-catalog = { path = "../catalog" }
+hustle-common = { path = "../common" }
+hustle-storage = { path = "../storage" }
+hustle-types = { path = "../types" }
+hustle-execution = { path = "../execution" }
+itertools = "0.8.0"
+core_affinity = "0.5.9"
+crossbeam = "0.7.2"

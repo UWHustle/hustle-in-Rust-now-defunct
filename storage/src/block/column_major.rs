@@ -50,7 +50,7 @@ pub struct ColumnMajorBlock {
     _mmap: MmapMut,
 }
 
-impl ColumnMajorBlock {
+impl ColumnMajorBlock {z
     /// Returns a new `ColumnMajorBlock` with the specified `col_sizes` and number of bit flags,
     /// using `mmap` as the backing memory buffer. This should only be called with newly constructed
     /// `MmapMut` buffers.
@@ -112,7 +112,7 @@ impl ColumnMajorBlock {
         let bits_type = Bits::new(bits_len);
         header.col_sizes.push(bits_type.byte_len());
 
-        let row_size = header.col_sizes.iter().sum::<usize>() + bits_type.byte_len();
+        let row_size = header.col_sizes.iter().sum::<usize>();
         let row_cap = data_len / row_size;
 
         let col_indices = (0..n_cols).collect();
