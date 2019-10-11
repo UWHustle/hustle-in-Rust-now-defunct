@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use hustle_common::plan::{Plan, Statement};
 
-use crate::policy::{Policy, ZeroConcurrencyPolicy};
+use crate::policy::{Policy, PredicateComparisonPolicy};
 
 pub struct TransactionManager {
     policy: Box<dyn Policy + Send>,
@@ -14,7 +14,7 @@ pub struct TransactionManager {
 impl TransactionManager {
     pub fn new() -> Self {
         TransactionManager {
-            policy: Box::new(ZeroConcurrencyPolicy::new()),
+            policy: Box::new(PredicateComparisonPolicy::new()),
             transaction_ids: HashMap::new(),
             statement_ctr: 0,
             transaction_ctr: 0,

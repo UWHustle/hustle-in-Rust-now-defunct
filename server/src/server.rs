@@ -14,6 +14,7 @@ use hustle_execution::ExecutionEngine;
 use hustle_resolver::Resolver;
 use hustle_transaction::TransactionManager;
 use hustle_common::plan::Statement;
+use threadpool::ThreadPool;
 
 /// Hustle`s server. Clients connect to the server via TCP.
 pub struct Server {
@@ -45,7 +46,7 @@ impl Server {
         let catalog = Arc::new(Catalog::try_from_file().unwrap_or(Catalog::new()));
         let mut resolver = Resolver::new(catalog.clone());
         let mut transaction_manager = TransactionManager::new();
-        let execution_engine = ExecutionEngine::new(catalog);
+        let execution_engine = Arc::new(ExecutionEngine::new(catalog));
 
         // Construct channels to pass messages between the major components.
         let (parser_tx, parser_rx) = mpsc::channel::<InternalMessage>();
@@ -132,48 +133,54 @@ impl Server {
             let transaction_tx_clone = transaction_tx.clone();
             let completed_tx_clone = completed_tx.clone();
             s.builder().name("execution".to_string()).spawn(move |_| {
+                let pool = ThreadPool::new(2);
                 for message in execution_rx {
                     match message.inner {
                         Message::ExecuteStatement { statement } => {
-                            match execution_engine.execute_plan(statement.plan.clone()) {
-                                Ok(table) => {
-                                    // The execution may have produced a result table. If so, we send the
-                                    // rows back to the user.
-                                    if let Some(table) = table {
-                                        // Send a message with the result schema.
-                                        completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Schema { schema: table.columns.clone() }
-                                        )).unwrap();
-
-                                        let connection_id = message.connection_id;
-                                        execution_engine.get_rows(table, |row|
+                            let execution_engine = execution_engine.clone();
+                            let transaction_tx_clone = transaction_tx_clone.clone();
+                            let completed_tx_clone = completed_tx_clone.clone();
+                            let connection_id = message.connection_id;
+                            pool.execute(move || {
+                                match execution_engine.execute_plan(statement.plan.clone()) {
+                                    Ok(table) => {
+                                        // The execution may have produced a result table. If so, we send the
+                                        // rows back to the user.
+                                        if let Some(table) = table {
+                                            // Send a message with the result schema.
                                             completed_tx_clone.send(InternalMessage::new(
                                                 connection_id,
-                                                Message::ReturnRow { row }
-                                            )).unwrap()
-                                        );
-                                    }
+                                                Message::Schema { schema: table.columns.clone() }
+                                            )).unwrap();
 
-                                    // Send a success message to indicate completion.
-                                    if !statement.silent {
-                                        completed_tx_clone.send(InternalMessage::new(
-                                            message.connection_id,
-                                            Message::Success,
-                                        )).unwrap();
-                                    }
-                                },
-                                Err(reason) => completed_tx_clone.send(InternalMessage::new(
-                                    message.connection_id,
-                                    Message::Failure { reason }
-                                )).unwrap(),
-                            };
+                                            execution_engine.get_rows(table, |row|
+                                                completed_tx_clone.send(InternalMessage::new(
+                                                    connection_id,
+                                                    Message::ReturnRow { row }
+                                                )).unwrap()
+                                            );
+                                        }
 
-                            // Notify the transaction manager that the plan execution has completed.
-                            transaction_tx_clone.send(InternalMessage::new(
-                                message.connection_id,
-                                Message::CompleteStatement { statement }
-                            )).unwrap();
+                                        // Send a success message to indicate completion.
+                                        if !statement.silent {
+                                            completed_tx_clone.send(InternalMessage::new(
+                                                connection_id,
+                                                Message::Success,
+                                            )).unwrap();
+                                        }
+                                    },
+                                    Err(reason) => completed_tx_clone.send(InternalMessage::new(
+                                        connection_id,
+                                        Message::Failure { reason }
+                                    )).unwrap(),
+                                };
+
+                                // Notify the transaction manager that the plan execution has completed.
+                                transaction_tx_clone.send(InternalMessage::new(
+                                    connection_id,
+                                    Message::CompleteStatement { statement }
+                                )).unwrap();
+                            });
                         },
                         _ => (),
                     }
