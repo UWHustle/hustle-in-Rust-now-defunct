@@ -314,7 +314,7 @@ mod scheduler_tests {
         create_table(&mut scheduler);
         insert(&mut scheduler);
 
-        println!("query");
+        println!("----- test_query -----");
         let table = scheduler.catalog.lock().unwrap().get_table("table").unwrap();
         let col_bool = table.columns.iter()
             .find(|c| c.get_name() == "col_bool")
